@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elena — Put Healthcare on Autopilot</title>
+  <meta name="description" content="Elena is your AI-powered healthcare assistant. Chat with an AI that calls doctors, negotiates bills, compares drug prices, and manages your entire medical life.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #fff;
+      background: #0a0a0a;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ========== NAV ========== */
+    nav {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-top-color: rgba(255, 255, 255, 0.3);
+      border-radius: 18px 18px 18px 4px;
+      padding: 10px 20px;
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: #fff;
+      text-decoration: none;
+      letter-spacing: -0.01em;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .nav-links {
+      display: flex;
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-top-color: rgba(255, 255, 255, 0.25);
+      border-radius: 100px;
+      padding: 6px 8px;
+      gap: 4px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+
+    .nav-links a {
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 400;
+      padding: 8px 24px;
+      border-radius: 100px;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-cta {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-top-color: rgba(255, 255, 255, 0.3);
+      border-radius: 100px;
+      padding: 12px 28px;
+      color: rgba(255, 255, 255, 0.9);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 400;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .nav-cta:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* ========== HERO ========== */
+    .hero {
+      position: relative;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background: url('images/clouds.jpg') center center / cover no-repeat;
+      filter: brightness(1.15) saturate(0.8);
+    }
+
+    /* Friendly blue overlay */
+    .hero-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg,
+        rgba(45, 85, 140, 0.4) 0%,
+        rgba(50, 95, 155, 0.35) 50%,
+        rgba(45, 85, 140, 0.45) 100%
+      );
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 5vw, 3.8rem);
+      font-weight: 300;
+      line-height: 1.15;
+      letter-spacing: -0.025em;
+      color: #ffffff;
+    }
+
+    .scroll-indicator {
+      position: relative;
+      z-index: 1;
+      margin-top: 72px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.95rem;
+      font-weight: 300;
+      letter-spacing: 0.01em;
+      animation: gentle-bounce 3s ease-in-out infinite;
+    }
+
+    .scroll-arrow {
+      opacity: 0.5;
+    }
+
+    @keyframes gentle-bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(6px); }
+    }
+
+    .hero-pill {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 100px;
+      z-index: 1;
+    }
+
+    /* ========== PHONE SECTION ========== */
+    .phone-section {
+      position: relative;
+      height: 350vh;
+    }
+
+    .phone-section-bg {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      width: 100%;
+      background: url('images/phone-bg.jpg') center bottom / cover no-repeat;
+      margin-bottom: -100vh;
+      z-index: 0;
+    }
+
+    /* Top fade matching hero blue */
+    .phone-section-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg,
+        rgba(45, 85, 140, 0.85) 0%,
+        rgba(50, 95, 155, 0.4) 15%,
+        rgba(0, 0, 0, 0.05) 35%,
+        transparent 50%
+      );
+    }
+
+    /* Phone sticks in center while scrolling, stays within its section */
+    .phone-wrapper {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      will-change: transform;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .phone-frame-container {
+      transform: scale(2.5);
+      transform-origin: center center;
+      opacity: 0;
+      filter: blur(20px);
+      transition: filter 0.1s ease-out;
+    }
+
+    /* ========== iPHONE (Apple bezel image overlay) ========== */
+
+    .phone-device {
+      position: relative;
+      width: 290px;
+      height: 600px;
+      background: #1a1a1c;
+      border-radius: 48px;
+      padding: 10px;
+      box-shadow:
+        0 40px 80px rgba(0, 0, 0, 0.5),
+        0 15px 30px rgba(0, 0, 0, 0.35),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      border-radius: 38px;
+      overflow: hidden;
+      background: linear-gradient(180deg, #e0d3c6 0%, #e6d9cd 30%, #ede3d8 60%, #f4efe8 100%);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Dynamic Island */
+    .phone-screen::before {
+      content: '';
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 28px;
+      background: #1a1a1c;
+      border-radius: 20px;
+      z-index: 10;
+    }
+
+    .phone-status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 22px 0;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #1a1a1a;
+      position: relative;
+      z-index: 5;
+    }
+
+    .status-right {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .signal-bars {
+      display: flex;
+      gap: 1.5px;
+      align-items: flex-end;
+      height: 9px;
+    }
+
+    .signal-bars span {
+      width: 2.5px;
+      background: #1a1a1a;
+      border-radius: 1px;
+    }
+
+    .signal-bars span:nth-child(1) { height: 3px; }
+    .signal-bars span:nth-child(2) { height: 5px; }
+    .signal-bars span:nth-child(3) { height: 7px; }
+    .signal-bars span:nth-child(4) { height: 9px; }
+
+    .battery {
+      width: 20px;
+      height: 9px;
+      border: 1.5px solid #1a1a1a;
+      border-radius: 2.5px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      padding: 1.5px;
+      margin-left: 3px;
+    }
+
+    .battery::after {
+      content: '';
+      position: absolute;
+      right: -3.5px;
+      width: 2px;
+      height: 4px;
+      background: #1a1a1a;
+      border-radius: 0 1px 1px 0;
+    }
+
+    .battery-fill {
+      width: 80%;
+      height: 100%;
+      background: #1a1a1a;
+      border-radius: 1px;
+    }
+
+    .phone-chat {
+      flex: 1;
+      padding: 34px 16px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .chat-greeting {
+      font-size: 1.4rem;
+      font-weight: 500;
+      color: #1a1a1a;
+      letter-spacing: -0.02em;
+    }
+
+    .chat-bubble-user {
+      align-self: flex-end;
+      background: rgba(255, 255, 255, 0.6);
+      color: #1a1a1a;
+      padding: 9px 13px;
+      border-radius: 18px;
+      font-size: 0.7rem;
+      max-width: 80%;
+      line-height: 1.45;
+    }
+
+    .chat-bubble-elena {
+      align-self: flex-start;
+      color: #1a1a1a;
+      font-size: 0.72rem;
+      line-height: 1.6;
+      max-width: 90%;
+    }
+
+    .phone-input-bar {
+      padding: 4px 14px 2px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .phone-input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 20px;
+      padding: 9px 14px;
+      font-size: 0.7rem;
+      color: #aaa;
+    }
+
+    .mic-bars {
+      display: flex;
+      gap: 2px;
+      align-items: center;
+      height: 14px;
+    }
+
+    .mic-bars span {
+      width: 2px;
+      background: #666;
+      border-radius: 2px;
+    }
+
+    .mic-bars span:nth-child(1) { height: 7px; }
+    .mic-bars span:nth-child(2) { height: 12px; }
+    .mic-bars span:nth-child(3) { height: 9px; }
+    .mic-bars span:nth-child(4) { height: 14px; }
+
+    .phone-tab-bar {
+      display: flex;
+      justify-content: space-around;
+      padding: 5px 10px 3px;
+      border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .phone-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      font-size: 0.5rem;
+      color: #999;
+    }
+
+    .phone-tab.active { color: #1a1a1a; }
+
+    .phone-tab-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 500;
+      border: 1.5px solid #ccc;
+    }
+
+    .phone-tab.active .phone-tab-icon {
+      background: #1a1a1a;
+      color: #fff;
+      font-size: 0.6rem;
+      font-weight: 600;
+      border-color: #1a1a1a;
+    }
+
+    .home-indicator {
+      width: 36%;
+      height: 4px;
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 100px;
+      margin: 2px auto 6px;
+    }
+
+    /* ========== FEATURES ========== */
+    .features {
+      position: relative;
+      z-index: 10;
+      padding: 120px 32px 160px;
+      background: #fff;
+      color: #111;
+    }
+
+    .features-inner {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .features-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .features-header h2 {
+      font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+      font-weight: 300;
+      letter-spacing: -0.025em;
+      color: #111;
+    }
+
+    .inline-waitlist {
+      text-align: center;
+      margin-bottom: 80px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .feature-card {
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 20px;
+      padding: 28px 24px;
+      transition: box-shadow 0.3s;
+    }
+
+    .feature-card:hover {
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    .feature-card h3 {
+      font-size: 0.92rem;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #111;
+    }
+
+    .feature-card p {
+      font-size: 0.8rem;
+      color: #888;
+      line-height: 1.6;
+      font-weight: 300;
+    }
+
+    /* (Waitlist is now inline within features section) */
+
+    .email-form {
+      display: flex;
+      gap: 10px;
+      max-width: 460px;
+      margin: 0 auto;
+    }
+
+    .email-form input[type="email"] {
+      flex: 1;
+      padding: 15px 22px;
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      border-radius: 100px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      font-weight: 300;
+      color: #111;
+      outline: none;
+      transition: border-color 0.2s;
+      min-width: 0;
+    }
+
+    .email-form input[type="email"]::placeholder {
+      color: #aaa;
+    }
+
+    .email-form input[type="email"]:focus {
+      border-color: rgba(0, 0, 0, 0.25);
+    }
+
+    .email-form button {
+      padding: 15px 30px;
+      background: #111;
+      border: none;
+      border-radius: 100px;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 400;
+      font-family: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+
+    .email-form button:hover {
+      background: #333;
+    }
+
+    .form-note {
+      font-size: 0.78rem;
+      color: #aaa;
+      margin-top: 16px;
+      font-weight: 300;
+    }
+
+    .success-message {
+      display: none;
+      padding: 15px 30px;
+      background: #fff;
+      color: #111;
+      border-radius: 100px;
+      font-weight: 400;
+      font-size: 0.95rem;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    /* ========== FOOTER ========== */
+    footer {
+      position: relative;
+      z-index: 10;
+      padding: 24px 32px;
+      background: #fff;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .footer-bottom {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+      color: #666;
+      font-weight: 400;
+    }
+
+    @media (max-width: 768px) {
+      .footer-bottom {
+        flex-direction: column;
+        gap: 6px;
+        text-align: center;
+      }
+    }
+
+    /* ========== ANIMATIONS ========== */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 768px) {
+      nav {
+        padding: 16px 16px;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .phone-device {
+        width: 250px;
+        height: 520px;
+        border-radius: 40px;
+      }
+
+      .phone-screen {
+        border-radius: 32px;
+      }
+
+      .chat-greeting {
+        font-size: 1.2rem;
+      }
+
+      .features {
+        padding: 80px 20px;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .waitlist {
+        padding: 80px 20px 100px;
+      }
+
+      .email-form {
+        flex-direction: column;
+      }
+
+      .email-form button {
+        padding: 16px 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="#" class="nav-logo">elena</a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#waitlist">About</a>
+    </div>
+    <a href="#waitlist" class="nav-cta">Download the Beta</a>
+  </nav>
+
+  <!-- HERO: Dark clouds -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <h1>Elena makes healthcare better.</h1>
+    </div>
+    <div class="scroll-indicator">
+      Scroll
+      <svg class="scroll-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M8 3v8.5M4 8l4 4.5L12 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="hero-pill"></div>
+  </section>
+
+  <!-- PHONE: Nature background with scroll zoom -->
+  <section class="phone-section" id="phone-section">
+    <div class="phone-section-bg"></div>
+    <div class="phone-wrapper">
+      <div class="phone-frame-container" id="phone-wrapper">
+        <div class="phone-device">
+          <div class="phone-screen">
+            <div class="phone-status-bar">
+              <span>9:41</span>
+              <div class="status-right">
+                <div class="signal-bars">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+                <div class="battery">
+                  <div class="battery-fill"></div>
+                </div>
+              </div>
+            </div>
+            <div class="phone-chat">
+              <div class="chat-greeting">Hey Alex</div>
+              <div class="chat-bubble-user">My Lipitor refill is coming up — can you find me the cheapest option?</div>
+              <div class="chat-bubble-elena">
+                I checked your insurance and searched 4 pricing databases. Here's what I found:<br><br>
+                <strong>Costco (generic)</strong> &mdash; $4.20/mo<br>
+                <strong>Rx Outreach</strong> &mdash; $6.00/mo<br>
+                <strong>CVS w/ insurance</strong> &mdash; $12.00/mo<br><br>
+                Want me to transfer your prescription to Costco? I can call them now.
+              </div>
+            </div>
+            <div class="phone-input-bar">
+              <div class="phone-input">Ask me anything...</div>
+              <div class="mic-bars">
+                <span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+            <div class="phone-tab-bar">
+              <div class="phone-tab">
+                <div class="phone-tab-icon">&#8599;</div>
+                <span>Find Care</span>
+              </div>
+              <div class="phone-tab active">
+                <div class="phone-tab-icon">E</div>
+                <span>Ask Elena</span>
+              </div>
+              <div class="phone-tab">
+                <div class="phone-tab-icon">&#10003;</div>
+                <span>Checkups</span>
+              </div>
+              <div class="phone-tab">
+                <div class="phone-tab-icon">$</div>
+                <span>HSA/FSA</span>
+              </div>
+            </div>
+            <div class="home-indicator"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES + WAITLIST -->
+  <section class="features" id="features">
+    <div class="features-inner">
+      <div class="features-header fade-in">
+        <h2>Put healthcare on autopilot.</h2>
+        <p style="color: #888; font-size: 1rem; font-weight: 300; margin-top: 12px;">Your AI-powered healthcare assistant.</p>
+      </div>
+
+      <!-- Waitlist right under headline -->
+      <div class="inline-waitlist fade-in" id="waitlist">
+        <form class="email-form" id="waitlist-form">
+          <input type="email" placeholder="Enter your email" required>
+          <button type="submit">Download the Beta</button>
+        </form>
+        <div class="success-message" id="waitlist-success">You're in! Check your email for a beta invite.</div>
+        <p class="form-note">We'll send you a link to download the beta. No spam.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card fade-in">
+          <h3>Chat with Elena</h3>
+          <p>An AI that knows your health profile and can find doctors, compare prices, and even call offices for you.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <h3>Find the cheapest meds</h3>
+          <p>Searches multiple pricing databases to find the lowest price for every prescription.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <h3>Insurance at a glance</h3>
+          <p>Scan your cards, track deductibles, and see coinsurance rates in one place.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <h3>Your complete health profile</h3>
+          <p>Conditions, meds, allergies, doctors — all stored in one place with camera scanning.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <h3>Preventive care & daily habits</h3>
+          <p>Personalized checklists and habits based on your health — so nothing slips through.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <h3>Manage care for everyone</h3>
+          <p>Manage healthcare for your whole family under one account.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-bottom">
+      <span>&copy; 2026 Elena AI. All rights reserved.</span>
+      <span>Made with love in NYC</span>
+    </div>
+  </footer>
+
+  <script>
+    // Fade-in on scroll
+    const fadeObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.fade-in').forEach(el => fadeObserver.observe(el));
+
+    // Phone zoom-out on scroll
+    const phoneSection = document.getElementById('phone-section');
+    const phoneWrapper = document.getElementById('phone-wrapper');
+
+    function updatePhoneScale() {
+      const rect = phoneSection.getBoundingClientRect();
+      const sectionH = phoneSection.offsetHeight;
+      const viewH = window.innerHeight;
+
+      // How far we've scrolled into the section
+      const scrolled = -rect.top;
+      const scrollRange = sectionH - viewH;
+      const progress = Math.max(0, Math.min(1, scrolled / scrollRange));
+
+      // Fade in over first 20% of scroll
+      const fadeProgress = Math.min(1, progress / 0.2);
+      const opacity = fadeProgress * fadeProgress * (3 - 2 * fadeProgress);
+
+      // Blur clears as phone fades in (20px -> 0px over first 25%)
+      const blurProgress = Math.min(1, progress / 0.25);
+      const blur = 20 * (1 - blurProgress * blurProgress);
+
+      // Scale settles over first 50% of scroll, then phone sits still
+      const scaleProgress = Math.min(1, progress / 0.5);
+      const eased = 1 - Math.pow(1 - scaleProgress, 3); // ease-out cubic
+
+      // Scale from 2.5 down to 1.0
+      const scale = 2.5 - (1.5 * eased);
+      phoneWrapper.style.transform = `scale(${scale})`;
+      phoneWrapper.style.opacity = opacity;
+      phoneWrapper.style.filter = blur < 0.5 ? 'none' : `blur(${blur}px)`;
+    }
+
+    window.addEventListener('scroll', updatePhoneScale, { passive: true });
+    updatePhoneScale();
+
+    // Form handling — saves email to Supabase
+    const SUPABASE_URL = 'https://livbrrqqxnvnxhggguig.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpdmJycnFxeG52bnhoZ2dndWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Njc1MzYsImV4cCI6MjA4NzA0MzUzNn0.MkOKc7MWq5zoR3OY7wZgOsPwvjjKSij0ln1nF6inxP0';
+
+    document.getElementById('waitlist-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = e.target.querySelector('input[type="email"]').value;
+      const button = e.target.querySelector('button');
+      button.textContent = 'Sending...';
+      button.disabled = true;
+
+      try {
+        const resp = await fetch(`${SUPABASE_URL}/rest/v1/beta_signups`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({ email })
+        });
+        if (resp.status === 409) {
+          // Duplicate email
+          e.target.style.display = 'none';
+          document.getElementById('waitlist-success').textContent = "You're already signed up! We'll be in touch.";
+          document.getElementById('waitlist-success').style.display = 'inline-block';
+          return;
+        }
+        if (!resp.ok) throw new Error('Signup failed');
+        e.target.style.display = 'none';
+        document.getElementById('waitlist-success').style.display = 'inline-block';
+      } catch (err) {
+        console.error('Signup error:', err);
+        button.textContent = 'Download the Beta';
+        button.disabled = false;
+      }
+    });
+  </script>
+
+</body>
+</html>
