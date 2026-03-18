@@ -388,7 +388,7 @@
     }
 
     if (code) {
-      const deepLink = 'elenaapp://invite/' + code;
+      const deepLink = 'elenaapp://invite/' + code + (fromName ? '?from=' + encodeURIComponent(fromName) : '');
       openBtn.href = deepLink;
 
       // Try to open the app automatically on mobile
