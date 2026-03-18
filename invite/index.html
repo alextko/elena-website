@@ -18,97 +18,352 @@
       padding: 0;
       box-sizing: border-box;
     }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #0B1A3B;
       color: #fff;
+      background: #0a0a0a;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
       min-height: 100vh;
+    }
+
+    /* ========== NAV ========== */
+    nav {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 20px 32px;
       display: flex;
       align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-top-color: rgba(255, 255, 255, 0.3);
+      border-radius: 18px 18px 18px 4px;
+      padding: 10px 20px;
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: #fff;
+      text-decoration: none;
+      letter-spacing: -0.01em;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .nav-cta {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-top-color: rgba(255, 255, 255, 0.3);
+      border-radius: 100px;
+      padding: 12px 28px;
+      color: rgba(255, 255, 255, 0.9);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 400;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .nav-cta:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* ========== INVITE HERO ========== */
+    .invite-hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       justify-content: center;
-      -webkit-font-smoothing: antialiased;
-    }
-    .card {
-      max-width: 420px;
-      width: 90%;
       text-align: center;
-      padding: 48px 32px;
+      overflow: hidden;
+      padding: 120px 32px 80px;
     }
-    .logo {
-      font-family: 'DM Serif Display', serif;
-      font-size: 36px;
-      color: #F5F0E8;
-      margin-bottom: 32px;
+
+    .invite-hero-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background: linear-gradient(180deg,
+        rgba(45, 85, 140, 0.95) 0%,
+        rgba(50, 95, 155, 0.85) 50%,
+        rgba(30, 60, 110, 0.95) 100%
+      );
     }
-    .icon-circle {
+
+    .invite-content {
+      position: relative;
+      z-index: 1;
+      max-width: 520px;
+    }
+
+    .invite-icon {
       width: 80px;
       height: 80px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.1);
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 24px;
+      margin: 0 auto 32px;
       font-size: 36px;
     }
-    h1 {
-      font-family: 'DM Serif Display', serif;
-      font-size: 28px;
-      font-weight: 400;
-      color: #F5F0E8;
-      margin-bottom: 12px;
-      line-height: 1.3;
+
+    .invite-content h1 {
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      font-weight: 300;
+      line-height: 1.2;
+      letter-spacing: -0.025em;
+      color: #ffffff;
+      margin-bottom: 16px;
     }
-    p {
-      font-size: 16px;
-      line-height: 1.6;
-      color: rgba(245, 240, 232, 0.7);
-      margin-bottom: 32px;
+
+    .invite-content p {
+      font-size: 1.05rem;
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.7;
+      font-weight: 300;
+      margin-bottom: 40px;
     }
-    .btn {
-      display: inline-block;
-      width: 100%;
+
+    .invite-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 340px;
+      margin: 0 auto;
+    }
+
+    .btn-primary {
+      display: block;
       padding: 18px 32px;
-      border-radius: 30px;
-      font-size: 17px;
-      font-weight: 600;
+      background: #fff;
+      color: #111;
+      border-radius: 100px;
+      font-size: 1rem;
+      font-weight: 500;
+      font-family: inherit;
       text-decoration: none;
+      text-align: center;
       cursor: pointer;
       border: none;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-primary:hover {
+      background: #f0f0f0;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-secondary {
+      display: block;
+      padding: 18px 32px;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      color: rgba(255, 255, 255, 0.9);
+      border-radius: 100px;
+      font-size: 1rem;
+      font-weight: 400;
+      font-family: inherit;
+      text-decoration: none;
+      text-align: center;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .invite-footer {
+      position: relative;
+      z-index: 1;
+      margin-top: 48px;
+      font-size: 0.82rem;
+      color: rgba(255, 255, 255, 0.35);
+      font-weight: 300;
+    }
+
+    /* ========== FEATURES PREVIEW ========== */
+    .features-preview {
+      position: relative;
+      z-index: 1;
+      padding: 80px 32px 100px;
+      background: #fff;
+      color: #111;
+    }
+
+    .features-preview-inner {
+      max-width: 720px;
+      margin: 0 auto;
       text-align: center;
     }
-    .btn-primary {
-      background: #F5F0E8;
-      color: #0B1A3B;
+
+    .features-preview h2 {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 300;
+      letter-spacing: -0.025em;
+      color: #111;
       margin-bottom: 12px;
     }
-    .btn-secondary {
-      background: rgba(255,255,255,0.1);
-      color: #F5F0E8;
-      border: 1px solid rgba(255,255,255,0.2);
+
+    .features-preview .subtitle {
+      font-size: 1rem;
+      color: #888;
+      font-weight: 300;
+      margin-bottom: 48px;
     }
-    .btn:hover {
-      opacity: 0.9;
+
+    .features-mini-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      text-align: left;
     }
-    .footer-note {
-      margin-top: 24px;
-      font-size: 13px;
-      color: rgba(245, 240, 232, 0.4);
+
+    .feature-mini {
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 16px;
+      padding: 22px 20px;
+    }
+
+    .feature-mini h3 {
+      font-size: 0.88rem;
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: #111;
+    }
+
+    .feature-mini p {
+      font-size: 0.78rem;
+      color: #888;
+      line-height: 1.55;
+      font-weight: 300;
+    }
+
+    /* ========== FOOTER ========== */
+    footer {
+      position: relative;
+      z-index: 10;
+      padding: 24px 32px;
+      background: #fff;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .footer-bottom {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+      color: #666;
+      font-weight: 400;
+    }
+
+    @media (max-width: 768px) {
+      nav {
+        padding: 16px 16px;
+      }
+
+      .invite-hero {
+        padding: 100px 20px 60px;
+      }
+
+      .features-preview {
+        padding: 60px 20px 80px;
+      }
+
+      .features-mini-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-bottom {
+        flex-direction: column;
+        gap: 6px;
+        text-align: center;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="logo">Elena</div>
-    <div class="icon-circle">&#x1F91D;</div>
-    <h1>You've been invited to connect on Elena</h1>
-    <p>
-      A family member wants to connect with you on Elena so you can manage healthcare together. Open the app to accept, or download Elena to get started.
-    </p>
-    <a id="open-app" class="btn btn-primary" href="#">Open in Elena</a>
-    <a class="btn btn-secondary" href="https://testflight.apple.com/join/8Y7ZwXYk">Download Elena</a>
-    <p class="footer-note">Elena — Put Healthcare on Autopilot</p>
-  </div>
+
+  <!-- NAV -->
+  <nav>
+    <a href="https://www.elena-health.com" class="nav-logo">elena</a>
+    <a href="https://testflight.apple.com/join/8Y7ZwXYk" class="nav-cta">Download the Beta</a>
+  </nav>
+
+  <!-- INVITE HERO -->
+  <section class="invite-hero">
+    <div class="invite-hero-bg"></div>
+    <div class="invite-content">
+      <div class="invite-icon">&#x1F91D;</div>
+      <h1>You've been invited to connect on Elena</h1>
+      <p>
+        A family member wants to connect with you on Elena so you can manage healthcare together — track medications, share records, and coordinate care in one place.
+      </p>
+      <div class="invite-buttons">
+        <a id="open-app" class="btn-primary" href="#">Open in Elena</a>
+        <a class="btn-secondary" href="https://testflight.apple.com/join/8Y7ZwXYk">Download Elena</a>
+      </div>
+    </div>
+    <div class="invite-footer">Elena — Put Healthcare on Autopilot</div>
+  </section>
+
+  <!-- FEATURES PREVIEW -->
+  <section class="features-preview">
+    <div class="features-preview-inner">
+      <h2>Why families use Elena</h2>
+      <p class="subtitle">Your AI-powered healthcare assistant for the whole family.</p>
+      <div class="features-mini-grid">
+        <div class="feature-mini">
+          <h3>Manage care together</h3>
+          <p>Switch between family profiles to coordinate medications, appointments, and records.</p>
+        </div>
+        <div class="feature-mini">
+          <h3>AI that knows your health</h3>
+          <p>Chat with Elena about any family member's health — she knows everyone's history.</p>
+        </div>
+        <div class="feature-mini">
+          <h3>Never miss a thing</h3>
+          <p>Preventive care reminders and daily health habits personalized for each person.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-bottom">
+      <span>&copy; 2026 Elena AI. All rights reserved.</span>
+      <span>Made with love in NYC</span>
+    </div>
+  </footer>
 
   <script>
     // Extract invite code from URL path: /invite/ELENA-XXXXXX
@@ -125,12 +380,12 @@
       // Try to open the app automatically on mobile
       if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
         window.location.href = deepLink;
-        // If the app doesn't open after a short delay, the page stays visible
       }
     } else {
       openBtn.href = 'https://testflight.apple.com/join/8Y7ZwXYk';
       openBtn.textContent = 'Download Elena';
     }
   </script>
+
 </body>
 </html>
