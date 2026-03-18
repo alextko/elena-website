@@ -331,9 +331,9 @@
   <section class="invite-hero">
     <div class="invite-hero-bg"></div>
     <div class="invite-content">
-      <h1>You've been invited to connect on Elena</h1>
-      <p>
-        A family member wants to connect with you on Elena so you can manage healthcare together — track medications, share records, and coordinate care in one place.
+      <h1>Join the family</h1>
+      <p id="invite-subtitle">
+        Healthcare is better with the people you love.
       </p>
       <div class="invite-buttons">
         <a id="open-app" class="btn-primary" href="#">Open in Elena</a>
@@ -373,16 +373,27 @@
   </footer>
 
   <script>
-    // Extract invite code from URL path: /invite/ELENA-XXXXXX
+    const API_BASE = 'https://elena-backend-production-production.up.railway.app';
     const path = window.location.pathname;
     const match = path.match(/\/invite\/([A-Z0-9-]+)/i);
     const code = match ? match[1] : null;
 
     const openBtn = document.getElementById('open-app');
+    const subtitle = document.getElementById('invite-subtitle');
 
     if (code) {
       const deepLink = 'elenaapp://invite/' + code;
       openBtn.href = deepLink;
+
+      // Fetch inviter name from backend
+      fetch(API_BASE + '/family/invite/' + code)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data && data.inviter_name) {
+            subtitle.innerHTML = '<strong>' + data.inviter_name + '</strong> wants to connect with you on Elena.<br>Healthcare is better with the people you love.';
+          }
+        })
+        .catch(() => {});
 
       // Try to open the app automatically on mobile
       if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
