@@ -345,6 +345,12 @@
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
     }
 
+    .feature-card:hover p {
+      max-height: 80px;
+      opacity: 1;
+      margin-top: 6px;
+    }
+
     .feature-card h3 {
       font-size: 0.92rem;
       font-weight: 500;
@@ -357,6 +363,11 @@
       color: #888;
       line-height: 1.6;
       font-weight: 300;
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+      margin-top: 0;
     }
 
     /* (Waitlist is now inline within features section) */
