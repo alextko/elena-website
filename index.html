@@ -300,14 +300,16 @@
     .features {
       position: relative;
       z-index: 10;
-      padding: 100px 32px 140px;
+      padding: 100px 0 140px;
       background: #faf8f5;
       color: #111;
+      overflow: hidden;
     }
 
     .features-inner {
       max-width: 1080px;
       margin: 0 auto;
+      padding: 0 32px;
     }
 
     .features-header {
@@ -327,17 +329,56 @@
       margin-bottom: 64px;
     }
 
+    .features-carousel-wrapper {
+      overflow: hidden;
+      width: 100%;
+      position: relative;
+    }
+
+    .features-carousel-wrapper::before,
+    .features-carousel-wrapper::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 60px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .features-carousel-wrapper::before {
+      left: 0;
+      background: linear-gradient(to right, #faf8f5, transparent);
+    }
+
+    .features-carousel-wrapper::after {
+      right: 0;
+      background: linear-gradient(to left, #faf8f5, transparent);
+    }
+
     .features-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+      display: flex;
       gap: 20px;
+      animation: carousel-scroll 30s linear infinite;
+      width: max-content;
+    }
+
+    .features-grid:hover {
+      animation-play-state: paused;
+    }
+
+    @keyframes carousel-scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
     }
 
     .feature-card {
       position: relative;
       border-radius: 28px;
       padding: 0;
-      min-height: 340px;
+      min-height: 380px;
+      width: 340px;
+      flex-shrink: 0;
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
@@ -371,24 +412,12 @@
     }
 
     /* Card gradients */
-    .feature-card:nth-child(1) {
-      background: linear-gradient(145deg, #2d558c 0%, #1a3a6a 100%);
-    }
-    .feature-card:nth-child(2) {
-      background: linear-gradient(145deg, #7a9e8e 0%, #5a7e6e 100%);
-    }
-    .feature-card:nth-child(3) {
-      background: linear-gradient(145deg, #b5707a 0%, #8e4f58 100%);
-    }
-    .feature-card:nth-child(4) {
-      background: linear-gradient(145deg, #c4a06a 0%, #9e7a44 100%);
-    }
-    .feature-card:nth-child(5) {
-      background: linear-gradient(145deg, #6b7fa3 0%, #4a5e82 100%);
-    }
-    .feature-card:nth-child(6) {
-      background: linear-gradient(145deg, #8a7b6b 0%, #6a5b4b 100%);
-    }
+    .feature-card.grad-navy    { background: linear-gradient(145deg, #2d558c 0%, #1a3a6a 100%); }
+    .feature-card.grad-sage    { background: linear-gradient(145deg, #7a9e8e 0%, #5a7e6e 100%); }
+    .feature-card.grad-rose    { background: linear-gradient(145deg, #b5707a 0%, #8e4f58 100%); }
+    .feature-card.grad-gold    { background: linear-gradient(145deg, #c4a06a 0%, #9e7a44 100%); }
+    .feature-card.grad-slate   { background: linear-gradient(145deg, #6b7fa3 0%, #4a5e82 100%); }
+    .feature-card.grad-brown   { background: linear-gradient(145deg, #8a7b6b 0%, #6a5b4b 100%); }
 
     /* Emoji icon */
     .feature-icon {
@@ -528,12 +557,9 @@
         padding: 80px 20px;
       }
 
-      .features-grid {
-        grid-template-columns: 1fr;
-      }
-
       .feature-card {
-        min-height: 240px;
+        width: 280px;
+        min-height: 300px;
       }
 
       .waitlist {
@@ -619,51 +645,97 @@
         <p class="form-note">We'll send you a link to download the beta. No spam.</p>
       </div>
 
-      <div class="features-grid">
-        <div class="feature-card fade-in">
-          <div class="feature-card-content">
-            <div class="feature-icon">💬</div>
-            <h3>She actually calls for you.</h3>
-            <p>Elena calls doctors' offices, asks your questions, and reports back. No hold music required.</p>
+    </div>
+    <div class="features-carousel-wrapper">
+        <div class="features-grid">
+          <!-- Original cards -->
+          <div class="feature-card grad-navy">
+            <div class="feature-card-content">
+              <div class="feature-icon">💬</div>
+              <h3>She actually calls for you.</h3>
+              <p>Elena calls doctors' offices, asks your questions, and reports back. No hold music required.</p>
+            </div>
           </div>
-        </div>
-        <div class="feature-card fade-in">
-          <div class="feature-card-content">
-            <div class="feature-icon">💊</div>
-            <h3>Find the cheapest meds.</h3>
-            <p>Searches pricing databases and your insurance to find the lowest price for every prescription.</p>
+          <div class="feature-card grad-sage">
+            <div class="feature-card-content">
+              <div class="feature-icon">💊</div>
+              <h3>Find the cheapest meds.</h3>
+              <p>Searches pricing databases and your insurance to find the lowest price for every prescription.</p>
+            </div>
           </div>
-        </div>
-        <div class="feature-card fade-in">
-          <div class="feature-card-content">
-            <div class="feature-icon">🪪</div>
-            <h3>Insurance, decoded.</h3>
-            <p>Snap your card, and Elena handles the rest. Deductibles, copays, what's covered.</p>
+          <div class="feature-card grad-rose">
+            <div class="feature-card-content">
+              <div class="feature-icon">🪪</div>
+              <h3>Insurance, decoded.</h3>
+              <p>Snap your card, and Elena handles the rest. Deductibles, copays, what's covered.</p>
+            </div>
           </div>
-        </div>
-        <div class="feature-card fade-in">
-          <div class="feature-card-content">
-            <div class="feature-icon">📋</div>
-            <h3>Your whole health, one place.</h3>
-            <p>Conditions, meds, allergies, doctors. Always up to date, always with you.</p>
+          <div class="feature-card grad-gold">
+            <div class="feature-card-content">
+              <div class="feature-icon">📋</div>
+              <h3>Your whole health, one place.</h3>
+              <p>Conditions, meds, allergies, doctors. Always up to date, always with you.</p>
+            </div>
           </div>
-        </div>
-        <div class="feature-card fade-in">
-          <div class="feature-card-content">
-            <div class="feature-icon">✅</div>
-            <h3>Stay on top of it.</h3>
-            <p>Personalized reminders and habits so checkups, screenings, and refills never slip.</p>
+          <div class="feature-card grad-slate">
+            <div class="feature-card-content">
+              <div class="feature-icon">✅</div>
+              <h3>Stay on top of it.</h3>
+              <p>Personalized reminders and habits so checkups, screenings, and refills never slip.</p>
+            </div>
           </div>
-        </div>
-        <div class="feature-card fade-in">
-          <div class="feature-card-content">
-            <div class="feature-icon">👨‍👩‍👧</div>
-            <h3>Your whole family, covered.</h3>
-            <p>Manage healthcare for parents, kids, and partners all under one account.</p>
+          <div class="feature-card grad-brown">
+            <div class="feature-card-content">
+              <div class="feature-icon">👨‍👩‍👧</div>
+              <h3>Your whole family, covered.</h3>
+              <p>Manage healthcare for parents, kids, and partners all under one account.</p>
+            </div>
+          </div>
+          <!-- Duplicate for seamless loop -->
+          <div class="feature-card grad-navy">
+            <div class="feature-card-content">
+              <div class="feature-icon">💬</div>
+              <h3>She actually calls for you.</h3>
+              <p>Elena calls doctors' offices, asks your questions, and reports back. No hold music required.</p>
+            </div>
+          </div>
+          <div class="feature-card grad-sage">
+            <div class="feature-card-content">
+              <div class="feature-icon">💊</div>
+              <h3>Find the cheapest meds.</h3>
+              <p>Searches pricing databases and your insurance to find the lowest price for every prescription.</p>
+            </div>
+          </div>
+          <div class="feature-card grad-rose">
+            <div class="feature-card-content">
+              <div class="feature-icon">🪪</div>
+              <h3>Insurance, decoded.</h3>
+              <p>Snap your card, and Elena handles the rest. Deductibles, copays, what's covered.</p>
+            </div>
+          </div>
+          <div class="feature-card grad-gold">
+            <div class="feature-card-content">
+              <div class="feature-icon">📋</div>
+              <h3>Your whole health, one place.</h3>
+              <p>Conditions, meds, allergies, doctors. Always up to date, always with you.</p>
+            </div>
+          </div>
+          <div class="feature-card grad-slate">
+            <div class="feature-card-content">
+              <div class="feature-icon">✅</div>
+              <h3>Stay on top of it.</h3>
+              <p>Personalized reminders and habits so checkups, screenings, and refills never slip.</p>
+            </div>
+          </div>
+          <div class="feature-card grad-brown">
+            <div class="feature-card-content">
+              <div class="feature-icon">👨‍👩‍👧</div>
+              <h3>Your whole family, covered.</h3>
+              <p>Manage healthcare for parents, kids, and partners all under one account.</p>
+            </div>
           </div>
         </div>
       </div>
-    </div>
   </section>
 
   <footer>
