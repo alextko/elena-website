@@ -330,46 +330,22 @@
     }
 
     .features-carousel-wrapper {
-      overflow: hidden;
       width: 100%;
       position: relative;
-    }
-
-    .features-carousel-wrapper::before,
-    .features-carousel-wrapper::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 60px;
-      z-index: 2;
-      pointer-events: none;
-    }
-
-    .features-carousel-wrapper::before {
-      left: 0;
-      background: linear-gradient(to right, #fff, transparent);
-    }
-
-    .features-carousel-wrapper::after {
-      right: 0;
-      background: linear-gradient(to left, #fff, transparent);
     }
 
     .features-grid {
       display: flex;
       gap: 20px;
-      animation: carousel-scroll 30s linear infinite;
-      width: max-content;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding: 0 32px;
     }
 
-    .features-grid:hover {
-      animation-play-state: paused;
-    }
-
-    @keyframes carousel-scroll {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
+    .features-grid::-webkit-scrollbar {
+      display: none;
     }
 
     .feature-card {
@@ -384,6 +360,7 @@
       justify-content: flex-end;
       overflow: hidden;
       transition: transform 0.3s ease;
+      scroll-snap-align: start;
     }
 
     .feature-card:hover {
@@ -657,43 +634,6 @@
     <div class="features-carousel-wrapper">
         <div class="features-grid">
           <!-- Original cards -->
-          <div class="feature-card img-couch">
-            <div class="feature-card-content">
-              <h3>She actually calls for you.</h3>
-              <p>Elena calls doctors' offices, asks your questions, and reports back. No hold music.</p>
-            </div>
-          </div>
-          <div class="feature-card img-meds">
-            <div class="feature-card-content">
-              <h3>Find the cheapest meds.</h3>
-              <p>Searches pricing databases and your insurance to find the lowest price for every prescription.</p>
-            </div>
-          </div>
-          <div class="feature-card img-phone">
-            <div class="feature-card-content">
-              <h3>Insurance, decoded.</h3>
-              <p>Snap your card, and Elena handles the rest. Deductibles, copays, what's covered.</p>
-            </div>
-          </div>
-          <div class="feature-card img-hugging">
-            <div class="feature-card-content">
-              <h3>Your whole health, one place.</h3>
-              <p>Conditions, meds, allergies, doctors. Always up to date, always with you.</p>
-            </div>
-          </div>
-          <div class="feature-card img-meditate">
-            <div class="feature-card-content">
-              <h3>Stay on top of it.</h3>
-              <p>Personalized reminders and habits so checkups, screenings, and refills never slip.</p>
-            </div>
-          </div>
-          <div class="feature-card img-family">
-            <div class="feature-card-content">
-              <h3>Your whole family, covered.</h3>
-              <p>Manage healthcare for parents, kids, and partners all under one account.</p>
-            </div>
-          </div>
-          <!-- Duplicate for seamless loop -->
           <div class="feature-card img-couch">
             <div class="feature-card-content">
               <h3>She actually calls for you.</h3>
