@@ -300,19 +300,19 @@
     .features {
       position: relative;
       z-index: 10;
-      padding: 120px 32px 160px;
-      background: #fff;
+      padding: 100px 32px 140px;
+      background: #faf8f5;
       color: #111;
     }
 
     .features-inner {
-      max-width: 960px;
+      max-width: 1080px;
       margin: 0 auto;
     }
 
     .features-header {
       text-align: center;
-      margin-bottom: 32px;
+      margin-bottom: 48px;
     }
 
     .features-header h2 {
@@ -324,39 +324,76 @@
 
     .inline-waitlist {
       text-align: center;
-      margin-bottom: 80px;
+      margin-bottom: 64px;
     }
 
     .features-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 16px;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
     }
 
     .feature-card {
-      background: #fff;
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      border-radius: 20px;
-      padding: 28px 24px;
-      transition: box-shadow 0.3s;
+      position: relative;
+      border-radius: 28px;
+      padding: 0;
+      min-height: 340px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      overflow: hidden;
+      transition: transform 0.3s ease;
     }
 
     .feature-card:hover {
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+      transform: translateY(-4px);
+    }
+
+    .feature-card-content {
+      position: relative;
+      z-index: 1;
+      padding: 32px 28px;
     }
 
     .feature-card h3 {
-      font-size: 0.92rem;
+      font-size: 1.25rem;
       font-weight: 500;
-      margin-bottom: 6px;
-      color: #111;
+      margin-bottom: 8px;
+      color: #fff;
+      letter-spacing: -0.01em;
     }
 
     .feature-card p {
-      font-size: 0.8rem;
-      color: #888;
-      line-height: 1.6;
+      font-size: 0.88rem;
+      color: rgba(255, 255, 255, 0.8);
+      line-height: 1.55;
       font-weight: 300;
+    }
+
+    /* Card gradients */
+    .feature-card:nth-child(1) {
+      background: linear-gradient(145deg, #2d558c 0%, #1a3a6a 100%);
+    }
+    .feature-card:nth-child(2) {
+      background: linear-gradient(145deg, #7a9e8e 0%, #5a7e6e 100%);
+    }
+    .feature-card:nth-child(3) {
+      background: linear-gradient(145deg, #b5707a 0%, #8e4f58 100%);
+    }
+    .feature-card:nth-child(4) {
+      background: linear-gradient(145deg, #c4a06a 0%, #9e7a44 100%);
+    }
+    .feature-card:nth-child(5) {
+      background: linear-gradient(145deg, #6b7fa3 0%, #4a5e82 100%);
+    }
+    .feature-card:nth-child(6) {
+      background: linear-gradient(145deg, #8a7b6b 0%, #6a5b4b 100%);
+    }
+
+    /* Emoji icon */
+    .feature-icon {
+      font-size: 2rem;
+      margin-bottom: 16px;
     }
 
     /* (Waitlist is now inline within features section) */
@@ -432,7 +469,7 @@
       position: relative;
       z-index: 10;
       padding: 24px 32px;
-      background: #fff;
+      background: #faf8f5;
       border-top: 1px solid rgba(0, 0, 0, 0.06);
     }
 
@@ -493,6 +530,10 @@
 
       .features-grid {
         grid-template-columns: 1fr;
+      }
+
+      .feature-card {
+        min-height: 240px;
       }
 
       .waitlist {
@@ -580,28 +621,46 @@
 
       <div class="features-grid">
         <div class="feature-card fade-in">
-          <h3>Chat with Elena</h3>
-          <p>An AI that knows your health profile and can find doctors, compare prices, and even call offices for you.</p>
+          <div class="feature-card-content">
+            <div class="feature-icon">💬</div>
+            <h3>She actually calls for you.</h3>
+            <p>Elena calls doctors' offices, asks your questions, and reports back. No hold music required.</p>
+          </div>
         </div>
         <div class="feature-card fade-in">
-          <h3>Find the cheapest meds</h3>
-          <p>Searches multiple pricing databases to find the lowest price for every prescription.</p>
+          <div class="feature-card-content">
+            <div class="feature-icon">💊</div>
+            <h3>Find the cheapest meds.</h3>
+            <p>Searches pricing databases and your insurance to find the lowest price for every prescription.</p>
+          </div>
         </div>
         <div class="feature-card fade-in">
-          <h3>Insurance at a glance</h3>
-          <p>Scan your cards, track deductibles, and see coinsurance rates in one place.</p>
+          <div class="feature-card-content">
+            <div class="feature-icon">🪪</div>
+            <h3>Insurance, decoded.</h3>
+            <p>Snap your card, and Elena handles the rest. Deductibles, copays, what's covered.</p>
+          </div>
         </div>
         <div class="feature-card fade-in">
-          <h3>Your complete health profile</h3>
-          <p>Conditions, meds, allergies, doctors — all stored in one place with camera scanning.</p>
+          <div class="feature-card-content">
+            <div class="feature-icon">📋</div>
+            <h3>Your whole health, one place.</h3>
+            <p>Conditions, meds, allergies, doctors. Always up to date, always with you.</p>
+          </div>
         </div>
         <div class="feature-card fade-in">
-          <h3>Preventive care & daily habits</h3>
-          <p>Personalized checklists and habits based on your health — so nothing slips through.</p>
+          <div class="feature-card-content">
+            <div class="feature-icon">✅</div>
+            <h3>Stay on top of it.</h3>
+            <p>Personalized reminders and habits so checkups, screenings, and refills never slip.</p>
+          </div>
         </div>
         <div class="feature-card fade-in">
-          <h3>Manage care for everyone</h3>
-          <p>Manage healthcare for your whole family under one account.</p>
+          <div class="feature-card-content">
+            <div class="feature-icon">👨‍👩‍👧</div>
+            <h3>Your whole family, covered.</h3>
+            <p>Manage healthcare for parents, kids, and partners all under one account.</p>
+          </div>
         </div>
       </div>
     </div>
