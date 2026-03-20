@@ -270,7 +270,7 @@
     .manifesto {
       position: relative;
       z-index: 10;
-      padding: 120px 32px;
+      padding: 160px 32px 180px;
       background: #fff;
       text-align: center;
     }
@@ -335,57 +335,59 @@
       overflow: hidden;
     }
 
+    .features-carousel-wrapper::before,
+    .features-carousel-wrapper::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 60px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .features-carousel-wrapper::before {
+      left: 0;
+      background: linear-gradient(to right, #fff, transparent);
+    }
+
+    .features-carousel-wrapper::after {
+      right: 0;
+      background: linear-gradient(to left, #fff, transparent);
+    }
+
     .features-grid {
       display: flex;
       gap: 20px;
-      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-      padding: 20px 0;
+      animation: carousel-scroll 30s linear infinite;
+      width: max-content;
+    }
+
+    .features-grid:hover {
+      animation-play-state: paused;
+    }
+
+    @keyframes carousel-scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
     }
 
     .feature-card {
       position: relative;
       border-radius: 28px;
       padding: 0;
-      min-height: 420px;
-      width: 360px;
+      min-height: 380px;
+      width: 340px;
       flex-shrink: 0;
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
       overflow: hidden;
-      transition: transform 0.6s ease, opacity 0.6s ease, filter 0.6s ease;
-      opacity: 0.4;
-      transform: scale(0.88);
-      filter: brightness(0.7);
+      transition: transform 0.3s ease;
     }
 
-    .feature-card.active {
-      opacity: 1;
-      transform: scale(1);
-      filter: brightness(1);
-    }
-
-    .carousel-dots {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      margin-top: 28px;
-    }
-
-    .carousel-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: rgba(0, 0, 0, 0.15);
-      border: none;
-      padding: 0;
-      cursor: pointer;
-      transition: background 0.3s, transform 0.3s;
-    }
-
-    .carousel-dot.active {
-      background: #111;
-      transform: scale(1.2);
+    .feature-card:hover {
+      transform: translateY(-4px);
     }
 
     .feature-card-content {
@@ -635,23 +637,6 @@
 
   <!-- FEATURES + WAITLIST -->
   <section class="features" id="features">
-    <div class="features-inner">
-      <div class="features-header fade-in">
-        <h2>Put healthcare on autopilot.</h2>
-        <p style="color: #888; font-size: 1rem; font-weight: 300; margin-top: 12px;">Your AI-powered healthcare assistant.</p>
-      </div>
-
-      <!-- Waitlist right under headline -->
-      <div class="inline-waitlist fade-in" id="waitlist">
-        <form class="email-form" id="waitlist-form">
-          <input type="email" placeholder="Enter your email" required>
-          <button type="submit">Download the Beta</button>
-        </form>
-        <div class="success-message" id="waitlist-success">You're in! Check your email for a beta invite.</div>
-        <p class="form-note">We'll send you a link to download the beta. No spam.</p>
-      </div>
-
-    </div>
     <div class="features-carousel-wrapper">
         <div class="features-grid">
           <!-- Original cards -->
@@ -691,8 +676,60 @@
               <p>Manage healthcare for parents, kids, and partners all under one account.</p>
             </div>
           </div>
+          <!-- Duplicate for seamless loop -->
+          <div class="feature-card img-couch">
+            <div class="feature-card-content">
+              <h3>She actually calls for you.</h3>
+              <p>Elena calls doctors' offices, asks your questions, and reports back. No hold music.</p>
+            </div>
+          </div>
+          <div class="feature-card img-meds">
+            <div class="feature-card-content">
+              <h3>Find the cheapest meds.</h3>
+              <p>Searches pricing databases and your insurance to find the lowest price for every prescription.</p>
+            </div>
+          </div>
+          <div class="feature-card img-phone">
+            <div class="feature-card-content">
+              <h3>Insurance, decoded.</h3>
+              <p>Snap your card, and Elena handles the rest. Deductibles, copays, what's covered.</p>
+            </div>
+          </div>
+          <div class="feature-card img-hugging">
+            <div class="feature-card-content">
+              <h3>Your whole health, one place.</h3>
+              <p>Conditions, meds, allergies, doctors. Always up to date, always with you.</p>
+            </div>
+          </div>
+          <div class="feature-card img-meditate">
+            <div class="feature-card-content">
+              <h3>Stay on top of it.</h3>
+              <p>Personalized reminders and habits so checkups, screenings, and refills never slip.</p>
+            </div>
+          </div>
+          <div class="feature-card img-family">
+            <div class="feature-card-content">
+              <h3>Your whole family, covered.</h3>
+              <p>Manage healthcare for parents, kids, and partners all under one account.</p>
+            </div>
+          </div>
         </div>
-      <div class="carousel-dots" id="carousel-dots"></div>
+      </div>
+
+      <div class="features-inner">
+        <div class="features-header fade-in" style="margin-top: 80px;">
+          <h2>Put healthcare on autopilot.</h2>
+          <p style="color: #888; font-size: 1rem; font-weight: 300; margin-top: 12px;">Your AI-powered healthcare assistant.</p>
+        </div>
+
+        <div class="inline-waitlist fade-in" id="waitlist">
+          <form class="email-form" id="waitlist-form">
+            <input type="email" placeholder="Enter your email" required>
+            <button type="submit">Download the Beta</button>
+          </form>
+          <div class="success-message" id="waitlist-success">You're in! Check your email for a beta invite.</div>
+          <p class="form-note">We'll send you a link to download the beta. No spam.</p>
+        </div>
       </div>
   </section>
 
@@ -704,53 +741,6 @@
   </footer>
 
   <script>
-    // Feature carousel — spotlight one card at a time, advance every 5s
-    (function() {
-      const grid = document.querySelector('.features-grid');
-      const cards = Array.from(grid.querySelectorAll('.feature-card'));
-      const dotsContainer = document.getElementById('carousel-dots');
-      let current = 0;
-      let timer;
-
-      // Create dots
-      cards.forEach((_, i) => {
-        const dot = document.createElement('button');
-        dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
-        dot.addEventListener('click', () => goTo(i));
-        dotsContainer.appendChild(dot);
-      });
-      const dots = Array.from(dotsContainer.querySelectorAll('.carousel-dot'));
-
-      function goTo(index) {
-        current = index;
-        // Center the active card
-        const card = cards[current];
-        const wrapper = document.querySelector('.features-carousel-wrapper');
-        const wrapperWidth = wrapper.offsetWidth;
-        const cardWidth = card.offsetWidth;
-        const gap = 20;
-        const offset = card.offsetLeft - (wrapperWidth / 2) + (cardWidth / 2);
-        grid.style.transform = `translateX(-${offset}px)`;
-
-        cards.forEach((c, i) => c.classList.toggle('active', i === current));
-        dots.forEach((d, i) => d.classList.toggle('active', i === current));
-
-        resetTimer();
-      }
-
-      function next() {
-        goTo((current + 1) % cards.length);
-      }
-
-      function resetTimer() {
-        clearInterval(timer);
-        timer = setInterval(next, 5000);
-      }
-
-      // Initialize
-      goTo(0);
-    })();
-
     // Fade-in on scroll
     const fadeObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
