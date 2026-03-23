@@ -188,26 +188,38 @@
     .hero-email-form input[type="email"] {
       flex: 1;
       padding: 16px 24px;
-      background: #fff;
-      border: none;
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-top-color: rgba(255, 255, 255, 0.35);
       border-radius: 100px;
       font-size: 1rem;
       font-family: inherit;
       font-weight: 400;
-      color: #111;
+      color: #fff;
       outline: none;
       min-width: 0;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .hero-email-form input[type="email"]:focus {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.4);
     }
 
     .hero-email-form input[type="email"]::placeholder {
-      color: #999;
+      color: rgba(255, 255, 255, 0.6);
     }
 
     .hero-email-form button {
       padding: 16px 32px;
-      background: #111;
-      border: none;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-top-color: rgba(255, 255, 255, 0.35);
       border-radius: 100px;
       color: #fff;
       font-size: 1rem;
@@ -215,12 +227,13 @@
       font-family: inherit;
       cursor: pointer;
       white-space: nowrap;
-      transition: background 0.2s, transform 0.1s;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
     }
 
     .hero-email-form button:hover {
-      background: #333;
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.35);
       transform: translateY(-1px);
     }
 
