@@ -152,29 +152,69 @@
       color: #ffffff;
     }
 
-    .hero-waitlist-btn {
-      display: inline-block;
-      margin-top: 16px;
-      padding: 16px 36px;
-      background: rgba(255, 255, 255, 0.12);
-      backdrop-filter: blur(40px) saturate(1.8);
-      -webkit-backdrop-filter: blur(40px) saturate(1.8);
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      border-top-color: rgba(255, 255, 255, 0.35);
-      border-radius: 100px;
-      color: #fff;
-      text-decoration: none;
-      font-size: 1rem;
-      font-weight: 400;
-      letter-spacing: 0.01em;
-      transition: all 0.2s;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    .hero-email-form {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+      max-width: 460px;
     }
 
-    .hero-waitlist-btn:hover {
+    .hero-email-form input[type="email"] {
+      flex: 1;
+      padding: 15px 22px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 100px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      font-weight: 300;
+      color: #fff;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+      min-width: 0;
+    }
+
+    .hero-email-form input[type="email"]::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .hero-email-form input[type="email"]:focus {
       background: rgba(255, 255, 255, 0.2);
-      border-color: rgba(255, 255, 255, 0.35);
-      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .hero-email-form button {
+      padding: 15px 28px;
+      background: #fff;
+      border: none;
+      border-radius: 100px;
+      color: #111;
+      font-size: 0.95rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .hero-email-form button:hover {
+      background: #f0f0f0;
+      transform: translateY(-1px);
+    }
+
+    .hero-success {
+      display: none;
+      margin-top: 24px;
+      padding: 15px 30px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(40px);
+      color: #fff;
+      border-radius: 100px;
+      font-weight: 400;
+      font-size: 0.95rem;
+      border: 1px solid rgba(255, 255, 255, 0.25);
     }
 
     .scroll-indicator {
@@ -600,6 +640,7 @@
         padding: 80px 20px 100px;
       }
 
+      .hero-email-form,
       .email-form {
         flex-direction: column;
       }
@@ -619,7 +660,7 @@
       <a href="#features">Features</a>
       <a href="#waitlist">About</a>
     </div>
-    <a href="#waitlist" class="nav-cta">Join the Waitlist</a>
+    <div style="width: 36px;"></div>
   </nav>
 
   <!-- HERO: Dark clouds -->
@@ -627,7 +668,11 @@
     <div class="hero-bg"></div>
     <div class="hero-content">
       <h1>Elena makes healthcare better.</h1>
-      <a href="#waitlist" class="hero-waitlist-btn">Join the Waitlist</a>
+      <form class="hero-email-form" id="hero-waitlist-form">
+        <input type="email" placeholder="Enter your email" required>
+        <button type="submit">Join the Waitlist</button>
+      </form>
+      <div class="hero-success" id="hero-waitlist-success">You're in! We'll be in touch.</div>
     </div>
     <div class="scroll-indicator">
       Scroll
@@ -801,10 +846,9 @@
     const SUPABASE_URL = 'https://livbrrqqxnvnxhggguig.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpdmJycnFxeG52bnhoZ2dndWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Njc1MzYsImV4cCI6MjA4NzA0MzUzNn0.MkOKc7MWq5zoR3OY7wZgOsPwvjjKSij0ln1nF6inxP0';
 
-    document.getElementById('waitlist-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = e.target.querySelector('input[type="email"]').value;
-      const button = e.target.querySelector('button');
+    async function handleWaitlistSubmit(form, successEl) {
+      const email = form.querySelector('input[type="email"]').value;
+      const button = form.querySelector('button');
       button.textContent = 'Sending...';
       button.disabled = true;
 
@@ -820,20 +864,31 @@
           body: JSON.stringify({ email })
         });
         if (resp.status === 409) {
-          // Duplicate email
-          e.target.style.display = 'none';
-          document.getElementById('waitlist-success').textContent = "You're already signed up! We'll be in touch.";
-          document.getElementById('waitlist-success').style.display = 'inline-block';
+          form.style.display = 'none';
+          successEl.textContent = "You're already signed up! We'll be in touch.";
+          successEl.style.display = 'inline-block';
           return;
         }
         if (!resp.ok) throw new Error('Signup failed');
-        e.target.style.display = 'none';
-        document.getElementById('waitlist-success').style.display = 'inline-block';
+        form.style.display = 'none';
+        successEl.style.display = 'inline-block';
       } catch (err) {
         console.error('Signup error:', err);
         button.textContent = 'Join the Waitlist';
         button.disabled = false;
       }
+    }
+
+    // Hero form
+    document.getElementById('hero-waitlist-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleWaitlistSubmit(e.target, document.getElementById('hero-waitlist-success'));
+    });
+
+    // Bottom form
+    document.getElementById('waitlist-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleWaitlistSubmit(e.target, document.getElementById('waitlist-success'));
     });
   </script>
 
