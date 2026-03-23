@@ -123,19 +123,23 @@
       position: absolute;
       inset: 0;
       z-index: 0;
-      background: url('images/clouds.jpg') center center / cover no-repeat;
-      filter: brightness(1.1) saturate(0.7);
+      background: linear-gradient(135deg,
+        #4A90D9 0%,
+        #5BA3E6 25%,
+        #74B9F0 50%,
+        #8DCAF5 75%,
+        #A8D8F8 100%
+      );
     }
 
-    /* Deeper blue overlay for contrast */
+    /* Subtle radial glow for warmth */
     .hero-bg::after {
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg,
-        rgba(30, 60, 110, 0.55) 0%,
-        rgba(40, 75, 130, 0.45) 40%,
-        rgba(30, 60, 110, 0.6) 100%
+      background: radial-gradient(ellipse at 50% 40%,
+        rgba(255, 255, 255, 0.15) 0%,
+        transparent 70%
       );
     }
 
