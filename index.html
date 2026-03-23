@@ -981,9 +981,7 @@
   <!-- NAV -->
   <nav>
     <a href="#" class="nav-logo">elena</a>
-    <div class="nav-links">
-      <a href="#waitlist">About</a>
-    </div>
+    <a href="#waitlist" class="nav-cta">Join the Waitlist</a>
   </nav>
 
   <!-- HERO: Dark clouds -->
@@ -1208,6 +1206,16 @@
     }, { threshold: 0.1 });
 
     document.querySelectorAll('.fade-in').forEach(el => fadeObserver.observe(el));
+
+    // Nav CTA scrolls to hero form and focuses the email input
+    document.querySelector('.nav-cta').addEventListener('click', (e) => {
+      e.preventDefault();
+      const heroInput = document.querySelector('#hero-waitlist-form input[type="email"]');
+      if (heroInput) {
+        heroInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => heroInput.focus(), 500);
+      }
+    });
 
     // Form handling — saves email + interests to Supabase
     const SUPABASE_URL = 'https://livbrrqqxnvnxhggguig.supabase.co';
