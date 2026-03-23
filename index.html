@@ -355,14 +355,20 @@
     .manifesto {
       position: relative;
       z-index: 10;
-      padding: 200px 32px 100px;
+      padding: 120px 32px 100px;
       background: #fff;
-      text-align: center;
     }
 
     .manifesto-inner {
-      max-width: 640px;
+      max-width: 960px;
       margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 60px;
+    }
+
+    .manifesto-text {
+      flex: 1;
     }
 
     .manifesto h2 {
@@ -379,6 +385,21 @@
       font-weight: 300;
       color: #666;
       line-height: 1.7;
+    }
+
+    .manifesto-phone {
+      flex-shrink: 0;
+    }
+
+    .manifesto-phone .phone-device {
+      width: 240px;
+      height: 500px;
+      border-radius: 40px;
+      padding: 8px;
+    }
+
+    .manifesto-phone .phone-screen {
+      border-radius: 32px;
     }
 
     /* ========== FEATURES ========== */
@@ -636,6 +657,16 @@
         display: none;
       }
 
+      .manifesto-inner {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .manifesto-phone .phone-device {
+        width: 200px;
+        height: 420px;
+      }
+
       .phone-device {
         width: 250px;
         height: 520px;
@@ -705,8 +736,19 @@
   <!-- MANIFESTO -->
   <section class="manifesto">
     <div class="manifesto-inner fade-in">
-      <h2>Healthcare costs shouldn't be a mystery.</h2>
-      <p>Elena shows you real prices for procedures, finds the lowest-cost site of care, and helps you pick the right plan — so you can get the care you need with confidence.</p>
+      <div class="manifesto-text">
+        <h2>Healthcare costs shouldn't be a mystery.</h2>
+        <p>Elena shows you real prices for procedures, finds the lowest-cost site of care, and helps you pick the right plan — so you can get the care you need with confidence.</p>
+      </div>
+      <div class="manifesto-phone">
+        <div class="phone-device">
+          <div class="phone-screen">
+            <video autoplay muted loop playsinline>
+              <source src="images/elena-demo.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
