@@ -420,7 +420,7 @@
 
     .stat-banner-text strong {
       font-weight: 600;
-      color: #F4B084;
+      color: #D4A08A;
     }
 
     .stat-banner-sub {
@@ -841,7 +841,7 @@
       right: -10%;
       width: 50%;
       height: 80%;
-      background: radial-gradient(ellipse, rgba(244,176,132,0.15) 0%, transparent 70%);
+      background: radial-gradient(ellipse, rgba(153,87,102,0.2) 0%, transparent 70%);
       pointer-events: none;
     }
 
@@ -1305,12 +1305,13 @@
         uniform vec2 uResolution;
         uniform vec2 uMouse;
 
-        // Colors: deep navy, mid blue, bright blue, peach, warm orange
-        vec3 navy    = vec3(0.059, 0.106, 0.239);
-        vec3 blue1   = vec3(0.102, 0.227, 0.431);
-        vec3 blue2   = vec3(0.180, 0.420, 0.710);
-        vec3 peach   = vec3(0.957, 0.690, 0.518);
-        vec3 orange  = vec3(0.910, 0.585, 0.427);
+        // Split-complementary with purple bridge:
+        // navy → slate blue → purple → dusty rose → peach
+        vec3 navy      = vec3(0.059, 0.106, 0.239);
+        vec3 slateBlue = vec3(0.180, 0.200, 0.420);
+        vec3 purple    = vec3(0.320, 0.200, 0.450);
+        vec3 dustyRose = vec3(0.600, 0.340, 0.400);
+        vec3 peach     = vec3(0.920, 0.650, 0.500);
 
         // Simplex-style noise
         vec3 mod289(vec3 x) { return x - floor(x * (1.0/289.0)) * 289.0; }
@@ -1372,34 +1373,31 @@
           float aurora3 = smoothstep(0.2, 0.9, wave3 * 0.5 + 0.5);
           float aurora4 = smoothstep(0.05, 0.75, wave4 * 0.5 + 0.5);
 
-          // Base gradient: navy to blue, with warm shift toward bottom-right
-          vec3 col = mix(navy, blue1, uv.y * 0.6 + uv.x * 0.3);
+          // Base gradient: navy to slate blue
+          vec3 col = mix(navy, slateBlue, uv.y * 0.5 + uv.x * 0.3);
 
-          // Blue aurora band
-          col = mix(col, blue2, aurora1 * 0.45);
+          // Purple aurora bands flowing diagonally
+          col = mix(col, purple, aurora1 * 0.45);
+          col = mix(col, mix(slateBlue, purple, 0.6), aurora2 * 0.35);
 
-          // Peach/orange aurora bands flowing through the scene
-          vec3 warmWave = mix(peach, orange, aurora3 * 0.6);
-          col = mix(col, warmWave, aurora2 * 0.3 * smoothstep(0.0, 0.6, uv.x));
-          col = mix(col, peach, aurora4 * 0.25 * smoothstep(0.2, 0.8, uv.x + uv.y * 0.3));
+          // Dusty rose transition — bridges purple to warm
+          float roseZone = smoothstep(0.2, 0.7, uv.x + uv.y * 0.2);
+          col = mix(col, dustyRose, aurora3 * 0.3 * roseZone);
+          col = mix(col, mix(purple, dustyRose, 0.5), aurora4 * 0.25);
 
-          // Large peach/orange glow — bottom-right, mouse-reactive
+          // Warm peach glow — bottom-right, mouse-reactive
           vec2 glowCenter = vec2(0.8 + mouseInfluence.x * 0.25, 0.15 - mouseInfluence.y * 0.25);
           float peachGlow = smoothstep(0.55, 0.0, length((uv - glowCenter) * vec2(1.0, 1.3)));
-          col = mix(col, mix(peach, orange, 0.4 + aurora3 * 0.3), peachGlow * 0.7);
+          col = mix(col, mix(dustyRose, peach, 0.6 + aurora3 * 0.2), peachGlow * 0.65);
 
-          // Secondary warm glow — center-bottom
+          // Secondary rose glow — center-bottom
           vec2 glow2Center = vec2(0.5 + mouseInfluence.x * 0.15, 0.0);
-          float warmGlow2 = smoothstep(0.5, 0.0, length((uv - glow2Center) * vec2(0.8, 1.5)));
-          col = mix(col, mix(orange, peach, 0.5), warmGlow2 * 0.3 * (0.6 + aurora4 * 0.4));
+          float roseGlow = smoothstep(0.45, 0.0, length((uv - glow2Center) * vec2(0.8, 1.5)));
+          col = mix(col, dustyRose, roseGlow * 0.25 * (0.6 + aurora4 * 0.4));
 
-          // Bright warm highlights where waves converge
-          float warmHighlight = smoothstep(0.55, 0.8, (wave2 * 0.5 + 0.5) * (wave3 * 0.5 + 0.5));
-          col = mix(col, peach, warmHighlight * 0.2 * smoothstep(0.3, 0.7, uv.x));
-
-          // Cool highlight on wave peaks in the blue areas
-          float coolHighlight = smoothstep(0.6, 0.8, wave1 * wave2 + 0.5);
-          col += vec3(0.02, 0.05, 0.10) * coolHighlight * (1.0 - peachGlow);
+          // Subtle bright highlights on wave peaks
+          float highlight = smoothstep(0.55, 0.8, (wave1 * 0.5 + 0.5) * (wave3 * 0.5 + 0.5));
+          col = mix(col, mix(purple, vec3(0.5, 0.35, 0.55), 0.5), highlight * 0.15);
 
           // Vignette
           float vig = 1.0 - 0.25 * length((uv - 0.5) * vec2(1.2, 1.0));
