@@ -154,7 +154,7 @@
 
     .hero-waitlist-btn {
       display: inline-block;
-      margin-top: 32px;
+      margin-top: 16px;
       padding: 16px 36px;
       background: rgba(255, 255, 255, 0.12);
       backdrop-filter: blur(40px) saturate(1.8);
@@ -619,7 +619,7 @@
       <a href="#features">Features</a>
       <a href="#waitlist">About</a>
     </div>
-    <a href="#waitlist" class="nav-cta">Sign Up for the Waitlist</a>
+    <a href="#waitlist" class="nav-cta">Join the Waitlist</a>
   </nav>
 
   <!-- HERO: Dark clouds -->
@@ -736,7 +736,7 @@
         <div class="inline-waitlist fade-in" id="waitlist">
           <form class="email-form" id="waitlist-form">
             <input type="email" placeholder="Enter your email" required>
-            <button type="submit">Sign Up for the Waitlist</button>
+            <button type="submit">Join the Waitlist</button>
           </form>
           <div class="success-message" id="waitlist-success">You're in! Check your email for a beta invite.</div>
           <p class="form-note">We'll send you a link to download the beta. No spam.</p>
@@ -831,7 +831,7 @@
         document.getElementById('waitlist-success').style.display = 'inline-block';
       } catch (err) {
         console.error('Signup error:', err);
-        button.textContent = 'Sign Up for the Waitlist';
+        button.textContent = 'Join the Waitlist';
         button.disabled = false;
       }
     });
