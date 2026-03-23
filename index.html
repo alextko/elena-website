@@ -125,27 +125,38 @@
       z-index: 0;
       background: linear-gradient(135deg,
         #0F1B3D 0%,
-        #1A3A6E 25%,
-        #2E6BB5 50%,
-        #E8956D 80%,
-        #F4B084 100%
+        #1A3A6E 30%,
+        #2E6BB5 60%,
+        #2E6BB5 100%
       );
     }
 
-    /* Subtle radial glow for warmth */
+    /* Peachy orange radial glow in bottom-right */
     .hero-bg::after {
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(ellipse at 50% 40%,
-        rgba(255, 255, 255, 0.15) 0%,
-        transparent 70%
+      background: radial-gradient(ellipse at 85% 85%,
+        #F4B084 0%,
+        #E8956D 25%,
+        rgba(46, 107, 181, 0) 60%
       );
+    }
+
+    /* Subtle grain texture */
+    .hero-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.04;
+      mix-blend-mode: overlay;
     }
 
     .hero-content {
       position: relative;
-      z-index: 1;
+      z-index: 2;
     }
 
     .hero h1 {
