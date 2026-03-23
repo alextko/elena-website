@@ -1234,12 +1234,13 @@
       }
     }
 
-    function setupWaitlistFlow(formId, surveyId, surveySubmitId, surveySkipId, successId) {
+    function setupWaitlistFlow(formId, surveyId, surveySubmitId, surveySkipId, successId, hideSelectors) {
       const form = document.getElementById(formId);
       const survey = document.getElementById(surveyId);
       const surveySubmit = document.getElementById(surveySubmitId);
       const surveySkip = document.getElementById(surveySkipId);
       const successEl = document.getElementById(successId);
+      const hideEls = (hideSelectors || []).map(s => document.querySelector(s)).filter(Boolean);
       let savedEmail = '';
 
       form.addEventListener('submit', (e) => {
@@ -1247,6 +1248,7 @@
         savedEmail = form.querySelector('input[type="email"]').value;
         form.style.display = 'none';
         survey.style.display = 'block';
+        hideEls.forEach(el => el.style.display = 'none');
       });
 
       surveySubmit.addEventListener('click', () => {
@@ -1263,7 +1265,7 @@
     }
 
     // Hero form
-    setupWaitlistFlow('hero-waitlist-form', 'hero-survey', 'hero-survey-submit', 'hero-survey-skip', 'hero-waitlist-success');
+    setupWaitlistFlow('hero-waitlist-form', 'hero-survey', 'hero-survey-submit', 'hero-survey-skip', 'hero-waitlist-success', ['.hero-subtitle', '.waitlist-social-proof']);
 
     // Bottom form
     setupWaitlistFlow('waitlist-form', 'bottom-survey', 'bottom-survey-submit', 'bottom-survey-skip', 'waitlist-success');
