@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Elena — Put Healthcare on Autopilot</title>
+  <title>Elena — Put Care on Autopilot</title>
   <meta name="description" content="Elena is your AI-powered healthcare assistant. Chat with an AI that calls doctors, negotiates bills, compares drug prices, and manages your entire medical life.">
   <link rel="icon" type="image/png" href="images/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -415,6 +415,184 @@
       border-radius: 32px;
     }
 
+    /* ========== SURVEY STEP ========== */
+    .waitlist-flow {
+      max-width: 480px;
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .survey-step {
+      text-align: center;
+    }
+
+    .survey-label {
+      font-size: 1rem;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 16px;
+    }
+
+    .survey-label.light {
+      color: #333;
+    }
+
+    .survey-hint {
+      font-weight: 300;
+      font-size: 0.85rem;
+      opacity: 0.6;
+    }
+
+    .survey-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .survey-chip {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .survey-chip input {
+      display: none;
+    }
+
+    .survey-chip span {
+      padding: 10px 20px;
+      border-radius: 100px;
+      font-size: 0.88rem;
+      font-weight: 400;
+      font-family: inherit;
+      transition: all 0.2s;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .survey-chip:hover span {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .survey-chip input:checked + span {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.5);
+      color: #fff;
+    }
+
+    /* Light variant for bottom form */
+    .survey-chip.light span {
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      color: #555;
+    }
+
+    .survey-chip.light:hover span {
+      background: #f5f5f5;
+      border-color: rgba(0, 0, 0, 0.2);
+    }
+
+    .survey-chip.light input:checked + span {
+      background: #111;
+      border-color: #111;
+      color: #fff;
+    }
+
+    .survey-submit-btn {
+      padding: 14px 36px;
+      border-radius: 100px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .survey-submit-btn.dark {
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .survey-submit-btn.dark:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .survey-submit-btn.light {
+      background: #111;
+      color: #fff;
+    }
+
+    .survey-submit-btn.light:hover {
+      background: #333;
+    }
+
+    .survey-skip-btn {
+      display: block;
+      margin: 10px auto 0;
+      background: none;
+      border: none;
+      font-size: 0.82rem;
+      font-weight: 300;
+      font-family: inherit;
+      cursor: pointer;
+      color: rgba(255, 255, 255, 0.5);
+      transition: color 0.2s;
+    }
+
+    .survey-skip-btn:hover {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .survey-skip-btn.light {
+      color: #aaa;
+    }
+
+    .survey-skip-btn.light:hover {
+      color: #666;
+    }
+
+    /* ========== TRUST STRIP ========== */
+    .trust-strip {
+      position: relative;
+      z-index: 10;
+      background: #f8f8f8;
+      padding: 40px 32px;
+    }
+
+    .trust-strip-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      flex-wrap: wrap;
+    }
+
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.88rem;
+      font-weight: 400;
+      color: #555;
+    }
+
+    .trust-icon {
+      display: flex;
+      align-items: center;
+      color: #888;
+    }
+
     /* ========== FEATURES ========== */
     .features {
       position: relative;
@@ -629,6 +807,15 @@
       border-top: 1px solid rgba(0, 0, 0, 0.06);
     }
 
+    .footer-data-source {
+      max-width: 960px;
+      margin: 0 auto 12px;
+      font-size: 0.75rem;
+      color: #999;
+      font-weight: 300;
+      text-align: center;
+    }
+
     .footer-bottom {
       max-width: 960px;
       margin: 0 auto;
@@ -645,6 +832,12 @@
         flex-direction: column;
         gap: 6px;
         text-align: center;
+      }
+
+      .trust-strip-inner {
+        flex-direction: column;
+        gap: 20px;
+        align-items: center;
       }
     }
 
@@ -729,13 +922,26 @@
     <div class="hero-bg"></div>
     <div class="hero-content">
       <h1>The confidence to get<br>the healthcare you deserve.</h1>
-      <p class="hero-subtitle">Price transparency for every procedure, every provider, every plan.</p>
-      <form class="hero-email-form" id="hero-waitlist-form">
-        <input type="email" placeholder="Enter your email" required>
-        <button type="submit">Join the Waitlist</button>
-      </form>
-      <div class="hero-success" id="hero-waitlist-success">You're in! We'll be in touch.</div>
-      <p style="font-size: 0.85rem; font-weight: 400; color: rgba(255,255,255,0.6); margin-top: 14px;">Join 500+ people taking control of their healthcare costs</p>
+      <p class="hero-subtitle">The same MRI can cost $400 or $2,500 depending on where you go.<br>Elena finds the real price before you book.</p>
+      <div class="waitlist-flow" id="hero-waitlist-flow">
+        <form class="hero-email-form" id="hero-waitlist-form">
+          <input type="email" placeholder="Enter your email" required>
+          <button type="submit">Join the Waitlist</button>
+        </form>
+        <div class="survey-step" id="hero-survey" style="display:none;">
+          <p class="survey-label">What are you most interested in? <span class="survey-hint">(pick all that apply)</span></p>
+          <div class="survey-options dark">
+            <label class="survey-chip"><input type="checkbox" value="price_transparency"><span>Price transparency</span></label>
+            <label class="survey-chip"><input type="checkbox" value="bill_fighting"><span>Bill fighting &amp; prior auth</span></label>
+            <label class="survey-chip"><input type="checkbox" value="health_data"><span>All my health data in one place</span></label>
+            <label class="survey-chip"><input type="checkbox" value="automation"><span>Automation (phone calls, forms)</span></label>
+          </div>
+          <button class="survey-submit-btn dark" id="hero-survey-submit">Submit</button>
+          <button class="survey-skip-btn" id="hero-survey-skip">Skip</button>
+        </div>
+        <div class="hero-success" id="hero-waitlist-success">You're in! We'll be in touch.</div>
+        <p class="waitlist-social-proof" style="font-size: 0.85rem; font-weight: 400; color: rgba(255,255,255,0.6); margin-top: 14px;">Join 500+ people taking control of their healthcare costs</p>
+      </div>
     </div>
     <div class="scroll-indicator">
       Scroll
@@ -751,7 +957,8 @@
     <div class="manifesto-inner fade-in">
       <div class="manifesto-text">
         <h2>Healthcare costs shouldn't be a mystery.</h2>
-        <p>Elena shows you real prices for procedures, finds the lowest-cost site of care, and helps you pick the right plan — so you can get the care you need with confidence.</p>
+        <p>Since 2021, federal law requires hospitals to publish their actual negotiated prices. The problem? That data is buried in massive spreadsheets no one can read.</p>
+        <p style="margin-top: 12px;">Elena pulls from these CMS-mandated price transparency files, compares costs across providers in your area, and shows you what you'll actually pay — before you book.</p>
       </div>
       <div class="manifesto-phone">
         <div class="phone-device">
@@ -761,6 +968,30 @@
             </video>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUST SIGNALS -->
+  <section class="trust-strip">
+    <div class="trust-strip-inner">
+      <div class="trust-item">
+        <span class="trust-icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1L12.5 6.5L18.5 7.3L14.2 11.4L15.3 17.3L10 14.5L4.7 17.3L5.8 11.4L1.5 7.3L7.5 6.5L10 1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </span>
+        <span>Your data is never sold</span>
+      </div>
+      <div class="trust-item">
+        <span class="trust-icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2C6 2 3 5 3 8.5C3 14 10 18 10 18C10 18 17 14 17 8.5C17 5 14 2 10 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </span>
+        <span>Built by people frustrated by the same system</span>
+      </div>
+      <div class="trust-item">
+        <span class="trust-icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 18a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" stroke-width="1.5"/><path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span>Not medical advice — Elena helps with costs and logistics</span>
       </div>
     </div>
   </section>
@@ -855,18 +1086,35 @@
         </div>
 
         <div class="inline-waitlist fade-in" id="waitlist">
-          <form class="email-form" id="waitlist-form">
-            <input type="email" placeholder="Enter your email" required>
-            <button type="submit">Join the Waitlist</button>
-          </form>
-          <div class="success-message" id="waitlist-success">You're in! Check your email for a beta invite.</div>
+          <div class="waitlist-flow" id="bottom-waitlist-flow">
+            <form class="email-form" id="waitlist-form">
+              <input type="email" placeholder="Enter your email" required>
+              <button type="submit">Join the Waitlist</button>
+            </form>
+            <div class="survey-step" id="bottom-survey" style="display:none;">
+              <p class="survey-label light">What are you most interested in? <span class="survey-hint">(pick all that apply)</span></p>
+              <div class="survey-options light">
+                <label class="survey-chip light"><input type="checkbox" value="price_transparency"><span>Price transparency</span></label>
+                <label class="survey-chip light"><input type="checkbox" value="bill_fighting"><span>Bill fighting &amp; prior auth</span></label>
+                <label class="survey-chip light"><input type="checkbox" value="health_data"><span>All my health data in one place</span></label>
+                <label class="survey-chip light"><input type="checkbox" value="automation"><span>Automation (phone calls, forms)</span></label>
+              </div>
+              <button class="survey-submit-btn light" id="bottom-survey-submit">Submit</button>
+              <button class="survey-skip-btn light" id="bottom-survey-skip">Skip</button>
+            </div>
+            <div class="success-message" id="waitlist-success">You're in! Check your email for a beta invite.</div>
+          </div>
         </div>
       </div>
   </section>
 
   <footer>
+    <div class="footer-data-source">
+      Pricing data sourced from CMS-mandated hospital price transparency files, updated regularly.
+    </div>
     <div class="footer-bottom">
       <span>&copy; 2026 Elena AI. All rights reserved.</span>
+      <span>Elena helps you navigate healthcare costs and logistics. It is not a substitute for professional medical advice, diagnosis, or treatment.</span>
       <span>Made with love in NYC</span>
     </div>
   </footer>
@@ -917,17 +1165,16 @@
     window.addEventListener('scroll', updatePhoneScale, { passive: true });
     updatePhoneScale();
 
-    // Form handling — saves email to Supabase
+    // Form handling — saves email + interests to Supabase
     const SUPABASE_URL = 'https://livbrrqqxnvnxhggguig.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpdmJycnFxeG52bnhoZ2dndWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Njc1MzYsImV4cCI6MjA4NzA0MzUzNn0.MkOKc7MWq5zoR3OY7wZgOsPwvjjKSij0ln1nF6inxP0';
 
-    async function handleWaitlistSubmit(form, successEl) {
-      const email = form.querySelector('input[type="email"]').value;
-      const button = form.querySelector('button');
-      button.textContent = 'Sending...';
-      button.disabled = true;
-
+    async function submitToSupabase(email, interests, successEl) {
       try {
+        const body = { email };
+        if (interests.length > 0) {
+          body.interests = interests;
+        }
         const resp = await fetch(`${SUPABASE_URL}/rest/v1/beta_signups`, {
           method: 'POST',
           headers: {
@@ -936,35 +1183,53 @@
             'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
             'Prefer': 'return=minimal'
           },
-          body: JSON.stringify({ email })
+          body: JSON.stringify(body)
         });
         if (resp.status === 409) {
-          form.style.display = 'none';
           successEl.textContent = "You're already signed up! We'll be in touch.";
-          successEl.style.display = 'inline-block';
-          return;
         }
-        if (!resp.ok) throw new Error('Signup failed');
-        form.style.display = 'none';
+        if (!resp.ok && resp.status !== 409) throw new Error('Signup failed');
         successEl.style.display = 'inline-block';
       } catch (err) {
         console.error('Signup error:', err);
-        button.textContent = 'Join the Waitlist';
-        button.disabled = false;
+        successEl.textContent = 'Something went wrong — please try again.';
+        successEl.style.display = 'inline-block';
       }
     }
 
+    function setupWaitlistFlow(formId, surveyId, surveySubmitId, surveySkipId, successId) {
+      const form = document.getElementById(formId);
+      const survey = document.getElementById(surveyId);
+      const surveySubmit = document.getElementById(surveySubmitId);
+      const surveySkip = document.getElementById(surveySkipId);
+      const successEl = document.getElementById(successId);
+      let savedEmail = '';
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        savedEmail = form.querySelector('input[type="email"]').value;
+        form.style.display = 'none';
+        survey.style.display = 'block';
+      });
+
+      surveySubmit.addEventListener('click', () => {
+        const checked = survey.querySelectorAll('input[type="checkbox"]:checked');
+        const interests = Array.from(checked).map(cb => cb.value);
+        survey.style.display = 'none';
+        submitToSupabase(savedEmail, interests, successEl);
+      });
+
+      surveySkip.addEventListener('click', () => {
+        survey.style.display = 'none';
+        submitToSupabase(savedEmail, [], successEl);
+      });
+    }
+
     // Hero form
-    document.getElementById('hero-waitlist-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      handleWaitlistSubmit(e.target, document.getElementById('hero-waitlist-success'));
-    });
+    setupWaitlistFlow('hero-waitlist-form', 'hero-survey', 'hero-survey-submit', 'hero-survey-skip', 'hero-waitlist-success');
 
     // Bottom form
-    document.getElementById('waitlist-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      handleWaitlistSubmit(e.target, document.getElementById('waitlist-success'));
-    });
+    setupWaitlistFlow('waitlist-form', 'bottom-survey', 'bottom-survey-submit', 'bottom-survey-skip', 'waitlist-success');
   </script>
 
   <script defer src="/_vercel/insights/script.js"></script>
