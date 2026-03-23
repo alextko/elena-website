@@ -1285,9 +1285,17 @@
     const SUPABASE_URL = 'https://livbrrqqxnvnxhggguig.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpdmJycnFxeG52bnhoZ2dndWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Njc1MzYsImV4cCI6MjA4NzA0MzUzNn0.MkOKc7MWq5zoR3OY7wZgOsPwvjjKSij0ln1nF6inxP0';
 
+    // Capture UTM params from URL on page load
+    const utmParams = {};
+    const urlParams = new URLSearchParams(window.location.search);
+    ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach(key => {
+      const val = urlParams.get(key);
+      if (val) utmParams[key] = val;
+    });
+
     async function submitToSupabase(email, interests, successEl) {
       try {
-        const body = { email };
+        const body = { email, ...utmParams };
         if (interests.length > 0) {
           body.interests = interests;
         }
