@@ -241,12 +241,16 @@
       display: none;
       margin-top: 24px;
       padding: 16px 32px;
-      background: #fff;
-      color: #111;
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-top-color: rgba(255, 255, 255, 0.35);
+      color: #fff;
       border-radius: 100px;
       font-weight: 500;
       font-size: 1rem;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
     }
 
     .scroll-indicator {
@@ -776,42 +780,50 @@
     .email-form input[type="email"] {
       flex: 1;
       padding: 15px 22px;
-      background: #fff;
-      border: 1px solid rgba(0, 0, 0, 0.12);
+      background: rgba(15, 27, 61, 0.04);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(15, 27, 61, 0.12);
       border-radius: 100px;
       font-size: 0.95rem;
       font-family: inherit;
       font-weight: 300;
-      color: #111;
+      color: #0F1B3D;
       outline: none;
-      transition: border-color 0.2s;
+      transition: background 0.2s, border-color 0.2s;
       min-width: 0;
+      box-shadow: 0 4px 16px rgba(15, 27, 61, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.6);
     }
 
     .email-form input[type="email"]::placeholder {
-      color: #aaa;
+      color: rgba(15, 27, 61, 0.35);
     }
 
     .email-form input[type="email"]:focus {
-      border-color: rgba(0, 0, 0, 0.25);
+      background: rgba(15, 27, 61, 0.07);
+      border-color: rgba(15, 27, 61, 0.2);
     }
 
     .email-form button {
       padding: 15px 30px;
-      background: #0F1B3D;
-      border: none;
+      background: rgba(15, 27, 61, 0.08);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(15, 27, 61, 0.12);
       border-radius: 100px;
-      color: #fff;
+      color: #0F1B3D;
       font-size: 0.95rem;
-      font-weight: 400;
+      font-weight: 500;
       font-family: inherit;
       cursor: pointer;
       white-space: nowrap;
-      transition: background 0.2s;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(15, 27, 61, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.6);
     }
 
     .email-form button:hover {
-      background: #1A3A6E;
+      background: rgba(15, 27, 61, 0.14);
+      border-color: rgba(15, 27, 61, 0.2);
     }
 
     .form-note {
@@ -824,12 +836,15 @@
     .success-message {
       display: none;
       padding: 15px 30px;
-      background: #fff;
-      color: #111;
+      background: rgba(15, 27, 61, 0.06);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(15, 27, 61, 0.12);
+      color: #0F1B3D;
       border-radius: 100px;
       font-weight: 400;
       font-size: 0.95rem;
-      border: 1px solid rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 16px rgba(15, 27, 61, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
     }
 
     /* ========== FOOTER ========== */
