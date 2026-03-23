@@ -124,18 +124,18 @@
       inset: 0;
       z-index: 0;
       background: url('images/clouds.jpg') center center / cover no-repeat;
-      filter: brightness(1.4) saturate(0.6);
+      filter: brightness(1.1) saturate(0.7);
     }
 
-    /* Light blue overlay */
+    /* Deeper blue overlay for contrast */
     .hero-bg::after {
       content: '';
       position: absolute;
       inset: 0;
       background: linear-gradient(180deg,
-        rgba(135, 185, 235, 0.45) 0%,
-        rgba(150, 200, 245, 0.4) 50%,
-        rgba(135, 185, 235, 0.5) 100%
+        rgba(30, 60, 110, 0.55) 0%,
+        rgba(40, 75, 130, 0.45) 40%,
+        rgba(30, 60, 110, 0.6) 100%
       );
     }
 
@@ -161,60 +161,53 @@
 
     .hero-email-form input[type="email"] {
       flex: 1;
-      padding: 15px 22px;
-      background: rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(40px);
-      -webkit-backdrop-filter: blur(40px);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      border-radius: 100px;
-      font-size: 0.95rem;
-      font-family: inherit;
-      font-weight: 300;
-      color: #fff;
-      outline: none;
-      transition: border-color 0.2s, background 0.2s;
-      min-width: 0;
-    }
-
-    .hero-email-form input[type="email"]::placeholder {
-      color: rgba(255, 255, 255, 0.6);
-    }
-
-    .hero-email-form input[type="email"]:focus {
-      background: rgba(255, 255, 255, 0.2);
-      border-color: rgba(255, 255, 255, 0.5);
-    }
-
-    .hero-email-form button {
-      padding: 15px 28px;
+      padding: 16px 24px;
       background: #fff;
       border: none;
       border-radius: 100px;
+      font-size: 1rem;
+      font-family: inherit;
+      font-weight: 400;
       color: #111;
-      font-size: 0.95rem;
+      outline: none;
+      min-width: 0;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .hero-email-form input[type="email"]::placeholder {
+      color: #999;
+    }
+
+    .hero-email-form button {
+      padding: 16px 32px;
+      background: #111;
+      border: none;
+      border-radius: 100px;
+      color: #fff;
+      font-size: 1rem;
       font-weight: 500;
       font-family: inherit;
       cursor: pointer;
       white-space: nowrap;
       transition: background 0.2s, transform 0.1s;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
     }
 
     .hero-email-form button:hover {
-      background: #f0f0f0;
+      background: #333;
       transform: translateY(-1px);
     }
 
     .hero-success {
       display: none;
       margin-top: 24px;
-      padding: 15px 30px;
-      background: rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(40px);
-      color: #fff;
+      padding: 16px 32px;
+      background: #fff;
+      color: #111;
       border-radius: 100px;
-      font-weight: 400;
-      font-size: 0.95rem;
-      border: 1px solid rgba(255, 255, 255, 0.25);
+      font-weight: 500;
+      font-size: 1rem;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
     }
 
     .scroll-indicator {
