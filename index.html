@@ -148,10 +148,60 @@
       content: '';
       position: absolute;
       inset: 0;
-      z-index: 1;
+      z-index: 3;
       background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
       opacity: 0.12;
       mix-blend-mode: overlay;
+      pointer-events: none;
+    }
+
+    /* Interactive gradient blobs */
+    .hero-blobs {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .hero-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      will-change: transform;
+      transition: transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+
+    .hero-blob-1 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(46, 107, 181, 0.5) 0%, transparent 70%);
+      top: -10%;
+      left: 20%;
+    }
+
+    .hero-blob-2 {
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(244, 176, 132, 0.35) 0%, transparent 70%);
+      bottom: -20%;
+      right: -5%;
+    }
+
+    .hero-blob-3 {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(26, 58, 110, 0.4) 0%, transparent 70%);
+      top: 30%;
+      right: 25%;
+    }
+
+    .hero-blob-4 {
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(232, 149, 109, 0.25) 0%, transparent 70%);
+      bottom: 10%;
+      left: 5%;
     }
 
     .hero-content {
@@ -1005,6 +1055,12 @@
   <!-- HERO: Dark clouds -->
   <section class="hero">
     <div class="hero-bg"></div>
+    <div class="hero-blobs">
+      <div class="hero-blob hero-blob-1"></div>
+      <div class="hero-blob hero-blob-2"></div>
+      <div class="hero-blob hero-blob-3"></div>
+      <div class="hero-blob hero-blob-4"></div>
+    </div>
     <div class="hero-content">
       <h1>The confidence to get<br>the care you deserve.</h1>
       <p class="hero-subtitle">Price transparency for every procedure, every provider, every plan.</p>
@@ -1295,6 +1351,50 @@
   </script>
 
 
+
+  <script>
+    // Interactive gradient blobs — follow cursor with parallax
+    (function() {
+      const hero = document.querySelector('.hero');
+      const blobs = document.querySelectorAll('.hero-blob');
+      // Each blob moves at a different speed for parallax depth
+      const speeds = [0.04, -0.03, 0.025, -0.02];
+
+      let mouse = { x: 0, y: 0 };
+      let current = { x: 0, y: 0 };
+      let raf;
+
+      hero.addEventListener('mousemove', (e) => {
+        const rect = hero.getBoundingClientRect();
+        // Center-relative: -0.5 to 0.5
+        mouse.x = (e.clientX - rect.left) / rect.width - 0.5;
+        mouse.y = (e.clientY - rect.top) / rect.height - 0.5;
+      });
+
+      // On mobile, gentle drift based on scroll
+      window.addEventListener('scroll', () => {
+        const progress = Math.min(1, window.scrollY / window.innerHeight);
+        mouse.y = progress * 0.3 - 0.15;
+        mouse.x = Math.sin(progress * 2) * 0.1;
+      }, { passive: true });
+
+      function animate() {
+        // Smooth lerp
+        current.x += (mouse.x - current.x) * 0.05;
+        current.y += (mouse.y - current.y) * 0.05;
+
+        blobs.forEach((blob, i) => {
+          const dx = current.x * speeds[i] * 1000;
+          const dy = current.y * speeds[i] * 1000;
+          blob.style.transform = `translate(${dx}px, ${dy}px)`;
+        });
+
+        raf = requestAnimationFrame(animate);
+      }
+
+      animate();
+    })();
+  </script>
 
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
