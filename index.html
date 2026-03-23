@@ -369,7 +369,7 @@
       position: relative;
       z-index: 10;
       padding: 120px 32px 100px;
-      background: #fff;
+      background: #f5f7fb;
     }
 
     .manifesto-inner {
@@ -388,7 +388,7 @@
       font-size: clamp(1.8rem, 3.5vw, 2.5rem);
       font-weight: 300;
       letter-spacing: -0.025em;
-      color: #111;
+      color: #0F1B3D;
       line-height: 1.2;
       margin-bottom: 20px;
     }
@@ -396,7 +396,7 @@
     .manifesto p {
       font-size: 1.05rem;
       font-weight: 300;
-      color: #666;
+      color: #5a6a82;
       line-height: 1.7;
     }
 
@@ -419,7 +419,7 @@
     .stat-banner {
       position: relative;
       z-index: 10;
-      background: #111;
+      background: #0F1B3D;
       padding: 64px 32px;
       text-align: center;
     }
@@ -439,7 +439,7 @@
 
     .stat-banner-text strong {
       font-weight: 600;
-      color: #fff;
+      color: #F4B084;
     }
 
     .stat-banner-sub {
@@ -532,8 +532,8 @@
     }
 
     .survey-chip.light input:checked + span {
-      background: #111;
-      border-color: #111;
+      background: #0F1B3D;
+      border-color: #0F1B3D;
       color: #fff;
     }
 
@@ -562,12 +562,12 @@
     }
 
     .survey-submit-btn.light {
-      background: #111;
+      background: #0F1B3D;
       color: #fff;
     }
 
     .survey-submit-btn.light:hover {
-      background: #333;
+      background: #1A3A6E;
     }
 
     .survey-skip-btn {
@@ -599,7 +599,7 @@
     .trust-strip {
       position: relative;
       z-index: 10;
-      background: #f8f8f8;
+      background: #f0f3f9;
       padding: 40px 32px;
     }
 
@@ -618,13 +618,13 @@
       gap: 10px;
       font-size: 0.88rem;
       font-weight: 400;
-      color: #555;
+      color: #3a4a65;
     }
 
     .trust-icon {
       display: flex;
       align-items: center;
-      color: #888;
+      color: #2E6BB5;
     }
 
     /* ========== FEATURES ========== */
@@ -632,8 +632,8 @@
       position: relative;
       z-index: 10;
       padding: 100px 0 80px;
-      background: #fff;
-      color: #111;
+      background: #f5f7fb;
+      color: #0F1B3D;
       overflow: hidden;
     }
 
@@ -652,7 +652,7 @@
       font-size: clamp(1.8rem, 3.5vw, 2.5rem);
       font-weight: 300;
       letter-spacing: -0.025em;
-      color: #111;
+      color: #0F1B3D;
     }
 
     .inline-waitlist {
@@ -679,12 +679,12 @@
 
     .features-carousel-wrapper::before {
       left: 0;
-      background: linear-gradient(to right, #fff, transparent);
+      background: linear-gradient(to right, #f5f7fb, transparent);
     }
 
     .features-carousel-wrapper::after {
       right: 0;
-      background: linear-gradient(to left, #fff, transparent);
+      background: linear-gradient(to left, #f5f7fb, transparent);
     }
 
     .features-grid {
@@ -752,7 +752,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.05) 100%);
+      background: linear-gradient(to top, rgba(15,27,61,0.75) 0%, rgba(15,27,61,0.15) 50%, rgba(15,27,61,0.05) 100%);
       border-radius: 28px;
       z-index: 0;
     }
@@ -798,7 +798,7 @@
 
     .email-form button {
       padding: 15px 30px;
-      background: #111;
+      background: #0F1B3D;
       border: none;
       border-radius: 100px;
       color: #fff;
@@ -811,7 +811,7 @@
     }
 
     .email-form button:hover {
-      background: #333;
+      background: #1A3A6E;
     }
 
     .form-note {
@@ -837,8 +837,20 @@
       position: relative;
       z-index: 10;
       padding: 80px 32px 40px;
-      background: #111;
+      background: #0F1B3D;
       color: #fff;
+      overflow: hidden;
+    }
+
+    footer::after {
+      content: '';
+      position: absolute;
+      bottom: -40%;
+      right: -10%;
+      width: 50%;
+      height: 80%;
+      background: radial-gradient(ellipse, rgba(244,176,132,0.15) 0%, transparent 70%);
+      pointer-events: none;
     }
 
     .footer-inner {
@@ -1145,7 +1157,7 @@
       <div class="features-inner">
         <div class="features-header fade-in" style="margin-top: 80px;">
           <h2>Your AI healthcare assistant.</h2>
-          <p style="color: #666; font-size: 1.05rem; font-weight: 300; margin-top: 12px; max-width: 540px; margin-left: auto; margin-right: auto; line-height: 1.7;">
+          <p style="color: #5a6a82; font-size: 1.05rem; font-weight: 300; margin-top: 12px; max-width: 540px; margin-left: auto; margin-right: auto; line-height: 1.7;">
             An AI that manages your healthcare for you — calls doctors, compares prices, decodes your insurance, and keeps your whole family on track.
           </p>
         </div>
