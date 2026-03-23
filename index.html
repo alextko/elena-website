@@ -1209,42 +1209,6 @@
 
     document.querySelectorAll('.fade-in').forEach(el => fadeObserver.observe(el));
 
-    // Phone zoom-out on scroll
-    const phoneSection = document.getElementById('phone-section');
-    const phoneWrapper = document.getElementById('phone-wrapper');
-
-    function updatePhoneScale() {
-      const rect = phoneSection.getBoundingClientRect();
-      const sectionH = phoneSection.offsetHeight;
-      const viewH = window.innerHeight;
-
-      // How far we've scrolled into the section
-      const scrolled = -rect.top;
-      const scrollRange = sectionH - viewH;
-      const progress = Math.max(0, Math.min(1, scrolled / scrollRange));
-
-      // Fade in over first 20% of scroll
-      const fadeProgress = Math.min(1, progress / 0.2);
-      const opacity = fadeProgress * fadeProgress * (3 - 2 * fadeProgress);
-
-      // Blur clears as phone fades in (20px -> 0px over first 25%)
-      const blurProgress = Math.min(1, progress / 0.25);
-      const blur = 20 * (1 - blurProgress * blurProgress);
-
-      // Scale settles over first 50% of scroll, then phone sits still
-      const scaleProgress = Math.min(1, progress / 0.5);
-      const eased = 1 - Math.pow(1 - scaleProgress, 3); // ease-out cubic
-
-      // Scale from 2.5 down to 1.0
-      const scale = 2.5 - (1.5 * eased);
-      phoneWrapper.style.transform = `scale(${scale})`;
-      phoneWrapper.style.opacity = opacity;
-      phoneWrapper.style.filter = blur < 0.5 ? 'none' : `blur(${blur}px)`;
-    }
-
-    window.addEventListener('scroll', updatePhoneScale, { passive: true });
-    updatePhoneScale();
-
     // Form handling — saves email + interests to Supabase
     const SUPABASE_URL = 'https://livbrrqqxnvnxhggguig.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpdmJycnFxeG52bnhoZ2dndWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Njc1MzYsImV4cCI6MjA4NzA0MzUzNn0.MkOKc7MWq5zoR3OY7wZgOsPwvjjKSij0ln1nF6inxP0';
