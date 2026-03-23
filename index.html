@@ -415,6 +415,40 @@
       border-radius: 32px;
     }
 
+    /* ========== STAT BANNER ========== */
+    .stat-banner {
+      position: relative;
+      z-index: 10;
+      background: #111;
+      padding: 64px 32px;
+      text-align: center;
+    }
+
+    .stat-banner-inner {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .stat-banner-text {
+      font-size: clamp(1.3rem, 2.5vw, 1.8rem);
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.9);
+      line-height: 1.4;
+      letter-spacing: -0.015em;
+    }
+
+    .stat-banner-text strong {
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .stat-banner-sub {
+      margin-top: 12px;
+      font-size: 1rem;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
     /* ========== SURVEY STEP ========== */
     .waitlist-flow {
       max-width: 480px;
@@ -922,7 +956,7 @@
     <div class="hero-bg"></div>
     <div class="hero-content">
       <h1>The confidence to get<br>the care you deserve.</h1>
-      <p class="hero-subtitle">The same MRI can cost $400 or $2,500 depending on where you go.<br>Elena finds the real price before you book.</p>
+      <p class="hero-subtitle">Price transparency for every procedure, every provider, every plan.</p>
       <div class="waitlist-flow" id="hero-waitlist-flow">
         <form class="hero-email-form" id="hero-waitlist-form">
           <input type="email" placeholder="Enter your email" required>
@@ -969,6 +1003,14 @@
           </div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- STAT BANNER -->
+  <section class="stat-banner">
+    <div class="stat-banner-inner fade-in">
+      <p class="stat-banner-text">The same MRI can cost <strong>$400</strong> or <strong>$2,500</strong> depending on where you go.</p>
+      <p class="stat-banner-sub">Elena finds the real price before you book.</p>
     </div>
   </section>
 
