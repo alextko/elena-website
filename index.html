@@ -152,6 +152,31 @@
       color: #ffffff;
     }
 
+    .hero-waitlist-btn {
+      display: inline-block;
+      margin-top: 32px;
+      padding: 16px 36px;
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-top-color: rgba(255, 255, 255, 0.35);
+      border-radius: 100px;
+      color: #fff;
+      text-decoration: none;
+      font-size: 1rem;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      transition: all 0.2s;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    .hero-waitlist-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.35);
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+
     .scroll-indicator {
       position: relative;
       z-index: 1;
@@ -602,6 +627,7 @@
     <div class="hero-bg"></div>
     <div class="hero-content">
       <h1>Elena makes healthcare better.</h1>
+      <a href="#waitlist" class="hero-waitlist-btn">Join the Waitlist</a>
     </div>
     <div class="scroll-indicator">
       Scroll
