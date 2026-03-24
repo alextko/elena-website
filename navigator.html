@@ -584,348 +584,309 @@
       width: 420px;
     }
 
-    /* ---- Spotlight 1: Visit Detail Modal ---- */
-    .visit-modal {
-      background: #FFFFFF;
-      border-top-left-radius: 20px;
-      border-top-right-radius: 20px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    /* ---- Spotlight 1: Game Plan (Salmon Card) ---- */
+    .gp-card {
+      background: #F4B084;
+      border-radius: 22px;
+      padding-top: 18px;
+      padding-bottom: 8px;
       overflow: hidden;
     }
 
-    .visit-modal-handle {
-      width: 40px;
-      height: 4px;
-      border-radius: 2px;
-      background: #AEAEB2;
-      margin: 10px auto 0;
-    }
-
-    .visit-modal-header {
-      display: flex;
-      flex-direction: row;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px 24px 12px;
-    }
-
-    .visit-modal-title {
+    .gp-title {
       font-size: 28px;
       font-weight: 800;
-      color: #0F1B3D;
-      flex: 1;
+      color: #5C1A2A;
+      padding: 0 24px;
+      margin-bottom: 16px;
     }
 
-    .visit-modal-header-actions {
+    .gp-calendar {
       display: flex;
       flex-direction: row;
-      gap: 8px;
-      flex-shrink: 0;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 24px 16px;
     }
 
-    .visit-modal-icon-btn {
+    .gp-cal-day {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      width: 44px;
+    }
+
+    .gp-cal-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #7A3040;
+      text-transform: uppercase;
+    }
+
+    .gp-cal-num {
       width: 36px;
       height: 36px;
       border-radius: 18px;
-      background: #F7F6F2;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: none;
-      cursor: pointer;
+      font-size: 16px;
+      font-weight: 700;
+      color: #5C1A2A;
+    }
+
+    .gp-cal-today .gp-cal-num {
+      background: #FFFFFF;
+    }
+
+    .gp-cal-today .gp-cal-label {
+      color: #5C1A2A;
+    }
+
+    .gp-todo-section {
+      padding: 0 16px;
+    }
+
+    .gp-todo-header {
+      font-size: 15px;
+      font-weight: 700;
+      color: #5C1A2A;
+      padding: 0 8px;
+      margin-bottom: 10px;
+    }
+
+    .gp-todo-list {
+      background: rgba(255,255,255,0.3);
+      border-radius: 14px;
+      padding: 6px 0;
+    }
+
+    .gp-todo-item {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+    }
+
+    .gp-todo-divider {
+      height: 1px;
+      background: rgba(92,26,42,0.2);
+      margin: 0 14px;
+    }
+
+    .gp-checkbox {
+      width: 32px;
+      height: 32px;
+      border-radius: 16px;
+      border: 2px solid #7A3040;
+      background: transparent;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gp-checkbox-checked {
+      background: #5C1A2A;
+      border-color: #5C1A2A;
+    }
+
+    .gp-checkbox-checked svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .gp-todo-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .gp-todo-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #5C1A2A;
+    }
+
+    .gp-todo-done .gp-todo-title {
+      text-decoration: line-through;
+      color: #7A3040;
+    }
+
+    .gp-todo-subtitle {
+      font-size: 13px;
+      color: #7A3040;
+      margin-top: 1px;
+    }
+
+    /* ---- Spotlight 2: Visit Timeline ---- */
+    .tl-wrapper {
+      background: #F7F6F2;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .tl-section-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: #1E3A5F;
+      margin-bottom: 16px;
+    }
+
+    .tl-timeline {
+      position: relative;
+      padding-left: 24px;
+    }
+
+    .tl-rail {
+      position: absolute;
+      left: 5px;
+      top: 6px;
+      bottom: 6px;
+      width: 2px;
+      background: #93B5E1;
+    }
+
+    .tl-entry {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .tl-entry:last-child {
+      margin-bottom: 0;
+    }
+
+    .tl-dot {
+      position: absolute;
+      left: -24px;
+      top: 14px;
+      width: 12px;
+      height: 12px;
+      border-radius: 6px;
+      background: #2563EB;
+      transform: translateX(-0.5px);
+    }
+
+    .tl-dot-future {
+      background: transparent;
+      border: 2px solid #2563EB;
+    }
+
+    .tl-dot-note {
+      width: 8px;
+      height: 8px;
+      border-radius: 4px;
+      background: #93B5E1;
+      top: 16px;
+      left: -22px;
+    }
+
+    .tl-card {
+      background: #FFFFFF;
+      border-radius: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      margin-left: 10px;
+      padding: 14px;
+    }
+
+    .tl-card-date {
+      font-size: 12px;
+      font-weight: 600;
+      color: #6B9BD2;
+    }
+
+    .tl-card-type {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0F1B3D;
+      margin-top: 2px;
+    }
+
+    .tl-card-doctor {
+      font-size: 13px;
+      color: #8E8E93;
+      margin-top: 1px;
+    }
+
+    .tl-card-summary {
+      font-size: 13px;
+      line-height: 18px;
+      color: #8E8E93;
+      margin-top: 6px;
+    }
+
+    .tl-card-top {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .tl-badge-booked {
+      background: #C47A5A;
+      color: #FFFFFF;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 10px;
       flex-shrink: 0;
     }
 
-    .visit-modal-icon-btn svg {
-      width: 16px;
-      height: 16px;
-      color: #8E8E93;
-      stroke: #8E8E93;
-      fill: none;
-    }
-
-    .visit-modal-context {
-      padding: 0 24px 4px;
-    }
-
-    .visit-modal-context-date {
-      font-size: 15px;
-      color: #8E8E93;
-    }
-
-    .visit-modal-context-location {
-      font-size: 13px;
-      color: #AEAEB2;
-      margin-top: 2px;
-    }
-
-    .visit-modal-schedule-btn {
-      display: inline-flex;
-      align-items: center;
-      padding: 8px 14px;
-      border-radius: 20px;
-      background: #F7F6F2;
-      border: none;
-      font-size: 14px;
-      font-weight: 600;
-      color: #0F1B3D;
-      font-family: inherit;
-      cursor: pointer;
-      margin: 12px 24px 0;
-    }
-
-    .visit-modal-tabs {
+    .tl-stars {
       display: flex;
       flex-direction: row;
-      gap: 8px;
-      padding: 16px 24px 0;
+      gap: 2px;
+      margin-top: 6px;
     }
 
-    .visit-modal-tab {
-      padding: 8px 18px;
-      border-radius: 20px;
+    .tl-star {
       font-size: 14px;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      font-family: inherit;
-      background: transparent;
-      color: #8E8E93;
-    }
-
-    .visit-modal-tab-active {
-      background: #0F1B3D;
-      color: #FFFFFF;
-    }
-
-    .visit-modal-section {
-      padding: 0 24px;
-      margin-bottom: 24px;
-    }
-
-    .visit-modal-section-title {
-      font-size: 18px;
-      font-weight: 700;
-      color: #0F1B3D;
-      margin-top: 20px;
-      margin-bottom: 10px;
-    }
-
-    .visit-modal-summary {
-      font-size: 15px;
-      line-height: 22px;
-      color: #0F1B3D;
-    }
-
-    .visit-modal-labs-card {
-      background: #FFFFFF;
-      border-radius: 12px;
-      padding: 14px;
-    }
-
-    .visit-modal-lab-row {
-      display: flex;
-      flex-direction: row;
-      justify-content: space-between;
-      padding: 3px 0;
-    }
-
-    .visit-modal-lab-name {
-      font-size: 13px;
-      color: #8E8E93;
-    }
-
-    .visit-modal-lab-value {
-      font-size: 13px;
-      font-weight: 600;
-      color: #0F1B3D;
-    }
-
-    .visit-modal-lab-low {
-      color: #0F1B3D;
-    }
-
-    .visit-modal-notes-card {
-      background: #F8F9FA;
-      border-radius: 12px;
-      padding: 14px;
-    }
-
-    .visit-modal-notes-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: #0F1B3D;
-      margin-bottom: 8px;
-    }
-
-    .visit-modal-notes-bullet {
-      font-size: 14px;
-      line-height: 20px;
-      color: #8E8E93;
-      margin-bottom: 4px;
-    }
-
-    .visit-modal-rate-section {
-      padding: 0 24px;
-      margin-bottom: 24px;
-    }
-
-    .visit-modal-rate-title {
-      font-size: 18px;
-      font-weight: 700;
-      color: #0F1B3D;
-      margin-bottom: 10px;
-    }
-
-    .visit-modal-stars {
-      display: flex;
-      flex-direction: row;
-      gap: 8px;
-    }
-
-    .visit-modal-star {
-      font-size: 32px;
-      line-height: 1;
-    }
-
-    .visit-modal-star-on {
       color: #F5A623;
     }
 
-    .visit-modal-star-off {
+    .tl-star-off {
       color: #AEAEB2;
     }
 
-    /* ---- Spotlight 2: Insurance Card ---- */
-    .insurance-card-wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .insurance-card-shadow {
-      box-shadow: 0 8px 16px rgba(0,0,0,0.18);
-      border-radius: 24px;
-      width: 100%;
-    }
-
-    .insurance-card {
+    .tl-month-marker {
       position: relative;
-      border-radius: 24px;
-      background: #0F1B3D;
-      aspect-ratio: 1.6;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      overflow: hidden;
-      width: 100%;
-      box-sizing: border-box;
+      margin-bottom: 16px;
+      padding-left: 10px;
+      margin-left: 10px;
     }
 
-    .insurance-card-gloss {
+    .tl-month-marker-dot {
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%, rgba(255,255,255,0.02) 100%);
-      pointer-events: none;
+      left: -24px;
+      top: 50%;
+      transform: translate(-0.5px, -50%);
+      width: 8px;
+      height: 8px;
+      border-radius: 4px;
+      background: #93B5E1;
     }
 
-    .insurance-card-content {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      height: 100%;
-    }
-
-    .insurance-card-type {
-      font-size: 20px;
+    .tl-month-year {
+      font-size: 18px;
       font-weight: 800;
-      color: #FFFFFF;
-      letter-spacing: 0.5px;
-    }
-
-    .insurance-card-plan {
-      font-size: 15px;
-      font-weight: 700;
-      color: #FFFFFF;
-      margin-top: 4px;
-    }
-
-    .insurance-card-provider {
-      font-size: 11px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.6);
-      margin-top: 2px;
-    }
-
-    .insurance-card-ids {
+      color: #4A7AB5;
       display: flex;
-      flex-direction: row;
-      gap: 28px;
-      margin-top: auto;
-    }
-
-    .insurance-card-id-group {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .insurance-card-label {
-      font-size: 9px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: rgba(255,255,255,0.4);
-      margin-bottom: 2px;
-    }
-
-    .insurance-card-value {
-      font-size: 14px;
-      font-weight: 600;
-      color: #FFFFFF;
-      letter-spacing: 0.5px;
-    }
-
-    .insurance-card-copay {
-      margin-top: 8px;
-    }
-
-    .insurance-card-copay-value {
-      font-size: 12px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.6);
-    }
-
-    .insurance-card-dots {
-      display: flex;
-      flex-direction: row;
-      justify-content: center;
       align-items: center;
       gap: 8px;
-      margin-top: 16px;
     }
 
-    .insurance-card-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 4px;
-      background: #E5E5EA;
+    .tl-month-tick {
+      width: 10px;
+      height: 2px;
+      background: #6B9BD2;
+      display: inline-block;
+      border-radius: 1px;
     }
 
-    .insurance-card-dot-active {
-      width: 20px;
-      height: 7px;
-      border-radius: 4px;
-      background: #0F1B3D;
-    }
-
-    /* ---- Spotlight 3: Chat with Doctor Card + Booking ---- */
-    .chat-container {
+    /* ---- Spotlight 3: Chat with MRI Pricing ---- */
+    .ch-container {
       display: flex;
       flex-direction: column;
       gap: 18px;
@@ -934,7 +895,7 @@
       padding: 24px;
     }
 
-    .chat-msg-user {
+    .ch-msg-user {
       align-self: flex-end;
       max-width: 80%;
       background: #FFFFFF;
@@ -948,7 +909,7 @@
       color: #0F1B3D;
     }
 
-    .chat-msg-elena {
+    .ch-msg-elena {
       align-self: flex-start;
       max-width: 90%;
       background: #FFFFFF;
@@ -962,7 +923,7 @@
       color: #0F1B3D;
     }
 
-    .chat-doctor-card {
+    .ch-facility-card {
       align-self: flex-start;
       max-width: 90%;
       background: #FFFFFF;
@@ -971,101 +932,53 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
-    .chat-doctor-list {
+    .ch-facility-list {
       padding: 12px;
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
 
-    .chat-doctor-item {
+    .ch-facility-item {
       background: #FFFFFF;
       border-radius: 12px;
       padding: 10px 12px;
       border: 1.5px solid #F2F2F7;
     }
 
-    .chat-doctor-top {
+    .ch-facility-top {
       display: flex;
       flex-direction: row;
       justify-content: space-between;
       align-items: flex-start;
     }
 
-    .chat-doctor-info {
+    .ch-facility-info {
       flex: 1;
       margin-right: 8px;
     }
 
-    .chat-doctor-name {
+    .ch-facility-name {
       font-size: 15px;
       font-weight: 700;
       color: #1C1C1E;
     }
 
-    .chat-doctor-practice {
-      font-size: 12px;
-      color: #AEAEB2;
-      margin-top: 1px;
-    }
-
-    .chat-doctor-specialty-row {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      gap: 8px;
-      margin-top: 1px;
-    }
-
-    .chat-doctor-specialty {
+    .ch-facility-specialty {
       font-size: 13px;
       color: #8E8E93;
+      margin-top: 1px;
     }
 
-    .chat-doctor-rating {
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-    }
-
-    .chat-doctor-rating-star {
-      font-size: 12px;
-      color: #F5A623;
-    }
-
-    .chat-doctor-rating-num {
-      font-size: 12px;
-      font-weight: 700;
-      color: #F5A623;
-    }
-
-    .chat-doctor-rating-count {
-      font-size: 11px;
-      color: #AEAEB2;
-    }
-
-    .chat-book-btn {
-      background: #2563EB;
-      color: #FFFFFF;
-      border: none;
-      border-radius: 8px;
-      padding: 6px 14px;
-      font-size: 13px;
-      font-weight: 600;
-      font-family: inherit;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-
-    .chat-doctor-bottom {
+    .ch-facility-bottom {
       display: flex;
       flex-direction: row;
       justify-content: space-between;
       align-items: flex-end;
-      margin-top: 4px;
+      margin-top: 6px;
     }
 
-    .chat-badge-row {
+    .ch-badge-row {
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -1074,7 +987,7 @@
       flex: 1;
     }
 
-    .chat-badge-innetwork {
+    .ch-badge-innetwork {
       display: flex;
       align-items: center;
       gap: 3px;
@@ -1083,111 +996,189 @@
       color: #34C759;
     }
 
-    .chat-badge-facility {
+    .ch-badge-facility {
       font-size: 10px;
       font-weight: 600;
       padding: 1px 6px;
       border-radius: 4px;
+    }
+
+    .ch-badge-freestanding {
       background: #E8F5E9;
       color: #2E7D32;
     }
 
-    .chat-badge-distance {
+    .ch-badge-hospital {
+      background: #FFF3E0;
+      color: #E65100;
+    }
+
+    .ch-badge-distance {
       font-size: 11px;
       color: #AEAEB2;
     }
 
-    .chat-price-block {
+    .ch-price-block {
       text-align: right;
       display: flex;
       flex-direction: column;
       align-items: flex-end;
     }
 
-    .chat-price-amount {
+    .ch-price-original {
+      font-size: 12px;
+      color: #AEAEB2;
+      text-decoration: line-through;
+    }
+
+    .ch-price-amount {
       font-size: 16px;
       font-weight: 700;
       color: #1C1C1E;
     }
 
-    .chat-price-label {
+    .ch-price-label {
       font-size: 10px;
       color: #AEAEB2;
     }
 
-    .chat-confirmation {
-      align-self: flex-start;
-      max-width: 90%;
-      background: #FFFFFF;
-      border-radius: 14px;
-      overflow: hidden;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-      margin: 4px 0;
+    /* ---- Spotlight 4a: Insurance Card ---- */
+    .ins-card-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
-    .chat-confirmation-header {
+    .ins-card-shadow {
+      box-shadow: 0 8px 16px rgba(0,0,0,0.18);
+      border-radius: 24px;
+      width: 100%;
+    }
+
+    .ins-card {
+      position: relative;
+      border-radius: 24px;
+      background: #0F1B3D;
+      aspect-ratio: 1.6;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .ins-card-gloss {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%, rgba(255,255,255,0.02) 100%);
+      pointer-events: none;
+    }
+
+    .ins-card-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100%;
+    }
+
+    .ins-card-type {
+      font-size: 20px;
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: 0.5px;
+    }
+
+    .ins-card-plan {
+      font-size: 15px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-top: 4px;
+    }
+
+    .ins-card-provider {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.6);
+      margin-top: 2px;
+    }
+
+    .ins-card-ids {
       display: flex;
       flex-direction: row;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 14px 8px;
-      border-bottom: 1px solid #F2F2F7;
+      gap: 28px;
+      margin-top: auto;
     }
 
-    .chat-confirmation-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 5px;
-      border: 2px solid #34C759;
-      background: transparent;
+    .ins-card-id-group {
+      display: flex;
+      flex-direction: column;
     }
 
-    .chat-confirmation-title {
-      font-size: 13px;
+    .ins-card-label {
+      font-size: 9px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #34C759;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 2px;
     }
 
-    .chat-confirmation-body {
-      padding: 12px 14px;
-    }
-
-    .chat-confirmation-type {
-      font-size: 16px;
-      font-weight: 700;
-      color: #0F1B3D;
-    }
-
-    .chat-confirmation-doctor {
+    .ins-card-value {
       font-size: 14px;
-      color: #8E8E93;
-      margin-top: 2px;
-    }
-
-    .chat-confirmation-detail {
-      font-size: 13px;
       font-weight: 600;
-      color: #0F1B3D;
-      margin-top: 6px;
+      color: #FFFFFF;
+      letter-spacing: 0.5px;
     }
 
-    .chat-confirmation-reason {
-      font-size: 13px;
-      color: #AEAEB2;
-      margin-top: 2px;
+    .ins-card-copay {
+      margin-top: 8px;
     }
 
-    /* ---- Spotlight 4: Savings Preview Card ---- */
-    .savings-card {
+    .ins-card-copay-value {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .ins-card-dots {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .ins-card-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 4px;
+      background: #E5E5EA;
+    }
+
+    .ins-card-dot-active {
+      width: 20px;
+      height: 7px;
+      border-radius: 4px;
+      background: #0F1B3D;
+    }
+
+    /* ---- Spotlight 4b: Savings Preview Card ---- */
+    .sv-card {
       background: #FFFFFF;
       border-radius: 16px;
       padding: 20px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
 
-    .savings-header {
+    .sv-header {
       display: flex;
       flex-direction: row;
       margin-bottom: 14px;
@@ -1195,7 +1186,7 @@
       border-bottom: 1px solid #F2F2F7;
     }
 
-    .savings-header span {
+    .sv-header span {
       font-size: 12px;
       font-weight: 600;
       color: #8E8E93;
@@ -1203,19 +1194,19 @@
       letter-spacing: 0.5px;
     }
 
-    .savings-header .savings-col-desc { flex: 2; }
-    .savings-header .savings-col-price { flex: 1; text-align: right; }
+    .sv-header .sv-col-desc { flex: 2; }
+    .sv-header .sv-col-price { flex: 1; text-align: right; }
 
-    .savings-item { margin-bottom: 4px; }
+    .sv-item { margin-bottom: 4px; }
 
-    .savings-row {
+    .sv-row {
       display: flex;
       flex-direction: row;
       align-items: flex-start;
       padding: 6px 0;
     }
 
-    .savings-desc {
+    .sv-desc {
       flex: 2;
       font-size: 14px;
       font-weight: 500;
@@ -1223,7 +1214,7 @@
       line-height: 20px;
     }
 
-    .savings-billed {
+    .sv-billed {
       flex: 1;
       text-align: right;
       font-size: 14px;
@@ -1232,7 +1223,7 @@
       text-decoration: line-through;
     }
 
-    .savings-fair {
+    .sv-fair {
       flex: 1;
       text-align: right;
       font-size: 14px;
@@ -1240,7 +1231,7 @@
       color: #1B7A3D;
     }
 
-    .savings-pill {
+    .sv-pill {
       display: inline-block;
       background: #E8F5EC;
       color: #1B7A3D;
@@ -1252,13 +1243,13 @@
       margin-bottom: 6px;
     }
 
-    .savings-divider {
+    .sv-divider {
       height: 1px;
       background: #F2F2F7;
       margin: 4px 0;
     }
 
-    .savings-total {
+    .sv-total {
       display: flex;
       flex-direction: row;
       justify-content: space-between;
@@ -1268,13 +1259,13 @@
       border-top: 1px solid #E5E5EA;
     }
 
-    .savings-total-label {
+    .sv-total-label {
       font-size: 15px;
       font-weight: 600;
       color: #1C1C1E;
     }
 
-    .savings-total-amount {
+    .sv-total-amount {
       font-size: 20px;
       font-weight: 700;
       color: #1B7A3D;
@@ -1962,219 +1953,286 @@
   <!-- APP SPOTLIGHTS -->
   <section class="app-spotlights">
 
-    <!-- Spotlight 1: Visit Detail Modal -->
+    <!-- Spotlight 1: Game Plan (Salmon Card) — text LEFT, card RIGHT -->
     <div class="spotlight fade-in">
       <div class="spotlight-text">
-        <h3>Your care, every detail</h3>
-        <p>Tap any visit to see everything — AI-generated notes, lab results, documents, and your rating. Nothing gets lost.</p>
+        <h3>Your health game plan</h3>
+        <p>Elena builds a personalized daily plan — medications, follow-ups, screenings. Check things off as you go.</p>
       </div>
       <div class="spotlight-ui">
-        <div class="visit-modal">
-          <div class="visit-modal-handle"></div>
-          <div class="visit-modal-header">
-            <span class="visit-modal-title">Primary Care</span>
-            <div class="visit-modal-header-actions">
-              <button class="visit-modal-icon-btn" aria-label="Edit">
-                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              </button>
-              <button class="visit-modal-icon-btn" aria-label="Delete">
-                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              </button>
+        <div class="gp-card">
+          <div class="gp-title">Game Plan</div>
+          <div class="gp-calendar">
+            <div class="gp-cal-day">
+              <span class="gp-cal-label">Mon</span>
+              <span class="gp-cal-num">22</span>
+            </div>
+            <div class="gp-cal-day">
+              <span class="gp-cal-label">Tue</span>
+              <span class="gp-cal-num">23</span>
+            </div>
+            <div class="gp-cal-day gp-cal-today">
+              <span class="gp-cal-label">Wed</span>
+              <span class="gp-cal-num">24</span>
+            </div>
+            <div class="gp-cal-day">
+              <span class="gp-cal-label">Thu</span>
+              <span class="gp-cal-num">25</span>
+            </div>
+            <div class="gp-cal-day">
+              <span class="gp-cal-label">Fri</span>
+              <span class="gp-cal-num">26</span>
             </div>
           </div>
-          <div class="visit-modal-context">
-            <div class="visit-modal-context-date">Friday, Jan 10, 2026 · Dr. Sarah Chen</div>
-            <div class="visit-modal-context-location">Chen Family Medicine · Upper East Side</div>
-          </div>
-          <button class="visit-modal-schedule-btn">Schedule again</button>
-          <div class="visit-modal-tabs">
-            <button class="visit-modal-tab visit-modal-tab-active">Notes</button>
-            <button class="visit-modal-tab">Records</button>
-            <button class="visit-modal-tab">Review</button>
-          </div>
-          <div class="visit-modal-section">
-            <div class="visit-modal-section-title">Summary</div>
-            <div class="visit-modal-summary">Annual physical completed. Vitamin D deficiency diagnosed — started supplementation. Thyroid stable on current medication. Cholesterol and A1C both normal.</div>
-          </div>
-          <div class="visit-modal-section">
-            <div class="visit-modal-section-title">Lab Results</div>
-            <div class="visit-modal-labs-card">
-              <div class="visit-modal-lab-row"><span class="visit-modal-lab-name">Vitamin D</span><span class="visit-modal-lab-value visit-modal-lab-low">18 ng/mL ↓</span></div>
-              <div class="visit-modal-lab-row"><span class="visit-modal-lab-name">TSH</span><span class="visit-modal-lab-value">2.1 mIU/L</span></div>
-              <div class="visit-modal-lab-row"><span class="visit-modal-lab-name">Cholesterol</span><span class="visit-modal-lab-value">185 mg/dL</span></div>
-              <div class="visit-modal-lab-row"><span class="visit-modal-lab-name">A1C</span><span class="visit-modal-lab-value">5.2%</span></div>
-            </div>
-          </div>
-          <div class="visit-modal-section">
-            <div class="visit-modal-section-title">Visit Notes</div>
-            <div class="visit-modal-notes-card">
-              <div class="visit-modal-notes-title">Annual physical — Vitamin D deficiency diagnosed</div>
-              <div class="visit-modal-notes-bullet">• Vitamin D deficiency found at 18 ng/mL, started D3 2000 IU daily</div>
-              <div class="visit-modal-notes-bullet">• Thyroid stable on Levothyroxine 50 mcg</div>
-              <div class="visit-modal-notes-bullet">• Cholesterol and A1C within normal range</div>
-            </div>
-          </div>
-          <div class="visit-modal-rate-section">
-            <div class="visit-modal-rate-title">Rate Dr. Chen</div>
-            <div class="visit-modal-stars">
-              <span class="visit-modal-star visit-modal-star-on">★</span>
-              <span class="visit-modal-star visit-modal-star-on">★</span>
-              <span class="visit-modal-star visit-modal-star-on">★</span>
-              <span class="visit-modal-star visit-modal-star-on">★</span>
-              <span class="visit-modal-star visit-modal-star-off">★</span>
+          <div class="gp-todo-section">
+            <div class="gp-todo-header">To Do</div>
+            <div class="gp-todo-list">
+              <div class="gp-todo-item">
+                <div class="gp-checkbox"></div>
+                <div class="gp-todo-content">
+                  <div class="gp-todo-title">Take Vitamin D3</div>
+                  <div class="gp-todo-subtitle">Daily · Morning</div>
+                </div>
+              </div>
+              <div class="gp-todo-divider"></div>
+              <div class="gp-todo-item">
+                <div class="gp-checkbox"></div>
+                <div class="gp-todo-content">
+                  <div class="gp-todo-title">Schedule dermatology follow-up</div>
+                  <div class="gp-todo-subtitle">Due this week</div>
+                </div>
+              </div>
+              <div class="gp-todo-divider"></div>
+              <div class="gp-todo-item gp-todo-done">
+                <div class="gp-checkbox gp-checkbox-checked">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div class="gp-todo-content">
+                  <div class="gp-todo-title">Refill prescription</div>
+                  <div class="gp-todo-subtitle">Completed</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Spotlight 2: Insurance Card -->
+    <!-- Spotlight 2: Visit Timeline — text RIGHT, timeline LEFT -->
+    <div class="spotlight spotlight-reverse fade-in">
+      <div class="spotlight-text">
+        <h3>Your care, every detail</h3>
+        <p>Every visit, lab result, and document on a single timeline. Tap any visit to see the full picture.</p>
+      </div>
+      <div class="spotlight-ui">
+        <div class="tl-wrapper">
+          <div class="tl-section-title">Visits</div>
+          <div class="tl-timeline">
+            <div class="tl-rail"></div>
+
+            <!-- Future visit -->
+            <div class="tl-entry">
+              <div class="tl-dot tl-dot-future"></div>
+              <div class="tl-card">
+                <div class="tl-card-top">
+                  <div>
+                    <div class="tl-card-date">Apr 10, 2026</div>
+                    <div class="tl-card-type">Dermatology</div>
+                    <div class="tl-card-doctor">Dr. James Park</div>
+                  </div>
+                  <span class="tl-badge-booked">Booked</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Past visit -->
+            <div class="tl-entry">
+              <div class="tl-dot"></div>
+              <div class="tl-card">
+                <div class="tl-card-date">Mar 15, 2026</div>
+                <div class="tl-card-type">Primary Care</div>
+                <div class="tl-card-doctor">Dr. Sarah Chen</div>
+                <div class="tl-card-summary">Annual check-up. Vitamin D low — started supplementation. Thyroid stable.</div>
+                <div class="tl-stars">
+                  <span class="tl-star">★</span><span class="tl-star">★</span><span class="tl-star">★</span><span class="tl-star">★</span><span class="tl-star">★</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Month marker -->
+            <div class="tl-month-marker">
+              <div class="tl-month-marker-dot"></div>
+              <div class="tl-month-year"><span class="tl-month-tick"></span> JAN 2026</div>
+            </div>
+
+            <!-- Older past visit -->
+            <div class="tl-entry">
+              <div class="tl-dot"></div>
+              <div class="tl-card">
+                <div class="tl-card-date">Jan 10, 2026</div>
+                <div class="tl-card-type">Annual Physical</div>
+                <div class="tl-card-doctor">Dr. Sarah Chen</div>
+                <div class="tl-card-summary">Full panel bloodwork. All results within normal range. Follow-up in 6 months.</div>
+                <div class="tl-stars">
+                  <span class="tl-star">★</span><span class="tl-star">★</span><span class="tl-star">★</span><span class="tl-star">★</span><span class="tl-star tl-star-off">★</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spotlight 3: Chat with MRI Pricing — text LEFT, chat RIGHT -->
+    <div class="spotlight fade-in">
+      <div class="spotlight-text">
+        <h3>Elena finds the best price</h3>
+        <p>The same MRI can cost $180 or $2,400 depending on where you go. Elena checks your insurance and finds the best deal.</p>
+      </div>
+      <div class="spotlight-ui">
+        <div class="ch-container">
+          <div class="ch-msg-user">How much would an MRI of my knee cost?</div>
+          <div class="ch-msg-elena">I checked prices at 3 facilities near you. Here's what you'd pay with your insurance:</div>
+          <div class="ch-facility-card">
+            <div class="ch-facility-list">
+              <!-- Facility 1: Freestanding -->
+              <div class="ch-facility-item">
+                <div class="ch-facility-top">
+                  <div class="ch-facility-info">
+                    <div class="ch-facility-name">Sunrise Imaging Center</div>
+                    <div class="ch-facility-specialty">MRI - Knee without contrast</div>
+                  </div>
+                </div>
+                <div class="ch-facility-bottom">
+                  <div class="ch-badge-row">
+                    <span class="ch-badge-innetwork">&#10003; In-network</span>
+                    <span class="ch-badge-facility ch-badge-freestanding">Freestanding</span>
+                    <span class="ch-badge-distance">1.8 mi</span>
+                  </div>
+                  <div class="ch-price-block">
+                    <span class="ch-price-original">$1,200</span>
+                    <div class="ch-price-amount">~$180</div>
+                    <div class="ch-price-label">est. out-of-pocket</div>
+                  </div>
+                </div>
+              </div>
+              <!-- Facility 2: Hospital -->
+              <div class="ch-facility-item">
+                <div class="ch-facility-top">
+                  <div class="ch-facility-info">
+                    <div class="ch-facility-name">Mount Sinai Radiology</div>
+                    <div class="ch-facility-specialty">MRI - Knee without contrast</div>
+                  </div>
+                </div>
+                <div class="ch-facility-bottom">
+                  <div class="ch-badge-row">
+                    <span class="ch-badge-innetwork">&#10003; In-network</span>
+                    <span class="ch-badge-facility ch-badge-hospital">Hospital</span>
+                    <span class="ch-badge-distance">3.2 mi</span>
+                  </div>
+                  <div class="ch-price-block">
+                    <span class="ch-price-original">$2,400</span>
+                    <div class="ch-price-amount">~$450</div>
+                    <div class="ch-price-label">est. out-of-pocket</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ch-msg-user">Book the imaging center</div>
+          <div class="ch-msg-elena">Done! Sunrise Imaging Center, Thursday at 10am.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spotlight 4a: Insurance Card — text RIGHT, card LEFT -->
     <div class="spotlight spotlight-reverse fade-in">
       <div class="spotlight-text">
         <h3>Your insurance, always with you</h3>
-        <p>Snap your card and Elena pulls out every detail. Deductibles, copays, member ID — always one tap away.</p>
+        <p>Snap your card and Elena reads every detail. Deductibles, copays, member ID — always one tap away.</p>
       </div>
       <div class="spotlight-ui">
-        <div class="insurance-card-wrapper">
-          <div class="insurance-card-shadow">
-            <div class="insurance-card">
-              <div class="insurance-card-gloss"></div>
-              <div class="insurance-card-content">
+        <div class="ins-card-wrapper">
+          <div class="ins-card-shadow">
+            <div class="ins-card">
+              <div class="ins-card-gloss"></div>
+              <div class="ins-card-content">
                 <div>
-                  <div class="insurance-card-type">Medical</div>
-                  <div class="insurance-card-plan">Blue Cross Blue Shield PPO</div>
-                  <div class="insurance-card-provider">Blue Cross</div>
+                  <div class="ins-card-type">Medical</div>
+                  <div class="ins-card-plan">Blue Cross Blue Shield PPO</div>
+                  <div class="ins-card-provider">Blue Cross</div>
                 </div>
                 <div>
-                  <div class="insurance-card-ids">
-                    <div class="insurance-card-id-group">
-                      <span class="insurance-card-label">MEMBER ID</span>
-                      <span class="insurance-card-value">BCB123456789</span>
+                  <div class="ins-card-ids">
+                    <div class="ins-card-id-group">
+                      <span class="ins-card-label">MEMBER ID</span>
+                      <span class="ins-card-value">BCB123456789</span>
                     </div>
-                    <div class="insurance-card-id-group">
-                      <span class="insurance-card-label">GROUP</span>
-                      <span class="insurance-card-value">G98765</span>
+                    <div class="ins-card-id-group">
+                      <span class="ins-card-label">GROUP</span>
+                      <span class="ins-card-value">G98765</span>
                     </div>
                   </div>
-                  <div class="insurance-card-copay">
-                    <span class="insurance-card-label">COPAY</span>
-                    <div class="insurance-card-copay-value">$25 PCP / $50 Specialist</div>
+                  <div class="ins-card-copay">
+                    <span class="ins-card-label">COPAY</span>
+                    <div class="ins-card-copay-value">$25 PCP / $50 Specialist</div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <div class="insurance-card-dots">
-            <div class="insurance-card-dot"></div>
-            <div class="insurance-card-dot-active"></div>
-            <div class="insurance-card-dot"></div>
+          <div class="ins-card-dots">
+            <div class="ins-card-dot"></div>
+            <div class="ins-card-dot-active"></div>
+            <div class="ins-card-dot"></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Spotlight 3: Chat + Doctor Card + Booking -->
+    <!-- Spotlight 4b: Savings Card — text LEFT, card RIGHT -->
     <div class="spotlight fade-in">
-      <div class="spotlight-text">
-        <h3>Elena finds, you choose</h3>
-        <p>Tell Elena what you need. She searches providers, checks your insurance, compares prices, and books it for you.</p>
-      </div>
-      <div class="spotlight-ui">
-        <div class="chat-container">
-          <div class="chat-msg-user">I need a dermatologist that takes my insurance near me</div>
-          <div class="chat-msg-elena">I found 3 dermatologists in-network within 5 miles:</div>
-          <div class="chat-doctor-card">
-            <div class="chat-doctor-list">
-              <div class="chat-doctor-item">
-                <div class="chat-doctor-top">
-                  <div class="chat-doctor-info">
-                    <div class="chat-doctor-name">Dr. James Park</div>
-                    <div class="chat-doctor-practice">Park Dermatology Associates</div>
-                    <div class="chat-doctor-specialty-row">
-                      <span class="chat-doctor-specialty">Dermatology</span>
-                      <span class="chat-doctor-rating">
-                        <span class="chat-doctor-rating-star">★</span>
-                        <span class="chat-doctor-rating-num">4.8</span>
-                        <span class="chat-doctor-rating-count">(127)</span>
-                      </span>
-                    </div>
-                  </div>
-                  <button class="chat-book-btn">Book</button>
-                </div>
-                <div class="chat-doctor-bottom">
-                  <div class="chat-badge-row">
-                    <span class="chat-badge-innetwork">✓ In-network</span>
-                    <span class="chat-badge-facility">Freestanding</span>
-                    <span class="chat-badge-distance">2.1 mi</span>
-                  </div>
-                  <div class="chat-price-block">
-                    <div class="chat-price-amount">~$45</div>
-                    <div class="chat-price-label">est. out-of-pocket</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="chat-msg-user">Book the Thursday at 2pm</div>
-          <div class="chat-confirmation">
-            <div class="chat-confirmation-header">
-              <div class="chat-confirmation-dot"></div>
-              <span class="chat-confirmation-title">BOOKED</span>
-            </div>
-            <div class="chat-confirmation-body">
-              <div class="chat-confirmation-type">Dermatology</div>
-              <div class="chat-confirmation-doctor">Dr. James Park</div>
-              <div class="chat-confirmation-detail">Thursday, Apr 10, 2026 at 2:00 PM</div>
-              <div class="chat-confirmation-reason">Skin check follow-up</div>
-            </div>
-          </div>
-          <div class="chat-msg-elena">All set! I've added it to your calendar.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Spotlight 4: Savings Preview Card -->
-    <div class="spotlight spotlight-reverse fade-in">
       <div class="spotlight-text">
         <h3>Know what you should actually pay</h3>
         <p>Upload a bill and Elena breaks down every charge, flags what's overpriced, and shows you what to dispute.</p>
       </div>
       <div class="spotlight-ui">
-        <div class="savings-card">
-          <div class="savings-header">
-            <span class="savings-col-desc">Item</span>
-            <span class="savings-col-price">Billed</span>
-            <span class="savings-col-price">Fair price</span>
+        <div class="sv-card">
+          <div class="sv-header">
+            <span class="sv-col-desc">Item</span>
+            <span class="sv-col-price">Billed</span>
+            <span class="sv-col-price">Fair price</span>
           </div>
-          <div class="savings-item">
-            <div class="savings-row">
-              <span class="savings-desc">Office visit (Level 3)</span>
-              <span class="savings-billed">$350</span>
-              <span class="savings-fair">$185</span>
+          <div class="sv-item">
+            <div class="sv-row">
+              <span class="sv-desc">Office visit (Level 3)</span>
+              <span class="sv-billed">$350</span>
+              <span class="sv-fair">$185</span>
             </div>
-            <span class="savings-pill">Save $165</span>
+            <span class="sv-pill">Save $165</span>
           </div>
-          <div class="savings-divider"></div>
-          <div class="savings-item">
-            <div class="savings-row">
-              <span class="savings-desc">CBC blood panel</span>
-              <span class="savings-billed">$120</span>
-              <span class="savings-fair">$35</span>
+          <div class="sv-divider"></div>
+          <div class="sv-item">
+            <div class="sv-row">
+              <span class="sv-desc">CBC blood panel</span>
+              <span class="sv-billed">$120</span>
+              <span class="sv-fair">$35</span>
             </div>
-            <span class="savings-pill">Save $85</span>
+            <span class="sv-pill">Save $85</span>
           </div>
-          <div class="savings-divider"></div>
-          <div class="savings-item">
-            <div class="savings-row">
-              <span class="savings-desc">Metabolic panel</span>
-              <span class="savings-billed">$95</span>
-              <span class="savings-fair">$30</span>
+          <div class="sv-divider"></div>
+          <div class="sv-item">
+            <div class="sv-row">
+              <span class="sv-desc">Metabolic panel</span>
+              <span class="sv-billed">$95</span>
+              <span class="sv-fair">$30</span>
             </div>
-            <span class="savings-pill">Save $65</span>
+            <span class="sv-pill">Save $65</span>
           </div>
-          <div class="savings-total">
-            <span class="savings-total-label">Potential savings</span>
-            <span class="savings-total-amount">$315</span>
+          <div class="sv-total">
+            <span class="sv-total-label">Potential savings</span>
+            <span class="sv-total-amount">$315</span>
           </div>
         </div>
       </div>
