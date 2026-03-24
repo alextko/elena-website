@@ -425,6 +425,84 @@
       object-fit: cover;
     }
 
+    /* ========== COMMUNITY PERKS ========== */
+    .community-perks {
+      position: relative;
+      z-index: 10;
+      background: #fff;
+      padding: 80px 32px;
+    }
+
+    .perks-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .perks-inner h2 {
+      font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+      font-weight: 300;
+      letter-spacing: -0.025em;
+      color: #0F1B3D;
+      margin-bottom: 8px;
+    }
+
+    .perks-subtitle {
+      font-size: 1.05rem;
+      font-weight: 300;
+      color: #5a6a82;
+      margin-bottom: 48px;
+    }
+
+    .perks-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      text-align: left;
+    }
+
+    .perk-card {
+      background: #f5f7fb;
+      border-radius: 20px;
+      padding: 32px 28px;
+    }
+
+    .perk-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(15, 27, 61, 0.06);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #2E6BB5;
+      margin-bottom: 20px;
+    }
+
+    .perk-card h3 {
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: #0F1B3D;
+      margin-bottom: 8px;
+    }
+
+    .perk-card p {
+      font-size: 0.88rem;
+      font-weight: 300;
+      color: #5a6a82;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 768px) {
+      .perks-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .community-perks {
+        padding: 60px 20px;
+      }
+    }
+
     /* ========== MANIFESTO ========== */
     .manifesto {
       position: relative;
@@ -1074,7 +1152,7 @@
       <div class="waitlist-flow" id="hero-waitlist-flow">
         <form class="hero-email-form" id="hero-waitlist-form">
           <input type="email" placeholder="Enter your email" required>
-          <button type="submit">Join the Waitlist</button>
+          <button type="submit">Join the Community</button>
         </form>
         <div class="survey-step" id="hero-survey" style="display:none;">
           <p class="survey-label">What are you most interested in? <span class="survey-hint">(pick all that apply)</span></p>
@@ -1087,8 +1165,8 @@
           <button class="survey-submit-btn dark" id="hero-survey-submit">Submit</button>
           <button class="survey-skip-btn" id="hero-survey-skip">Skip</button>
         </div>
-        <div class="hero-success" id="hero-waitlist-success">You're in! We'll be in touch.</div>
-        <p class="waitlist-social-proof" style="font-size: 0.85rem; font-weight: 400; color: rgba(255,255,255,0.6); margin-top: 14px;">Join 500+ people taking control of their healthcare costs</p>
+        <div class="hero-success" id="hero-waitlist-success">Welcome to the community! Check your email for your WhatsApp invite.</div>
+        <p class="waitlist-social-proof" style="font-size: 0.85rem; font-weight: 400; color: rgba(255,255,255,0.6); margin-top: 14px;">Join 500+ founding members navigating healthcare together</p>
       </div>
     </div>
     <div class="scroll-indicator">
@@ -1098,6 +1176,37 @@
       </svg>
     </div>
     <div class="hero-pill"></div>
+  </section>
+
+  <!-- COMMUNITY PERKS -->
+  <section class="community-perks">
+    <div class="perks-inner fade-in">
+      <h2>Your membership starts now.</h2>
+      <p class="perks-subtitle">While we build Elena, founding members get immediate access to:</p>
+      <div class="perks-grid">
+        <div class="perk-card">
+          <div class="perk-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h3>Private WhatsApp community</h3>
+          <p>Connect with people navigating similar healthcare situations. Channels for insurance questions, finding providers, managing costs, and more.</p>
+        </div>
+        <div class="perk-card">
+          <div class="perk-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" stroke-width="1.5"/><path d="M22 6l-10 7L2 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Weekly healthcare newsletter</h3>
+          <p>Actionable tips on navigating the system — how to negotiate bills, find in-network providers, understand your coverage, and avoid surprise costs.</p>
+        </div>
+        <div class="perk-card">
+          <div class="perk-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke="currentColor" stroke-width="1.5"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h3>Monthly live Q&A sessions</h3>
+          <p>Ask your real healthcare questions to navigators and providers. No gatekeeping — just honest answers from people who know the system inside out.</p>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- MANIFESTO -->
@@ -1235,9 +1344,9 @@
 
       <div class="features-inner">
         <div class="features-header fade-in" style="margin-top: 80px;">
-          <h2>Your AI healthcare assistant.</h2>
+          <h2>Join the Elena community.</h2>
           <p style="color: #5a6a82; font-size: 1.05rem; font-weight: 300; margin-top: 12px; max-width: 540px; margin-left: auto; margin-right: auto; line-height: 1.7;">
-            An AI that manages your healthcare for you — calls doctors, compares prices, decodes your insurance, and keeps your whole family on track.
+            Get immediate access to our WhatsApp community, weekly newsletter, and live Q&A sessions — plus early access when Elena launches.
           </p>
         </div>
 
@@ -1245,7 +1354,7 @@
           <div class="waitlist-flow" id="bottom-waitlist-flow">
             <form class="email-form" id="waitlist-form">
               <input type="email" placeholder="Enter your email" required>
-              <button type="submit">Join the Waitlist</button>
+              <button type="submit">Join the Community</button>
             </form>
             <div class="survey-step" id="bottom-survey" style="display:none;">
               <p class="survey-label light">What are you most interested in? <span class="survey-hint">(pick all that apply)</span></p>
@@ -1258,7 +1367,7 @@
               <button class="survey-submit-btn light" id="bottom-survey-submit">Submit</button>
               <button class="survey-skip-btn light" id="bottom-survey-skip">Skip</button>
             </div>
-            <div class="success-message" id="waitlist-success">You're in! Check your email for a beta invite.</div>
+            <div class="success-message" id="waitlist-success">Welcome to the community! Check your email for your WhatsApp invite.</div>
           </div>
         </div>
       </div>
