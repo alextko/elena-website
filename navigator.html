@@ -1386,24 +1386,26 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      max-width: 300px;
     }
 
     .ins-track {
       overflow: hidden;
-      border-radius: 24px;
+      border-radius: 20px;
       box-shadow: 0 8px 16px rgba(0,0,0,0.18);
+      position: relative;
     }
 
     .ins-slider {
       display: flex;
       width: 300%;
-      transition: transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .ins-card {
       position: relative;
       aspect-ratio: 1.6;
-      padding: 24px;
+      padding: 18px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -1434,19 +1436,19 @@
     }
 
     .ins-type {
-      font-size: 20px;
+      font-size: 16px;
       font-weight: 800;
       letter-spacing: 0.5px;
     }
 
     .ins-plan {
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 700;
-      margin-top: 4px;
+      margin-top: 2px;
     }
 
     .ins-provider {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 600;
       margin-top: 1px;
     }
@@ -1454,11 +1456,11 @@
     .ins-id-row {
       display: flex;
       flex-direction: row;
-      gap: 28px;
+      gap: 20px;
     }
 
     .ins-field-label {
-      font-size: 9px;
+      font-size: 8px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1px;
@@ -1466,14 +1468,21 @@
     }
 
     .ins-field-value {
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 600;
       letter-spacing: 0.5px;
     }
 
     .ins-copay-value {
-      font-size: 12px;
+      font-size: 10px;
       font-weight: 600;
+    }
+
+    .ins-logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      object-fit: contain;
     }
 
     /* Dark card text colors */
@@ -2542,6 +2551,7 @@
                 <div class="ins-gloss"></div>
                 <div class="ins-top">
                   <span class="ins-type">Health</span>
+                  <img class="ins-logo" src="https://img.logo.dev/bcbs.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="">
                 </div>
                 <div>
                   <div class="ins-plan">Blue Cross Blue Shield PPO</div>
@@ -2567,6 +2577,7 @@
                 <div class="ins-gloss"></div>
                 <div class="ins-top">
                   <span class="ins-type">Dental</span>
+                  <img class="ins-logo" src="https://img.logo.dev/deltadental.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="">
                 </div>
                 <div>
                   <div class="ins-plan">Delta Dental Premier</div>
@@ -2592,6 +2603,7 @@
                 <div class="ins-gloss"></div>
                 <div class="ins-top">
                   <span class="ins-type">Vision</span>
+                  <img class="ins-logo" src="https://img.logo.dev/vsp.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="">
                 </div>
                 <div>
                   <div class="ins-plan">VSP Choice Plan</div>
