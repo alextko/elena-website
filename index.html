@@ -1024,6 +1024,23 @@
       border-top: 1px solid rgba(255, 255, 255, 0.1);
     }
 
+    .footer-links {
+      display: flex;
+      gap: 20px;
+    }
+
+    .footer-links a {
+      color: rgba(255, 255, 255, 0.45);
+      text-decoration: none;
+      font-size: 0.78rem;
+      font-weight: 400;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
     .footer-fine-print {
       max-width: 960px;
       margin: 16px auto 0;
@@ -1356,17 +1373,13 @@
     <div class="footer-inner">
       <div class="footer-brand">elena</div>
       <p class="footer-tagline">Put healthcare on autopilot.</p>
-      <div class="footer-resources" style="display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:24px;">
-        <a href="/blog/medical-bill-errors" style="font-size:0.82rem;color:rgba(255,255,255,0.4);text-decoration:none;">Medical Bill Errors</a>
-        <a href="/blog/47-minutes-on-hold" style="font-size:0.82rem;color:rgba(255,255,255,0.4);text-decoration:none;">47 Minutes on Hold</a>
-        <a href="/blog/mri-cost-comparison" style="font-size:0.82rem;color:rgba(255,255,255,0.4);text-decoration:none;">MRI Cost Comparison</a>
-        <a href="/blog/what-eob-means" style="font-size:0.82rem;color:rgba(255,255,255,0.4);text-decoration:none;">What Your EOB Means</a>
-        <a href="/blog/managing-parents-healthcare" style="font-size:0.82rem;color:rgba(255,255,255,0.4);text-decoration:none;">Managing Parent's Healthcare</a>
-        <a href="/blog/health-insurance-at-26" style="font-size:0.82rem;color:rgba(255,255,255,0.4);text-decoration:none;">Insurance at 26</a>
-      </div>
     </div>
     <div class="footer-bottom">
       <span>&copy; 2026 Elena AI. All rights reserved.</span>
+      <div class="footer-links">
+        <a href="/blog">Resources</a>
+        <a href="https://www.tiktok.com/@elenahealth" target="_blank" rel="noopener">TikTok</a>
+      </div>
       <span>Made with love in NYC</span>
     </div>
     <div class="footer-fine-print">
