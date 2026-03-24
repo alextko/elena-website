@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elena — Upload Documents</title>
+  <link rel="icon" type="image/png" href="../images/favicon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #F7F6F2;
+      color: #0F1B3D;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #0F1B3D;
+      text-decoration: none;
+      display: block;
+      margin-bottom: 48px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #0F1B3D;
+    }
+
+    .subtitle {
+      font-size: 0.95rem;
+      color: #8E8E93;
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
+
+    /* Auth form */
+    .auth-section { display: block; }
+    .app-section { display: none; }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #8E8E93;
+      margin-bottom: 6px;
+    }
+
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid #E5E5EA;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: inherit;
+      color: #0F1B3D;
+      background: #FFFFFF;
+      outline: none;
+      margin-bottom: 16px;
+      transition: border-color 0.2s;
+    }
+
+    input:focus {
+      border-color: #0F1B3D;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: #0F1B3D;
+      color: #FFFFFF;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+
+    .error-msg {
+      color: #EF4444;
+      font-size: 0.85rem;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    .error-msg.visible { display: block; }
+
+    /* Upload area */
+    .drop-zone {
+      border: 2px dashed #E5E5EA;
+      border-radius: 16px;
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      margin-bottom: 24px;
+      background: #FFFFFF;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.dragover {
+      border-color: #0F1B3D;
+      background: rgba(15, 27, 61, 0.03);
+    }
+
+    .drop-zone-icon {
+      font-size: 2rem;
+      margin-bottom: 12px;
+    }
+
+    .drop-zone-text {
+      font-size: 0.95rem;
+      color: #8E8E93;
+      line-height: 1.5;
+    }
+
+    .drop-zone-text strong {
+      color: #0F1B3D;
+    }
+
+    .formats {
+      font-size: 0.8rem;
+      color: #AEAEB2;
+      margin-top: 8px;
+    }
+
+    /* File list */
+    .file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: #FFFFFF;
+      border-radius: 12px;
+      border: 1px solid #E5E5EA;
+    }
+
+    .file-icon {
+      font-size: 1.2rem;
+    }
+
+    .file-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-name {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #0F1B3D;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-status {
+      font-size: 0.8rem;
+      color: #8E8E93;
+      margin-top: 2px;
+    }
+
+    .file-status.success { color: #34C759; }
+    .file-status.error { color: #EF4444; }
+    .file-status.processing { color: #0F1B3D; }
+
+    .file-remove {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      color: #AEAEB2;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .file-remove:hover { color: #EF4444; }
+
+    /* Progress bar */
+    .progress-bar {
+      height: 4px;
+      background: #E5E5EA;
+      border-radius: 2px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #0F1B3D;
+      border-radius: 2px;
+      transition: width 0.3s;
+    }
+
+    /* User header */
+    .user-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    .user-email {
+      font-size: 0.85rem;
+      color: #8E8E93;
+    }
+
+    .sign-out {
+      background: none;
+      border: none;
+      font-size: 0.85rem;
+      color: #8E8E93;
+      cursor: pointer;
+      font-family: inherit;
+      text-decoration: underline;
+    }
+
+    .sign-out:hover { color: #0F1B3D; }
+
+    /* Doc list */
+    .existing-docs {
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 1px solid #E5E5EA;
+    }
+
+    .existing-docs h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .doc-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid #F2F2F7;
+    }
+
+    .doc-title {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #0F1B3D;
+    }
+
+    .doc-type {
+      font-size: 0.8rem;
+      color: #8E8E93;
+      text-transform: capitalize;
+    }
+
+    .doc-date {
+      font-size: 0.8rem;
+      color: #AEAEB2;
+      margin-left: auto;
+    }
+
+    .empty-docs {
+      font-size: 0.9rem;
+      color: #AEAEB2;
+      text-align: center;
+      padding: 24px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <a href="../" class="logo">elena</a>
+
+  <!-- Auth Section -->
+  <div class="auth-section" id="auth-section">
+    <h1>Upload your documents</h1>
+    <p class="subtitle">Sign in with your Elena account to upload medical documents, EOBs, lab results, and more.</p>
+
+    <div class="error-msg" id="auth-error"></div>
+
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
+
+    <label for="password">Password</label>
+    <input type="password" id="password" placeholder="Your password" autocomplete="current-password">
+
+    <button class="btn btn-primary" id="sign-in-btn" onclick="handleSignIn()">Sign in</button>
+  </div>
+
+  <!-- App Section (after auth) -->
+  <div class="app-section" id="app-section">
+    <div class="user-header">
+      <span class="user-email" id="user-email"></span>
+      <button class="sign-out" onclick="handleSignOut()">Sign out</button>
+    </div>
+
+    <h1>Upload documents</h1>
+    <p class="subtitle">Drag and drop files or click to browse. Accepted: PDF, JPEG, PNG, HEIC.</p>
+
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <div class="drop-zone-icon">📄</div>
+      <div class="drop-zone-text">
+        <strong>Choose files</strong> or drag them here
+      </div>
+      <div class="formats">PDF, JPEG, PNG, GIF, WebP, HEIC</div>
+    </div>
+    <input type="file" id="file-input" multiple accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.heic,.heif" style="display:none" onchange="handleFileSelect(event)">
+
+    <div class="file-list" id="file-list"></div>
+
+    <!-- Existing documents -->
+    <div class="existing-docs" id="existing-docs">
+      <h2>Your documents</h2>
+      <div id="doc-list"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  const SUPABASE_URL = 'https://livbrrqqxnvnxhggguig.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpdmJycnFxeG52bnhoZ2dndWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Njc1MzYsImV4cCI6MjA4NzA0MzUzNn0.MkOKc7MWq5zoR3OY7wZgOsPwvjjKSij0ln1nF6inxP0';
+  const API_BASE = 'https://elena-backend-production-production.up.railway.app';
+
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let accessToken = null;
+
+  // Check existing session on load
+  (async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      accessToken = session.access_token;
+      showApp(session.user.email);
+    }
+  })();
+
+  async function handleSignIn() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const errEl = document.getElementById('auth-error');
+    const btn = document.getElementById('sign-in-btn');
+
+    if (!email || !password) {
+      errEl.textContent = 'Please enter your email and password.';
+      errEl.classList.add('visible');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Signing in...';
+    errEl.classList.remove('visible');
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      errEl.textContent = error.message;
+      errEl.classList.add('visible');
+      btn.disabled = false;
+      btn.textContent = 'Sign in';
+      return;
+    }
+
+    accessToken = data.session.access_token;
+    showApp(data.user.email);
+  }
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    accessToken = null;
+    document.getElementById('auth-section').style.display = 'block';
+    document.getElementById('app-section').style.display = 'none';
+  }
+
+  function showApp(email) {
+    document.getElementById('auth-section').style.display = 'none';
+    document.getElementById('app-section').style.display = 'block';
+    document.getElementById('user-email').textContent = email;
+    loadExistingDocs();
+  }
+
+  // Drag and drop
+  const dropZone = document.getElementById('drop-zone');
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
+  });
+
+  function handleFileSelect(e) {
+    handleFiles(e.target.files);
+    e.target.value = '';
+  }
+
+  async function handleFiles(fileList) {
+    for (const file of fileList) {
+      await uploadFile(file);
+    }
+  }
+
+  async function uploadFile(file) {
+    const listEl = document.getElementById('file-list');
+    const id = 'file-' + Date.now() + Math.random().toString(36).slice(2);
+
+    // Add to list
+    const item = document.createElement('div');
+    item.className = 'file-item';
+    item.id = id;
+    item.innerHTML = `
+      <span class="file-icon">📄</span>
+      <div class="file-info">
+        <div class="file-name">${file.name}</div>
+        <div class="file-status processing">Uploading...</div>
+        <div class="progress-bar"><div class="progress-fill" style="width: 10%"></div></div>
+      </div>
+    `;
+    listEl.prepend(item);
+
+    try {
+      // Step 1: Get presigned URL
+      const sessionId = 'web-' + Date.now();
+      const urlRes = await fetch(`${API_BASE}/documents/upload-url`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ session_id: sessionId, filename: file.name }),
+      });
+
+      if (!urlRes.ok) throw new Error('Failed to get upload URL');
+      const { upload_url, key, content_type, required_headers } = await urlRes.json();
+
+      updateFileStatus(id, 'Uploading to cloud...', 'processing', 40);
+
+      // Step 2: Upload to cloud
+      const uploadRes = await fetch(upload_url, {
+        method: 'PUT',
+        headers: { 'Content-Type': content_type, ...(required_headers || {}) },
+        body: file,
+      });
+
+      if (!uploadRes.ok) throw new Error('Upload to cloud failed');
+
+      updateFileStatus(id, 'Processing document...', 'processing', 70);
+
+      // Step 3: Create structured document
+      const docRes = await fetch(`${API_BASE}/structured-documents/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          s3_key: key,
+          filename: file.name,
+          content_type: file.type || 'application/octet-stream',
+          care_visit_id: null,
+        }),
+      });
+
+      if (!docRes.ok) {
+        const errData = await docRes.json().catch(() => ({}));
+        throw new Error(errData.detail || 'Processing failed');
+      }
+
+      const result = await docRes.json();
+      const title = result.document.doc_title || file.name;
+      const type = result.document.doc_type.replace(/_/g, ' ');
+
+      updateFileStatus(id, `${title} (${type})`, 'success', 100);
+
+      // Refresh doc list
+      loadExistingDocs();
+
+    } catch (err) {
+      updateFileStatus(id, err.message, 'error', 0);
+    }
+  }
+
+  function updateFileStatus(id, text, cls, progress) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const status = el.querySelector('.file-status');
+    status.textContent = text;
+    status.className = 'file-status ' + cls;
+    const fill = el.querySelector('.progress-fill');
+    if (progress > 0) {
+      fill.style.width = progress + '%';
+    } else {
+      fill.parentElement.style.display = 'none';
+    }
+    if (cls === 'success' || cls === 'error') {
+      setTimeout(() => { fill.parentElement.style.display = 'none'; }, 1000);
+    }
+  }
+
+  async function loadExistingDocs() {
+    const listEl = document.getElementById('doc-list');
+    try {
+      const res = await fetch(`${API_BASE}/structured-documents?profile_only=true`, {
+        headers: { 'Authorization': `Bearer ${accessToken}` },
+      });
+      if (!res.ok) return;
+      const docs = await res.json();
+
+      if (docs.length === 0) {
+        listEl.innerHTML = '<div class="empty-docs">No documents uploaded yet.</div>';
+        return;
+      }
+
+      listEl.innerHTML = docs.map(doc => `
+        <div class="doc-row">
+          <span class="file-icon">📄</span>
+          <div>
+            <div class="doc-title">${doc.doc_title || doc.filename}</div>
+            <div class="doc-type">${doc.doc_type.replace(/_/g, ' ')}</div>
+          </div>
+          <span class="doc-date">${doc.created_at.slice(0, 10)}</span>
+        </div>
+      `).join('');
+    } catch {
+      listEl.innerHTML = '<div class="empty-docs">Could not load documents.</div>';
+    }
+  }
+
+  // Enter key submits login
+  document.getElementById('password').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleSignIn();
+  });
+</script>
+
+</body>
+</html>
