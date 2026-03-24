@@ -1053,6 +1053,206 @@
       color: #0F1B3D;
     }
 
+    /* Visit detail modal — from history.tsx */
+    .el-modal {
+      background: #FFFFFF;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    }
+
+    .el-modal-header {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px 16px;
+    }
+
+    .el-modal-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: #0F1B3D;
+      flex: 1;
+    }
+
+    .el-modal-close {
+      width: 36px;
+      height: 36px;
+      border-radius: 18px;
+      background: #F7F6F2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #8E8E93;
+      border: none;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .el-modal-context {
+      padding: 0 24px 4px;
+    }
+
+    .el-modal-context-date {
+      font-size: 15px;
+      color: #8E8E93;
+    }
+
+    .el-modal-context-location {
+      font-size: 13px;
+      color: #AEAEB2;
+      margin-top: 2px;
+    }
+
+    .el-modal-actions {
+      display: flex;
+      flex-direction: row;
+      gap: 12px;
+      padding: 12px 24px 0;
+    }
+
+    .el-modal-action-btn {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 20px;
+      background: #F7F6F2;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      color: #0F1B3D;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .el-modal-section {
+      padding: 0 24px;
+      margin-bottom: 28px;
+    }
+
+    .el-modal-section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #0F1B3D;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+
+    .el-modal-summary {
+      font-size: 15px;
+      line-height: 22px;
+      color: #0F1B3D;
+    }
+
+    /* Labs card — from history.tsx */
+    .el-labs-card {
+      background: #FFFFFF;
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .el-lab-row {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      padding: 3px 0;
+    }
+
+    .el-lab-name {
+      font-size: 13px;
+      color: #8E8E93;
+    }
+
+    .el-lab-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #0F1B3D;
+    }
+
+    .el-lab-low { color: #2563EB; }
+    .el-lab-high { color: #DC2626; }
+
+    /* Booking confirmation card — from index.tsx */
+    .el-confirmation {
+      align-self: flex-start;
+      max-width: 90%;
+      background: #FFFFFF;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      margin: 4px 0;
+    }
+
+    .el-confirmation-header {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 14px 8px;
+      border-bottom: 1px solid #F2F2F7;
+    }
+
+    .el-confirmation-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 5px;
+      border: 2px solid;
+      background: transparent;
+    }
+
+    .el-confirmation-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .el-confirmation-body {
+      padding: 12px 14px;
+    }
+
+    .el-confirmation-type {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0F1B3D;
+    }
+
+    .el-confirmation-doctor {
+      font-size: 14px;
+      color: #8E8E93;
+      margin-top: 2px;
+    }
+
+    .el-confirmation-detail {
+      font-size: 13px;
+      font-weight: 600;
+      color: #0F1B3D;
+      margin-top: 6px;
+    }
+
+    .el-confirmation-reason {
+      font-size: 13px;
+      color: #AEAEB2;
+      margin-top: 2px;
+    }
+
+    /* Star rating row */
+    .el-star-row {
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .el-star-interactive {
+      font-size: 28px;
+      cursor: pointer;
+    }
+
     /* Action preview — from ActionPreviewCard.tsx */
     .el-action-card {
       display: flex;
@@ -1820,7 +2020,10 @@
                 <div class="el-timeline-date-row">
                   <span class="el-timeline-date">Thursday, Apr 10, 2026</span>
                 </div>
-                <div class="el-timeline-type">Dermatology</div>
+                <div style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px;">
+                  <span class="el-timeline-type">Dermatology</span>
+                  <span class="el-booked-badge" style="background: #C47A5A;">Booked</span>
+                </div>
                 <div class="el-timeline-doctor">Dr. James Park</div>
                 <div class="el-timeline-location">Park Dermatology · Midtown</div>
                 <div class="el-timeline-summary">Follow-up skin check, review biopsy results</div>
@@ -1829,7 +2032,7 @@
           </div>
           <div class="el-timeline-entry">
             <div class="el-timeline-rail">
-              <div class="el-timeline-dot"></div>
+              <div class="el-timeline-dot" style="background: #0F1B3D;"></div>
               <div class="el-timeline-line"></div>
             </div>
             <div class="el-timeline-card">
@@ -1848,7 +2051,27 @@
           </div>
           <div class="el-timeline-entry">
             <div class="el-timeline-rail">
-              <div class="el-timeline-dot"></div>
+              <div class="el-timeline-dot" style="background: #7A9E8E;"></div>
+              <div class="el-timeline-line"></div>
+            </div>
+            <div class="el-timeline-card">
+              <div class="el-timeline-card-body">
+                <div class="el-timeline-date-row">
+                  <span class="el-timeline-date">Wednesday, Feb 5, 2026</span>
+                </div>
+                <div class="el-timeline-type">Dentist</div>
+                <div class="el-timeline-doctor">Dr. Lisa Wong</div>
+                <div class="el-timeline-location">Smile Dental · East Village</div>
+                <div class="el-timeline-summary">Routine cleaning. No cavities. Next visit in 6 months.</div>
+                <div class="el-timeline-rating-row">
+                  <span class="el-star el-star-on">★</span><span class="el-star el-star-on">★</span><span class="el-star el-star-on">★</span><span class="el-star el-star-on">★</span><span class="el-star el-star-on">★</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="el-timeline-entry">
+            <div class="el-timeline-rail">
+              <div class="el-timeline-dot" style="background: #0F1B3D;"></div>
             </div>
             <div class="el-timeline-card">
               <div class="el-timeline-card-body">
@@ -1911,29 +2134,80 @@
             </div>
           </div>
           <div class="el-msg-user">Book the Thursday at 2pm</div>
-          <div class="el-msg-elena">Done! I've added it to your calendar. I'll remind you the day before.</div>
+          <div class="el-confirmation">
+            <div class="el-confirmation-header">
+              <div class="el-confirmation-dot" style="border-color: #34C759;"></div>
+              <span class="el-confirmation-title" style="color: #34C759;">Booked</span>
+            </div>
+            <div class="el-confirmation-body">
+              <div class="el-confirmation-type">Dermatology</div>
+              <div class="el-confirmation-doctor">Dr. James Park</div>
+              <div class="el-confirmation-detail">Thursday, Apr 10, 2026 at 2:00 PM</div>
+              <div class="el-confirmation-reason">Skin check follow-up</div>
+            </div>
+          </div>
+          <div class="el-msg-elena">All set! I've added it to your calendar. I'll remind you the day before.</div>
         </div>
       </div>
     </div>
 
-    <!-- Spotlight 3: Visit Notes -->
+    <!-- Spotlight 3: Visit Detail Modal -->
     <div class="spotlight fade-in">
       <div class="spotlight-text">
         <h3>Never forget what the doctor said</h3>
-        <p>Elena records your visits and turns them into organized notes with key points and action items you can actually follow.</p>
+        <p>Tap any visit to see the full picture — AI-generated notes, lab results, documents, and your own rating. Everything in one place.</p>
       </div>
       <div class="spotlight-ui">
-        <div class="el-notes-card">
-          <div class="el-notes-meta">14 min recording · Annual Physical with Dr. Chen</div>
-          <div class="el-notes-section-title">Key Points</div>
-          <div class="el-notes-bullet"><div class="el-notes-dot"></div><span>Vitamin D deficiency diagnosed — level at 18 ng/mL (normal is 30–100)</span></div>
-          <div class="el-notes-bullet"><div class="el-notes-dot"></div><span>Started Vitamin D3 2000 IU daily supplementation</span></div>
-          <div class="el-notes-bullet"><div class="el-notes-dot"></div><span>Thyroid stable — TSH 2.1, continuing Levothyroxine 50 mcg</span></div>
-          <div class="el-notes-bullet"><div class="el-notes-dot"></div><span>Cholesterol and A1C both normal, no dietary changes needed</span></div>
-          <div class="el-notes-section-title">Action Items</div>
-          <div class="el-notes-bullet"><span class="el-notes-check">☐</span><span>Take Vitamin D3 2000 IU daily with food</span></div>
-          <div class="el-notes-bullet"><span class="el-notes-check">☐</span><span>Schedule follow-up blood work in 3 months</span></div>
-          <div class="el-notes-bullet"><span class="el-notes-check">☐</span><span>Continue Levothyroxine 50 mcg every morning</span></div>
+        <div class="el-modal">
+          <div class="el-modal-header">
+            <span class="el-modal-title">Annual Physical</span>
+            <button class="el-modal-close">✕</button>
+          </div>
+          <div class="el-modal-context">
+            <div class="el-modal-context-date">Friday, Jan 10, 2026 · Dr. Sarah Chen</div>
+            <div class="el-modal-context-location">Chen Family Medicine · Upper East Side</div>
+          </div>
+          <div class="el-modal-actions">
+            <button class="el-modal-action-btn">📝 Edit visit</button>
+            <button class="el-modal-action-btn">🎤 Record notes</button>
+          </div>
+          <div class="el-modal-section">
+            <div class="el-modal-section-title">Summary</div>
+            <div class="el-modal-summary">Annual physical completed. Vitamin D deficiency diagnosed — started supplementation. Thyroid stable on current medication. Cholesterol and A1C both normal.</div>
+          </div>
+          <div class="el-modal-section">
+            <div class="el-modal-section-title">Lab Results</div>
+            <div class="el-labs-card">
+              <div class="el-lab-row"><span class="el-lab-name">Vitamin D</span><span class="el-lab-value el-lab-low">18 ng/mL ↓</span></div>
+              <div class="el-lab-row"><span class="el-lab-name">TSH</span><span class="el-lab-value">2.1 mIU/L</span></div>
+              <div class="el-lab-row"><span class="el-lab-name">Cholesterol</span><span class="el-lab-value">185 mg/dL</span></div>
+              <div class="el-lab-row"><span class="el-lab-name">A1C</span><span class="el-lab-value">5.2%</span></div>
+            </div>
+          </div>
+          <div class="el-modal-section">
+            <div class="el-modal-section-title">Visit Notes</div>
+            <div class="el-notes-card" style="box-shadow: none; background: #F8F9FA;">
+              <div class="el-notes-meta">14 min recording</div>
+              <div class="el-notes-section-title" style="font-size: 14px; margin-top: 0;">Key Points</div>
+              <div class="el-notes-bullet"><div class="el-notes-dot"></div><span>Vitamin D deficiency diagnosed — level at 18 ng/mL (normal is 30–100)</span></div>
+              <div class="el-notes-bullet"><div class="el-notes-dot"></div><span>Started Vitamin D3 2000 IU daily supplementation</span></div>
+              <div class="el-notes-bullet"><div class="el-notes-dot"></div><span>Thyroid stable — TSH 2.1, continuing Levothyroxine 50 mcg</span></div>
+              <div class="el-notes-section-title" style="font-size: 14px;">Action Items</div>
+              <div class="el-notes-bullet"><span class="el-notes-check">☐</span><span>Take Vitamin D3 2000 IU daily with food</span></div>
+              <div class="el-notes-bullet"><span class="el-notes-check">☐</span><span>Schedule follow-up blood work in 3 months</span></div>
+              <div class="el-notes-bullet"><span class="el-notes-check">☐</span><span>Continue Levothyroxine 50 mcg every morning</span></div>
+            </div>
+          </div>
+          <div class="el-modal-section">
+            <div class="el-modal-section-title">Rate Dr. Chen</div>
+            <div class="el-star-row">
+              <span class="el-star-interactive el-star-on">★</span>
+              <span class="el-star-interactive el-star-on">★</span>
+              <span class="el-star-interactive el-star-on">★</span>
+              <span class="el-star-interactive el-star-on">★</span>
+              <span class="el-star-interactive el-star-off">★</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
