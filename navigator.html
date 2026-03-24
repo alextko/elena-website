@@ -553,23 +553,16 @@
 
     .spotlight {
       max-width: 960px;
-      margin: 0 auto 80px;
+      margin: 0 auto 100px;
       display: flex;
       align-items: center;
       gap: 60px;
     }
 
-    .spotlight:last-child {
-      margin-bottom: 0;
-    }
+    .spotlight:last-child { margin-bottom: 0; }
+    .spotlight-reverse { flex-direction: row-reverse; }
 
-    .spotlight-reverse {
-      flex-direction: row-reverse;
-    }
-
-    .spotlight-text {
-      flex: 1;
-    }
+    .spotlight-text { flex: 1; }
 
     .spotlight-text h3 {
       font-size: clamp(1.4rem, 2.5vw, 1.8rem);
@@ -586,240 +579,381 @@
       line-height: 1.7;
     }
 
-    .spotlight-mock {
+    .spotlight-ui {
+      flex-shrink: 0;
+      width: 380px;
+    }
+
+    /* ---- Elena App UI Components ---- */
+
+    /* Timeline */
+    .el-timeline { display: flex; flex-direction: column; }
+
+    .el-timeline-entry {
+      display: flex;
+      gap: 0;
+    }
+
+    .el-timeline-rail {
+      width: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       flex-shrink: 0;
     }
 
-    /* Mini phone mockup */
-    .mock-phone {
-      width: 260px;
-      background: #1a1a1c;
-      border-radius: 36px;
-      padding: 8px;
-      box-shadow: 0 25px 60px rgba(0,0,0,0.18), 0 8px 20px rgba(0,0,0,0.12);
+    .el-timeline-line {
+      width: 2px;
+      flex: 1;
+      background: #93B5E1;
     }
 
-    .mock-screen {
-      background: #F7F6F2;
-      border-radius: 28px;
-      overflow: hidden;
-      min-height: 380px;
+    .el-timeline-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 6px;
+      background: #2563EB;
+      flex-shrink: 0;
     }
 
-    .mock-header {
-      padding: 20px 20px 12px;
+    .el-timeline-dot-future {
+      background: transparent;
+      border: 2px solid #2563EB;
+    }
+
+    .el-timeline-card {
       background: #fff;
-      border-bottom: 1px solid #E5E5EA;
+      border-radius: 14px;
+      padding: 14px;
+      margin-left: 10px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      flex: 1;
     }
 
-    .mock-header-title {
-      font-size: 1.1rem;
+    .el-timeline-date {
+      font-size: 12px;
       font-weight: 600;
+      color: #6B9BD2;
+      margin-bottom: 4px;
+    }
+
+    .el-timeline-type {
+      font-size: 15px;
+      font-weight: 700;
       color: #0F1B3D;
     }
 
-    /* Timeline mockup */
-    .mock-timeline {
-      padding: 16px;
-    }
-
-    .mock-visit {
-      display: flex;
-      gap: 12px;
-      padding: 14px 0;
-      border-bottom: 1px solid #E5E5EA;
-    }
-
-    .mock-visit:last-child {
-      border-bottom: none;
-    }
-
-    .mock-visit-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      margin-top: 4px;
-      flex-shrink: 0;
-    }
-
-    .mock-visit-content {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .mock-visit-type {
-      font-size: 0.7rem;
-      font-weight: 500;
+    .el-timeline-doctor {
+      font-size: 13px;
       color: #8E8E93;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+      margin-top: 2px;
     }
 
-    .mock-visit-name {
-      font-size: 0.88rem;
-      font-weight: 500;
-      color: #1C1C1E;
-    }
-
-    .mock-visit-date {
-      font-size: 0.75rem;
+    .el-timeline-summary {
+      font-size: 13px;
       color: #8E8E93;
-    }
-
-    .mock-visit-tags {
-      display: flex;
-      gap: 6px;
+      line-height: 18px;
       margin-top: 6px;
     }
 
-    .mock-tag {
-      font-size: 0.65rem;
-      font-weight: 500;
-      color: #0F1B3D;
-      background: rgba(15, 27, 61, 0.06);
-      padding: 3px 8px;
-      border-radius: 6px;
-    }
-
-    /* Calendar mockup */
-    .mock-calendar-strip {
+    .el-timeline-stars {
       display: flex;
-      gap: 4px;
-      padding: 12px 16px;
-      justify-content: center;
+      gap: 0;
+      margin-top: 6px;
     }
 
-    .mock-cal-day {
+    .el-star { font-size: 12px; }
+    .el-star-on { color: #F5A623; }
+    .el-star-off { color: #AEAEB2; }
+
+    /* Chat conversation */
+    .el-chat {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      padding: 8px 12px;
-      border-radius: 12px;
-    }
-
-    .mock-cal-label {
-      font-size: 0.65rem;
-      color: #8E8E93;
-      font-weight: 500;
-    }
-
-    .mock-cal-num {
-      font-size: 0.88rem;
-      font-weight: 500;
-      color: #1C1C1E;
-    }
-
-    .mock-cal-today {
-      background: #0F1B3D;
-      border-radius: 12px;
-    }
-
-    .mock-cal-today .mock-cal-label,
-    .mock-cal-today .mock-cal-num {
-      color: #fff;
-    }
-
-    .mock-cal-has-event {
-      position: relative;
-    }
-
-    .mock-cal-has-event::after {
-      content: '';
-      width: 5px;
-      height: 5px;
-      background: #E8956D;
-      border-radius: 50%;
-      position: absolute;
-      bottom: 4px;
-    }
-
-    /* Todos mockup */
-    .mock-todos {
-      padding: 12px 16px;
-    }
-
-    .mock-todo {
-      display: flex;
       gap: 12px;
-      align-items: flex-start;
-      padding: 12px;
+    }
+
+    .el-msg {
+      max-width: 90%;
+      padding: 14px 18px;
+      font-size: 15px;
+      line-height: 22px;
+      font-weight: 600;
+    }
+
+    .el-msg-user {
+      align-self: flex-end;
       background: #fff;
-      border-radius: 12px;
+      color: #0F1B3D;
+      border-radius: 20px 20px 6px 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .el-msg-elena {
+      align-self: flex-start;
+      background: #fff;
+      color: #0F1B3D;
+      border-radius: 20px 20px 20px 6px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    /* Doctor card (generative UI) */
+    .el-doctor-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      margin-top: 8px;
+      align-self: flex-start;
+      max-width: 90%;
+    }
+
+    .el-doctor-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .el-doctor-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0F1B3D;
+    }
+
+    .el-doctor-practice {
+      font-size: 12px;
+      color: #8E8E93;
+      margin-top: 1px;
+    }
+
+    .el-doctor-specialty {
+      font-size: 13px;
+      color: #1C1C1E;
+      margin-top: 2px;
+    }
+
+    .el-doctor-rating {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      margin-left: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #F5A623;
+    }
+
+    .el-doctor-rating-count {
+      font-weight: 400;
+      color: #8E8E93;
+      font-size: 11px;
+    }
+
+    .el-book-btn {
+      background: #0F1B3D;
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      padding: 7px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .el-doctor-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .el-badge-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .el-badge-innetwork {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 11px;
+      color: #1B7A3D;
+      font-weight: 500;
+    }
+
+    .el-badge-facility {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: #E8F5EC;
+      color: #1B7A3D;
+    }
+
+    .el-badge-distance {
+      font-size: 11px;
+      color: #8E8E93;
+    }
+
+    .el-price {
+      text-align: right;
+    }
+
+    .el-price-amount {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0F1B3D;
+    }
+
+    .el-price-label {
+      font-size: 10px;
+      color: #8E8E93;
+    }
+
+    /* Savings card */
+    .el-savings-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      margin-top: 8px;
+      align-self: flex-start;
+      max-width: 90%;
+      width: 100%;
+    }
+
+    .el-savings-header {
+      display: flex;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #F2F2F7;
       margin-bottom: 8px;
     }
 
-    .mock-todo-check {
-      width: 22px;
-      height: 22px;
-      border-radius: 6px;
-      border: 2px solid #E5E5EA;
-      flex-shrink: 0;
+    .el-savings-header span {
+      font-size: 12px;
+      font-weight: 600;
+      color: #8E8E93;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .el-savings-header .col-desc { flex: 2; }
+    .el-savings-header .col-price { flex: 1; text-align: right; }
+
+    .el-savings-row {
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: 0.7rem;
-      color: transparent;
+      padding: 6px 0;
+      border-bottom: 1px solid #F2F2F7;
     }
 
-    .mock-checked {
-      background: #0F1B3D;
-      border-color: #0F1B3D;
-      color: #fff;
-    }
+    .el-savings-row:last-of-type { border-bottom: none; }
 
-    .mock-todo-done {
-      opacity: 0.5;
-    }
+    .el-savings-desc { flex: 2; font-size: 14px; color: #1C1C1E; }
 
-    .mock-todo-text {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .mock-todo-title {
-      font-size: 0.82rem;
-      font-weight: 500;
-      color: #1C1C1E;
-    }
-
-    .mock-todo-sub {
-      font-size: 0.7rem;
+    .el-savings-billed {
+      flex: 1;
+      text-align: right;
+      font-size: 14px;
       color: #8E8E93;
+      text-decoration: line-through;
     }
 
-    /* Chat mockup */
-    .mock-chat {
-      padding: 16px;
+    .el-savings-fair {
+      flex: 1;
+      text-align: right;
+      font-size: 14px;
+      font-weight: 700;
+      color: #1B7A3D;
+    }
+
+    .el-savings-pill {
+      display: inline-block;
+      background: #E8F5EC;
+      color: #1B7A3D;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 12px;
+      margin-top: 4px;
+    }
+
+    .el-savings-total {
       display: flex;
-      flex-direction: column;
-      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #E5E5EA;
     }
 
-    .mock-msg {
-      max-width: 85%;
-      padding: 10px 14px;
-      border-radius: 16px;
-      font-size: 0.78rem;
-      line-height: 1.5;
-      font-weight: 400;
+    .el-savings-total-label {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0F1B3D;
     }
 
-    .mock-msg-user {
-      align-self: flex-end;
-      background: #0F1B3D;
-      color: #fff;
-      border-bottom-right-radius: 4px;
+    .el-savings-total-amount {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1B7A3D;
     }
 
-    .mock-msg-elena {
-      align-self: flex-start;
+    /* Visit notes card */
+    .el-notes-card {
       background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+
+    .el-notes-meta {
+      font-size: 12px;
+      font-weight: 600;
+      color: #AEAEB2;
+      margin-bottom: 12px;
+    }
+
+    .el-notes-section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0F1B3D;
+      margin-bottom: 8px;
+      margin-top: 16px;
+    }
+
+    .el-notes-section-title:first-of-type { margin-top: 0; }
+
+    .el-notes-bullet {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 6px;
+    }
+
+    .el-notes-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 3px;
+      background: #0F1B3D;
+      margin-top: 7px;
+      flex-shrink: 0;
+    }
+
+    .el-notes-check {
+      font-size: 16px;
+      color: #0F1B3D;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    .el-notes-bullet span {
+      font-size: 14px;
       color: #1C1C1E;
-      border-bottom-left-radius: 4px;
-      border: 1px solid #E5E5EA;
+      line-height: 20px;
     }
 
     @media (max-width: 768px) {
@@ -829,12 +963,9 @@
         text-align: center;
       }
 
-      .mock-phone {
-        width: 240px;
-      }
-
-      .mock-screen {
-        min-height: 340px;
+      .spotlight-ui {
+        width: 100%;
+        max-width: 380px;
       }
     }
 
@@ -1506,53 +1637,62 @@
 
   <!-- APP SPOTLIGHTS -->
   <section class="app-spotlights">
-    <!-- Spotlight 1: Timeline -->
+
+    <!-- Spotlight 1: Care Timeline -->
     <div class="spotlight fade-in">
       <div class="spotlight-text">
         <h3>Your care timeline</h3>
         <p>Every visit, lab result, and document — organized on a single timeline. No more digging through portals.</p>
       </div>
-      <div class="spotlight-mock">
-        <div class="mock-phone">
-          <div class="mock-screen">
-            <div class="mock-header">
-              <span class="mock-header-title">History</span>
+      <div class="spotlight-ui">
+        <div class="el-timeline">
+          <div class="el-timeline-entry">
+            <div class="el-timeline-rail">
+              <div class="el-timeline-dot el-timeline-dot-future"></div>
+              <div class="el-timeline-line"></div>
             </div>
-            <div class="mock-timeline">
-              <div class="mock-visit">
-                <div class="mock-visit-dot" style="background: #4A90D9;"></div>
-                <div class="mock-visit-content">
-                  <span class="mock-visit-type">Primary Care</span>
-                  <span class="mock-visit-name">Dr. Sarah Chen</span>
-                  <span class="mock-visit-date">Mar 15, 2026</span>
-                  <div class="mock-visit-tags">
-                    <span class="mock-tag">Lab Results</span>
-                    <span class="mock-tag">Notes</span>
-                  </div>
-                </div>
+            <div class="el-timeline-card">
+              <div class="el-timeline-date">Thursday, Apr 10, 2026</div>
+              <div class="el-timeline-type">Dermatology</div>
+              <div class="el-timeline-doctor">Dr. James Park</div>
+              <div class="el-timeline-summary">Follow-up on skin check, review biopsy results</div>
+            </div>
+          </div>
+          <div class="el-timeline-entry">
+            <div class="el-timeline-rail">
+              <div class="el-timeline-dot"></div>
+              <div class="el-timeline-line"></div>
+            </div>
+            <div class="el-timeline-card">
+              <div class="el-timeline-date">Saturday, Mar 15, 2026</div>
+              <div class="el-timeline-type">Primary Care</div>
+              <div class="el-timeline-doctor">Dr. Sarah Chen</div>
+              <div class="el-timeline-summary">Vitamin D recheck — level improved to 32 ng/mL. Continue supplementation.</div>
+              <div class="el-timeline-stars">
+                <span class="el-star el-star-on">★</span>
+                <span class="el-star el-star-on">★</span>
+                <span class="el-star el-star-on">★</span>
+                <span class="el-star el-star-on">★</span>
+                <span class="el-star el-star-on">★</span>
               </div>
-              <div class="mock-visit">
-                <div class="mock-visit-dot" style="background: #E8956D;"></div>
-                <div class="mock-visit-content">
-                  <span class="mock-visit-type">Dermatology</span>
-                  <span class="mock-visit-name">Dr. James Park</span>
-                  <span class="mock-visit-date">Feb 28, 2026</span>
-                  <div class="mock-visit-tags">
-                    <span class="mock-tag">Rx Updated</span>
-                  </div>
-                </div>
-              </div>
-              <div class="mock-visit">
-                <div class="mock-visit-dot" style="background: #5CB85C;"></div>
-                <div class="mock-visit-content">
-                  <span class="mock-visit-type">Annual Physical</span>
-                  <span class="mock-visit-name">Dr. Sarah Chen</span>
-                  <span class="mock-visit-date">Jan 10, 2026</span>
-                  <div class="mock-visit-tags">
-                    <span class="mock-tag">Lab Results</span>
-                    <span class="mock-tag">Documents</span>
-                  </div>
-                </div>
+            </div>
+          </div>
+          <div class="el-timeline-entry">
+            <div class="el-timeline-rail">
+              <div class="el-timeline-dot"></div>
+              <div class="el-timeline-line"></div>
+            </div>
+            <div class="el-timeline-card">
+              <div class="el-timeline-date">Friday, Jan 10, 2026</div>
+              <div class="el-timeline-type">Annual Physical</div>
+              <div class="el-timeline-doctor">Dr. Sarah Chen</div>
+              <div class="el-timeline-summary">Vitamin D deficiency diagnosed. Started supplementation. Thyroid stable.</div>
+              <div class="el-timeline-stars">
+                <span class="el-star el-star-on">★</span>
+                <span class="el-star el-star-on">★</span>
+                <span class="el-star el-star-on">★</span>
+                <span class="el-star el-star-on">★</span>
+                <span class="el-star el-star-off">★</span>
               </div>
             </div>
           </div>
@@ -1560,90 +1700,104 @@
       </div>
     </div>
 
-    <!-- Spotlight 2: Daily Todos / Calendar -->
+    <!-- Spotlight 2: Chat + Doctor Card -->
     <div class="spotlight spotlight-reverse fade-in">
       <div class="spotlight-text">
-        <h3>She remembers so you don't have to</h3>
-        <p>Follow-ups, refills, annual screenings, specialist referrals — Elena tracks it all and nudges you at the right time.</p>
+        <h3>Ask Elena anything</h3>
+        <p>Chat with an AI that knows your health history. She'll find providers, compare prices, and book appointments for you.</p>
       </div>
-      <div class="spotlight-mock">
-        <div class="mock-phone">
-          <div class="mock-screen">
-            <div class="mock-header">
-              <span class="mock-header-title">Today</span>
+      <div class="spotlight-ui">
+        <div class="el-chat">
+          <div class="el-msg el-msg-user">I need a dermatologist that takes my insurance near me</div>
+          <div class="el-msg el-msg-elena">I found 3 dermatologists in-network within 5 miles. Here's the top-rated one:</div>
+          <div class="el-doctor-card">
+            <div class="el-doctor-top">
+              <div>
+                <div class="el-doctor-name">Dr. James Park</div>
+                <div class="el-doctor-practice">Park Dermatology Associates</div>
+                <div class="el-doctor-specialty">Dermatology <span class="el-doctor-rating">★ 4.8 <span class="el-doctor-rating-count">(127)</span></span></div>
+              </div>
+              <button class="el-book-btn">Book</button>
             </div>
-            <div class="mock-calendar-strip">
-              <div class="mock-cal-day">
-                <span class="mock-cal-label">Mon</span>
-                <span class="mock-cal-num">22</span>
+            <div class="el-doctor-bottom">
+              <div class="el-badge-row">
+                <span class="el-badge-innetwork">✓ In-network</span>
+                <span class="el-badge-facility">Freestanding</span>
+                <span class="el-badge-distance">2.1 mi</span>
               </div>
-              <div class="mock-cal-day">
-                <span class="mock-cal-label">Tue</span>
-                <span class="mock-cal-num">23</span>
-              </div>
-              <div class="mock-cal-day mock-cal-today">
-                <span class="mock-cal-label">Wed</span>
-                <span class="mock-cal-num">24</span>
-              </div>
-              <div class="mock-cal-day mock-cal-has-event">
-                <span class="mock-cal-label">Thu</span>
-                <span class="mock-cal-num">25</span>
-              </div>
-              <div class="mock-cal-day">
-                <span class="mock-cal-label">Fri</span>
-                <span class="mock-cal-num">26</span>
+              <div class="el-price">
+                <div class="el-price-amount">~$45</div>
+                <div class="el-price-label">est. out-of-pocket</div>
               </div>
             </div>
-            <div class="mock-todos">
-              <div class="mock-todo">
-                <div class="mock-todo-check"></div>
-                <div class="mock-todo-text">
-                  <span class="mock-todo-title">Take Vitamin D</span>
-                  <span class="mock-todo-sub">Daily · Morning</span>
-                </div>
-              </div>
-              <div class="mock-todo">
-                <div class="mock-todo-check"></div>
-                <div class="mock-todo-text">
-                  <span class="mock-todo-title">Schedule dermatology follow-up</span>
-                  <span class="mock-todo-sub">Due this week</span>
-                </div>
-              </div>
-              <div class="mock-todo mock-todo-done">
-                <div class="mock-todo-check mock-checked">✓</div>
-                <div class="mock-todo-text">
-                  <span class="mock-todo-title">Refill prescription</span>
-                  <span class="mock-todo-sub">Completed yesterday</span>
-                </div>
-              </div>
-            </div>
+          </div>
+          <div class="el-msg el-msg-user">Book the Thursday at 2pm</div>
+          <div class="el-msg el-msg-elena">Done! I've added it to your calendar. I'll remind you the day before.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spotlight 3: Visit Notes -->
+    <div class="spotlight fade-in">
+      <div class="spotlight-text">
+        <h3>Never forget what the doctor said</h3>
+        <p>Elena records your visits and turns them into organized notes with key points and action items you can actually follow.</p>
+      </div>
+      <div class="spotlight-ui">
+        <div class="el-notes-card">
+          <div class="el-notes-meta">14 min recording · Annual Physical with Dr. Chen</div>
+          <div class="el-notes-section-title">Key Points</div>
+          <div class="el-notes-bullet"><div class="el-notes-dot"></div><span>Vitamin D deficiency diagnosed — level at 18 ng/mL (normal is 30–100)</span></div>
+          <div class="el-notes-bullet"><div class="el-notes-dot"></div><span>Started Vitamin D3 2000 IU daily supplementation</span></div>
+          <div class="el-notes-bullet"><div class="el-notes-dot"></div><span>Thyroid stable — TSH 2.1, continuing Levothyroxine 50 mcg</span></div>
+          <div class="el-notes-bullet"><div class="el-notes-dot"></div><span>Cholesterol and A1C both normal, no dietary changes needed</span></div>
+          <div class="el-notes-section-title">Action Items</div>
+          <div class="el-notes-bullet"><span class="el-notes-check">☐</span><span>Take Vitamin D3 2000 IU daily with food</span></div>
+          <div class="el-notes-bullet"><span class="el-notes-check">☐</span><span>Schedule follow-up blood work in 3 months</span></div>
+          <div class="el-notes-bullet"><span class="el-notes-check">☐</span><span>Continue Levothyroxine 50 mcg every morning</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spotlight 4: Savings -->
+    <div class="spotlight spotlight-reverse fade-in">
+      <div class="spotlight-text">
+        <h3>See what you should actually be paying</h3>
+        <p>Upload a bill and Elena breaks down every charge, flags what's overpriced, and shows you what to dispute.</p>
+      </div>
+      <div class="spotlight-ui">
+        <div class="el-savings-card">
+          <div class="el-savings-header">
+            <span class="col-desc">Item</span>
+            <span class="col-price">Billed</span>
+            <span class="col-price">Fair price</span>
+          </div>
+          <div class="el-savings-row">
+            <span class="el-savings-desc">Office visit (Level 3)</span>
+            <span class="el-savings-billed">$350</span>
+            <span class="el-savings-fair">$185</span>
+          </div>
+          <div style="padding-left: 0;"><span class="el-savings-pill">Save $165</span></div>
+          <div class="el-savings-row">
+            <span class="el-savings-desc">CBC blood panel</span>
+            <span class="el-savings-billed">$120</span>
+            <span class="el-savings-fair">$35</span>
+          </div>
+          <div><span class="el-savings-pill">Save $85</span></div>
+          <div class="el-savings-row">
+            <span class="el-savings-desc">Metabolic panel</span>
+            <span class="el-savings-billed">$95</span>
+            <span class="el-savings-fair">$30</span>
+          </div>
+          <div><span class="el-savings-pill">Save $65</span></div>
+          <div class="el-savings-total">
+            <span class="el-savings-total-label">Potential savings</span>
+            <span class="el-savings-total-amount">$315</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Spotlight 3: Chat -->
-    <div class="spotlight fade-in">
-      <div class="spotlight-text">
-        <h3>Ask Elena anything</h3>
-        <p>Chat with an AI that knows your health history, your medications, and your family's care. Get answers, not runarounds.</p>
-      </div>
-      <div class="spotlight-mock">
-        <div class="mock-phone">
-          <div class="mock-screen">
-            <div class="mock-header">
-              <span class="mock-header-title">Elena</span>
-            </div>
-            <div class="mock-chat">
-              <div class="mock-msg mock-msg-user">When was my last blood test?</div>
-              <div class="mock-msg mock-msg-elena">Your last CBC was on Jan 10 with Dr. Chen. Everything came back normal — cholesterol was 185, down from 210 last year. You're due for another in July.</div>
-              <div class="mock-msg mock-msg-user">Can you schedule that?</div>
-              <div class="mock-msg mock-msg-elena">I'll call Dr. Chen's office and book it for early July. I'll send you the confirmation.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </section>
 
   <!-- STAT BANNER -->
