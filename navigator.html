@@ -584,14 +584,14 @@
       width: 380px;
     }
 
-    /* ---- Elena App UI Components ---- */
+    /* ---- Elena App UI Components (1:1 from React Native) ---- */
 
-    /* Timeline */
+    /* Timeline — from history.tsx */
     .el-timeline { display: flex; flex-direction: column; }
 
     .el-timeline-entry {
       display: flex;
-      gap: 0;
+      flex-direction: row;
     }
 
     .el-timeline-rail {
@@ -622,24 +622,37 @@
     }
 
     .el-timeline-card {
-      background: #fff;
-      border-radius: 14px;
-      padding: 14px;
+      flex: 1;
+      display: flex;
+      flex-direction: row;
       margin-left: 10px;
       margin-bottom: 16px;
+      background: #FFFFFF;
+      border-radius: 14px;
+      overflow: hidden;
       box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+
+    .el-timeline-card-body {
       flex: 1;
+      padding: 14px;
+    }
+
+    .el-timeline-date-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      margin-bottom: 2px;
     }
 
     .el-timeline-date {
       font-size: 12px;
       font-weight: 600;
       color: #6B9BD2;
-      margin-bottom: 4px;
     }
 
     .el-timeline-type {
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 700;
       color: #0F1B3D;
     }
@@ -647,114 +660,169 @@
     .el-timeline-doctor {
       font-size: 13px;
       color: #8E8E93;
-      margin-top: 2px;
+      margin-top: 1px;
+    }
+
+    .el-timeline-location {
+      font-size: 12px;
+      color: #AEAEB2;
+      margin-top: 1px;
     }
 
     .el-timeline-summary {
       font-size: 13px;
-      color: #8E8E93;
       line-height: 18px;
-      margin-top: 6px;
+      color: #8E8E93;
+      margin-top: 4px;
     }
 
-    .el-timeline-stars {
+    .el-timeline-rating-row {
       display: flex;
-      gap: 0;
-      margin-top: 6px;
+      flex-direction: row;
+      gap: 2px;
+      margin-top: 3px;
     }
 
-    .el-star { font-size: 12px; }
+    .el-star { font-size: 12px; line-height: 1; }
     .el-star-on { color: #F5A623; }
     .el-star-off { color: #AEAEB2; }
 
-    /* Chat conversation */
+    .el-booked-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+
+    /* Chat — from index.tsx */
     .el-chat {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-    }
-
-    .el-msg {
-      max-width: 90%;
-      padding: 14px 18px;
-      font-size: 15px;
-      line-height: 22px;
-      font-weight: 600;
-    }
-
-    .el-msg-user {
-      align-self: flex-end;
-      background: #fff;
-      color: #0F1B3D;
-      border-radius: 20px 20px 6px 20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      gap: 18px;
+      background: #F7F6F2;
+      border-radius: 16px;
+      padding: 24px;
     }
 
     .el-msg-elena {
       align-self: flex-start;
-      background: #fff;
-      color: #0F1B3D;
-      border-radius: 20px 20px 20px 6px;
+      max-width: 90%;
+      background: #FFFFFF;
+      border-radius: 20px;
+      border-top-left-radius: 6px;
+      padding: 14px 18px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      font-size: 15px;
+      line-height: 22px;
+      font-weight: 600;
+      color: #0F1B3D;
     }
 
-    /* Doctor card (generative UI) */
+    .el-msg-user {
+      align-self: flex-end;
+      max-width: 80%;
+      background: #FFFFFF;
+      padding: 12px 18px;
+      border-radius: 20px;
+      border-bottom-right-radius: 6px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      font-size: 15px;
+      line-height: 22px;
+      font-weight: 600;
+      color: #0F1B3D;
+    }
+
+    /* Doctor card — from DoctorMapCard.tsx */
     .el-doctor-card {
-      background: #fff;
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-      margin-top: 8px;
       align-self: flex-start;
       max-width: 90%;
+      background: #FFFFFF;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .el-doctor-list {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .el-doctor-item {
+      background: #FFFFFF;
+      border-radius: 12px;
+      padding: 10px 12px;
+      border: 1.5px solid #F2F2F7;
     }
 
     .el-doctor-top {
       display: flex;
+      flex-direction: row;
       justify-content: space-between;
       align-items: flex-start;
+    }
+
+    .el-doctor-info {
+      flex: 1;
+      margin-right: 8px;
     }
 
     .el-doctor-name {
       font-size: 15px;
       font-weight: 700;
-      color: #0F1B3D;
+      color: #1C1C1E;
     }
 
     .el-doctor-practice {
       font-size: 12px;
-      color: #8E8E93;
+      color: #AEAEB2;
+      margin-top: 1px;
+    }
+
+    .el-doctor-specialty-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
       margin-top: 1px;
     }
 
     .el-doctor-specialty {
       font-size: 13px;
-      color: #1C1C1E;
-      margin-top: 2px;
+      color: #8E8E93;
     }
 
     .el-doctor-rating {
       display: inline-flex;
       align-items: center;
       gap: 3px;
-      margin-left: 8px;
+    }
+
+    .el-doctor-rating-star {
+      font-size: 12px;
+      color: #F5A623;
+    }
+
+    .el-doctor-rating-num {
       font-size: 12px;
       font-weight: 700;
       color: #F5A623;
     }
 
     .el-doctor-rating-count {
-      font-weight: 400;
-      color: #8E8E93;
       font-size: 11px;
+      color: #AEAEB2;
     }
 
     .el-book-btn {
-      background: #0F1B3D;
+      background: #2563EB;
       color: #fff;
       border: none;
-      border-radius: 20px;
-      padding: 7px 16px;
+      border-radius: 8px;
+      padding: 6px 14px;
       font-size: 13px;
       font-weight: 600;
       font-family: inherit;
@@ -764,15 +832,19 @@
 
     .el-doctor-bottom {
       display: flex;
+      flex-direction: row;
       justify-content: space-between;
-      align-items: center;
-      margin-top: 10px;
+      align-items: flex-end;
+      margin-top: 4px;
     }
 
     .el-badge-row {
       display: flex;
-      gap: 8px;
+      flex-direction: row;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      flex: 1;
     }
 
     .el-badge-innetwork {
@@ -780,56 +852,65 @@
       align-items: center;
       gap: 3px;
       font-size: 11px;
-      color: #1B7A3D;
-      font-weight: 500;
+      font-weight: 600;
+      color: #34C759;
     }
 
     .el-badge-facility {
       font-size: 10px;
       font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 6px;
-      background: #E8F5EC;
-      color: #1B7A3D;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    .el-badge-freestanding {
+      background: #E8F5E9;
+      color: #2E7D32;
+    }
+
+    .el-badge-hospital {
+      background: #FFF3E0;
+      color: #E65100;
     }
 
     .el-badge-distance {
       font-size: 11px;
-      color: #8E8E93;
+      color: #AEAEB2;
     }
 
-    .el-price {
+    .el-price-block {
       text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
     }
 
     .el-price-amount {
       font-size: 16px;
       font-weight: 700;
-      color: #0F1B3D;
+      color: #1C1C1E;
     }
 
     .el-price-label {
       font-size: 10px;
-      color: #8E8E93;
+      color: #AEAEB2;
     }
 
-    /* Savings card */
+    /* Savings — from SavingsPreviewCard.tsx */
     .el-savings-card {
-      background: #fff;
+      background: #FFFFFF;
       border-radius: 16px;
       padding: 20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-      margin-top: 8px;
-      align-self: flex-start;
-      max-width: 90%;
-      width: 100%;
+      margin: 0 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
 
     .el-savings-header {
       display: flex;
+      flex-direction: row;
+      margin-bottom: 14px;
       padding-bottom: 10px;
       border-bottom: 1px solid #F2F2F7;
-      margin-bottom: 8px;
     }
 
     .el-savings-header span {
@@ -843,21 +924,28 @@
     .el-savings-header .col-desc { flex: 2; }
     .el-savings-header .col-price { flex: 1; text-align: right; }
 
+    .el-savings-item { margin-bottom: 4px; }
+
     .el-savings-row {
       display: flex;
-      align-items: center;
+      flex-direction: row;
+      align-items: flex-start;
       padding: 6px 0;
-      border-bottom: 1px solid #F2F2F7;
     }
 
-    .el-savings-row:last-of-type { border-bottom: none; }
-
-    .el-savings-desc { flex: 2; font-size: 14px; color: #1C1C1E; }
+    .el-savings-desc {
+      flex: 2;
+      font-size: 14px;
+      font-weight: 500;
+      color: #1C1C1E;
+      line-height: 20px;
+    }
 
     .el-savings-billed {
       flex: 1;
       text-align: right;
       font-size: 14px;
+      font-weight: 500;
       color: #8E8E93;
       text-decoration: line-through;
     }
@@ -866,7 +954,7 @@
       flex: 1;
       text-align: right;
       font-size: 14px;
-      font-weight: 700;
+      font-weight: 600;
       color: #1B7A3D;
     }
 
@@ -875,25 +963,33 @@
       background: #E8F5EC;
       color: #1B7A3D;
       font-size: 12px;
-      font-weight: 700;
-      padding: 3px 10px;
+      font-weight: 600;
+      padding: 4px 10px;
       border-radius: 12px;
       margin-top: 4px;
+      margin-bottom: 6px;
+    }
+
+    .el-savings-divider {
+      height: 1px;
+      background: #F2F2F7;
+      margin: 4px 0;
     }
 
     .el-savings-total {
       display: flex;
+      flex-direction: row;
       justify-content: space-between;
       align-items: center;
-      margin-top: 12px;
-      padding-top: 12px;
+      margin-top: 14px;
+      padding-top: 14px;
       border-top: 1px solid #E5E5EA;
     }
 
     .el-savings-total-label {
       font-size: 15px;
-      font-weight: 700;
-      color: #0F1B3D;
+      font-weight: 600;
+      color: #1C1C1E;
     }
 
     .el-savings-total-amount {
@@ -902,58 +998,126 @@
       color: #1B7A3D;
     }
 
-    /* Visit notes card */
+    /* Visit notes — from history.tsx notesSectionTitle, notesBulletRow etc */
     .el-notes-card {
-      background: #fff;
+      background: #FFFFFF;
       border-radius: 16px;
-      padding: 20px;
+      padding: 18px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.05);
     }
 
     .el-notes-meta {
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 13px;
       color: #AEAEB2;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     .el-notes-section-title {
-      font-size: 14px;
+      font-size: 18px;
       font-weight: 700;
       color: #0F1B3D;
-      margin-bottom: 8px;
-      margin-top: 16px;
+      margin-top: 20px;
+      margin-bottom: 10px;
     }
 
     .el-notes-section-title:first-of-type { margin-top: 0; }
 
     .el-notes-bullet {
       display: flex;
-      gap: 10px;
+      flex-direction: row;
       align-items: flex-start;
-      margin-bottom: 6px;
+      gap: 10px;
+      margin-bottom: 8px;
     }
 
     .el-notes-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 3px;
+      width: 8px;
+      height: 8px;
+      border-radius: 4px;
       background: #0F1B3D;
-      margin-top: 7px;
+      margin-top: 6px;
       flex-shrink: 0;
     }
 
     .el-notes-check {
-      font-size: 16px;
+      font-size: 18px;
       color: #0F1B3D;
       flex-shrink: 0;
       line-height: 1;
     }
 
     .el-notes-bullet span {
-      font-size: 14px;
+      flex: 1;
+      font-size: 15px;
+      line-height: 22px;
+      color: #0F1B3D;
+    }
+
+    /* Action preview — from ActionPreviewCard.tsx */
+    .el-action-card {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 0 4px;
+    }
+
+    .el-action-main {
+      background: #FFFFFF;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .el-action-doctor-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .el-action-emoji {
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .el-action-doctor-info { flex: 1; }
+
+    .el-action-doctor-name {
+      font-size: 17px;
+      font-weight: 600;
       color: #1C1C1E;
-      line-height: 20px;
+    }
+
+    .el-action-specialty {
+      font-size: 14px;
+      color: #8E8E93;
+      margin-top: 2px;
+    }
+
+    .el-action-date {
+      font-size: 14px;
+      font-weight: 500;
+      color: #8E8E93;
+    }
+
+    .el-action-bubble {
+      align-self: flex-start;
+      background: #FFFFFF;
+      border-radius: 18px;
+      border-bottom-left-radius: 4px;
+      padding: 12px 16px;
+      max-width: 85%;
+      box-shadow: 0 3px 10px rgba(255,153,102,0.3);
+    }
+
+    .el-action-bubble-text {
+      font-size: 15px;
+      font-weight: 500;
+      color: #1C1C1E;
+      line-height: 21px;
     }
 
     @media (max-width: 768px) {
@@ -1652,28 +1816,14 @@
               <div class="el-timeline-line"></div>
             </div>
             <div class="el-timeline-card">
-              <div class="el-timeline-date">Thursday, Apr 10, 2026</div>
-              <div class="el-timeline-type">Dermatology</div>
-              <div class="el-timeline-doctor">Dr. James Park</div>
-              <div class="el-timeline-summary">Follow-up on skin check, review biopsy results</div>
-            </div>
-          </div>
-          <div class="el-timeline-entry">
-            <div class="el-timeline-rail">
-              <div class="el-timeline-dot"></div>
-              <div class="el-timeline-line"></div>
-            </div>
-            <div class="el-timeline-card">
-              <div class="el-timeline-date">Saturday, Mar 15, 2026</div>
-              <div class="el-timeline-type">Primary Care</div>
-              <div class="el-timeline-doctor">Dr. Sarah Chen</div>
-              <div class="el-timeline-summary">Vitamin D recheck — level improved to 32 ng/mL. Continue supplementation.</div>
-              <div class="el-timeline-stars">
-                <span class="el-star el-star-on">★</span>
-                <span class="el-star el-star-on">★</span>
-                <span class="el-star el-star-on">★</span>
-                <span class="el-star el-star-on">★</span>
-                <span class="el-star el-star-on">★</span>
+              <div class="el-timeline-card-body">
+                <div class="el-timeline-date-row">
+                  <span class="el-timeline-date">Thursday, Apr 10, 2026</span>
+                </div>
+                <div class="el-timeline-type">Dermatology</div>
+                <div class="el-timeline-doctor">Dr. James Park</div>
+                <div class="el-timeline-location">Park Dermatology · Midtown</div>
+                <div class="el-timeline-summary">Follow-up skin check, review biopsy results</div>
               </div>
             </div>
           </div>
@@ -1683,16 +1833,34 @@
               <div class="el-timeline-line"></div>
             </div>
             <div class="el-timeline-card">
-              <div class="el-timeline-date">Friday, Jan 10, 2026</div>
-              <div class="el-timeline-type">Annual Physical</div>
-              <div class="el-timeline-doctor">Dr. Sarah Chen</div>
-              <div class="el-timeline-summary">Vitamin D deficiency diagnosed. Started supplementation. Thyroid stable.</div>
-              <div class="el-timeline-stars">
-                <span class="el-star el-star-on">★</span>
-                <span class="el-star el-star-on">★</span>
-                <span class="el-star el-star-on">★</span>
-                <span class="el-star el-star-on">★</span>
-                <span class="el-star el-star-off">★</span>
+              <div class="el-timeline-card-body">
+                <div class="el-timeline-date-row">
+                  <span class="el-timeline-date">Saturday, Mar 15, 2026</span>
+                </div>
+                <div class="el-timeline-type">Primary Care</div>
+                <div class="el-timeline-doctor">Dr. Sarah Chen</div>
+                <div class="el-timeline-summary">Vitamin D recheck — level improved to 32 ng/mL. Continue supplementation.</div>
+                <div class="el-timeline-rating-row">
+                  <span class="el-star el-star-on">★</span><span class="el-star el-star-on">★</span><span class="el-star el-star-on">★</span><span class="el-star el-star-on">★</span><span class="el-star el-star-on">★</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="el-timeline-entry">
+            <div class="el-timeline-rail">
+              <div class="el-timeline-dot"></div>
+            </div>
+            <div class="el-timeline-card">
+              <div class="el-timeline-card-body">
+                <div class="el-timeline-date-row">
+                  <span class="el-timeline-date">Friday, Jan 10, 2026</span>
+                </div>
+                <div class="el-timeline-type">Annual Physical</div>
+                <div class="el-timeline-doctor">Dr. Sarah Chen</div>
+                <div class="el-timeline-summary">Vitamin D deficiency diagnosed. Started supplementation. Thyroid stable.</div>
+                <div class="el-timeline-rating-row">
+                  <span class="el-star el-star-on">★</span><span class="el-star el-star-on">★</span><span class="el-star el-star-on">★</span><span class="el-star el-star-on">★</span><span class="el-star el-star-off">★</span>
+                </div>
               </div>
             </div>
           </div>
@@ -1708,31 +1876,42 @@
       </div>
       <div class="spotlight-ui">
         <div class="el-chat">
-          <div class="el-msg el-msg-user">I need a dermatologist that takes my insurance near me</div>
-          <div class="el-msg el-msg-elena">I found 3 dermatologists in-network within 5 miles. Here's the top-rated one:</div>
+          <div class="el-msg-user">I need a dermatologist that takes my insurance near me</div>
+          <div class="el-msg-elena">I found 3 dermatologists in-network within 5 miles. Here's the top-rated one:</div>
           <div class="el-doctor-card">
-            <div class="el-doctor-top">
-              <div>
-                <div class="el-doctor-name">Dr. James Park</div>
-                <div class="el-doctor-practice">Park Dermatology Associates</div>
-                <div class="el-doctor-specialty">Dermatology <span class="el-doctor-rating">★ 4.8 <span class="el-doctor-rating-count">(127)</span></span></div>
-              </div>
-              <button class="el-book-btn">Book</button>
-            </div>
-            <div class="el-doctor-bottom">
-              <div class="el-badge-row">
-                <span class="el-badge-innetwork">✓ In-network</span>
-                <span class="el-badge-facility">Freestanding</span>
-                <span class="el-badge-distance">2.1 mi</span>
-              </div>
-              <div class="el-price">
-                <div class="el-price-amount">~$45</div>
-                <div class="el-price-label">est. out-of-pocket</div>
+            <div class="el-doctor-list">
+              <div class="el-doctor-item">
+                <div class="el-doctor-top">
+                  <div class="el-doctor-info">
+                    <div class="el-doctor-name">Dr. James Park</div>
+                    <div class="el-doctor-practice">Park Dermatology Associates</div>
+                    <div class="el-doctor-specialty-row">
+                      <span class="el-doctor-specialty">Dermatology</span>
+                      <span class="el-doctor-rating">
+                        <span class="el-doctor-rating-star">★</span>
+                        <span class="el-doctor-rating-num">4.8</span>
+                        <span class="el-doctor-rating-count">(127)</span>
+                      </span>
+                    </div>
+                  </div>
+                  <button class="el-book-btn">Book</button>
+                </div>
+                <div class="el-doctor-bottom">
+                  <div class="el-badge-row">
+                    <span class="el-badge-innetwork">✓ In-network</span>
+                    <span class="el-badge-facility el-badge-freestanding">Freestanding</span>
+                    <span class="el-badge-distance">2.1 mi</span>
+                  </div>
+                  <div class="el-price-block">
+                    <div class="el-price-amount">~$45</div>
+                    <div class="el-price-label">est. out-of-pocket</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          <div class="el-msg el-msg-user">Book the Thursday at 2pm</div>
-          <div class="el-msg el-msg-elena">Done! I've added it to your calendar. I'll remind you the day before.</div>
+          <div class="el-msg-user">Book the Thursday at 2pm</div>
+          <div class="el-msg-elena">Done! I've added it to your calendar. I'll remind you the day before.</div>
         </div>
       </div>
     </div>
@@ -1772,24 +1951,32 @@
             <span class="col-price">Billed</span>
             <span class="col-price">Fair price</span>
           </div>
-          <div class="el-savings-row">
-            <span class="el-savings-desc">Office visit (Level 3)</span>
-            <span class="el-savings-billed">$350</span>
-            <span class="el-savings-fair">$185</span>
+          <div class="el-savings-item">
+            <div class="el-savings-row">
+              <span class="el-savings-desc">Office visit (Level 3)</span>
+              <span class="el-savings-billed">$350</span>
+              <span class="el-savings-fair">$185</span>
+            </div>
+            <span class="el-savings-pill">Save $165</span>
           </div>
-          <div style="padding-left: 0;"><span class="el-savings-pill">Save $165</span></div>
-          <div class="el-savings-row">
-            <span class="el-savings-desc">CBC blood panel</span>
-            <span class="el-savings-billed">$120</span>
-            <span class="el-savings-fair">$35</span>
+          <div class="el-savings-divider"></div>
+          <div class="el-savings-item">
+            <div class="el-savings-row">
+              <span class="el-savings-desc">CBC blood panel</span>
+              <span class="el-savings-billed">$120</span>
+              <span class="el-savings-fair">$35</span>
+            </div>
+            <span class="el-savings-pill">Save $85</span>
           </div>
-          <div><span class="el-savings-pill">Save $85</span></div>
-          <div class="el-savings-row">
-            <span class="el-savings-desc">Metabolic panel</span>
-            <span class="el-savings-billed">$95</span>
-            <span class="el-savings-fair">$30</span>
+          <div class="el-savings-divider"></div>
+          <div class="el-savings-item">
+            <div class="el-savings-row">
+              <span class="el-savings-desc">Metabolic panel</span>
+              <span class="el-savings-billed">$95</span>
+              <span class="el-savings-fair">$30</span>
+            </div>
+            <span class="el-savings-pill">Save $65</span>
           </div>
-          <div><span class="el-savings-pill">Save $65</span></div>
           <div class="el-savings-total">
             <span class="el-savings-total-label">Potential savings</span>
             <span class="el-savings-total-amount">$315</span>
