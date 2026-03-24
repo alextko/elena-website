@@ -118,13 +118,33 @@
     /* ========== HERO ========== */
     .hero {
       position: relative;
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      text-align: center;
       overflow: hidden;
+    }
+
+    .hero-split {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 60px;
+      max-width: 1080px;
+      width: 100%;
+      padding: 0 48px;
+    }
+
+    .hero-left {
+      flex: 1;
+      text-align: left;
+    }
+
+    .hero-right {
+      flex-shrink: 0;
     }
 
     .hero-bg {
@@ -215,6 +235,7 @@
     .hero-content {
       position: relative;
       z-index: 2;
+      text-align: left;
     }
 
     .hero h1 {
@@ -239,8 +260,6 @@
       margin-top: 24px;
       max-width: 480px;
       width: 100%;
-      margin-left: auto;
-      margin-right: auto;
     }
 
     .hero-email-form input[type="email"] {
@@ -309,6 +328,30 @@
       font-weight: 500;
       font-size: 1rem;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .hero-phone {
+      position: relative;
+      width: 290px;
+      height: 600px;
+      background: #1a1a1c;
+      border-radius: 48px;
+      padding: 10px;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.35), 0 15px 30px rgba(0,0,0,0.25);
+    }
+
+    .hero-phone-screen {
+      width: 100%;
+      height: 100%;
+      border-radius: 38px;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .hero-phone-screen video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     .scroll-indicator {
@@ -1870,6 +1913,31 @@
         gap: 20px;
         align-items: center;
       }
+
+      .hero-split {
+        flex-direction: column;
+        text-align: center;
+        padding: 0 20px;
+      }
+
+      .hero-left {
+        text-align: center;
+      }
+
+      .hero-email-form {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .hero-phone {
+        width: 240px;
+        height: 500px;
+        border-radius: 40px;
+      }
+
+      .hero-phone-screen {
+        border-radius: 32px;
+      }
     }
 
     /* ========== ANIMATIONS ========== */
@@ -1958,27 +2026,40 @@
       <div class="hero-blob hero-blob-3"></div>
       <div class="hero-blob hero-blob-4"></div>
     </div>
-    <div class="hero-content">
-      <h1>Your healthcare<br>home base.</h1>
-      <p class="hero-subtitle">An AI assistant that organizes your records, books appointments, follows up with doctors, and keeps your whole family on track.</p>
-      <div class="waitlist-flow" id="hero-waitlist-flow">
-        <form class="hero-email-form" id="hero-waitlist-form">
-          <input type="email" placeholder="Enter your email" required>
-          <button type="submit">Join the Community</button>
-        </form>
-        <div class="survey-step" id="hero-survey" style="display:none;">
-          <p class="survey-label">What are you most interested in? <span class="survey-hint">(pick all that apply)</span></p>
-          <div class="survey-options dark">
-            <label class="survey-chip"><input type="checkbox" value="health_data"><span>All my health data in one place</span></label>
-            <label class="survey-chip"><input type="checkbox" value="scheduling"><span>Scheduling &amp; follow-ups</span></label>
-            <label class="survey-chip"><input type="checkbox" value="family"><span>Family health management</span></label>
-            <label class="survey-chip"><input type="checkbox" value="price_transparency"><span>Price transparency</span></label>
+    <div class="hero-split">
+      <div class="hero-left">
+        <div class="hero-content">
+          <h1>Your healthcare<br>home base.</h1>
+          <p class="hero-subtitle">An AI assistant that organizes your records, books appointments, follows up with doctors, and keeps your whole family on track.</p>
+          <div class="waitlist-flow" id="hero-waitlist-flow">
+            <form class="hero-email-form" id="hero-waitlist-form">
+              <input type="email" placeholder="Enter your email" required>
+              <button type="submit">Join the Community</button>
+            </form>
+            <div class="survey-step" id="hero-survey" style="display:none;">
+              <p class="survey-label">What are you most interested in? <span class="survey-hint">(pick all that apply)</span></p>
+              <div class="survey-options dark">
+                <label class="survey-chip"><input type="checkbox" value="health_data"><span>All my health data in one place</span></label>
+                <label class="survey-chip"><input type="checkbox" value="scheduling"><span>Scheduling &amp; follow-ups</span></label>
+                <label class="survey-chip"><input type="checkbox" value="family"><span>Family health management</span></label>
+                <label class="survey-chip"><input type="checkbox" value="price_transparency"><span>Price transparency</span></label>
+              </div>
+              <button class="survey-submit-btn dark" id="hero-survey-submit">Submit</button>
+              <button class="survey-skip-btn" id="hero-survey-skip">Skip</button>
+            </div>
+            <div class="hero-success" id="hero-waitlist-success">Welcome to the community! Check your email for your WhatsApp invite.</div>
+            <p class="waitlist-social-proof" style="font-size: 0.85rem; font-weight: 400; color: rgba(255,255,255,0.6); margin-top: 14px;">Join founding members navigating healthcare together</p>
           </div>
-          <button class="survey-submit-btn dark" id="hero-survey-submit">Submit</button>
-          <button class="survey-skip-btn" id="hero-survey-skip">Skip</button>
         </div>
-        <div class="hero-success" id="hero-waitlist-success">Welcome to the community! Check your email for your WhatsApp invite.</div>
-        <p class="waitlist-social-proof" style="font-size: 0.85rem; font-weight: 400; color: rgba(255,255,255,0.6); margin-top: 14px;">Join founding members navigating healthcare together</p>
+      </div>
+      <div class="hero-right">
+        <div class="hero-phone">
+          <div class="hero-phone-screen">
+            <video autoplay muted loop playsinline>
+              <source src="images/elena-demo.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
       </div>
     </div>
     <div class="scroll-indicator">
@@ -2014,20 +2095,11 @@
 
   <!-- MANIFESTO -->
   <section class="manifesto" id="how-it-works">
-    <div class="manifesto-inner fade-in">
+    <div class="manifesto-inner fade-in" style="max-width: 720px; text-align: center;">
       <div class="manifesto-text">
         <h2>Your health shouldn't live in 10 different patient portals.</h2>
         <p>The average American sees 7 doctors across 4 different health systems. Your records are scattered across portals you can't remember the password to. Important follow-ups get lost. Prescriptions lapse quietly.</p>
         <p style="margin-top: 12px;">Elena pulls everything together: your documents, your appointments, your family's care. One AI-powered assistant that actually keeps track so you don't have to.</p>
-      </div>
-      <div class="manifesto-phone">
-        <div class="phone-device">
-          <div class="phone-screen">
-            <video autoplay muted loop playsinline>
-              <source src="images/elena-demo.mp4" type="video/mp4">
-            </video>
-          </div>
-        </div>
       </div>
     </div>
   </section>
