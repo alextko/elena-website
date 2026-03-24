@@ -1382,141 +1382,136 @@
     }
 
     /* ---- Spotlight 4a: Insurance Card ---- */
-    .ins-card-wrapper {
+    .ins-wrapper {
       display: flex;
       flex-direction: column;
       align-items: center;
     }
 
-    .ins-card-track {
-      width: 100%;
+    .ins-track {
       overflow: hidden;
       border-radius: 24px;
       box-shadow: 0 8px 16px rgba(0,0,0,0.18);
     }
 
-    .ins-card-slider {
+    .ins-slider {
       display: flex;
-      flex-direction: row;
-      transition: transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
       width: 300%;
+      transition: transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
     }
 
     .ins-card {
       position: relative;
-      border-radius: 0;
       aspect-ratio: 1.6;
       padding: 24px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-top-color: rgba(255,255,255,0.15);
       overflow: hidden;
-      width: 100%;
+      width: 33.333%;
       flex-shrink: 0;
       box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
     }
 
-    .ins-card-gloss {
+    .ins-gloss {
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%, rgba(255,255,255,0.02) 100%);
+      background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 40%, rgba(255,255,255,0.02) 100%);
       pointer-events: none;
     }
 
-    .ins-card-content {
-      position: relative;
-      z-index: 1;
+    .ins-top {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       justify-content: space-between;
-      height: 100%;
+      align-items: center;
     }
 
-    .ins-card-type {
+    .ins-type {
       font-size: 20px;
       font-weight: 800;
-      color: #FFFFFF;
       letter-spacing: 0.5px;
     }
 
-    .ins-card-plan {
+    .ins-plan {
       font-size: 15px;
       font-weight: 700;
-      color: #FFFFFF;
       margin-top: 4px;
     }
 
-    .ins-card-provider {
+    .ins-provider {
       font-size: 11px;
       font-weight: 600;
-      color: rgba(255,255,255,0.6);
-      margin-top: 2px;
+      margin-top: 1px;
     }
 
-    .ins-card-ids {
+    .ins-id-row {
       display: flex;
       flex-direction: row;
       gap: 28px;
-      margin-top: auto;
     }
 
-    .ins-card-id-group {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .ins-card-label {
+    .ins-field-label {
       font-size: 9px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1px;
-      color: rgba(255,255,255,0.4);
       margin-bottom: 2px;
     }
 
-    .ins-card-value {
+    .ins-field-value {
       font-size: 14px;
       font-weight: 600;
-      color: #FFFFFF;
       letter-spacing: 0.5px;
     }
 
-    .ins-card-copay {
-      margin-top: 8px;
-    }
-
-    .ins-card-copay-value {
+    .ins-copay-value {
       font-size: 12px;
       font-weight: 600;
-      color: rgba(255,255,255,0.6);
     }
 
-    .ins-card-dots {
+    /* Dark card text colors */
+    .ins-dark .ins-type,
+    .ins-dark .ins-plan,
+    .ins-dark .ins-field-value { color: #FFFFFF; }
+    .ins-dark .ins-provider,
+    .ins-dark .ins-copay-value { color: rgba(255,255,255,0.7); }
+    .ins-dark .ins-field-label { color: rgba(255,255,255,0.5); }
+
+    /* Light card text colors */
+    .ins-light .ins-type,
+    .ins-light .ins-plan,
+    .ins-light .ins-field-value { color: #0F1B3D; }
+    .ins-light .ins-provider,
+    .ins-light .ins-copay-value { color: #8E8E93; }
+    .ins-light .ins-field-label { color: #AEAEB2; }
+
+    .ins-dots {
       display: flex;
       flex-direction: row;
       justify-content: center;
       align-items: center;
       gap: 8px;
-      margin-top: 16px;
+      margin-top: 14px;
     }
 
-    .ins-card-dot {
+    .ins-dot {
+      height: 7px;
+      border-radius: 3.5px;
+      transition: all 0.3s ease;
       width: 7px;
-      height: 7px;
-      border-radius: 4px;
       background: #E5E5EA;
-      transition: all 0.4s ease;
     }
 
-    .ins-card-dot-active {
+    .ins-dot-active {
       width: 20px;
-      height: 7px;
-      border-radius: 4px;
-      background: #0F1B3D;
-      transition: all 0.4s ease;
+      background: #AEAEB2;
     }
 
     /* ---- Spotlight 6: Profile Switcher ---- */
@@ -2539,96 +2534,90 @@
         <p>Elena knows your deductible, your copays, what's in-network, and what's not. She finds the cheapest option for every procedure and makes sure you never leave money on the table.</p>
       </div>
       <div class="spotlight-ui">
-        <div class="ins-card-wrapper">
-          <div class="ins-card-track">
-            <div class="ins-card-slider" id="ins-slider">
-              <!-- Medical -->
-              <div class="ins-card" style="background: #0F1B3D;">
-                <div class="ins-card-gloss"></div>
-                <div class="ins-card-content">
+        <div class="ins-wrapper">
+          <div class="ins-track">
+            <div class="ins-slider" id="ins-slider">
+              <!-- Health card (dark) -->
+              <div class="ins-card ins-dark" style="background:#0F1B3D;">
+                <div class="ins-gloss"></div>
+                <div class="ins-top">
+                  <span class="ins-type">Health</span>
+                </div>
+                <div>
+                  <div class="ins-plan">Blue Cross Blue Shield PPO</div>
+                  <div class="ins-provider">Blue Cross</div>
+                </div>
+                <div class="ins-id-row">
                   <div>
-                    <div class="ins-card-type">Medical</div>
-                    <div class="ins-card-plan">Blue Cross Blue Shield PPO</div>
-                    <div class="ins-card-provider">Blue Cross</div>
+                    <div class="ins-field-label">Member ID</div>
+                    <div class="ins-field-value">BCB123456789</div>
                   </div>
                   <div>
-                    <div class="ins-card-ids">
-                      <div class="ins-card-id-group">
-                        <span class="ins-card-label">MEMBER ID</span>
-                        <span class="ins-card-value">BCB123456789</span>
-                      </div>
-                      <div class="ins-card-id-group">
-                        <span class="ins-card-label">GROUP</span>
-                        <span class="ins-card-value">G98765</span>
-                      </div>
-                    </div>
-                    <div class="ins-card-copay">
-                      <span class="ins-card-label">COPAY</span>
-                      <div class="ins-card-copay-value">$25 PCP / $50 Specialist</div>
-                    </div>
+                    <div class="ins-field-label">Group</div>
+                    <div class="ins-field-value">G98765</div>
                   </div>
                 </div>
-              </div>
-              <!-- Dental -->
-              <div class="ins-card" style="background: #7A9E8E;">
-                <div class="ins-card-gloss"></div>
-                <div class="ins-card-content">
-                  <div>
-                    <div class="ins-card-type">Dental</div>
-                    <div class="ins-card-plan">Delta Dental Premier</div>
-                    <div class="ins-card-provider">Delta Dental</div>
-                  </div>
-                  <div>
-                    <div class="ins-card-ids">
-                      <div class="ins-card-id-group">
-                        <span class="ins-card-label">MEMBER ID</span>
-                        <span class="ins-card-value">DT987654321</span>
-                      </div>
-                      <div class="ins-card-id-group">
-                        <span class="ins-card-label">GROUP</span>
-                        <span class="ins-card-value">D45678</span>
-                      </div>
-                    </div>
-                    <div class="ins-card-copay">
-                      <span class="ins-card-label">COPAY</span>
-                      <div class="ins-card-copay-value">$0 Preventive / $20 Basic</div>
-                    </div>
-                  </div>
+                <div>
+                  <div class="ins-field-label">Copay</div>
+                  <div class="ins-copay-value">$25 primary / $50 specialist</div>
                 </div>
               </div>
-              <!-- Vision -->
-              <div class="ins-card" style="background: #6B7FA3;">
-                <div class="ins-card-gloss"></div>
-                <div class="ins-card-content">
+              <!-- Dental card (LIGHT) -->
+              <div class="ins-card ins-light" style="background:rgba(255,255,255,0.55); border-color:rgba(0,0,0,0.06);">
+                <div class="ins-gloss"></div>
+                <div class="ins-top">
+                  <span class="ins-type">Dental</span>
+                </div>
+                <div>
+                  <div class="ins-plan">Delta Dental Premier</div>
+                  <div class="ins-provider">Delta Dental</div>
+                </div>
+                <div class="ins-id-row">
                   <div>
-                    <div class="ins-card-type">Vision</div>
-                    <div class="ins-card-plan">VSP Choice Plan</div>
-                    <div class="ins-card-provider">VSP Vision</div>
+                    <div class="ins-field-label">Member ID</div>
+                    <div class="ins-field-value">DT987654321</div>
                   </div>
                   <div>
-                    <div class="ins-card-ids">
-                      <div class="ins-card-id-group">
-                        <span class="ins-card-label">MEMBER ID</span>
-                        <span class="ins-card-value">VSP111222333</span>
-                      </div>
-                      <div class="ins-card-id-group">
-                        <span class="ins-card-label">GROUP</span>
-                        <span class="ins-card-value">V12345</span>
-                      </div>
-                    </div>
-                    <div class="ins-card-copay">
-                      <span class="ins-card-label">COPAY</span>
-                      <div class="ins-card-copay-value">$10 Eye Exam / $0 Lenses</div>
-                    </div>
+                    <div class="ins-field-label">Group</div>
+                    <div class="ins-field-value">D45678</div>
                   </div>
+                </div>
+                <div>
+                  <div class="ins-field-label">Copay</div>
+                  <div class="ins-copay-value">100% preventive / 80% major</div>
+                </div>
+              </div>
+              <!-- Vision card (dark) -->
+              <div class="ins-card ins-dark" style="background:#0F1B3D;">
+                <div class="ins-gloss"></div>
+                <div class="ins-top">
+                  <span class="ins-type">Vision</span>
+                </div>
+                <div>
+                  <div class="ins-plan">VSP Choice Plan</div>
+                  <div class="ins-provider">VSP Vision</div>
+                </div>
+                <div class="ins-id-row">
+                  <div>
+                    <div class="ins-field-label">Member ID</div>
+                    <div class="ins-field-value">VSP111222333</div>
+                  </div>
+                  <div>
+                    <div class="ins-field-label">Group</div>
+                    <div class="ins-field-value">V12345</div>
+                  </div>
+                </div>
+                <div>
+                  <div class="ins-field-label">Copay</div>
+                  <div class="ins-copay-value">$10 exam / $0 lenses</div>
                 </div>
               </div>
             </div>
           </div>
-          <div class="ins-card-dots" id="ins-dots">
-            <div class="ins-card-dot-active"></div>
-            <div class="ins-card-dot"></div>
-            <div class="ins-card-dot"></div>
+          <div class="ins-dots" id="ins-dots">
+            <div class="ins-dot ins-dot-active"></div>
+            <div class="ins-dot"></div>
+            <div class="ins-dot"></div>
           </div>
         </div>
       </div>
@@ -3131,33 +3120,26 @@
   <script>
     // Insurance card slide carousel
     (function() {
-      const slider = document.getElementById('ins-slider');
-      const dotsContainer = document.getElementById('ins-dots');
-      if (!slider || !dotsContainer) return;
-      const dots = dotsContainer.children;
-      const total = 3;
-      let idx = 0;
+      var slider = document.getElementById('ins-slider');
+      var dotsEl = document.getElementById('ins-dots');
+      if (!slider || !dotsEl) return;
+      var dots = dotsEl.querySelectorAll('.ins-dot');
+      var idx = 0;
+      var total = 3;
 
-      // Active dot color matches card bg
-      const dotColors = ['#0F1B3D', '#7A9E8E', '#6B7FA3'];
-
-      function updateDots() {
-        for (let i = 0; i < dots.length; i++) {
-          if (i === idx) {
-            dots[i].className = 'ins-card-dot-active';
-            dots[i].style.background = dotColors[idx];
-          } else {
-            dots[i].className = 'ins-card-dot';
-            dots[i].style.background = '';
-          }
-        }
-      }
-
-      setInterval(() => {
+      function update() {
         idx = (idx + 1) % total;
         slider.style.transform = 'translateX(-' + (idx * 100 / total) + '%)';
-        updateDots();
-      }, 4000);
+        dots.forEach(function(d, i) {
+          if (i === idx) {
+            d.classList.add('ins-dot-active');
+          } else {
+            d.classList.remove('ins-dot-active');
+          }
+        });
+      }
+
+      setInterval(update, 4000);
     })();
 
     // Game plan todo toggle
