@@ -766,11 +766,10 @@
 
     /* ---- Spotlight 2: Visit Timeline ---- */
     .tl-wrapper {
-      background: #FFFFFF;
+      background: #DBEAFE;
       border-radius: 24px;
       padding: 24px;
       overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
 
     .tl-section-title {
@@ -819,21 +818,20 @@
       border: 2px solid #2563EB;
     }
 
-    .tl-dot-note {
-      width: 8px;
-      height: 8px;
-      border-radius: 4px;
-      background: #93B5E1;
-      top: 16px;
-      left: -22px;
-    }
-
     .tl-card {
       background: #FFFFFF;
       border-radius: 14px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.05);
       margin-left: 10px;
+      margin-bottom: 16px;
       padding: 14px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .tl-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 
     .tl-card-date {
@@ -874,7 +872,7 @@
       color: #FFFFFF;
       font-size: 11px;
       font-weight: 700;
-      padding: 3px 10px;
+      padding: 2px 8px;
       border-radius: 10px;
       flex-shrink: 0;
     }
@@ -887,7 +885,7 @@
     }
 
     .tl-star {
-      font-size: 14px;
+      font-size: 12px;
       color: #F5A623;
     }
 
@@ -928,6 +926,200 @@
       background: #6B9BD2;
       display: inline-block;
       border-radius: 1px;
+    }
+
+    /* ---- Visit Detail Modal ---- */
+    .visit-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+    }
+
+    .visit-modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .visit-modal-sheet {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%) translateY(100%);
+      max-width: 480px;
+      width: 100%;
+      max-height: 85vh;
+      background: #fff;
+      border-top-left-radius: 20px;
+      border-top-right-radius: 20px;
+      overflow-y: auto;
+      box-shadow: 0 -8px 32px rgba(0,0,0,0.15);
+      z-index: 1001;
+      transition: transform 0.3s ease-out;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-sheet.active {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .visit-modal-handle {
+      width: 40px;
+      height: 4px;
+      background: #AEAEB2;
+      border-radius: 2px;
+      margin: 12px auto 16px;
+    }
+
+    .visit-modal-header {
+      padding: 0 24px 16px;
+    }
+
+    .visit-modal-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: #0F1B3D;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-subtitle {
+      font-size: 15px;
+      color: #8E8E93;
+      margin-top: 4px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-location {
+      font-size: 13px;
+      color: #AEAEB2;
+      margin-top: 4px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-schedule-btn {
+      display: inline-flex;
+      padding: 8px 14px;
+      border-radius: 20px;
+      background: #F7F6F2;
+      font-size: 14px;
+      font-weight: 600;
+      color: #0F1B3D;
+      margin-top: 12px;
+      border: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 24px;
+      margin: 16px 0 20px;
+    }
+
+    .visit-modal-tab {
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      background: transparent;
+      color: #AEAEB2;
+      border: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-tab.active {
+      background: #0F1B3D;
+      color: #fff;
+    }
+
+    .visit-modal-section {
+      padding: 0 24px;
+      margin-bottom: 28px;
+    }
+
+    .visit-modal-section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #0F1B3D;
+      margin-bottom: 10px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-body {
+      font-size: 15px;
+      line-height: 22px;
+      color: #0F1B3D;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-lab-card {
+      background: #FFFFFF;
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .visit-modal-lab-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+    }
+
+    .visit-modal-lab-name {
+      font-size: 13px;
+      color: #8E8E93;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-lab-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #0F1B3D;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-lab-value.low {
+      color: #2563EB;
+    }
+
+    .visit-modal-notes-card {
+      background: #F8F9FA;
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .visit-modal-notes-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0F1B3D;
+      margin-bottom: 4px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-notes-list {
+      font-size: 14px;
+      line-height: 20px;
+      color: #8E8E93;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-rate-stars {
+      display: flex;
+      gap: 8px;
+    }
+
+    .visit-modal-rate-star {
+      font-size: 32px;
+      color: #AEAEB2;
+      cursor: pointer;
+    }
+
+    .visit-modal-rate-star.filled {
+      color: #F5A623;
     }
 
     /* ---- Spotlight 3: Chat with MRI Pricing ---- */
@@ -2187,7 +2379,7 @@
             <!-- Future visit -->
             <div class="tl-entry">
               <div class="tl-dot tl-dot-future"></div>
-              <div class="tl-card">
+              <div class="tl-card" data-visit="dermatology" onclick="openVisitModal('dermatology')">
                 <div class="tl-card-top">
                   <div>
                     <div class="tl-card-date">Apr 10, 2026</div>
@@ -2202,11 +2394,11 @@
             <!-- Past visit -->
             <div class="tl-entry">
               <div class="tl-dot"></div>
-              <div class="tl-card">
+              <div class="tl-card" data-visit="primary-care" onclick="openVisitModal('primary-care')">
                 <div class="tl-card-date">Mar 15, 2026</div>
                 <div class="tl-card-type">Primary Care</div>
                 <div class="tl-card-doctor">Dr. Sarah Chen</div>
-                <div class="tl-card-summary">Annual check-up. Vitamin D low, started supplementation. Thyroid stable.</div>
+                <div class="tl-card-summary">Vitamin D recheck, level improved to 32 ng/mL. Continue supplementation.</div>
                 <div class="tl-stars">
                   <span class="tl-star">★</span><span class="tl-star">★</span><span class="tl-star">★</span><span class="tl-star">★</span><span class="tl-star">★</span>
                 </div>
@@ -2222,11 +2414,11 @@
             <!-- Older past visit -->
             <div class="tl-entry">
               <div class="tl-dot"></div>
-              <div class="tl-card">
+              <div class="tl-card" data-visit="annual-physical" onclick="openVisitModal('annual-physical')">
                 <div class="tl-card-date">Jan 10, 2026</div>
                 <div class="tl-card-type">Annual Physical</div>
                 <div class="tl-card-doctor">Dr. Sarah Chen</div>
-                <div class="tl-card-summary">Full panel bloodwork. All results within normal range. Follow-up in 6 months.</div>
+                <div class="tl-card-summary">Vitamin D deficiency diagnosed. Started supplementation. Thyroid stable.</div>
                 <div class="tl-stars">
                   <span class="tl-star">★</span><span class="tl-star">★</span><span class="tl-star">★</span><span class="tl-star">★</span><span class="tl-star tl-star-off">★</span>
                 </div>
@@ -2236,6 +2428,20 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Visit Detail Modal -->
+    <div class="visit-modal-overlay" id="visitModalOverlay" onclick="closeVisitModal()"></div>
+    <div class="visit-modal-sheet" id="visitModalSheet">
+      <div class="visit-modal-handle"></div>
+      <div class="visit-modal-header">
+        <div class="visit-modal-title" id="visitModalTitle"></div>
+        <div class="visit-modal-subtitle" id="visitModalSubtitle"></div>
+        <div class="visit-modal-location" id="visitModalLocation"></div>
+        <button class="visit-modal-schedule-btn" id="visitModalScheduleBtn">Schedule again</button>
+      </div>
+      <div class="visit-modal-tabs" id="visitModalTabs"></div>
+      <div id="visitModalContent"></div>
     </div>
 
     <!-- Spotlight 3: Chat with MRI Pricing.text LEFT, chat RIGHT -->
@@ -2669,6 +2875,174 @@
 
       animate();
     })();
+  </script>
+
+  <script>
+  (function() {
+    const visitData = {
+      'dermatology': {
+        type: 'Dermatology',
+        date: 'Apr 10, 2026',
+        doctor: 'Dr. James Park',
+        location: 'Westside Dermatology Clinic',
+        future: true,
+        stars: 0,
+        summary: '',
+        labs: null,
+        notes: null
+      },
+      'primary-care': {
+        type: 'Primary Care',
+        date: 'Mar 15, 2026',
+        doctor: 'Dr. Sarah Chen',
+        location: 'Bay Area Family Medicine',
+        future: false,
+        stars: 5,
+        summary: 'Vitamin D recheck, level improved to 32 ng/mL. Continue supplementation.',
+        labs: null,
+        notes: null
+      },
+      'annual-physical': {
+        type: 'Annual Physical',
+        date: 'Jan 10, 2026',
+        doctor: 'Dr. Sarah Chen',
+        location: 'Bay Area Family Medicine',
+        future: false,
+        stars: 4,
+        summary: 'Vitamin D deficiency diagnosed. Started supplementation. Thyroid stable.',
+        labs: [
+          { name: 'Vitamin D', value: '18 ng/mL', low: true },
+          { name: 'TSH', value: '2.1 mIU/L', low: false },
+          { name: 'Cholesterol', value: '185 mg/dL', low: false },
+          { name: 'A1C', value: '5.2%', low: false }
+        ],
+        notes: {
+          keyPoints: [
+            'Vitamin D deficiency diagnosed, level at 18 ng/mL',
+            'Started Vitamin D3 2000 IU daily',
+            'Thyroid stable, TSH 2.1',
+            'Cholesterol and A1C normal'
+          ],
+          actionItems: [
+            'Take Vitamin D3 2000 IU daily with food',
+            'Schedule follow-up blood work in 3 months',
+            'Continue Levothyroxine 50 mcg every morning'
+          ]
+        }
+      }
+    };
+
+    function buildStars(count, size) {
+      let html = '<div class="visit-modal-rate-stars">';
+      for (let i = 0; i < 5; i++) {
+        html += '<span class="visit-modal-rate-star' + (i < count ? ' filled' : '') + '">&#9733;</span>';
+      }
+      html += '</div>';
+      return html;
+    }
+
+    function buildContent(visit) {
+      let html = '';
+
+      if (visit.future) {
+        html += '<div class="visit-modal-section"><div class="visit-modal-body">Upcoming appointment</div></div>';
+        return html;
+      }
+
+      // Summary
+      if (visit.summary) {
+        html += '<div class="visit-modal-section">';
+        html += '<div class="visit-modal-section-title">Summary</div>';
+        html += '<div class="visit-modal-body">' + visit.summary + '</div>';
+        html += '</div>';
+      }
+
+      // Lab Results
+      if (visit.labs) {
+        html += '<div class="visit-modal-section">';
+        html += '<div class="visit-modal-section-title">Lab Results</div>';
+        html += '<div class="visit-modal-lab-card">';
+        visit.labs.forEach(function(lab) {
+          html += '<div class="visit-modal-lab-row">';
+          html += '<span class="visit-modal-lab-name">' + lab.name + '</span>';
+          html += '<span class="visit-modal-lab-value' + (lab.low ? ' low' : '') + '">' + lab.value + (lab.low ? ' \u2193' : '') + '</span>';
+          html += '</div>';
+        });
+        html += '</div></div>';
+      }
+
+      // Visit Notes
+      if (visit.notes) {
+        html += '<div class="visit-modal-section">';
+        html += '<div class="visit-modal-section-title">Visit Notes</div>';
+        html += '<div class="visit-modal-notes-card">';
+        html += '<div class="visit-modal-notes-title">Key Points</div>';
+        html += '<div class="visit-modal-notes-list">';
+        visit.notes.keyPoints.forEach(function(p) {
+          html += '\u2022 ' + p + '<br>';
+        });
+        html += '</div>';
+        html += '<div class="visit-modal-notes-title" style="margin-top:8px;">Action Items</div>';
+        html += '<div class="visit-modal-notes-list">';
+        visit.notes.actionItems.forEach(function(a) {
+          html += '\u2022 ' + a + '<br>';
+        });
+        html += '</div></div></div>';
+      }
+
+      // Rate
+      if (visit.stars > 0) {
+        html += '<div class="visit-modal-section">';
+        html += '<div class="visit-modal-section-title">Rate ' + visit.doctor + '</div>';
+        html += buildStars(visit.stars);
+        html += '</div>';
+      }
+
+      return html;
+    }
+
+    function buildTabs(visit) {
+      if (visit.future) return '';
+      const tabs = ['Summary'];
+      if (visit.labs) tabs.push('Labs');
+      if (visit.notes) tabs.push('Notes');
+      if (tabs.length <= 1) return '';
+      let html = '';
+      tabs.forEach(function(t, i) {
+        html += '<button class="visit-modal-tab' + (i === 0 ? ' active' : '') + '">' + t + '</button>';
+      });
+      return html;
+    }
+
+    window.openVisitModal = function(visitId) {
+      const visit = visitData[visitId];
+      if (!visit) return;
+
+      document.getElementById('visitModalTitle').textContent = visit.type;
+      document.getElementById('visitModalSubtitle').textContent = visit.date + ' \u00b7 ' + visit.doctor;
+      document.getElementById('visitModalLocation').textContent = visit.location;
+      document.getElementById('visitModalTabs').innerHTML = buildTabs(visit);
+      document.getElementById('visitModalContent').innerHTML = buildContent(visit);
+
+      // Show/hide schedule button for past visits
+      document.getElementById('visitModalScheduleBtn').style.display = visit.future ? 'none' : 'inline-flex';
+
+      document.getElementById('visitModalOverlay').classList.add('active');
+      document.getElementById('visitModalSheet').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    };
+
+    window.closeVisitModal = function() {
+      document.getElementById('visitModalOverlay').classList.remove('active');
+      document.getElementById('visitModalSheet').classList.remove('active');
+      document.body.style.overflow = '';
+    };
+
+    // Close on escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeVisitModal();
+    });
+  })();
   </script>
 
   <script defer src="/_vercel/insights/script.js"></script>
