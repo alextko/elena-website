@@ -689,7 +689,7 @@
     }
 
     .gp-todo-section {
-      padding: 0 16px;
+      padding: 0 24px 16px;
     }
 
     .gp-todo-header {
@@ -703,7 +703,7 @@
     .gp-todo-list {
       background: rgba(255,255,255,0.3);
       border-radius: 14px;
-      padding: 6px 0;
+      padding: 10px 14px;
     }
 
     .gp-todo-item {
@@ -711,7 +711,9 @@
       flex-direction: row;
       align-items: center;
       gap: 12px;
-      padding: 10px 14px;
+      padding: 10px 0;
+      cursor: pointer;
+      transition: opacity 0.2s;
     }
 
     .gp-todo-divider {
@@ -2345,9 +2347,9 @@
             </div>
           </div>
           <div class="gp-todo-section">
-            <div class="gp-todo-header">To Do</div>
-            <div class="gp-todo-list">
-              <div class="gp-todo-item">
+            <div class="gp-todo-header" id="gp-todo-header">To Do</div>
+            <div class="gp-todo-list" id="gp-todo-list">
+              <div class="gp-todo-item" onclick="toggleGpTodo(this)">
                 <div class="gp-checkbox"></div>
                 <div class="gp-todo-content">
                   <div class="gp-todo-title">Take Vitamin D3</div>
@@ -2355,7 +2357,7 @@
                 </div>
               </div>
               <div class="gp-todo-divider"></div>
-              <div class="gp-todo-item">
+              <div class="gp-todo-item" onclick="toggleGpTodo(this)">
                 <div class="gp-checkbox"></div>
                 <div class="gp-todo-content">
                   <div class="gp-todo-title">Schedule dermatology follow-up</div>
@@ -2363,7 +2365,7 @@
                 </div>
               </div>
               <div class="gp-todo-divider"></div>
-              <div class="gp-todo-item gp-todo-done">
+              <div class="gp-todo-item gp-todo-done" onclick="toggleGpTodo(this)">
                 <div class="gp-checkbox gp-checkbox-checked">
                   <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
@@ -3091,6 +3093,36 @@
         }, 400);
       }, 4000);
     })();
+
+    // Game plan todo toggle
+    const checkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+    window.toggleGpTodo = function(item) {
+      const checkbox = item.querySelector('.gp-checkbox');
+      const isDone = item.classList.contains('gp-todo-done');
+
+      if (isDone) {
+        item.classList.remove('gp-todo-done');
+        checkbox.classList.remove('gp-checkbox-checked');
+        checkbox.innerHTML = '';
+      } else {
+        item.classList.add('gp-todo-done');
+        checkbox.classList.add('gp-checkbox-checked');
+        checkbox.innerHTML = checkSvg;
+      }
+
+      // Check if all todos are done
+      const items = document.querySelectorAll('#gp-todo-list .gp-todo-item');
+      const allDone = Array.from(items).every(i => i.classList.contains('gp-todo-done'));
+      const header = document.getElementById('gp-todo-header');
+      if (allDone) {
+        header.innerHTML = '✓ All done for today!';
+        header.style.color = '#2E7D32';
+      } else {
+        header.textContent = 'To Do';
+        header.style.color = '';
+      }
+    };
 
     // Annual physical card bounce
     (function() {
