@@ -32,7 +32,7 @@ async function submitBlogSignup(email, successEl, formEl) {
     } else if (!resp.ok) {
       throw new Error('Signup failed');
     } else {
-      successEl.textContent = "You're in! Check your inbox in the next few hours \u2014 I'll personally send you a link to set up your 20-minute onboarding call.";
+      successEl.textContent = "You're in! We'll reach out when early access is ready.";
     }
     formEl.style.display = 'none';
     successEl.style.display = 'block';

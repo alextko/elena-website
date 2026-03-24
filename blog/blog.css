@@ -588,6 +588,45 @@ body {
   line-height: 1.5;
 }
 
+/* ========== SOURCES ========== */
+.blog-sources {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(15, 27, 61, 0.08);
+}
+
+.blog-sources h2 {
+  font-size: 1rem !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(26, 26, 46, 0.5);
+  margin-top: 0 !important;
+  margin-bottom: 1rem;
+}
+
+.blog-sources ol {
+  padding-left: 1.25rem;
+  margin-bottom: 0;
+}
+
+.blog-sources li {
+  font-size: 0.88rem !important;
+  line-height: 1.6;
+  color: rgba(26, 26, 46, 0.6);
+  margin-bottom: 0.4rem;
+}
+
+.blog-sources a {
+  color: #2E6BB5;
+  text-decoration: none;
+  word-break: break-word;
+}
+
+.blog-sources a:hover {
+  text-decoration: underline;
+}
+
 /* ========== ANIMATIONS ========== */
 .fade-in {
   opacity: 0;
