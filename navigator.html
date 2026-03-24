@@ -2349,9 +2349,9 @@
               <span class="gp-cal-label">Tue</span>
               <span class="gp-cal-num">23</span>
             </div>
-            <div class="gp-cal-day gp-cal-today">
+            <div class="gp-cal-day gp-cal-today" id="gp-today">
               <span class="gp-cal-label">Wed</span>
-              <span class="gp-cal-num">24</span>
+              <span class="gp-cal-num" id="gp-today-num">24</span>
             </div>
             <div class="gp-cal-day">
               <span class="gp-cal-label">Thu</span>
@@ -3173,16 +3173,21 @@
         checkbox.innerHTML = checkSvg;
       }
 
-      // Check if all todos are done
+      // Check if all todos are done — today circle becomes a checkmark
       const items = document.querySelectorAll('#gp-todo-list .gp-todo-item');
       const allDone = Array.from(items).every(i => i.classList.contains('gp-todo-done'));
-      const header = document.getElementById('gp-todo-header');
+      const todayNum = document.getElementById('gp-today-num');
+      const todayDay = document.getElementById('gp-today');
       if (allDone) {
-        header.innerHTML = '✓ All done for today!';
-        header.style.color = '#2E7D32';
+        todayNum.innerHTML = '✓';
+        todayNum.style.fontSize = '16px';
+        todayDay.style.background = '#2E7D32';
+        todayDay.querySelector('.gp-cal-label').style.color = '#FFFFFF';
       } else {
-        header.textContent = 'To Do';
-        header.style.color = '';
+        todayNum.textContent = '24';
+        todayNum.style.fontSize = '';
+        todayDay.style.background = '';
+        todayDay.querySelector('.gp-cal-label').style.color = '';
       }
     };
 
