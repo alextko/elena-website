@@ -1129,6 +1129,13 @@
       opacity: 0;
       transform: translateY(16px);
       transition: opacity 0.4s ease, transform 0.4s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .ch-anim-right {
+      align-items: flex-end;
     }
 
     .ch-anim.ch-visible {
@@ -2495,7 +2502,7 @@
       </div>
       <div class="spotlight-ui">
         <div class="ch-container" id="mri-chat">
-          <div class="ch-anim" style="--delay: 0">
+          <div class="ch-anim ch-anim-right" style="--delay: 0">
             <div class="ch-msg-user">How much would an MRI of my knee cost?</div>
           </div>
           <div class="ch-anim" style="--delay: 1">
@@ -2549,7 +2556,7 @@
             </div>
           </div>
           </div>
-          <div class="ch-anim" style="--delay: 3">
+          <div class="ch-anim ch-anim-right" style="--delay: 3">
             <div class="ch-msg-user">Book the imaging center</div>
           </div>
           <div class="ch-anim" style="--delay: 4">
