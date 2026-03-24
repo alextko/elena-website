@@ -1259,7 +1259,91 @@
       background: #0F1B3D;
     }
 
-    /* (savings card removed, replaced by phone calling agent) */
+    /* ---- Spotlight 6: Profile Switcher ---- */
+    .sw-sheet {
+      background: #FFFFFF;
+      border-radius: 20px;
+      padding: 20px 24px 32px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .sw-handle {
+      width: 40px;
+      height: 4px;
+      background: #AEAEB2;
+      border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+
+    .sw-header {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .sw-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #1C1C1E;
+    }
+
+    .sw-add {
+      font-size: 24px;
+      font-weight: 400;
+      color: #0F1B3D;
+      cursor: pointer;
+    }
+
+    .sw-option {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      padding: 12px 14px;
+      gap: 12px;
+      border-radius: 12px;
+      border: 2px solid transparent;
+      margin-bottom: 8px;
+    }
+
+    .sw-option-selected {
+      border-color: #0F1B3D;
+      background: #F7F6F2;
+    }
+
+    .sw-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: #FFFFFF;
+      flex-shrink: 0;
+    }
+
+    .sw-name-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sw-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1C1C1E;
+    }
+
+    .sw-badge {
+      font-size: 12px;
+      font-weight: 400;
+      color: #AEAEB2;
+      margin-top: 2px;
+    }
 
     @media (max-width: 768px) {
       .spotlight,
@@ -2203,6 +2287,58 @@
               <div class="ch-confirmation-doctor">Dr. James Park</div>
               <div class="ch-confirmation-detail">Thursday, Apr 10, 2026 at 2:00 PM</div>
               <div class="ch-confirmation-reason">Skin check follow-up</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spotlight 6: Family Profiles -->
+    <div class="spotlight spotlight-reverse fade-in">
+      <div class="spotlight-text">
+        <h3>Your whole family, one app</h3>
+        <p>Manage healthcare for your parents, your partner, your kids. Switch between profiles in one tap and Elena knows everyone's history.</p>
+      </div>
+      <div class="spotlight-ui">
+        <div class="sw-sheet">
+          <div class="sw-handle"></div>
+          <div class="sw-header">
+            <span class="sw-title">Switch Profile</span>
+            <span class="sw-add">+</span>
+          </div>
+          <div class="sw-option sw-option-selected">
+            <div class="sw-avatar" style="background: #3B82F6;">AR</div>
+            <div class="sw-name-col">
+              <span class="sw-name">Alex Reinhart</span>
+              <span class="sw-badge">Me</span>
+            </div>
+          </div>
+          <div class="sw-option">
+            <div class="sw-avatar" style="background: #EC4899;">SR</div>
+            <div class="sw-name-col">
+              <span class="sw-name">Sarah Reinhart</span>
+              <span class="sw-badge">Linked</span>
+            </div>
+          </div>
+          <div class="sw-option">
+            <div class="sw-avatar" style="background: #10B981;">ER</div>
+            <div class="sw-name-col">
+              <span class="sw-name">Emma Reinhart</span>
+              <span class="sw-badge">Managed</span>
+            </div>
+          </div>
+          <div class="sw-option">
+            <div class="sw-avatar" style="background: #F97316;">JR</div>
+            <div class="sw-name-col">
+              <span class="sw-name">Jack Reinhart</span>
+              <span class="sw-badge">Managed</span>
+            </div>
+          </div>
+          <div class="sw-option">
+            <div class="sw-avatar" style="background: #8B5CF6;">MR</div>
+            <div class="sw-name-col">
+              <span class="sw-name">Martha Reinhart</span>
+              <span class="sw-badge">Linked</span>
             </div>
           </div>
         </div>
