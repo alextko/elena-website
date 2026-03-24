@@ -1570,6 +1570,8 @@
       border-radius: 12px;
       border: 2px solid transparent;
       margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
     }
 
     .sw-option-selected {
@@ -2676,35 +2678,35 @@
             <span class="sw-title">Switch Profile</span>
             <span class="sw-add">+</span>
           </div>
-          <div class="sw-option sw-option-selected">
+          <div class="sw-option sw-option-selected" onclick="selectProfile(this)">
             <img class="sw-avatar-img" src="https://i.pravatar.cc/72?img=32" alt="">
             <div class="sw-name-col">
               <span class="sw-name">David Castillo</span>
               <span class="sw-badge">Me</span>
             </div>
           </div>
-          <div class="sw-option">
+          <div class="sw-option" onclick="selectProfile(this)">
             <img class="sw-avatar-img" src="https://i.pravatar.cc/72?img=47" alt="">
             <div class="sw-name-col">
               <span class="sw-name">Maria Castillo</span>
               <span class="sw-badge">Linked</span>
             </div>
           </div>
-          <div class="sw-option">
+          <div class="sw-option" onclick="selectProfile(this)">
             <img class="sw-avatar-img" src="https://i.pravatar.cc/72?img=38" alt="">
             <div class="sw-name-col">
               <span class="sw-name">Sofia Castillo</span>
               <span class="sw-badge">Managed</span>
             </div>
           </div>
-          <div class="sw-option">
+          <div class="sw-option" onclick="selectProfile(this)">
             <img class="sw-avatar-img" src="https://i.pravatar.cc/72?img=59" alt="">
             <div class="sw-name-col">
               <span class="sw-name">Lucas Castillo</span>
               <span class="sw-badge">Managed</span>
             </div>
           </div>
-          <div class="sw-option">
+          <div class="sw-option" onclick="selectProfile(this)">
             <img class="sw-avatar-img" src="https://i.pravatar.cc/72?img=25" alt="">
             <div class="sw-name-col">
               <span class="sw-name">Rosa Castillo</span>
@@ -3182,6 +3184,13 @@
         header.textContent = 'To Do';
         header.style.color = '';
       }
+    };
+
+    // Profile switcher
+    window.selectProfile = function(el) {
+      var options = document.querySelectorAll('.sw-option');
+      options.forEach(function(o) { o.classList.remove('sw-option-selected'); });
+      el.classList.add('sw-option-selected');
     };
 
     // Annual physical card bounce
