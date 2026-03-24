@@ -1043,6 +1043,93 @@
       color: #AEAEB2;
     }
 
+    /* Booking status rows */
+    .ch-booking-row {
+      align-self: flex-start;
+      max-width: 90%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0;
+    }
+
+    .ch-booking-emoji {
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .ch-booking-text {
+      font-size: 15px;
+      line-height: 22px;
+      font-weight: 500;
+      color: #0F1B3D;
+    }
+
+    /* Confirmation card */
+    .ch-confirmation {
+      align-self: flex-start;
+      max-width: 90%;
+      background: #FFFFFF;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      margin: 4px 0;
+    }
+
+    .ch-confirmation-header {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 14px 8px;
+      border-bottom: 1px solid #F2F2F7;
+    }
+
+    .ch-confirmation-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 5px;
+      border: 2px solid;
+      background: transparent;
+    }
+
+    .ch-confirmation-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .ch-confirmation-body {
+      padding: 12px 14px;
+    }
+
+    .ch-confirmation-type {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0F1B3D;
+    }
+
+    .ch-confirmation-doctor {
+      font-size: 14px;
+      color: #8E8E93;
+      margin-top: 2px;
+    }
+
+    .ch-confirmation-detail {
+      font-size: 13px;
+      font-weight: 600;
+      color: #0F1B3D;
+      margin-top: 6px;
+    }
+
+    .ch-confirmation-reason {
+      font-size: 13px;
+      color: #AEAEB2;
+      margin-top: 2px;
+    }
+
     /* ---- Spotlight 4a: Insurance Card ---- */
     .ins-card-wrapper {
       display: flex;
@@ -1171,106 +1258,7 @@
       background: #0F1B3D;
     }
 
-    /* ---- Spotlight 4b: Savings Preview Card ---- */
-    .sv-card {
-      background: #FFFFFF;
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-
-    .sv-header {
-      display: flex;
-      flex-direction: row;
-      margin-bottom: 14px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid #F2F2F7;
-    }
-
-    .sv-header span {
-      font-size: 12px;
-      font-weight: 600;
-      color: #8E8E93;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .sv-header .sv-col-desc { flex: 2; }
-    .sv-header .sv-col-price { flex: 1; text-align: right; }
-
-    .sv-item { margin-bottom: 4px; }
-
-    .sv-row {
-      display: flex;
-      flex-direction: row;
-      align-items: flex-start;
-      padding: 6px 0;
-    }
-
-    .sv-desc {
-      flex: 2;
-      font-size: 14px;
-      font-weight: 500;
-      color: #1C1C1E;
-      line-height: 20px;
-    }
-
-    .sv-billed {
-      flex: 1;
-      text-align: right;
-      font-size: 14px;
-      font-weight: 500;
-      color: #8E8E93;
-      text-decoration: line-through;
-    }
-
-    .sv-fair {
-      flex: 1;
-      text-align: right;
-      font-size: 14px;
-      font-weight: 600;
-      color: #1B7A3D;
-    }
-
-    .sv-pill {
-      display: inline-block;
-      background: #E8F5EC;
-      color: #1B7A3D;
-      font-size: 12px;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 12px;
-      margin-top: 4px;
-      margin-bottom: 6px;
-    }
-
-    .sv-divider {
-      height: 1px;
-      background: #F2F2F7;
-      margin: 4px 0;
-    }
-
-    .sv-total {
-      display: flex;
-      flex-direction: row;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px solid #E5E5EA;
-    }
-
-    .sv-total-label {
-      font-size: 15px;
-      font-weight: 600;
-      color: #1C1C1E;
-    }
-
-    .sv-total-amount {
-      font-size: 20px;
-      font-weight: 700;
-      color: #1B7A3D;
-    }
+    /* (savings card removed — replaced by phone calling agent) */
 
     @media (max-width: 768px) {
       .spotlight,
@@ -2192,49 +2180,41 @@
       </div>
     </div>
 
-    <!-- Spotlight 4b: Savings Card — text LEFT, card RIGHT -->
+    <!-- Spotlight 4b: Phone Calling Agent — text LEFT, chat RIGHT -->
     <div class="spotlight fade-in">
       <div class="spotlight-text">
-        <h3>Know what you should actually pay</h3>
-        <p>Upload a bill and Elena breaks down every charge, flags what's overpriced, and shows you what to dispute.</p>
+        <h3>She actually calls for you</h3>
+        <p>No hold music. No phone tag. Elena calls the doctor's office, checks availability, confirms your insurance, and books it — you just get the confirmation.</p>
       </div>
       <div class="spotlight-ui">
-        <div class="sv-card">
-          <div class="sv-header">
-            <span class="sv-col-desc">Item</span>
-            <span class="sv-col-price">Billed</span>
-            <span class="sv-col-price">Fair price</span>
+        <div class="ch-wrapper">
+          <div class="ch-msg-user">Can you schedule a dermatology appointment with Dr. Park for next week?</div>
+          <div class="ch-msg-elena">On it! I'll call Park Dermatology Associates now.</div>
+          <div class="ch-booking-row">
+            <span class="ch-booking-emoji">📞</span>
+            <span class="ch-booking-text">Calling Park Dermatology Associates...</span>
           </div>
-          <div class="sv-item">
-            <div class="sv-row">
-              <span class="sv-desc">Office visit (Level 3)</span>
-              <span class="sv-billed">$350</span>
-              <span class="sv-fair">$185</span>
+          <div class="ch-booking-row">
+            <span class="ch-booking-emoji">🗓️</span>
+            <span class="ch-booking-text">Checking availability for next week...</span>
+          </div>
+          <div class="ch-booking-row">
+            <span class="ch-booking-emoji">✅</span>
+            <span class="ch-booking-text">Appointment confirmed!</span>
+          </div>
+          <div class="ch-confirmation">
+            <div class="ch-confirmation-header">
+              <div class="ch-confirmation-dot" style="border-color: #34C759;"></div>
+              <span class="ch-confirmation-title" style="color: #34C759;">Booked</span>
             </div>
-            <span class="sv-pill">Save $165</span>
-          </div>
-          <div class="sv-divider"></div>
-          <div class="sv-item">
-            <div class="sv-row">
-              <span class="sv-desc">CBC blood panel</span>
-              <span class="sv-billed">$120</span>
-              <span class="sv-fair">$35</span>
+            <div class="ch-confirmation-body">
+              <div class="ch-confirmation-type">Dermatology</div>
+              <div class="ch-confirmation-doctor">Dr. James Park</div>
+              <div class="ch-confirmation-detail">Thursday, Apr 10, 2026 at 2:00 PM</div>
+              <div class="ch-confirmation-reason">Skin check follow-up</div>
             </div>
-            <span class="sv-pill">Save $85</span>
           </div>
-          <div class="sv-divider"></div>
-          <div class="sv-item">
-            <div class="sv-row">
-              <span class="sv-desc">Metabolic panel</span>
-              <span class="sv-billed">$95</span>
-              <span class="sv-fair">$30</span>
-            </div>
-            <span class="sv-pill">Save $65</span>
-          </div>
-          <div class="sv-total">
-            <span class="sv-total-label">Potential savings</span>
-            <span class="sv-total-amount">$315</span>
-          </div>
+          <div class="ch-msg-elena">All set! I confirmed your insurance is accepted and there's no referral needed. I've added it to your calendar and I'll remind you the day before.</div>
         </div>
       </div>
     </div>
