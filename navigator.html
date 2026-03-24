@@ -1303,13 +1303,26 @@
     }
 
     /* Confirmation card */
+    @keyframes phone-wiggle {
+      0%, 80%, 100% { transform: rotate(0deg); }
+      84% { transform: rotate(-12deg); }
+      88% { transform: rotate(12deg); }
+      92% { transform: rotate(-8deg); }
+      96% { transform: rotate(8deg); }
+    }
+
+    .ch-booking-emoji-wiggle {
+      display: inline-block;
+      animation: phone-wiggle 3s ease-in-out infinite;
+    }
+
     .ch-confirmation {
       align-self: flex-start;
       max-width: 90%;
       background: #FFFFFF;
       border-radius: 14px;
       overflow: hidden;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
       margin: 16px 0;
     }
 
@@ -1391,6 +1404,7 @@
       overflow: hidden;
       width: 100%;
       box-sizing: border-box;
+      transition: opacity 0.4s ease;
     }
 
     .ins-card-gloss {
@@ -2560,7 +2574,7 @@
       <div class="spotlight-ui">
         <div class="ch-wrapper">
           <div class="ch-booking-row">
-            <span class="ch-booking-emoji">📞</span>
+            <span class="ch-booking-emoji ch-booking-emoji-wiggle">📞</span>
             <span class="ch-booking-text">Calling Park Dermatology Associates...</span>
           </div>
           <div class="ch-confirmation">
@@ -3043,6 +3057,59 @@
       if (e.key === 'Escape') closeVisitModal();
     });
   })();
+  </script>
+
+  <script>
+    // Insurance card rotation
+    (function() {
+      const cards = [
+        { type: 'Medical', plan: 'Blue Cross Blue Shield PPO', provider: 'Blue Cross', memberId: 'BCB123456789', group: 'G98765', copay: '$25 PCP / $50 Specialist', bg: '#0F1B3D' },
+        { type: 'Dental', plan: 'Delta Dental Premier', provider: 'Delta Dental', memberId: 'DT987654321', group: 'D45678', copay: '$0 Preventive / $20 Basic', bg: '#7A9E8E' },
+        { type: 'Vision', plan: 'VSP Choice Plan', provider: 'VSP Vision', memberId: 'VSP111222333', group: 'V12345', copay: '$10 Eye Exam / $0 Lenses', bg: '#6B7FA3' },
+      ];
+      let idx = 0;
+      const card = document.querySelector('.ins-card');
+      const dots = document.querySelectorAll('.ins-card-dots > div');
+      if (!card) return;
+
+      setInterval(() => {
+        card.style.opacity = '0';
+        setTimeout(() => {
+          idx = (idx + 1) % cards.length;
+          const c = cards[idx];
+          card.style.background = c.bg;
+          card.querySelector('.ins-card-type').textContent = c.type;
+          card.querySelector('.ins-card-plan').textContent = c.plan;
+          card.querySelector('.ins-card-provider').textContent = c.provider;
+          card.querySelectorAll('.ins-card-value')[0].textContent = c.memberId;
+          card.querySelectorAll('.ins-card-value')[1].textContent = c.group;
+          card.querySelector('.ins-card-copay-value').textContent = c.copay;
+          dots.forEach((d, i) => {
+            d.className = i === idx ? 'ins-card-dot-active' : 'ins-card-dot';
+          });
+          card.style.opacity = '1';
+        }, 400);
+      }, 4000);
+    })();
+
+    // Annual physical card bounce
+    (function() {
+      const annualCard = document.querySelector('[data-visit="annual-physical"]');
+      if (!annualCard) return;
+      setInterval(() => {
+        annualCard.style.transition = 'transform 0.15s ease';
+        annualCard.style.transform = 'translateY(-6px)';
+        setTimeout(() => {
+          annualCard.style.transform = 'translateY(0)';
+          setTimeout(() => {
+            annualCard.style.transform = 'translateY(-3px)';
+            setTimeout(() => {
+              annualCard.style.transform = 'translateY(0)';
+            }, 150);
+          }, 150);
+        }, 150);
+      }, 5000);
+    })();
   </script>
 
   <script defer src="/_vercel/insights/script.js"></script>
