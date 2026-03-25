@@ -111,7 +111,7 @@ export function ChatArea({
   const [streamingId, setStreamingId] = useState<string | null>("4"); // Last message streams
 
   return (
-    <div className="relative flex flex-1 flex-col min-w-0 bg-white">
+    <div className="relative flex flex-1 flex-col min-w-0 overflow-x-hidden bg-white">
       {/* Grain texture overlay */}
       <div
         className="pointer-events-none absolute inset-0 z-0 opacity-[0.08] mix-blend-overlay"
