@@ -578,6 +578,85 @@
       line-height: 1.7;
     }
 
+    .manifesto-col {
+      flex: 1;
+    }
+
+    .manifesto-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #2E6BB5;
+      margin-bottom: 12px;
+    }
+
+    .manifesto-col-title {
+      font-size: clamp(1.5rem, 2.5vw, 2rem);
+      font-weight: 300;
+      letter-spacing: -0.025em;
+      color: #0F1B3D;
+      line-height: 1.2;
+      margin-bottom: 14px;
+    }
+
+    .manifesto-col-body {
+      font-size: 1rem;
+      font-weight: 300;
+      color: #5a6a82;
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+
+    .manifesto-divider {
+      width: 1px;
+      background: rgba(15, 27, 61, 0.1);
+      align-self: stretch;
+      flex-shrink: 0;
+    }
+
+    .manifesto-btn {
+      display: inline-block;
+      padding: 14px 28px;
+      border-radius: 100px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      font-family: inherit;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .manifesto-btn-primary {
+      background: #0F1B3D;
+      color: #fff;
+    }
+
+    .manifesto-btn-primary:hover {
+      background: #1A3A6E;
+    }
+
+    .manifesto-btn-secondary {
+      background: transparent;
+      color: #0F1B3D;
+      border: 1.5px solid rgba(15, 27, 61, 0.2);
+    }
+
+    .manifesto-btn-secondary:hover {
+      border-color: rgba(15, 27, 61, 0.4);
+      background: rgba(15, 27, 61, 0.04);
+    }
+
+    @media (max-width: 768px) {
+      .manifesto-inner {
+        flex-direction: column;
+      }
+
+      .manifesto-divider {
+        width: 100%;
+        height: 1px;
+      }
+    }
+
     .manifesto-phone {
       flex-shrink: 0;
     }
@@ -2725,13 +2804,21 @@
 
 
 
-  <!-- MANIFESTO -->
+  <!-- MANIFESTO: TWO-COLUMN -->
   <section class="manifesto">
-    <div class="manifesto-inner fade-in" style="max-width: 720px; text-align: center;">
-      <div class="manifesto-text">
-        <h2>Your health shouldn't live in 10 different patient portals.</h2>
-        <p>The average American sees 7 doctors across 4 different health systems. Your records are scattered across portals you can't remember the password to. Important follow-ups get lost. Prescriptions lapse quietly.</p>
-        <p style="margin-top: 12px;">Elena pulls everything together: your documents, your appointments, your family's care. One AI-powered assistant that actually keeps track so you don't have to.</p>
+    <div class="manifesto-inner fade-in" style="max-width: 960px; text-align: left;">
+      <div class="manifesto-col">
+        <div class="manifesto-label">Available now</div>
+        <h3 class="manifesto-col-title">Use Elena today</h3>
+        <p class="manifesto-col-body">Compare procedure prices, dispute medical bills, find in-network doctors, and get answers about your insurance. Elena handles the phone calls, the research, and the paperwork.</p>
+        <a href="#" class="manifesto-btn manifesto-btn-primary" onclick="document.getElementById('chat-hero-input').scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(function(){document.getElementById('chat-hero-input').focus()},500); return false;">Try Elena now</a>
+      </div>
+      <div class="manifesto-divider"></div>
+      <div class="manifesto-col">
+        <div class="manifesto-label">Coming soon</div>
+        <h3 class="manifesto-col-title">The Elena app</h3>
+        <p class="manifesto-col-body">All your health data, documents, and family's care in one place. A personal assistant that tracks follow-ups, manages medications, and keeps your whole family on top of their health.</p>
+        <a href="#waitlist" class="manifesto-btn manifesto-btn-secondary">Apply for early access</a>
       </div>
     </div>
   </section>
