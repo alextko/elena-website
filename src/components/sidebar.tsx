@@ -28,7 +28,7 @@ export function Sidebar() {
         <img
           src="/images/elena-icon-cropped.png"
           alt="Elena"
-          className="h-8 w-8 rounded-lg"
+          className="h-10 w-10 rounded-xl"
         />
         <span className="text-lg font-extrabold text-[#0F1B3D]">elena</span>
       </div>
@@ -65,6 +65,20 @@ export function Sidebar() {
           </div>
         ))}
       </ScrollArea>
+
+      {/* Credits */}
+      <div className="mx-4 mb-3 rounded-xl border border-[#0F1B3D]/[0.06] bg-white/60 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-[#0F1B3D]/50">Credits</span>
+          <span className="text-xs font-bold text-[#0F1B3D]">47 remaining</span>
+        </div>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#0F1B3D]/[0.06]">
+          <div className="h-full w-[47%] rounded-full bg-[#0F1B3D]" />
+        </div>
+        <button className="mt-2 w-full text-center text-[0.7rem] font-semibold text-[#0F1B3D]/50 transition-colors hover:text-[#0F1B3D]">
+          Get more credits
+        </button>
+      </div>
 
       {/* User */}
       <div className="flex items-center gap-2.5 border-t border-[#0F1B3D]/[0.06] px-5 py-4">
