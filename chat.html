@@ -153,10 +153,11 @@
       inset: 0;
       z-index: 0;
       background: linear-gradient(135deg,
-        #0F1B3D 0%,
-        #1A3A6E 30%,
-        #2E6BB5 60%,
-        #2E6BB5 100%
+        #080E1F 0%,
+        #0F1B3D 20%,
+        #1A3A6E 45%,
+        #2E6BB5 70%,
+        #3578C4 100%
       );
     }
 
@@ -167,67 +168,25 @@
       inset: 0;
       background: radial-gradient(ellipse at 85% 130%,
         #F4B084 0%,
-        #E8956D 25%,
-        rgba(46, 107, 181, 0) 60%
+        #E8956D 20%,
+        rgba(46, 107, 181, 0) 50%
       );
     }
 
-    /* Subtle grain texture */
+    /* Fine grain texture */
     .hero-bg::before {
       content: '';
       position: absolute;
       inset: 0;
       z-index: 3;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-      opacity: 0.12;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.18;
       mix-blend-mode: overlay;
       pointer-events: none;
     }
 
-    /* Interactive gradient blobs */
-    .hero-blobs {
-      position: absolute;
-      inset: 0;
-      z-index: 2;
-      overflow: hidden;
-      pointer-events: none;
-    }
-
-    .hero-blob {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(80px);
-      will-change: transform;
-      transition: transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
-    }
-
-    .hero-blob-1 {
-      width: 500px;
-      height: 500px;
-      background: radial-gradient(circle, rgba(46, 107, 181, 0.5) 0%, transparent 70%);
-      top: -10%;
-      left: 20%;
-    }
-
-    .hero-blob-2 {
-      width: 600px;
-      height: 600px;
-      background: radial-gradient(circle, rgba(244, 176, 132, 0.35) 0%, transparent 70%);
-      bottom: -20%;
-      right: -5%;
-    }
-
-    .hero-blob-3 {
-      width: 400px;
-      height: 400px;
-      background: radial-gradient(circle, rgba(26, 58, 110, 0.4) 0%, transparent 70%);
-      top: 30%;
-      right: 25%;
-    }
-
-    .hero-blob-4 {
-      width: 450px;
-      height: 450px;
+    /* Blobs hidden */
+    .hero-blobs { display: none; }
       background: radial-gradient(circle, rgba(232, 149, 109, 0.25) 0%, transparent 70%);
       bottom: 10%;
       left: 5%;
