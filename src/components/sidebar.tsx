@@ -3,6 +3,7 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Plus, Search } from "lucide-react";
+import { ProfilePopover } from "@/components/profile-popover";
 
 const HISTORY = {
   Today: [
@@ -67,18 +68,20 @@ export function Sidebar() {
       </ScrollArea>
 
       {/* User */}
-      <div className="flex items-center gap-2.5 border-t border-[#0F1B3D]/[0.06] px-5 py-4">
-        <Avatar className="h-8 w-8">
-          <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-xs font-semibold text-[#0F1B3D]/50">AR</AvatarFallback>
-        </Avatar>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-bold text-[#0F1B3D]">Alex Reinhart</p>
-            <span className="rounded-full bg-[#0F1B3D]/[0.06] px-2 py-0.5 text-[0.65rem] font-semibold text-[#0F1B3D]/50">5 credits</span>
+      <ProfilePopover>
+        <button className="flex w-full items-center gap-2.5 border-t border-[#0F1B3D]/[0.06] px-5 py-4 text-left transition-colors hover:bg-[#0F1B3D]/[0.03]">
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-xs font-semibold text-[#0F1B3D]/50">AR</AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-bold text-[#0F1B3D]">Alex Reinhart</p>
+              <span className="rounded-full bg-[#0F1B3D]/[0.06] px-2 py-0.5 text-[0.65rem] font-semibold text-[#0F1B3D]/50">5 credits</span>
+            </div>
+            <p className="truncate text-xs text-[#0F1B3D]/40">alex@example.com</p>
           </div>
-          <p className="truncate text-xs text-[#0F1B3D]/40">alex@example.com</p>
-        </div>
-      </div>
+        </button>
+      </ProfilePopover>
     </div>
   );
 }
