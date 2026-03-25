@@ -66,24 +66,16 @@ export function Sidebar() {
         ))}
       </ScrollArea>
 
-      {/* Credits */}
-      <div className="mx-4 mb-3 rounded-xl border border-[#0F1B3D]/[0.06] bg-white/60 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-[#0F1B3D]/50">Credits</span>
-          <span className="text-xs font-bold text-[#0F1B3D]">5 remaining</span>
-        </div>
-        <button className="mt-1.5 w-full text-center text-[0.7rem] font-semibold text-[#0F1B3D]/50 transition-colors hover:text-[#0F1B3D]">
-          Get more credits
-        </button>
-      </div>
-
       {/* User */}
       <div className="flex items-center gap-2.5 border-t border-[#0F1B3D]/[0.06] px-5 py-4">
         <Avatar className="h-8 w-8">
           <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-xs font-semibold text-[#0F1B3D]/50">AR</AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-[#0F1B3D]">Alex Reinhart</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-bold text-[#0F1B3D]">Alex Reinhart</p>
+            <span className="rounded-full bg-[#0F1B3D]/[0.06] px-2 py-0.5 text-[0.65rem] font-semibold text-[#0F1B3D]/50">5 credits</span>
+          </div>
           <p className="truncate text-xs text-[#0F1B3D]/40">alex@example.com</p>
         </div>
       </div>
