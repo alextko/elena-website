@@ -32,7 +32,7 @@ export function Sidebar() {
           alt="Elena"
           className="h-8 w-8 rounded-lg"
         />
-        <span className="text-base font-semibold text-foreground">elena</span>
+        <span className="text-lg font-extrabold text-[#0F1B3D]">elena</span>
       </div>
 
       {/* Actions */}
@@ -78,7 +78,7 @@ export function Sidebar() {
           <AvatarFallback className="text-xs">AR</AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-foreground">Alex Reinhart</p>
+          <p className="text-sm font-bold text-[#0F1B3D]">Alex Reinhart</p>
           <p className="truncate text-xs text-muted-foreground">alex@example.com</p>
         </div>
       </div>
