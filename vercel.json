@@ -1,5 +1,9 @@
 {
   "cleanUrls": true,
+  "redirects": [
+    { "source": "/navigator", "destination": "/", "permanent": false },
+    { "source": "/chat", "destination": "/", "permanent": false }
+  ],
   "rewrites": [
     { "source": "/invite/:code", "destination": "/invite/index.html" }
   ],
