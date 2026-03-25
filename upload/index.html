@@ -389,12 +389,15 @@
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpdmJycnFxeG52bnhoZ2dndWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Njc1MzYsImV4cCI6MjA4NzA0MzUzNn0.MkOKc7MWq5zoR3OY7wZgOsPwvjjKSij0ln1nF6inxP0';
   const API_BASE = 'https://elena-backend-production-production.up.railway.app';
 
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  if (!window.supabase || !window.supabase.createClient) {
+    alert('Supabase library failed to load. Please refresh the page.');
+  }
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   let accessToken = null;
 
   // Check existing session on load
   (async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await sb.auth.getSession();
     if (session) {
       accessToken = session.access_token;
       showApp(session.user.email);
@@ -402,7 +405,7 @@
   })();
 
   async function handleGoogleSignIn() {
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error } = await sb.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.origin + '/upload/' },
     });
@@ -413,7 +416,7 @@
   }
 
   async function handleAppleSignIn() {
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error } = await sb.auth.signInWithOAuth({
       provider: 'apple',
       options: { redirectTo: window.location.origin + '/upload/' },
     });
@@ -440,7 +443,7 @@
     errEl.classList.remove('visible');
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
 
       if (error) {
         errEl.textContent = error.message;
@@ -461,7 +464,7 @@
   }
 
   async function handleSignOut() {
-    await supabase.auth.signOut();
+    await sb.auth.signOut();
     accessToken = null;
     document.getElementById('auth-section').style.display = 'block';
     document.getElementById('app-section').style.display = 'none';
