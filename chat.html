@@ -2041,37 +2041,41 @@
     }
 
     /* Progressive blur edges */
-    .features-carousel-wrapper .prog-blur {
+    .prog-blur {
       position: absolute;
       top: 0;
       bottom: 0;
-      width: 120px;
+      width: 100px;
       z-index: 2;
       pointer-events: none;
-      display: flex;
+      overflow: hidden;
     }
 
-    .features-carousel-wrapper .prog-blur-left { left: 0; flex-direction: row; }
-    .features-carousel-wrapper .prog-blur-right { right: 0; flex-direction: row-reverse; }
+    .prog-blur-left { left: 0; }
+    .prog-blur-right { right: 0; }
 
     .prog-blur-layer {
       position: absolute;
-      top: 0;
-      bottom: 0;
+      inset: 0;
       backdrop-filter: blur(var(--blur));
       -webkit-backdrop-filter: blur(var(--blur));
-      mask: linear-gradient(to var(--dir), rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
-      -webkit-mask: linear-gradient(to var(--dir), rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
     }
 
-    .prog-blur-left .prog-blur-layer { left: 0; --dir: right; }
-    .prog-blur-right .prog-blur-layer { right: 0; --dir: left; }
+    .prog-blur-left .prog-blur-layer {
+      mask: linear-gradient(to right, black var(--start), transparent var(--end));
+      -webkit-mask: linear-gradient(to right, black var(--start), transparent var(--end));
+    }
 
-    .prog-blur-layer:nth-child(1) { width: 25%; --blur: 1px; z-index: 1; }
-    .prog-blur-layer:nth-child(2) { width: 50%; --blur: 2px; z-index: 2; }
-    .prog-blur-layer:nth-child(3) { width: 75%; --blur: 4px; z-index: 3; }
-    .prog-blur-layer:nth-child(4) { width: 100%; --blur: 8px; z-index: 4; }
-    .prog-blur-layer:nth-child(5) { width: 100%; --blur: 16px; z-index: 5; }
+    .prog-blur-right .prog-blur-layer {
+      mask: linear-gradient(to left, black var(--start), transparent var(--end));
+      -webkit-mask: linear-gradient(to left, black var(--start), transparent var(--end));
+    }
+
+    .prog-blur-layer:nth-child(1) { --blur: 1px; --start: 0%; --end: 20%; }
+    .prog-blur-layer:nth-child(2) { --blur: 2px; --start: 0%; --end: 40%; }
+    .prog-blur-layer:nth-child(3) { --blur: 4px; --start: 0%; --end: 60%; }
+    .prog-blur-layer:nth-child(4) { --blur: 8px; --start: 0%; --end: 80%; }
+    .prog-blur-layer:nth-child(5) { --blur: 12px; --start: 0%; --end: 100%; }
 
     .features-grid {
       display: flex;
@@ -2750,11 +2754,7 @@
       position: relative;
     }
 
-    .trusted-strip-marquee .prog-blur { width: 80px; }
-    .trusted-strip-marquee .prog-blur-layer {
-      backdrop-filter: blur(var(--blur));
-      -webkit-backdrop-filter: blur(var(--blur));
-    }
+    .trusted-strip-marquee .prog-blur { width: 60px; }
 
     .trusted-strip-track {
       display: flex;
