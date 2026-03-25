@@ -27,9 +27,11 @@ export function Sidebar() {
     <div className="flex w-64 flex-shrink-0 flex-col overflow-hidden border-r border-border bg-muted/40">
       {/* Header */}
       <div className="flex items-center gap-2.5 px-5 py-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0F1B3D] text-xs font-bold text-white">
-          E
-        </div>
+        <img
+          src="/images/elena-icon-cropped.png"
+          alt="Elena"
+          className="h-8 w-8 rounded-lg"
+        />
         <span className="text-base font-semibold text-foreground">elena</span>
       </div>
 

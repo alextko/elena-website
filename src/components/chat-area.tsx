@@ -2,16 +2,13 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { PanelLeft, Plus, ArrowUp, Check } from "lucide-react";
+import { PanelLeft, Plus, ArrowUp } from "lucide-react";
 
 type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
-  steps?: string[];
 };
 
 const MOCK_MESSAGES: Message[] = [
@@ -23,11 +20,6 @@ const MOCK_MESSAGES: Message[] = [
   {
     id: "2",
     role: "assistant",
-    steps: [
-      "Searching pricing databases",
-      "Checking your insurance coverage",
-      "Comparing nearby pharmacies",
-    ],
     content: `I checked your insurance and searched 4 pricing databases. Here's what I found for generic atorvastatin (Lipitor):
 
 **Costco Pharmacy** — $4.20/mo (no membership needed for pharmacy)
@@ -52,11 +44,10 @@ You'll be saving **$7.80/month** compared to your current CVS price. That's $93.
 ];
 
 function renderMarkdown(text: string) {
-  // Very simple bold rendering
   const parts = text.split(/(\*\*.*?\*\*)/g);
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={i}>{part.slice(2, -2)}</strong>;
+      return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>;
     }
     return <span key={i}>{part}</span>;
   });
@@ -95,43 +86,18 @@ export function ChatArea({
           {MOCK_MESSAGES.map((msg) =>
             msg.role === "user" ? (
               <div key={msg.id} className="flex justify-end">
-                <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-muted px-4 py-3">
-                  <p className="text-sm leading-relaxed">{msg.content}</p>
+                <div className="max-w-[85%] rounded-3xl bg-muted px-5 py-3">
+                  <p className="text-[0.9rem] leading-relaxed">{msg.content}</p>
                 </div>
               </div>
             ) : (
-              <div key={msg.id} className="flex gap-3">
-                <Avatar className="mt-0.5 h-7 w-7 flex-shrink-0">
-                  <AvatarFallback className="bg-[#0F1B3D] text-[0.6rem] font-bold text-white">
-                    E
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1 space-y-3">
-                  <p className="text-xs font-semibold text-foreground">Elena</p>
-
-                  {msg.steps && (
-                    <div className="space-y-1.5">
-                      {msg.steps.map((step, i) => (
-                        <div
-                          key={i}
-                          className="flex items-center gap-2 text-sm text-muted-foreground"
-                        >
-                          <div className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-green-50">
-                            <Check className="h-3 w-3 text-green-500" />
-                          </div>
-                          {step}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="text-sm leading-relaxed text-foreground whitespace-pre-line">
-                    {msg.content.split("\n").map((line, i) => (
-                      <p key={i} className={line === "" ? "h-3" : "mb-1"}>
-                        {renderMarkdown(line)}
-                      </p>
-                    ))}
-                  </div>
+              <div key={msg.id} className="max-w-full">
+                <div className="text-[0.9rem] leading-[1.7] text-foreground">
+                  {msg.content.split("\n").map((line, i) => (
+                    <p key={i} className={line === "" ? "h-3" : "mb-1"}>
+                      {renderMarkdown(line)}
+                    </p>
+                  ))}
                 </div>
               </div>
             )
@@ -157,7 +123,6 @@ export function ChatArea({
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                // TODO: send message
               }
             }}
           />
