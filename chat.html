@@ -2258,55 +2258,71 @@
 
     .chat-input-bar {
       display: flex;
+      flex-direction: column;
+      background: rgba(255,255,255,0.95);
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.3);
+      max-width: 620px;
+      width: 100%;
+      margin: 32px auto 0;
+      padding: 0;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    .chat-input-top {
+      padding: 18px 20px 12px;
+    }
+
+    .chat-input-bar input {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 16px;
+      font-family: inherit;
+      color: #1C1C1E;
+      min-width: 0;
+    }
+
+    .chat-input-bar input::placeholder {
+      color: #AEAEB2;
+    }
+
+    .chat-input-bottom {
+      display: flex;
       align-items: center;
-      background: rgba(255,255,255,0.12);
-      backdrop-filter: blur(40px);
-      -webkit-backdrop-filter: blur(40px);
-      border-radius: 28px;
-      border: 1px solid rgba(255,255,255,0.2);
-      max-width: 600px;
-      margin: 28px auto 0;
-      padding: 16px 8px 16px 16px;
-      gap: 10px;
+      justify-content: space-between;
+      padding: 8px 12px 12px 16px;
     }
 
     .chat-attach-btn {
       background: none;
       border: none;
       cursor: pointer;
-      color: rgba(255,255,255,0.5);
-      font-size: 20px;
-      line-height: 1;
-      flex-shrink: 0;
-      padding: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: color 0.2s;
+      color: #AEAEB2;
+      transition: color 0.2s, background 0.2s;
     }
 
     .chat-attach-btn:hover {
-      color: rgba(255,255,255,0.8);
+      color: #8E8E93;
+      background: rgba(0,0,0,0.04);
     }
 
-    .chat-input-bar input {
-      flex: 1;
-      border: none;
-      outline: none;
-      background: transparent;
-      font-size: 16px;
-      font-family: inherit;
-      color: #fff;
-      min-width: 0;
-    }
-
-    .chat-input-bar input::placeholder {
-      color: rgba(255,255,255,0.5);
+    .chat-attach-btn svg {
+      width: 20px;
+      height: 20px;
     }
 
     .chat-send-btn {
-      width: 34px;
-      height: 34px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       background: #0F1B3D;
       border: none;
@@ -2323,8 +2339,19 @@
     }
 
     .chat-send-btn svg {
-      width: 16px;
-      height: 16px;
+      width: 18px;
+      height: 18px;
+    }
+
+    .suggestion-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.4);
+      text-align: center;
+      margin-top: 28px;
+      margin-bottom: 14px;
     }
 
     .suggestion-chips {
@@ -2332,7 +2359,6 @@
       gap: 10px;
       justify-content: center;
       flex-wrap: wrap;
-      margin-top: 20px;
       padding: 0 12px;
     }
 
@@ -2596,16 +2622,21 @@
     <div class="hero-center">
       <h1>What can Elena help you with?</h1>
       <div class="chat-input-bar">
-        <button class="chat-attach-btn" aria-label="Attach document">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-        </button>
-        <input type="text" id="chat-hero-input" placeholder="How much should an MRI cost with my insurance?">
-        <button class="chat-send-btn" id="chat-send-btn" aria-label="Send">
-          <svg viewBox="0 0 20 20" fill="none">
-            <path d="M4 10h12M12 4l6 6-6 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
+        <div class="chat-input-top">
+          <input type="text" id="chat-hero-input" placeholder="How much should an MRI cost with my insurance?">
+        </div>
+        <div class="chat-input-bottom">
+          <button class="chat-attach-btn" aria-label="Attach document">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+          </button>
+          <button class="chat-send-btn" id="chat-send-btn" aria-label="Send">
+            <svg viewBox="0 0 20 20" fill="none">
+              <path d="M10 16V4M4 10l6-6 6 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
       </div>
+      <div class="suggestion-label">Common things Elena can help with</div>
       <div class="suggestion-chips">
         <span class="suggestion-chip" data-text="Compare MRI prices near me">Compare MRI prices</span>
         <span class="suggestion-chip" data-text="I want to dispute a medical bill">Dispute a bill</span>
