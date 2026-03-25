@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Elena — Put Healthcare on Autopilot</title>
-  <meta name="description" content="Elena is your AI-powered healthcare assistant. Chat with an AI that calls doctors, negotiates bills, compares drug prices, and manages your entire medical life.">
+  <title>Elena — Ask Elena Anything</title>
+  <meta name="description" content="Ask Elena about healthcare costs, insurance coverage, appointment scheduling, and more. Your AI healthcare assistant.">
   <link rel="icon" type="image/png" href="images/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,6 +14,7 @@
     record_sessions_percent: 100,
     record_mask_text_selector: ""
   });
+  mixpanel.register({'landing_variant': 'chat_first'});
   mixpanel.track_pageview();
   </script>
   <style>
@@ -117,13 +118,34 @@
     /* ========== HERO ========== */
     .hero {
       position: relative;
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      text-align: center;
       overflow: hidden;
+      padding-bottom: 60px;
+    }
+
+    .hero-split {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 60px;
+      max-width: 1080px;
+      width: 100%;
+      padding: 0 48px;
+    }
+
+    .hero-left {
+      flex: 1;
+      text-align: left;
+    }
+
+    .hero-right {
+      flex-shrink: 0;
     }
 
     .hero-bg {
@@ -214,6 +236,7 @@
     .hero-content {
       position: relative;
       z-index: 2;
+      text-align: left;
     }
 
     .hero h1 {
@@ -222,6 +245,12 @@
       line-height: 1.15;
       letter-spacing: -0.025em;
       color: #ffffff;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-weight: 400;
     }
 
     .hero-subtitle {
@@ -238,8 +267,6 @@
       margin-top: 24px;
       max-width: 480px;
       width: 100%;
-      margin-left: auto;
-      margin-right: auto;
     }
 
     .hero-email-form input[type="email"] {
@@ -308,6 +335,30 @@
       font-weight: 500;
       font-size: 1rem;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .hero-phone {
+      position: relative;
+      width: 290px;
+      height: 600px;
+      background: #1a1a1c;
+      border-radius: 48px;
+      padding: 10px;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.35), 0 15px 30px rgba(0,0,0,0.25);
+    }
+
+    .hero-phone-screen {
+      width: 100%;
+      height: 100%;
+      border-radius: 38px;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .hero-phone-screen video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     .scroll-indicator {
@@ -511,13 +562,20 @@
       flex: 1;
     }
 
+    .manifesto-eyebrow {
+      font-size: 1.05rem;
+      font-weight: 400;
+      color: #5a6a82;
+      margin-bottom: 8px;
+    }
+
     .manifesto h2 {
       font-size: clamp(1.8rem, 3.5vw, 2.5rem);
       font-weight: 300;
       letter-spacing: -0.025em;
       color: #0F1B3D;
       line-height: 1.2;
-      margin-bottom: 20px;
+      margin-bottom: 28px;
     }
 
     .manifesto p {
@@ -525,6 +583,130 @@
       font-weight: 300;
       color: #5a6a82;
       line-height: 1.7;
+    }
+
+    .manifesto-app-side {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .manifesto-app-icon {
+      width: 280px;
+      height: 280px;
+      border-radius: 56px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.12);
+      background: #0F1B3D;
+    }
+
+    .manifesto-app-label {
+      font-size: 0.65rem;
+      font-weight: 400;
+      color: #AEAEB2;
+      text-align: center;
+    }
+
+    .manifesto-app-btn {
+      display: inline-block;
+      padding: 14px 28px;
+      background: rgba(15, 27, 61, 0.06);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      border: 1px solid rgba(15, 27, 61, 0.12);
+      border-radius: 100px;
+      color: #0F1B3D;
+      font-size: 0.9rem;
+      font-weight: 500;
+      font-family: inherit;
+      text-decoration: none;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(15, 27, 61, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    .manifesto-app-btn:hover {
+      background: rgba(15, 27, 61, 0.1);
+      border-color: rgba(15, 27, 61, 0.2);
+    }
+
+    .manifesto-col {
+      flex: 1;
+    }
+
+    .manifesto-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #2E6BB5;
+      margin-bottom: 12px;
+    }
+
+    .manifesto-col-title {
+      font-size: clamp(1.5rem, 2.5vw, 2rem);
+      font-weight: 300;
+      letter-spacing: -0.025em;
+      color: #0F1B3D;
+      line-height: 1.2;
+      margin-bottom: 14px;
+    }
+
+    .manifesto-col-body {
+      font-size: 1rem;
+      font-weight: 300;
+      color: #5a6a82;
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+
+    .manifesto-divider {
+      width: 1px;
+      background: rgba(15, 27, 61, 0.1);
+      align-self: stretch;
+      flex-shrink: 0;
+    }
+
+    .manifesto-btn {
+      display: inline-block;
+      padding: 14px 28px;
+      border-radius: 100px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      font-family: inherit;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .manifesto-btn-primary {
+      background: #0F1B3D;
+      color: #fff;
+    }
+
+    .manifesto-btn-primary:hover {
+      background: #1A3A6E;
+    }
+
+    .manifesto-btn-secondary {
+      background: transparent;
+      color: #0F1B3D;
+      border: 1.5px solid rgba(15, 27, 61, 0.2);
+    }
+
+    .manifesto-btn-secondary:hover {
+      border-color: rgba(15, 27, 61, 0.4);
+      background: rgba(15, 27, 61, 0.04);
+    }
+
+    @media (max-width: 768px) {
+      .manifesto-inner {
+        flex-direction: column;
+      }
+
+      .manifesto-divider {
+        width: 100%;
+        height: 1px;
+      }
     }
 
     .manifesto-phone {
@@ -540,6 +722,1071 @@
 
     .manifesto-phone .phone-screen {
       border-radius: 32px;
+    }
+
+    /* ========== APP SPOTLIGHTS ========== */
+    .app-spotlights {
+      position: relative;
+      z-index: 10;
+      background: #FFFFFF;
+      padding: 80px 32px 120px;
+    }
+
+    .spotlight {
+      max-width: 960px;
+      margin: 0 auto 140px;
+      display: flex;
+      align-items: center;
+      gap: 80px;
+    }
+
+    .spotlight:last-child { margin-bottom: 60px; }
+    .spotlight-reverse { flex-direction: row-reverse; }
+
+    .spotlight-text { flex: 1; }
+
+    .spotlight-text h3 {
+      font-size: clamp(1.4rem, 2.5vw, 1.8rem);
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      color: #0F1B3D;
+      margin-bottom: 12px;
+    }
+
+    .spotlight-text p {
+      font-size: 1rem;
+      font-weight: 300;
+      color: #5a6a82;
+      line-height: 1.7;
+    }
+
+    .spotlight-ui {
+      flex-shrink: 0;
+      width: 420px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, sans-serif;
+    }
+
+    /* ---- Spotlight 1: Game Plan (Salmon Card) ---- */
+    .gp-card {
+      background: #F4B084;
+      border-radius: 22px;
+      padding-top: 18px;
+      padding-bottom: 8px;
+      overflow: hidden;
+    }
+
+    .gp-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: #5C1A2A;
+      padding: 0 24px;
+      margin-bottom: 16px;
+    }
+
+    .gp-calendar {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 24px 16px;
+    }
+
+    .gp-cal-day {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      width: 44px;
+    }
+
+    .gp-cal-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #7A3040;
+      text-transform: uppercase;
+    }
+
+    .gp-cal-num {
+      width: 36px;
+      height: 36px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      color: #5C1A2A;
+    }
+
+    .gp-cal-today .gp-cal-num {
+      background: #FFFFFF;
+    }
+
+    .gp-cal-today .gp-cal-label {
+      color: #5C1A2A;
+    }
+
+    .gp-todo-section {
+      padding: 0 24px 16px;
+    }
+
+    .gp-todo-header {
+      font-size: 15px;
+      font-weight: 700;
+      color: #5C1A2A;
+      padding: 0 8px;
+      margin-bottom: 10px;
+    }
+
+    .gp-todo-list {
+      background: rgba(255,255,255,0.3);
+      border-radius: 14px;
+      padding: 10px 14px;
+    }
+
+    .gp-todo-item {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .gp-todo-divider {
+      height: 1px;
+      background: rgba(92,26,42,0.2);
+      margin: 0 14px;
+    }
+
+    .gp-checkbox {
+      width: 32px;
+      height: 32px;
+      border-radius: 16px;
+      border: 2px solid #7A3040;
+      background: transparent;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gp-checkbox-checked {
+      background: #5C1A2A;
+      border-color: #5C1A2A;
+    }
+
+    .gp-checkbox-checked svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .gp-todo-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .gp-todo-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #5C1A2A;
+    }
+
+    .gp-todo-done .gp-todo-title {
+      text-decoration: line-through;
+      color: #7A3040;
+    }
+
+    .gp-todo-subtitle {
+      font-size: 13px;
+      color: #7A3040;
+      margin-top: 1px;
+    }
+
+    /* ---- Spotlight 2: Visit Timeline ---- */
+    .tl-wrapper {
+      background: #DBEAFE;
+      border-radius: 24px;
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    .tl-section-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: #1E3A5F;
+      margin-bottom: 16px;
+    }
+
+    .tl-timeline {
+      position: relative;
+      padding-left: 24px;
+    }
+
+    .tl-rail {
+      position: absolute;
+      left: 5px;
+      top: 6px;
+      bottom: 6px;
+      width: 2px;
+      background: #93B5E1;
+    }
+
+    .tl-entry {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .tl-entry:last-child {
+      margin-bottom: 0;
+    }
+
+    .tl-dot {
+      position: absolute;
+      left: -24px;
+      top: 14px;
+      width: 12px;
+      height: 12px;
+      border-radius: 6px;
+      background: #2563EB;
+      transform: translateX(-0.5px);
+    }
+
+    .tl-dot-future {
+      background: transparent;
+      border: 2px solid #2563EB;
+    }
+
+    .tl-card {
+      background: #FFFFFF;
+      border-radius: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      margin-left: 10px;
+      margin-bottom: 16px;
+      padding: 14px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .tl-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .tl-card-date {
+      font-size: 12px;
+      font-weight: 600;
+      color: #6B9BD2;
+    }
+
+    .tl-card-type {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0F1B3D;
+      margin-top: 2px;
+    }
+
+    .tl-card-doctor {
+      font-size: 13px;
+      color: #8E8E93;
+      margin-top: 1px;
+    }
+
+    .tl-card-summary {
+      font-size: 13px;
+      line-height: 18px;
+      color: #8E8E93;
+      margin-top: 6px;
+    }
+
+    .tl-card-top {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .tl-badge-booked {
+      background: #C47A5A;
+      color: #FFFFFF;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+
+    .tl-stars {
+      display: flex;
+      flex-direction: row;
+      gap: 2px;
+      margin-top: 6px;
+    }
+
+    .tl-star {
+      font-size: 12px;
+      color: #F5A623;
+    }
+
+    .tl-star-off {
+      color: #AEAEB2;
+    }
+
+    .tl-month-marker {
+      position: relative;
+      margin-bottom: 16px;
+      padding-left: 10px;
+      margin-left: 10px;
+    }
+
+    .tl-month-marker-dot {
+      position: absolute;
+      left: -24px;
+      top: 50%;
+      transform: translate(-0.5px, -50%);
+      width: 8px;
+      height: 8px;
+      border-radius: 4px;
+      background: #93B5E1;
+    }
+
+    .tl-month-year {
+      font-size: 18px;
+      font-weight: 800;
+      color: #4A7AB5;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tl-month-tick {
+      width: 10px;
+      height: 2px;
+      background: #6B9BD2;
+      display: inline-block;
+      border-radius: 1px;
+    }
+
+    /* ---- Visit Detail Modal ---- */
+    .visit-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+    }
+
+    .visit-modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .visit-modal-sheet {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%) translateY(100%);
+      max-width: 480px;
+      width: 100%;
+      max-height: 85vh;
+      background: #fff;
+      border-top-left-radius: 20px;
+      border-top-right-radius: 20px;
+      overflow-y: auto;
+      box-shadow: 0 -8px 32px rgba(0,0,0,0.15);
+      z-index: 1001;
+      transition: transform 0.3s ease-out;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-sheet.active {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .visit-modal-handle {
+      width: 40px;
+      height: 4px;
+      background: #AEAEB2;
+      border-radius: 2px;
+      margin: 12px auto 16px;
+    }
+
+    .visit-modal-header {
+      padding: 0 24px 16px;
+    }
+
+    .visit-modal-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: #0F1B3D;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-subtitle {
+      font-size: 15px;
+      color: #8E8E93;
+      margin-top: 4px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-location {
+      font-size: 13px;
+      color: #AEAEB2;
+      margin-top: 4px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-schedule-btn {
+      display: inline-flex;
+      padding: 8px 14px;
+      border-radius: 20px;
+      background: #F7F6F2;
+      font-size: 14px;
+      font-weight: 600;
+      color: #0F1B3D;
+      margin-top: 12px;
+      border: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 24px;
+      margin: 16px 0 20px;
+    }
+
+    .visit-modal-tab {
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      background: transparent;
+      color: #AEAEB2;
+      border: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-tab.active {
+      background: #0F1B3D;
+      color: #fff;
+    }
+
+    .visit-modal-section {
+      padding: 0 24px;
+      margin-bottom: 28px;
+    }
+
+    .visit-modal-section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #0F1B3D;
+      margin-bottom: 10px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-body {
+      font-size: 15px;
+      line-height: 22px;
+      color: #0F1B3D;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-lab-card {
+      background: #FFFFFF;
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .visit-modal-lab-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+    }
+
+    .visit-modal-lab-name {
+      font-size: 13px;
+      color: #8E8E93;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-lab-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #0F1B3D;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-lab-value.low {
+      color: #2563EB;
+    }
+
+    .visit-modal-notes-card {
+      background: #F8F9FA;
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .visit-modal-notes-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0F1B3D;
+      margin-bottom: 4px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-notes-list {
+      font-size: 14px;
+      line-height: 20px;
+      color: #8E8E93;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .visit-modal-rate-stars {
+      display: flex;
+      gap: 8px;
+    }
+
+    .visit-modal-rate-star {
+      font-size: 32px;
+      color: #AEAEB2;
+      cursor: pointer;
+    }
+
+    .visit-modal-rate-star.filled {
+      color: #F5A623;
+    }
+
+    /* ---- Spotlight 3: Chat with MRI Pricing ---- */
+    .ch-anim {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .ch-anim-right {
+      align-items: flex-end;
+    }
+
+    .ch-anim.ch-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .ch-container {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      background: #F7F6F2;
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .ch-msg-user {
+      align-self: flex-end;
+      max-width: 80%;
+      background: #FFFFFF;
+      padding: 12px 18px;
+      border-radius: 20px;
+      border-bottom-right-radius: 6px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      font-size: 15px;
+      line-height: 22px;
+      font-weight: 600;
+      color: #0F1B3D;
+    }
+
+    .ch-msg-elena {
+      align-self: flex-start;
+      max-width: 90%;
+      background: #FFFFFF;
+      border-radius: 20px;
+      border-top-left-radius: 6px;
+      padding: 14px 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      font-size: 15px;
+      line-height: 22px;
+      font-weight: 600;
+      color: #0F1B3D;
+    }
+
+    .ch-facility-card {
+      align-self: flex-start;
+      max-width: 90%;
+      background: #FFFFFF;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .ch-facility-list {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .ch-facility-item {
+      background: #FFFFFF;
+      border-radius: 12px;
+      padding: 10px 12px;
+      border: 1.5px solid #F2F2F7;
+    }
+
+    .ch-facility-top {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .ch-facility-info {
+      flex: 1;
+      margin-right: 8px;
+    }
+
+    .ch-facility-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1C1C1E;
+    }
+
+    .ch-facility-specialty {
+      font-size: 13px;
+      color: #8E8E93;
+      margin-top: 1px;
+    }
+
+    .ch-facility-bottom {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: 6px;
+    }
+
+    .ch-badge-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .ch-badge-innetwork {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #34C759;
+    }
+
+    .ch-badge-facility {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    .ch-badge-freestanding {
+      background: #E8F5E9;
+      color: #2E7D32;
+    }
+
+    .ch-badge-hospital {
+      background: #FFF3E0;
+      color: #E65100;
+    }
+
+    .ch-badge-distance {
+      font-size: 11px;
+      color: #AEAEB2;
+    }
+
+    .ch-price-block {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .ch-price-original {
+      font-size: 12px;
+      color: #AEAEB2;
+      text-decoration: line-through;
+    }
+
+    .ch-price-amount {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1C1C1E;
+    }
+
+    .ch-price-label {
+      font-size: 10px;
+      color: #AEAEB2;
+    }
+
+    /* Booking status rows */
+    .ch-booking-row {
+      align-self: flex-start;
+      max-width: 90%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 0;
+    }
+
+    .ch-booking-emoji {
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .ch-booking-text {
+      font-size: 15px;
+      line-height: 22px;
+      font-weight: 500;
+      color: #0F1B3D;
+    }
+
+    /* Confirmation card */
+    @keyframes phone-wiggle {
+      0%, 80%, 100% { transform: rotate(0deg); }
+      84% { transform: rotate(-12deg); }
+      88% { transform: rotate(12deg); }
+      92% { transform: rotate(-8deg); }
+      96% { transform: rotate(8deg); }
+    }
+
+    .ch-booking-emoji-wiggle {
+      display: inline-block;
+      animation: phone-wiggle 3s ease-in-out infinite;
+    }
+
+    .ch-confirmation {
+      align-self: flex-start;
+      max-width: 90%;
+      background: #FFFFFF;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      margin: 16px 0;
+    }
+
+    .ch-confirmation-header {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 14px 8px;
+      border-bottom: 1px solid #F2F2F7;
+    }
+
+    .ch-confirmation-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 5px;
+      border: 2px solid;
+      background: transparent;
+    }
+
+    .ch-confirmation-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .ch-confirmation-body {
+      padding: 12px 14px;
+    }
+
+    .ch-confirmation-type {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0F1B3D;
+    }
+
+    .ch-confirmation-doctor {
+      font-size: 14px;
+      color: #8E8E93;
+      margin-top: 2px;
+    }
+
+    .ch-confirmation-detail {
+      font-size: 13px;
+      font-weight: 600;
+      color: #0F1B3D;
+      margin-top: 6px;
+    }
+
+    .ch-confirmation-reason {
+      font-size: 13px;
+      color: #AEAEB2;
+      margin-top: 2px;
+    }
+
+    /* ---- Spotlight 4a: Insurance Card ---- */
+    .ins-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 280px;
+    }
+
+    .ins-track {
+      overflow: hidden;
+      border-radius: 20px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.18);
+      position: relative;
+      width: 100%;
+    }
+
+    .ins-slider {
+      display: flex;
+      width: 300%;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .ins-card {
+      position: relative;
+      aspect-ratio: 1.6;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-top-color: rgba(255,255,255,0.15);
+      overflow: hidden;
+      width: 33.333%;
+      flex-shrink: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .ins-gloss {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 40%, rgba(255,255,255,0.02) 100%);
+      pointer-events: none;
+    }
+
+    .ins-top {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .ins-type {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .ins-plan {
+      font-size: 13px;
+      font-weight: 700;
+      margin-top: 3px;
+    }
+
+    .ins-provider {
+      font-size: 10px;
+      font-weight: 600;
+      margin-top: 1px;
+    }
+
+    .ins-id-row {
+      display: flex;
+      flex-direction: row;
+      gap: 24px;
+    }
+
+    .ins-field-label {
+      font-size: 8px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 2px;
+    }
+
+    .ins-field-value {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .ins-copay-value {
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .ins-logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      object-fit: contain;
+    }
+
+    /* Dark card text colors */
+    .ins-dark .ins-type,
+    .ins-dark .ins-plan,
+    .ins-dark .ins-field-value { color: #FFFFFF; }
+    .ins-dark .ins-provider,
+    .ins-dark .ins-copay-value { color: rgba(255,255,255,0.7); }
+    .ins-dark .ins-field-label { color: rgba(255,255,255,0.5); }
+
+    /* Light card text colors */
+    .ins-light .ins-type,
+    .ins-light .ins-plan,
+    .ins-light .ins-field-value { color: #0F1B3D; }
+    .ins-light .ins-provider,
+    .ins-light .ins-copay-value { color: #8E8E93; }
+    .ins-light .ins-field-label { color: #AEAEB2; }
+
+    .ins-dots {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      margin-top: 14px;
+    }
+
+    .ins-dot {
+      height: 6px;
+      border-radius: 3px;
+      transition: all 0.3s ease;
+      width: 6px;
+      background: #E5E5EA;
+    }
+
+    .ins-dot-active {
+      width: 18px;
+      background: #AEAEB2;
+    }
+
+    /* ---- Spotlight 6: Profile Switcher ---- */
+    .sw-sheet {
+      background: #FFFFFF;
+      border-radius: 20px;
+      padding: 20px 24px 32px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .sw-handle {
+      width: 40px;
+      height: 4px;
+      background: #AEAEB2;
+      border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+
+    .sw-header {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .sw-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #1C1C1E;
+    }
+
+    .sw-add {
+      font-size: 24px;
+      font-weight: 400;
+      color: #0F1B3D;
+      cursor: pointer;
+    }
+
+    .sw-option {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      padding: 12px 14px;
+      gap: 12px;
+      border-radius: 12px;
+      border: 2px solid transparent;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .sw-option-selected {
+      border-color: #0F1B3D;
+      background: #F7F6F2;
+    }
+
+    .sw-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: #FFFFFF;
+      flex-shrink: 0;
+    }
+
+    .sw-avatar-img {
+      width: 36px;
+      height: 36px;
+      border-radius: 18px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .sw-name-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sw-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1C1C1E;
+    }
+
+    .sw-badge {
+      font-size: 12px;
+      font-weight: 400;
+      color: #AEAEB2;
+      margin-top: 2px;
+    }
+
+    @media (max-width: 768px) {
+      .spotlight,
+      .spotlight-reverse {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .spotlight-ui {
+        width: 100%;
+        max-width: 420px;
+      }
     }
 
     /* ========== STAT BANNER ========== */
@@ -726,7 +1973,7 @@
     .trust-strip {
       position: relative;
       z-index: 10;
-      background: #f5f7fb;
+      background: #FFFFFF;
       padding: 40px 32px;
     }
 
@@ -759,7 +2006,7 @@
       position: relative;
       z-index: 10;
       padding: 100px 0 80px;
-      background: #f5f7fb;
+      background: #FFFFFF;
       color: #0F1B3D;
       overflow: hidden;
     }
@@ -793,26 +2040,42 @@
       overflow: hidden;
     }
 
-    .features-carousel-wrapper::before,
-    .features-carousel-wrapper::after {
-      content: '';
+    /* Progressive blur edges */
+    .prog-blur {
       position: absolute;
       top: 0;
       bottom: 0;
-      width: 60px;
+      width: 100px;
       z-index: 2;
       pointer-events: none;
+      overflow: hidden;
     }
 
-    .features-carousel-wrapper::before {
-      left: 0;
-      background: linear-gradient(to right, #f5f7fb, transparent);
+    .prog-blur-left { left: 0; }
+    .prog-blur-right { right: 0; }
+
+    .prog-blur-layer {
+      position: absolute;
+      inset: 0;
+      backdrop-filter: blur(var(--blur));
+      -webkit-backdrop-filter: blur(var(--blur));
     }
 
-    .features-carousel-wrapper::after {
-      right: 0;
-      background: linear-gradient(to left, #f5f7fb, transparent);
+    .prog-blur-left .prog-blur-layer {
+      mask: linear-gradient(to right, black var(--start), transparent var(--end));
+      -webkit-mask: linear-gradient(to right, black var(--start), transparent var(--end));
     }
+
+    .prog-blur-right .prog-blur-layer {
+      mask: linear-gradient(to left, black var(--start), transparent var(--end));
+      -webkit-mask: linear-gradient(to left, black var(--start), transparent var(--end));
+    }
+
+    .prog-blur-layer:nth-child(1) { --blur: 1px; --start: 0%; --end: 20%; }
+    .prog-blur-layer:nth-child(2) { --blur: 2px; --start: 0%; --end: 40%; }
+    .prog-blur-layer:nth-child(3) { --blur: 4px; --start: 0%; --end: 60%; }
+    .prog-blur-layer:nth-child(4) { --blur: 8px; --start: 0%; --end: 80%; }
+    .prog-blur-layer:nth-child(5) { --blur: 12px; --start: 0%; --end: 100%; }
 
     .features-grid {
       display: flex;
@@ -975,7 +2238,12 @@
       position: relative;
       z-index: 10;
       padding: 80px 32px 40px;
-      background: #0F1B3D;
+      background: linear-gradient(135deg,
+        #0F1B3D 0%,
+        #1A3A6E 30%,
+        #2E6BB5 60%,
+        #2E6BB5 100%
+      );
       color: #fff;
       overflow: hidden;
     }
@@ -983,17 +2251,31 @@
     footer::after {
       content: '';
       position: absolute;
-      bottom: -40%;
-      right: -10%;
-      width: 50%;
-      height: 80%;
-      background: radial-gradient(ellipse, rgba(244,176,132,0.15) 0%, transparent 70%);
+      inset: 0;
+      background: radial-gradient(ellipse at 85% 130%,
+        #F4B084 0%,
+        #E8956D 25%,
+        rgba(46, 107, 181, 0) 60%
+      );
+      pointer-events: none;
+    }
+
+    footer::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.2;
+      mix-blend-mode: overlay;
       pointer-events: none;
     }
 
     .footer-inner {
       max-width: 960px;
       margin: 0 auto;
+      position: relative;
+      z-index: 2;
     }
 
     .footer-brand {
@@ -1016,6 +2298,8 @@
       margin: 0 auto;
       display: flex;
       justify-content: space-between;
+      position: relative;
+      z-index: 2;
       align-items: center;
       font-size: 0.78rem;
       color: rgba(255, 255, 255, 0.35);
@@ -1024,26 +2308,11 @@
       border-top: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .footer-links {
-      display: flex;
-      gap: 20px;
-    }
-
-    .footer-links a {
-      color: rgba(255, 255, 255, 0.45);
-      text-decoration: none;
-      font-size: 0.78rem;
-      font-weight: 400;
-      transition: color 0.2s;
-    }
-
-    .footer-links a:hover {
-      color: rgba(255, 255, 255, 0.7);
-    }
-
     .footer-fine-print {
       max-width: 960px;
       margin: 16px auto 0;
+      position: relative;
+      z-index: 2;
       font-size: 0.7rem;
       color: rgba(255, 255, 255, 0.25);
       font-weight: 300;
@@ -1062,6 +2331,31 @@
         flex-direction: column;
         gap: 20px;
         align-items: center;
+      }
+
+      .hero-split {
+        flex-direction: column;
+        text-align: center;
+        padding: 0 20px;
+      }
+
+      .hero-left {
+        text-align: center;
+      }
+
+      .hero-email-form {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .hero-phone {
+        width: 240px;
+        height: 500px;
+        border-radius: 40px;
+      }
+
+      .hero-phone-screen {
+        border-radius: 32px;
       }
     }
 
@@ -1129,6 +2423,377 @@
         padding: 16px 30px;
       }
     }
+    /* ========== CHAT HERO ========== */
+    .hero-center {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 700px;
+      width: 100%;
+      padding: 0 24px;
+    }
+
+    .chat-input-bar {
+      display: flex;
+      flex-direction: column;
+      background: rgba(255,255,255,0.95);
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.3);
+      max-width: 620px;
+      width: 100%;
+      margin: 32px auto 0;
+      padding: 0;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    .chat-input-top {
+      padding: 18px 20px 12px;
+    }
+
+    .chat-input-bar input {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 16px;
+      font-family: inherit;
+      color: #1C1C1E;
+      min-width: 0;
+    }
+
+    .chat-input-bar input::placeholder {
+      color: #AEAEB2;
+    }
+
+    .chat-input-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px 12px 16px;
+    }
+
+    .chat-attach-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #AEAEB2;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    .chat-attach-btn:hover {
+      color: #8E8E93;
+      background: rgba(0,0,0,0.04);
+    }
+
+    .chat-attach-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .chat-send-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #0F1B3D;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+
+    .chat-send-btn:hover {
+      background: #1A3A6E;
+    }
+
+    .chat-send-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .suggestion-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.4);
+      text-align: center;
+      margin-top: 28px;
+      margin-bottom: 14px;
+    }
+
+    .suggestion-chips {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: nowrap;
+      padding: 0 12px;
+    }
+
+    .suggestion-chip {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 22px;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      white-space: nowrap;
+    }
+
+    .suggestion-chip:hover {
+      background: rgba(255,255,255,0.18);
+      border-color: rgba(255,255,255,0.35);
+    }
+
+    .hero-social-proof {
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: rgba(255,255,255,0.6);
+      margin-top: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .suggestion-chips {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        justify-content: flex-start;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 4px;
+      }
+      .suggestion-chips::-webkit-scrollbar { display: none; }
+    }
+
+    /* ========== CHAT RESPONSE AREA ========== */
+    .chat-response-section {
+      position: relative;
+      z-index: 10;
+      background: #F7F6F2;
+      padding: 40px 24px;
+      display: none;
+    }
+
+    .chat-response-inner {
+      max-width: 640px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .chat-bubble-user {
+      align-self: flex-end;
+      max-width: 80%;
+      background: #FFFFFF;
+      padding: 12px 18px;
+      border-radius: 20px;
+      border-bottom-right-radius: 6px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      font-size: 15px;
+      line-height: 22px;
+      font-weight: 600;
+      color: #0F1B3D;
+    }
+
+    .chat-bubble-elena {
+      align-self: flex-start;
+      max-width: 90%;
+      background: #FFFFFF;
+      border-radius: 20px;
+      border-top-left-radius: 6px;
+      padding: 14px 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      font-size: 15px;
+      line-height: 22px;
+      font-weight: 400;
+      color: #0F1B3D;
+    }
+
+    .chat-thinking {
+      align-self: flex-start;
+      display: flex;
+      gap: 6px;
+      padding: 14px 18px;
+      background: #FFFFFF;
+      border-radius: 20px;
+      border-top-left-radius: 6px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .chat-thinking span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #8E8E93;
+      animation: thinking-bounce 1.4s ease-in-out infinite;
+    }
+
+    .chat-thinking span:nth-child(2) { animation-delay: 0.2s; }
+    .chat-thinking span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes thinking-bounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    .chat-gate-overlay {
+      position: relative;
+      margin-top: -40px;
+      padding: 60px 24px 40px;
+      background: rgba(255,255,255,0.8);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 16px;
+      text-align: center;
+      display: none;
+    }
+
+    .chat-gate-overlay h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #0F1B3D;
+      margin-bottom: 20px;
+    }
+
+    .chat-gate-form {
+      display: flex;
+      gap: 10px;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .chat-gate-form input[type="email"] {
+      flex: 1;
+      padding: 14px 20px;
+      background: rgba(15, 27, 61, 0.04);
+      border: 1px solid rgba(15, 27, 61, 0.12);
+      border-radius: 100px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      font-weight: 300;
+      color: #0F1B3D;
+      outline: none;
+      min-width: 0;
+    }
+
+    .chat-gate-form input[type="email"]::placeholder {
+      color: rgba(15, 27, 61, 0.35);
+    }
+
+    .chat-gate-form button {
+      padding: 14px 28px;
+      background: #0F1B3D;
+      border: none;
+      border-radius: 100px;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+
+    .chat-gate-form button:hover {
+      background: #1A3A6E;
+    }
+
+    .chat-gate-success {
+      display: none;
+      padding: 14px 28px;
+      background: rgba(15, 27, 61, 0.06);
+      border: 1px solid rgba(15, 27, 61, 0.12);
+      color: #0F1B3D;
+      border-radius: 100px;
+      font-weight: 400;
+      font-size: 0.95rem;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .chat-gate-form {
+        flex-direction: column;
+      }
+    }
+
+    /* ========== INSURER MARQUEE (inside hero) ========== */
+    /* ========== TRUSTED BY (in hero) ========== */
+    .trusted-strip-hero {
+      position: absolute;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      z-index: 2;
+      text-align: center;
+    }
+
+    .trusted-strip-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.3);
+      margin-bottom: 16px;
+    }
+
+    .trusted-strip-marquee {
+      overflow: hidden;
+      width: 100%;
+      position: relative;
+      mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+    }
+
+
+    .trusted-strip-track {
+      display: flex;
+      align-items: center;
+      animation: trusted-scroll 30s linear infinite;
+    }
+
+    .trusted-strip-set {
+      display: flex;
+      align-items: center;
+      gap: 40px;
+      padding-right: 40px;
+      flex-shrink: 0;
+    }
+
+    .trusted-strip-set span {
+      font-size: 14px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.45);
+      white-space: nowrap;
+      flex-shrink: 0;
+      letter-spacing: 0.02em;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+    }
+
+    .trusted-strip-set img {
+      height: 28px;
+      width: auto;
+      filter: brightness(0) invert(1);
+      opacity: 0.45;
+      flex-shrink: 0;
+    }
+
+    @keyframes trusted-scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
   </style>
 </head>
 <body>
@@ -1143,7 +2808,7 @@
     <a href="/upload" class="nav-cta">Log in</a>
   </nav>
 
-  <!-- HERO: Dark clouds -->
+  <!-- HERO: Chat-first -->
   <section class="hero">
     <div class="hero-bg"></div>
     <div class="hero-blobs">
@@ -1152,188 +2817,559 @@
       <div class="hero-blob hero-blob-3"></div>
       <div class="hero-blob hero-blob-4"></div>
     </div>
-    <div class="hero-content">
-      <h1>Elena fights your bills and<br>calls your insurance.</h1>
-      <p class="hero-subtitle">The AI healthcare companion that handles the calls you don't want to make.</p>
-      <div class="waitlist-flow" id="hero-waitlist-flow">
-        <form class="hero-email-form" id="hero-waitlist-form">
-          <input type="email" placeholder="Enter your email" required>
-          <button type="submit">Get Early Access</button>
-        </form>
-        <div class="survey-step" id="hero-survey" style="display:none;">
-          <p class="survey-label">What are you most interested in? <span class="survey-hint">(pick all that apply)</span></p>
-          <div class="survey-options dark">
-            <label class="survey-chip"><input type="checkbox" value="price_transparency"><span>Price transparency</span></label>
-            <label class="survey-chip"><input type="checkbox" value="bill_fighting"><span>Bill fighting &amp; prior auth</span></label>
-            <label class="survey-chip"><input type="checkbox" value="health_data"><span>All my health data in one place</span></label>
-            <label class="survey-chip"><input type="checkbox" value="automation"><span>Automation (phone calls, forms)</span></label>
-          </div>
-          <button class="survey-submit-btn dark" id="hero-survey-submit">Submit</button>
-          <button class="survey-skip-btn" id="hero-survey-skip">Skip</button>
+    <div class="hero-center">
+      <h1>What can I help<br>you with <em>today?</em></h1>
+      <p class="hero-subtitle">Elena is a personal health assistant. She can make calls, use a computer, and write emails, and she's an expert in navigating the healthcare system.</p>
+      <div class="chat-input-bar">
+        <div class="chat-input-top">
+          <input type="text" id="chat-hero-input" placeholder="How much should an MRI cost with my insurance?" onkeydown="if(event.key==='Enter'){event.preventDefault();showComingSoon();}">
         </div>
-        <div class="hero-success" id="hero-waitlist-success">You're in! We'll reach out when early access is ready.</div>
-        <p class="waitlist-social-proof" style="font-size: 0.85rem; font-weight: 400; color: rgba(255,255,255,0.6); margin-top: 14px;">Join 2,000+ founding members navigating healthcare together</p>
+        <div class="chat-input-bottom">
+          <button class="chat-attach-btn" aria-label="Attach document">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+          </button>
+          <button class="chat-send-btn" id="chat-send-btn" aria-label="Send" onclick="showComingSoon()">
+            <svg viewBox="0 0 20 20" fill="none">
+              <path d="M10 16V4M4 10l6-6 6 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="suggestion-label">Common problems Elena can solve</div>
+      <div class="suggestion-chips">
+        <span class="suggestion-chip" data-text="Compare MRI prices near me">Compare Prices</span>
+        <span class="suggestion-chip" data-text="I want to dispute a medical bill">Dispute a Bill</span>
+        <span class="suggestion-chip" data-text="Find an in-network doctor near me">Find a Doctor</span>
+        <span class="suggestion-chip" data-text="Schedule an appointment with my doctor">Schedule an Appointment</span>
+        <span class="suggestion-chip" data-text="Help me fight a prior authorization denial">Fight an Authorization</span>
       </div>
     </div>
-    <div class="scroll-indicator">
-      Scroll
-      <svg class="scroll-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M8 3v8.5M4 8l4 4.5L12 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
+    <div class="trusted-strip-hero">
+      <div class="trusted-strip-label">Trusted by members insured with</div>
+      <div class="trusted-strip-marquee">
+        <div class="trusted-strip-track">
+          <div class="trusted-strip-set">
+            <img src="images/insurers/bcbs.svg" alt="Blue Cross Blue Shield"><img src="images/insurers/uhc.svg" alt="UnitedHealthcare"><img src="images/insurers/aetna.svg" alt="Aetna"><img src="images/insurers/cigna.svg" alt="Cigna"><img src="images/insurers/humana.svg" alt="Humana"><img src="images/insurers/kaiser.svg" alt="Kaiser Permanente"><img src="images/insurers/anthem.svg" alt="Anthem"><img src="images/insurers/medicare.svg" alt="Medicare"><img src="images/insurers/centene.svg" alt="Centene"><img src="images/insurers/oscar.svg" alt="Oscar Health"><img src="images/insurers/delta-dental.svg" alt="Delta Dental"><img src="images/insurers/vsp.svg" alt="VSP Vision">
+          </div>
+          <div class="trusted-strip-set">
+            <img src="images/insurers/bcbs.svg" alt="Blue Cross Blue Shield"><img src="images/insurers/uhc.svg" alt="UnitedHealthcare"><img src="images/insurers/aetna.svg" alt="Aetna"><img src="images/insurers/cigna.svg" alt="Cigna"><img src="images/insurers/humana.svg" alt="Humana"><img src="images/insurers/kaiser.svg" alt="Kaiser Permanente"><img src="images/insurers/anthem.svg" alt="Anthem"><img src="images/insurers/medicare.svg" alt="Medicare"><img src="images/insurers/centene.svg" alt="Centene"><img src="images/insurers/oscar.svg" alt="Oscar Health"><img src="images/insurers/delta-dental.svg" alt="Delta Dental"><img src="images/insurers/vsp.svg" alt="VSP Vision">
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="hero-pill"></div>
   </section>
 
-  <!-- COMMUNITY PERKS -->
-  <section class="community-perks">
-    <div class="perks-inner fade-in">
-      <h2>Your membership starts now.</h2>
-      <p class="perks-subtitle">Founding members get immediate access to:</p>
-      <div class="perks-grid">
-        <div class="perk-card">
-          <h3>Private WhatsApp community</h3>
-          <p>People dealing with the same stuff you are. Ask questions, share what worked, get real answers.</p>
-        </div>
-        <div class="perk-card">
-          <h3>Weekly healthcare newsletter</h3>
-          <p>Short, useful tips on saving money, picking providers, and understanding your coverage.</p>
-        </div>
-        <div class="perk-card">
-          <h3>Monthly live Q&A sessions</h3>
-          <p>Bring your questions to real navigators and providers. No scripts, no runaround.</p>
-        </div>
-      </div>
+  <!-- CHAT RESPONSE AREA (hidden until user submits) -->
+  <section class="chat-response-section" id="chat-response-section">
+    <div class="chat-response-inner" id="chat-response-inner">
+      <!-- content injected by JS -->
+    </div>
+    <div class="chat-gate-overlay" id="chat-gate-overlay">
+      <h3>Join the community to see Elena's full answer</h3>
+      <form class="chat-gate-form" id="chat-gate-form">
+        <input type="email" placeholder="Enter your email" required>
+        <button type="submit">Join the Community</button>
+      </form>
+      <div class="chat-gate-success" id="chat-gate-success">Welcome to the community! Check your email for your WhatsApp invite.</div>
     </div>
   </section>
+
+
 
   <!-- MANIFESTO -->
-  <section class="manifesto" id="how-it-works">
-    <div class="manifesto-inner fade-in">
+  <section class="manifesto">
+    <div class="manifesto-inner fade-in" style="max-width: 960px;">
       <div class="manifesto-text">
-        <h2>Healthcare costs shouldn't be a mystery.</h2>
-        <p>Since 2021, federal law requires hospitals and insurers to publish their actual negotiated prices. The problem? That data is buried in massive spreadsheets no one can read.</p>
-        <p style="margin-top: 12px;">Elena pulls from these CMS-mandated price transparency files, compares costs across providers in your area, and shows you what you'll actually pay — before you book.</p>
+        <p class="manifesto-eyebrow">Healthcare today is built for providers and payers.</p>
+        <h2>We're building it for you.</h2>
+        <p>Today, the center of your healthcare is your doctor's office. But most people see dozens of providers across multiple health systems. Records get scattered. Follow-ups get lost. Bills pile up. Incentives are misaligned.</p>
+        <p style="margin-top: 12px;">We think patients should be at the center of their own care. Elena puts a teammate in your pocket that helps you use the system and fights for you.</p>
       </div>
-      <div class="manifesto-phone">
-        <div class="phone-device">
-          <div class="phone-screen">
-            <video autoplay muted loop playsinline>
-              <source src="images/elena-demo.mp4" type="video/mp4">
-            </video>
+      <div class="manifesto-app-side">
+        <img src="images/elena-icon.png" alt="Elena" class="manifesto-app-icon">
+        <p class="manifesto-app-label">The Elena app is coming soon.</p>
+        <a href="#waitlist" class="manifesto-app-btn">Apply for early access</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- APP SPOTLIGHTS -->
+  <section class="app-spotlights" id="how-it-works">
+
+    <!-- Spotlight 1: Game Plan (Salmon Card).text LEFT, card RIGHT -->
+    <div class="spotlight fade-in">
+      <div class="spotlight-text">
+        <h3>Your health game plan</h3>
+        <p>Elena builds a personalized daily plan: medications, follow-ups, screenings. Check things off as you go.</p>
+      </div>
+      <div class="spotlight-ui">
+        <div class="gp-card">
+          <div class="gp-title">Game Plan</div>
+          <div class="gp-calendar">
+            <div class="gp-cal-day">
+              <span class="gp-cal-label">Mon</span>
+              <span class="gp-cal-num">22</span>
+            </div>
+            <div class="gp-cal-day">
+              <span class="gp-cal-label">Tue</span>
+              <span class="gp-cal-num">23</span>
+            </div>
+            <div class="gp-cal-day gp-cal-today" id="gp-today">
+              <span class="gp-cal-label">Wed</span>
+              <span class="gp-cal-num" id="gp-today-num">24</span>
+            </div>
+            <div class="gp-cal-day">
+              <span class="gp-cal-label">Thu</span>
+              <span class="gp-cal-num">25</span>
+            </div>
+            <div class="gp-cal-day">
+              <span class="gp-cal-label">Fri</span>
+              <span class="gp-cal-num">26</span>
+            </div>
+          </div>
+          <div class="gp-todo-section">
+            <div class="gp-todo-header" id="gp-todo-header">To Do</div>
+            <div class="gp-todo-list" id="gp-todo-list">
+              <div class="gp-todo-item" onclick="toggleGpTodo(this)">
+                <div class="gp-checkbox"></div>
+                <div class="gp-todo-content">
+                  <div class="gp-todo-title">Take Vitamin D3</div>
+                  <div class="gp-todo-subtitle">Daily · Morning</div>
+                </div>
+              </div>
+              <div class="gp-todo-divider"></div>
+              <div class="gp-todo-item" onclick="toggleGpTodo(this)">
+                <div class="gp-checkbox"></div>
+                <div class="gp-todo-content">
+                  <div class="gp-todo-title">Schedule dermatology follow-up</div>
+                  <div class="gp-todo-subtitle">Due this week</div>
+                </div>
+              </div>
+              <div class="gp-todo-divider"></div>
+              <div class="gp-todo-item" onclick="toggleGpTodo(this)">
+                <div class="gp-checkbox"></div>
+                <div class="gp-todo-content">
+                  <div class="gp-todo-title">Refill prescription</div>
+                  <div class="gp-todo-subtitle">Due today</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Spotlight 2: Visit Timeline.text RIGHT, timeline LEFT -->
+    <div class="spotlight spotlight-reverse fade-in">
+      <div class="spotlight-text">
+        <h3>Your care, every detail</h3>
+        <p>Every visit, lab result, and document on a single timeline. Tap any visit to see the full picture.</p>
+      </div>
+      <div class="spotlight-ui">
+        <div class="tl-wrapper">
+          <div class="tl-section-title">Visits</div>
+          <div class="tl-timeline">
+            <div class="tl-rail"></div>
+
+            <!-- Future visit -->
+            <div class="tl-entry">
+              <div class="tl-dot tl-dot-future"></div>
+              <div class="tl-card" data-visit="dermatology" onclick="openVisitModal('dermatology')">
+                <div class="tl-card-top">
+                  <div>
+                    <div class="tl-card-date">Apr 10, 2026</div>
+                    <div class="tl-card-type">Dermatology</div>
+                    <div class="tl-card-doctor">Dr. James Park</div>
+                  </div>
+                  <span class="tl-badge-booked">Booked</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Past visit -->
+            <div class="tl-entry">
+              <div class="tl-dot"></div>
+              <div class="tl-card" data-visit="primary-care" onclick="openVisitModal('primary-care')">
+                <div class="tl-card-date">Mar 15, 2026</div>
+                <div class="tl-card-type">Primary Care</div>
+                <div class="tl-card-doctor">Dr. Sarah Chen</div>
+                <div class="tl-card-summary">Vitamin D recheck, level improved to 32 ng/mL. Continue supplementation.</div>
+                <div class="tl-stars">
+                  <span class="tl-star">★</span><span class="tl-star">★</span><span class="tl-star">★</span><span class="tl-star">★</span><span class="tl-star">★</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Month marker -->
+            <div class="tl-month-marker">
+              <div class="tl-month-marker-dot"></div>
+              <div class="tl-month-year"><span class="tl-month-tick"></span> JAN 2026</div>
+            </div>
+
+            <!-- Older past visit -->
+            <div class="tl-entry">
+              <div class="tl-dot"></div>
+              <div class="tl-card" data-visit="annual-physical" onclick="openVisitModal('annual-physical')">
+                <div class="tl-card-date">Jan 10, 2026</div>
+                <div class="tl-card-type">Annual Physical</div>
+                <div class="tl-card-doctor">Dr. Sarah Chen</div>
+                <div class="tl-card-summary">Vitamin D deficiency diagnosed. Started supplementation. Thyroid stable.</div>
+                <div class="tl-stars">
+                  <span class="tl-star">★</span><span class="tl-star">★</span><span class="tl-star">★</span><span class="tl-star">★</span><span class="tl-star tl-star-off">★</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Visit Detail Modal -->
+    <div class="visit-modal-overlay" id="visitModalOverlay" onclick="closeVisitModal()"></div>
+    <div class="visit-modal-sheet" id="visitModalSheet">
+      <div class="visit-modal-handle"></div>
+      <div class="visit-modal-header">
+        <div class="visit-modal-title" id="visitModalTitle"></div>
+        <div class="visit-modal-subtitle" id="visitModalSubtitle"></div>
+        <div class="visit-modal-location" id="visitModalLocation"></div>
+        <button class="visit-modal-schedule-btn" id="visitModalScheduleBtn">Schedule again</button>
+      </div>
+      <div class="visit-modal-tabs" id="visitModalTabs"></div>
+      <div id="visitModalContent"></div>
+    </div>
+
+    <!-- Spotlight 4b: Phone Calling Agent.text LEFT, chat RIGHT -->
+    <div class="spotlight fade-in">
+      <div class="spotlight-text">
+        <h3>She actually calls for you</h3>
+        <p>No hold music. No phone tag. Elena calls the doctor's office, checks availability, confirms your insurance, and books it. You just get the confirmation.</p>
+      </div>
+      <div class="spotlight-ui">
+        <div class="ch-wrapper">
+          <div class="ch-booking-row">
+            <span class="ch-booking-emoji ch-booking-emoji-wiggle">📞</span>
+            <span class="ch-booking-text">Calling Park Dermatology Associates...</span>
+          </div>
+          <div class="ch-confirmation">
+            <div class="ch-confirmation-header">
+              <div class="ch-confirmation-dot" style="border-color: #34C759;"></div>
+              <span class="ch-confirmation-title" style="color: #34C759;">Booked</span>
+            </div>
+            <div class="ch-confirmation-body">
+              <div class="ch-confirmation-type">Dermatology</div>
+              <div class="ch-confirmation-doctor">Dr. James Park</div>
+              <div class="ch-confirmation-detail">Thursday, Apr 10, 2026 at 2:00 PM</div>
+              <div class="ch-confirmation-reason">Skin check follow-up</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spotlight 4a: Insurance Card.text RIGHT, card LEFT -->
+    <div class="spotlight spotlight-reverse fade-in">
+      <div class="spotlight-text">
+        <h3>Navigate healthcare like a pro</h3>
+        <p>Elena knows your deductible, your copays, what's in-network, and what's not. She finds the cheapest option for every procedure and makes sure you never leave money on the table.</p>
+      </div>
+      <div class="spotlight-ui">
+        <div class="ins-wrapper">
+          <div class="ins-track">
+            <div class="ins-slider" id="ins-slider">
+              <!-- Health card (dark) -->
+              <div class="ins-card ins-dark" style="background:#0F1B3D;">
+                <div class="ins-gloss"></div>
+                <div class="ins-top">
+                  <span class="ins-type">Health</span>
+                  <img class="ins-logo" src="https://img.logo.dev/bcbs.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="">
+                </div>
+                <div>
+                  <div class="ins-plan">Blue Cross Blue Shield PPO</div>
+                  <div class="ins-provider">Blue Cross</div>
+                </div>
+                <div class="ins-id-row">
+                  <div>
+                    <div class="ins-field-label">Member ID</div>
+                    <div class="ins-field-value">BCB123456789</div>
+                  </div>
+                  <div>
+                    <div class="ins-field-label">Group</div>
+                    <div class="ins-field-value">G98765</div>
+                  </div>
+                </div>
+                <div>
+                  <div class="ins-field-label">Copay</div>
+                  <div class="ins-copay-value">$25 primary / $50 specialist</div>
+                </div>
+              </div>
+              <!-- Dental card (LIGHT) -->
+              <div class="ins-card ins-light" style="background:rgba(255,255,255,0.55); border-color:rgba(0,0,0,0.06);">
+                <div class="ins-gloss"></div>
+                <div class="ins-top">
+                  <span class="ins-type">Dental</span>
+                  <img class="ins-logo" src="https://img.logo.dev/deltadental.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="">
+                </div>
+                <div>
+                  <div class="ins-plan">Delta Dental Premier</div>
+                  <div class="ins-provider">Delta Dental</div>
+                </div>
+                <div class="ins-id-row">
+                  <div>
+                    <div class="ins-field-label">Member ID</div>
+                    <div class="ins-field-value">DT987654321</div>
+                  </div>
+                  <div>
+                    <div class="ins-field-label">Group</div>
+                    <div class="ins-field-value">D45678</div>
+                  </div>
+                </div>
+                <div>
+                  <div class="ins-field-label">Copay</div>
+                  <div class="ins-copay-value">100% preventive / 80% major</div>
+                </div>
+              </div>
+              <!-- Vision card (dark) -->
+              <div class="ins-card ins-dark" style="background:#0F1B3D;">
+                <div class="ins-gloss"></div>
+                <div class="ins-top">
+                  <span class="ins-type">Vision</span>
+                  <img class="ins-logo" src="https://img.logo.dev/vsp.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="">
+                </div>
+                <div>
+                  <div class="ins-plan">VSP Choice Plan</div>
+                  <div class="ins-provider">VSP Vision</div>
+                </div>
+                <div class="ins-id-row">
+                  <div>
+                    <div class="ins-field-label">Member ID</div>
+                    <div class="ins-field-value">VSP111222333</div>
+                  </div>
+                  <div>
+                    <div class="ins-field-label">Group</div>
+                    <div class="ins-field-value">V12345</div>
+                  </div>
+                </div>
+                <div>
+                  <div class="ins-field-label">Copay</div>
+                  <div class="ins-copay-value">$10 exam / $0 lenses</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ins-dots" id="ins-dots">
+            <div class="ins-dot ins-dot-active"></div>
+            <div class="ins-dot"></div>
+            <div class="ins-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spotlight 3: Chat with MRI Pricing.text LEFT, chat RIGHT -->
+    <div class="spotlight fade-in">
+      <div class="spotlight-text">
+        <h3>Elena finds the best price</h3>
+        <p>The same MRI can cost $180 or $2,400 depending on where you go. Elena checks your insurance and finds the best deal.</p>
+      </div>
+      <div class="spotlight-ui">
+        <div class="ch-container" id="mri-chat">
+          <div class="ch-anim ch-anim-right" style="--delay: 0">
+            <div class="ch-msg-user">How much would an MRI of my knee cost?</div>
+          </div>
+          <div class="ch-anim" style="--delay: 1">
+            <div class="ch-msg-elena">I checked prices at 3 facilities near you. Here's what you'd pay with your insurance:</div>
+          </div>
+          <div class="ch-anim" style="--delay: 2">
+          <div class="ch-facility-card">
+            <div class="ch-facility-list">
+              <!-- Facility 1: Freestanding -->
+              <div class="ch-facility-item">
+                <div class="ch-facility-top">
+                  <div class="ch-facility-info">
+                    <div class="ch-facility-name">Sunrise Imaging Center</div>
+                    <div class="ch-facility-specialty">MRI - Knee without contrast</div>
+                  </div>
+                </div>
+                <div class="ch-facility-bottom">
+                  <div class="ch-badge-row">
+                    <span class="ch-badge-innetwork">&#10003; In-network</span>
+                    <span class="ch-badge-facility ch-badge-freestanding">Freestanding</span>
+                    <span class="ch-badge-distance">1.8 mi</span>
+                  </div>
+                  <div class="ch-price-block">
+                    <span class="ch-price-original">$1,200</span>
+                    <div class="ch-price-amount">~$180</div>
+                    <div class="ch-price-label">est. out-of-pocket</div>
+                  </div>
+                </div>
+              </div>
+              <!-- Facility 2: Hospital -->
+              <div class="ch-facility-item">
+                <div class="ch-facility-top">
+                  <div class="ch-facility-info">
+                    <div class="ch-facility-name">Mount Sinai Radiology</div>
+                    <div class="ch-facility-specialty">MRI - Knee without contrast</div>
+                  </div>
+                </div>
+                <div class="ch-facility-bottom">
+                  <div class="ch-badge-row">
+                    <span class="ch-badge-innetwork">&#10003; In-network</span>
+                    <span class="ch-badge-facility ch-badge-hospital">Hospital</span>
+                    <span class="ch-badge-distance">3.2 mi</span>
+                  </div>
+                  <div class="ch-price-block">
+                    <span class="ch-price-original">$2,400</span>
+                    <div class="ch-price-amount">~$450</div>
+                    <div class="ch-price-label">est. out-of-pocket</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+          <div class="ch-anim ch-anim-right" style="--delay: 3">
+            <div class="ch-msg-user">Book the imaging center</div>
+          </div>
+          <div class="ch-anim" style="--delay: 4">
+            <div class="ch-msg-elena">Done! Sunrise Imaging Center, Thursday at 10am.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spotlight 6: Family Profiles -->
+    <div class="spotlight spotlight-reverse fade-in">
+      <div class="spotlight-text">
+        <h3>Your whole family, one app</h3>
+        <p>Manage healthcare for your parents, your partner, your kids. Switch between profiles in one tap and Elena knows everyone's history.</p>
+      </div>
+      <div class="spotlight-ui">
+        <div class="sw-sheet">
+          <div class="sw-handle"></div>
+          <div class="sw-header">
+            <span class="sw-title">Switch Profile</span>
+            <span class="sw-add">+</span>
+          </div>
+          <div class="sw-option sw-option-selected" onclick="selectProfile(this)">
+            <img class="sw-avatar-img" src="https://i.pravatar.cc/72?img=32" alt="">
+            <div class="sw-name-col">
+              <span class="sw-name">David Castillo</span>
+              <span class="sw-badge">Me</span>
+            </div>
+          </div>
+          <div class="sw-option" onclick="selectProfile(this)">
+            <img class="sw-avatar-img" src="https://i.pravatar.cc/72?img=47" alt="">
+            <div class="sw-name-col">
+              <span class="sw-name">Maria Castillo</span>
+              <span class="sw-badge">Linked</span>
+            </div>
+          </div>
+          <div class="sw-option" onclick="selectProfile(this)">
+            <img class="sw-avatar-img" src="https://i.pravatar.cc/72?img=38" alt="">
+            <div class="sw-name-col">
+              <span class="sw-name">Sofia Castillo</span>
+              <span class="sw-badge">Managed</span>
+            </div>
+          </div>
+          <div class="sw-option" onclick="selectProfile(this)">
+            <img class="sw-avatar-img" src="https://i.pravatar.cc/72?img=59" alt="">
+            <div class="sw-name-col">
+              <span class="sw-name">Lucas Castillo</span>
+              <span class="sw-badge">Managed</span>
+            </div>
+          </div>
+          <div class="sw-option" onclick="selectProfile(this)">
+            <img class="sw-avatar-img" src="https://i.pravatar.cc/72?img=25" alt="">
+            <div class="sw-name-col">
+              <span class="sw-name">Rosa Castillo</span>
+              <span class="sw-badge">Linked</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </section>
 
-  <!-- STAT BANNER -->
-  <section class="stat-banner">
-    <div class="stat-banner-inner fade-in">
-      <p class="stat-banner-text">The same MRI can cost <strong>$400</strong> or <strong>$2,500</strong> depending on where you go.</p>
-      <p class="stat-banner-sub">Elena finds the real price before you book.</p>
-    </div>
-  </section>
-
-  <!-- TRUST SIGNALS -->
-  <section class="trust-strip">
-    <div class="trust-strip-inner">
-      <div class="trust-item">
-        <span class="trust-icon">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1L12.5 6.5L18.5 7.3L14.2 11.4L15.3 17.3L10 14.5L4.7 17.3L5.8 11.4L1.5 7.3L7.5 6.5L10 1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-        </span>
-        <span>Your data is never sold</span>
-      </div>
-      <div class="trust-item">
-        <span class="trust-icon">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2C6 2 3 5 3 8.5C3 14 10 18 10 18C10 18 17 14 17 8.5C17 5 14 2 10 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-        </span>
-        <span>Built by people frustrated by the same system</span>
-      </div>
-      <div class="trust-item">
-        <span class="trust-icon">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 18a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" stroke-width="1.5"/><path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </span>
-        <span>Not medical advice — Elena helps with costs and logistics</span>
-      </div>
-    </div>
-  </section>
 
   <!-- FEATURES + WAITLIST -->
-  <section class="features" id="features">
+  <section class="features" id="features" style="padding: 120px 0 100px;">
     <div class="features-carousel-wrapper">
+        <div class="prog-blur prog-blur-left">
+          <div class="prog-blur-layer"></div>
+          <div class="prog-blur-layer"></div>
+          <div class="prog-blur-layer"></div>
+          <div class="prog-blur-layer"></div>
+          <div class="prog-blur-layer"></div>
+        </div>
+        <div class="prog-blur prog-blur-right">
+          <div class="prog-blur-layer"></div>
+          <div class="prog-blur-layer"></div>
+          <div class="prog-blur-layer"></div>
+          <div class="prog-blur-layer"></div>
+          <div class="prog-blur-layer"></div>
+        </div>
         <div class="features-grid">
-          <!-- Original cards -->
-          <div class="feature-card img-couch">
-            <div class="feature-card-content">
-              <h3>She actually calls for you.</h3>
-              <p>Elena calls doctors' offices, asks your questions, and reports back. No hold music.</p>
-            </div>
-          </div>
-          <div class="feature-card img-meds">
-            <div class="feature-card-content">
-              <h3>Find the cheapest meds.</h3>
-              <p>Searches pricing databases and your insurance to find the lowest price for every prescription.</p>
-            </div>
-          </div>
-          <div class="feature-card img-phone">
-            <div class="feature-card-content">
-              <h3>Insurance, decoded.</h3>
-              <p>Snap your card, and Elena handles the rest. Deductibles, copays, what's covered.</p>
-            </div>
-          </div>
           <div class="feature-card img-hugging">
             <div class="feature-card-content">
               <h3>Your whole health, one place.</h3>
-              <p>Conditions, meds, allergies, doctors. Always up to date, always with you.</p>
             </div>
           </div>
           <div class="feature-card img-meditate">
             <div class="feature-card-content">
-              <h3>Stay on top of it.</h3>
-              <p>Personalized reminders and habits so checkups, screenings, and refills never slip.</p>
+              <h3>She remembers so you don't have to.</h3>
             </div>
           </div>
           <div class="feature-card img-family">
             <div class="feature-card-content">
               <h3>Your whole family, covered.</h3>
-              <p>Manage healthcare for parents, kids, and partners all under one account.</p>
+            </div>
+          </div>
+          <div class="feature-card img-couch">
+            <div class="feature-card-content">
+              <h3>She books it for you.</h3>
+            </div>
+          </div>
+          <div class="feature-card img-phone">
+            <div class="feature-card-content">
+              <h3>Insurance, decoded.</h3>
+            </div>
+          </div>
+          <div class="feature-card img-meds">
+            <div class="feature-card-content">
+              <h3>Find the best price.</h3>
             </div>
           </div>
           <!-- Duplicate for seamless loop -->
-          <div class="feature-card img-couch">
-            <div class="feature-card-content">
-              <h3>She actually calls for you.</h3>
-              <p>Elena calls doctors' offices, asks your questions, and reports back. No hold music.</p>
-            </div>
-          </div>
-          <div class="feature-card img-meds">
-            <div class="feature-card-content">
-              <h3>Find the cheapest meds.</h3>
-              <p>Searches pricing databases and your insurance to find the lowest price for every prescription.</p>
-            </div>
-          </div>
-          <div class="feature-card img-phone">
-            <div class="feature-card-content">
-              <h3>Insurance, decoded.</h3>
-              <p>Snap your card, and Elena handles the rest. Deductibles, copays, what's covered.</p>
-            </div>
-          </div>
           <div class="feature-card img-hugging">
             <div class="feature-card-content">
               <h3>Your whole health, one place.</h3>
-              <p>Conditions, meds, allergies, doctors. Always up to date, always with you.</p>
             </div>
           </div>
           <div class="feature-card img-meditate">
             <div class="feature-card-content">
-              <h3>Stay on top of it.</h3>
-              <p>Personalized reminders and habits so checkups, screenings, and refills never slip.</p>
+              <h3>She remembers so you don't have to.</h3>
             </div>
           </div>
           <div class="feature-card img-family">
             <div class="feature-card-content">
               <h3>Your whole family, covered.</h3>
-              <p>Manage healthcare for parents, kids, and partners all under one account.</p>
+            </div>
+          </div>
+          <div class="feature-card img-couch">
+            <div class="feature-card-content">
+              <h3>She books it for you.</h3>
+            </div>
+          </div>
+          <div class="feature-card img-phone">
+            <div class="feature-card-content">
+              <h3>Insurance, decoded.</h3>
+            </div>
+          </div>
+          <div class="feature-card img-meds">
+            <div class="feature-card-content">
+              <h3>Find the best price.</h3>
             </div>
           </div>
         </div>
@@ -1341,30 +3377,27 @@
 
       <div class="features-inner">
         <div class="features-header fade-in" style="margin-top: 80px;">
-          <h2>Join the Elena community.</h2>
-          <p style="color: #5a6a82; font-size: 1.05rem; font-weight: 300; margin-top: 12px; max-width: 540px; margin-left: auto; margin-right: auto; line-height: 1.7;">
-            Get immediate access to our WhatsApp community, weekly newsletter, and live Q&A sessions — plus early access when Elena launches.
-          </p>
+          <h2>Apply for early access.</h2>
         </div>
 
         <div class="inline-waitlist fade-in" id="waitlist">
           <div class="waitlist-flow" id="bottom-waitlist-flow">
             <form class="email-form" id="waitlist-form">
               <input type="email" placeholder="Enter your email" required>
-              <button type="submit">Get Early Access</button>
+              <button type="submit">Apply</button>
             </form>
             <div class="survey-step" id="bottom-survey" style="display:none;">
               <p class="survey-label light">What are you most interested in? <span class="survey-hint">(pick all that apply)</span></p>
               <div class="survey-options light">
-                <label class="survey-chip light"><input type="checkbox" value="price_transparency"><span>Price transparency</span></label>
-                <label class="survey-chip light"><input type="checkbox" value="bill_fighting"><span>Bill fighting &amp; prior auth</span></label>
                 <label class="survey-chip light"><input type="checkbox" value="health_data"><span>All my health data in one place</span></label>
-                <label class="survey-chip light"><input type="checkbox" value="automation"><span>Automation (phone calls, forms)</span></label>
+                <label class="survey-chip light"><input type="checkbox" value="scheduling"><span>Scheduling &amp; follow-ups</span></label>
+                <label class="survey-chip light"><input type="checkbox" value="family"><span>Family health management</span></label>
+                <label class="survey-chip light"><input type="checkbox" value="price_transparency"><span>Price transparency</span></label>
               </div>
               <button class="survey-submit-btn light" id="bottom-survey-submit">Submit</button>
               <button class="survey-skip-btn light" id="bottom-survey-skip">Skip</button>
             </div>
-            <div class="success-message" id="waitlist-success">You're in! We'll reach out when early access is ready.</div>
+            <div class="success-message" id="waitlist-success">You're in! We'll reach out when a spot opens up.</div>
           </div>
         </div>
       </div>
@@ -1373,18 +3406,14 @@
   <footer>
     <div class="footer-inner">
       <div class="footer-brand">elena</div>
-      <p class="footer-tagline">Put healthcare on autopilot.</p>
+      <p class="footer-tagline">Your family's health, in one place.</p>
     </div>
     <div class="footer-bottom">
       <span>&copy; 2026 Elena AI. All rights reserved.</span>
-      <div class="footer-links">
-        <a href="/blog">Resources</a>
-        <a href="https://www.tiktok.com/@elenahealth" target="_blank" rel="noopener">TikTok</a>
-      </div>
       <span>Made with love in NYC</span>
     </div>
     <div class="footer-fine-print">
-      Elena helps you navigate healthcare costs and logistics — not a substitute for medical advice. Pricing data from CMS-mandated hospital price transparency files.
+      Elena helps you navigate and coordinate your healthcare.not a substitute for medical advice.
     </div>
   </footer>
 
@@ -1398,7 +3427,7 @@
 
     document.querySelectorAll('.fade-in').forEach(el => fadeObserver.observe(el));
 
-    // Form handling — saves email + interests to Supabase
+    // Form handling.saves email + interests to Supabase
     const SUPABASE_URL = 'https://livbrrqqxnvnxhggguig.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpdmJycnFxeG52bnhoZ2dndWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Njc1MzYsImV4cCI6MjA4NzA0MzUzNn0.MkOKc7MWq5zoR3OY7wZgOsPwvjjKSij0ln1nF6inxP0';
 
@@ -1433,7 +3462,7 @@
         successEl.style.display = 'inline-block';
       } catch (err) {
         console.error('Signup error:', err);
-        successEl.textContent = 'Something went wrong — please try again.';
+        successEl.textContent = 'Something went wrong.please try again.';
         successEl.style.display = 'inline-block';
       }
     }
@@ -1468,17 +3497,26 @@
       });
     }
 
-    // Hero form
-    setupWaitlistFlow('hero-waitlist-form', 'hero-survey', 'hero-survey-submit', 'hero-survey-skip', 'hero-waitlist-success', ['.hero-subtitle', '.waitlist-social-proof']);
-
     // Bottom form
     setupWaitlistFlow('waitlist-form', 'bottom-survey', 'bottom-survey-submit', 'bottom-survey-skip', 'waitlist-success');
+
+    // Chat gate form
+    (function() {
+      var gateForm = document.getElementById('chat-gate-form');
+      if (!gateForm) return;
+      gateForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var email = gateForm.querySelector('input[type="email"]').value;
+        gateForm.style.display = 'none';
+        submitToSupabase(email, [], document.getElementById('chat-gate-success'));
+      });
+    })();
   </script>
 
 
 
   <script>
-    // Interactive gradient blobs — follow cursor with parallax
+    // Interactive gradient blobs.follow cursor with parallax
     (function() {
       const hero = document.querySelector('.hero');
       const blobs = document.querySelectorAll('.hero-blob');
@@ -1519,6 +3557,401 @@
 
       animate();
     })();
+  </script>
+
+  <script>
+  (function() {
+    const visitData = {
+      'dermatology': {
+        type: 'Dermatology',
+        date: 'Apr 10, 2026',
+        doctor: 'Dr. James Park',
+        location: 'Westside Dermatology Clinic',
+        future: true,
+        stars: 0,
+        summary: '',
+        labs: null,
+        notes: null
+      },
+      'primary-care': {
+        type: 'Primary Care',
+        date: 'Mar 15, 2026',
+        doctor: 'Dr. Sarah Chen',
+        location: 'Bay Area Family Medicine',
+        future: false,
+        stars: 5,
+        summary: 'Vitamin D recheck, level improved to 32 ng/mL. Continue supplementation.',
+        labs: null,
+        notes: null
+      },
+      'annual-physical': {
+        type: 'Annual Physical',
+        date: 'Jan 10, 2026',
+        doctor: 'Dr. Sarah Chen',
+        location: 'Bay Area Family Medicine',
+        future: false,
+        stars: 4,
+        summary: 'Vitamin D deficiency diagnosed. Started supplementation. Thyroid stable.',
+        labs: [
+          { name: 'Vitamin D', value: '18 ng/mL', low: true },
+          { name: 'TSH', value: '2.1 mIU/L', low: false },
+          { name: 'Cholesterol', value: '185 mg/dL', low: false },
+          { name: 'A1C', value: '5.2%', low: false }
+        ],
+        notes: {
+          keyPoints: [
+            'Vitamin D deficiency diagnosed, level at 18 ng/mL',
+            'Started Vitamin D3 2000 IU daily',
+            'Thyroid stable, TSH 2.1',
+            'Cholesterol and A1C normal'
+          ],
+          actionItems: [
+            'Take Vitamin D3 2000 IU daily with food',
+            'Schedule follow-up blood work in 3 months',
+            'Continue Levothyroxine 50 mcg every morning'
+          ]
+        }
+      }
+    };
+
+    function buildStars(count, size) {
+      let html = '<div class="visit-modal-rate-stars">';
+      for (let i = 0; i < 5; i++) {
+        html += '<span class="visit-modal-rate-star' + (i < count ? ' filled' : '') + '">&#9733;</span>';
+      }
+      html += '</div>';
+      return html;
+    }
+
+    function buildContent(visit) {
+      let html = '';
+
+      if (visit.future) {
+        html += '<div class="visit-modal-section"><div class="visit-modal-body">Upcoming appointment</div></div>';
+        return html;
+      }
+
+      // Summary
+      if (visit.summary) {
+        html += '<div class="visit-modal-section">';
+        html += '<div class="visit-modal-section-title">Summary</div>';
+        html += '<div class="visit-modal-body">' + visit.summary + '</div>';
+        html += '</div>';
+      }
+
+      // Lab Results
+      if (visit.labs) {
+        html += '<div class="visit-modal-section">';
+        html += '<div class="visit-modal-section-title">Lab Results</div>';
+        html += '<div class="visit-modal-lab-card">';
+        visit.labs.forEach(function(lab) {
+          html += '<div class="visit-modal-lab-row">';
+          html += '<span class="visit-modal-lab-name">' + lab.name + '</span>';
+          html += '<span class="visit-modal-lab-value' + (lab.low ? ' low' : '') + '">' + lab.value + (lab.low ? ' \u2193' : '') + '</span>';
+          html += '</div>';
+        });
+        html += '</div></div>';
+      }
+
+      // Visit Notes
+      if (visit.notes) {
+        html += '<div class="visit-modal-section">';
+        html += '<div class="visit-modal-section-title">Visit Notes</div>';
+        html += '<div class="visit-modal-notes-card">';
+        html += '<div class="visit-modal-notes-title">Key Points</div>';
+        html += '<div class="visit-modal-notes-list">';
+        visit.notes.keyPoints.forEach(function(p) {
+          html += '\u2022 ' + p + '<br>';
+        });
+        html += '</div>';
+        html += '<div class="visit-modal-notes-title" style="margin-top:8px;">Action Items</div>';
+        html += '<div class="visit-modal-notes-list">';
+        visit.notes.actionItems.forEach(function(a) {
+          html += '\u2022 ' + a + '<br>';
+        });
+        html += '</div></div></div>';
+      }
+
+      // Rate
+      if (visit.stars > 0) {
+        html += '<div class="visit-modal-section">';
+        html += '<div class="visit-modal-section-title">Rate ' + visit.doctor + '</div>';
+        html += buildStars(visit.stars);
+        html += '</div>';
+      }
+
+      return html;
+    }
+
+    function buildTabs(visit) {
+      if (visit.future) return '';
+      const tabs = ['Summary'];
+      if (visit.labs) tabs.push('Labs');
+      if (visit.notes) tabs.push('Notes');
+      if (tabs.length <= 1) return '';
+      let html = '';
+      tabs.forEach(function(t, i) {
+        html += '<button class="visit-modal-tab' + (i === 0 ? ' active' : '') + '">' + t + '</button>';
+      });
+      return html;
+    }
+
+    window.openVisitModal = function(visitId) {
+      const visit = visitData[visitId];
+      if (!visit) return;
+
+      document.getElementById('visitModalTitle').textContent = visit.type;
+      document.getElementById('visitModalSubtitle').textContent = visit.date + ' \u00b7 ' + visit.doctor;
+      document.getElementById('visitModalLocation').textContent = visit.location;
+      document.getElementById('visitModalTabs').innerHTML = buildTabs(visit);
+      document.getElementById('visitModalContent').innerHTML = buildContent(visit);
+
+      // Show/hide schedule button for past visits
+      document.getElementById('visitModalScheduleBtn').style.display = visit.future ? 'none' : 'inline-flex';
+
+      document.getElementById('visitModalOverlay').classList.add('active');
+      document.getElementById('visitModalSheet').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    };
+
+    window.closeVisitModal = function() {
+      document.getElementById('visitModalOverlay').classList.remove('active');
+      document.getElementById('visitModalSheet').classList.remove('active');
+      document.body.style.overflow = '';
+    };
+
+    // Close on escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeVisitModal();
+    });
+  })();
+  </script>
+
+  <script>
+    // Insurance card slide carousel
+    (function() {
+      var slider = document.getElementById('ins-slider');
+      var dotsEl = document.getElementById('ins-dots');
+      if (!slider || !dotsEl) return;
+      var dots = dotsEl.querySelectorAll('.ins-dot');
+      var idx = 0;
+      var total = 3;
+
+      function update() {
+        idx = (idx + 1) % total;
+        slider.style.transform = 'translateX(-' + (idx * 100 / total) + '%)';
+        dots.forEach(function(d, i) {
+          if (i === idx) {
+            d.classList.add('ins-dot-active');
+          } else {
+            d.classList.remove('ins-dot-active');
+          }
+        });
+      }
+
+      setInterval(update, 4000);
+    })();
+
+    // Game plan todo toggle
+    const checkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+    window.toggleGpTodo = function(item) {
+      var checkbox = item.querySelector('.gp-checkbox');
+      var isDone = item.classList.contains('gp-todo-done');
+
+      if (isDone) {
+        item.classList.remove('gp-todo-done');
+        checkbox.classList.remove('gp-checkbox-checked');
+        checkbox.innerHTML = '';
+      } else {
+        item.classList.add('gp-todo-done');
+        checkbox.classList.add('gp-checkbox-checked');
+        checkbox.innerHTML = checkSvg;
+      }
+
+      checkAllDone();
+    };
+
+    function checkAllDone() {
+      var items = document.querySelectorAll('#gp-todo-list .gp-todo-item');
+      var allDone = Array.from(items).every(function(i) { return i.classList.contains('gp-todo-done'); });
+      var todayNum = document.getElementById('gp-today-num');
+      if (allDone) {
+        todayNum.innerHTML = '✓';
+        todayNum.style.fontSize = '16px';
+      } else {
+        todayNum.textContent = '24';
+        todayNum.style.fontSize = '';
+      }
+    }
+
+    // Auto-animate todos checking off when scrolled into view
+    (function() {
+      var gpCard = document.querySelector('.gp-card');
+      if (!gpCard) return;
+      var played = false;
+
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting && !played) {
+            played = true;
+            var items = document.querySelectorAll('#gp-todo-list .gp-todo-item');
+            Array.from(items).forEach(function(item, i) {
+              setTimeout(function() {
+                var checkbox = item.querySelector('.gp-checkbox');
+                item.classList.add('gp-todo-done');
+                checkbox.classList.add('gp-checkbox-checked');
+                checkbox.innerHTML = checkSvg;
+                checkAllDone();
+              }, 1200 + (i * 800));
+            });
+          }
+        });
+      }, { threshold: 0.4 });
+
+      observer.observe(gpCard);
+    })();
+
+    // MRI chat staggered animation
+    (function() {
+      var chat = document.getElementById('mri-chat');
+      if (!chat) return;
+      var items = chat.querySelectorAll('.ch-anim');
+      var played = false;
+
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting && !played) {
+            played = true;
+            items.forEach(function(item, i) {
+              var delay = parseInt(item.style.getPropertyValue('--delay')) || i;
+              setTimeout(function() {
+                item.classList.add('ch-visible');
+              }, delay * 600);
+            });
+          }
+        });
+      }, { threshold: 0.3 });
+
+      observer.observe(chat);
+    })();
+
+    // Profile switcher
+    window.selectProfile = function(el) {
+      var options = document.querySelectorAll('.sw-option');
+      options.forEach(function(o) { o.classList.remove('sw-option-selected'); });
+      el.classList.add('sw-option-selected');
+    };
+
+    // Annual physical card bounce
+    (function() {
+      const annualCard = document.querySelector('[data-visit="annual-physical"]');
+      if (!annualCard) return;
+      setInterval(() => {
+        annualCard.style.transition = 'transform 0.15s ease';
+        annualCard.style.transform = 'translateY(-6px)';
+        setTimeout(() => {
+          annualCard.style.transform = 'translateY(0)';
+          setTimeout(() => {
+            annualCard.style.transform = 'translateY(-3px)';
+            setTimeout(() => {
+              annualCard.style.transform = 'translateY(0)';
+            }, 150);
+          }, 150);
+        }, 150);
+      }, 3000);
+    })();
+  </script>
+
+  <script>
+    // Chat hero: rotating placeholder text
+    (function() {
+      var input = document.getElementById('chat-hero-input');
+      if (!input) return;
+      var placeholders = [
+        'How much should an MRI cost with my insurance?',
+        'Can you call my doctor and schedule a follow-up?',
+        'My ER bill seems too high. Can you check it?',
+        'What does my insurance actually cover?'
+      ];
+      var idx = 0;
+      setInterval(function() {
+        if (document.activeElement === input && input.value !== '') return;
+        idx = (idx + 1) % placeholders.length;
+        input.placeholder = placeholders[idx];
+      }, 3000);
+    })();
+
+    // Chat hero: suggestion chips fill input
+    (function() {
+      var chips = document.querySelectorAll('.suggestion-chip');
+      var input = document.getElementById('chat-hero-input');
+      chips.forEach(function(chip) {
+        chip.addEventListener('click', function() {
+          input.value = chip.getAttribute('data-text') || chip.textContent;
+          input.focus();
+        });
+      });
+    })();
+
+    // Chat hero: send button and Enter both open coming soon modal
+    // (handlers are inline on the HTML elements via onclick/onkeydown)
+  </script>
+
+  <!-- Coming Soon Modal -->
+  <div id="coming-soon-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.2); z-index:2000; align-items:center; justify-content:center; backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);" onclick="closeComingSoon()">
+    <div style="background:#fff; border-radius:24px; padding:48px 40px; max-width:420px; width:90%; text-align:center; box-shadow:0 16px 48px rgba(0,0,0,0.12);" onclick="event.stopPropagation()">
+      <h3 style="font-size:24px; font-weight:300; color:#0F1B3D; margin-bottom:10px; letter-spacing:-0.02em;">Oops, sorry about that.</h3>
+      <p style="font-size:15px; color:#5a6a82; font-weight:300; line-height:1.6; margin-bottom:28px;">Elena is undergoing some temporary maintenance. We'll let you know when she's ready to help you out.</p>
+      <form id="coming-soon-form" style="display:flex; gap:10px;">
+        <input type="email" placeholder="Enter your email" required style="flex:1; padding:15px 22px; background:rgba(15,27,61,0.04); border:1px solid rgba(15,27,61,0.12); border-radius:100px; font-size:0.95rem; font-family:inherit; font-weight:300; color:#0F1B3D; outline:none; min-width:0; box-shadow:0 4px 16px rgba(15,27,61,0.06), inset 0 1px 0 rgba(255,255,255,0.6);">
+        <button type="submit" style="padding:15px 28px; background:rgba(15,27,61,0.08); border:1px solid rgba(15,27,61,0.12); border-radius:100px; color:#0F1B3D; font-size:0.95rem; font-weight:500; font-family:inherit; cursor:pointer; white-space:nowrap; box-shadow:0 4px 16px rgba(15,27,61,0.06), inset 0 1px 0 rgba(255,255,255,0.6); transition:all 0.2s;">Notify Me</button>
+      </form>
+      <div id="coming-soon-success" style="display:none; padding:15px 28px; background:rgba(15,27,61,0.06); border:1px solid rgba(15,27,61,0.12); border-radius:100px; font-size:0.95rem; color:#0F1B3D; font-weight:500;">You're on the list!</div>
+    </div>
+  </div>
+
+  <script>
+    function showComingSoon() {
+      var overlay = document.getElementById('coming-soon-overlay');
+      overlay.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeComingSoon() {
+      document.getElementById('coming-soon-overlay').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeComingSoon();
+    });
+
+    document.getElementById('coming-soon-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var email = this.querySelector('input').value;
+      var form = this;
+      var btn = form.querySelector('button');
+      btn.textContent = 'Sending...';
+      btn.disabled = true;
+
+      fetch('https://livbrrqqxnvnxhggguig.supabase.co/rest/v1/beta_signups', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpdmJycnFxeG52bnhoZ2dndWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Njc1MzYsImV4cCI6MjA4NzA0MzUzNn0.MkOKc7MWq5zoR3OY7wZgOsPwvjjKSij0ln1nF6inxP0',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpdmJycnFxeG52bnhoZ2dndWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Njc1MzYsImV4cCI6MjA4NzA0MzUzNn0.MkOKc7MWq5zoR3OY7wZgOsPwvjjKSij0ln1nF6inxP0',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ email: email })
+      }).then(function(resp) {
+        form.style.display = 'none';
+        document.getElementById('coming-soon-success').style.display = 'inline-block';
+      }).catch(function() {
+        form.style.display = 'none';
+        document.getElementById('coming-soon-success').style.display = 'inline-block';
+      });
+    });
   </script>
 
   <script defer src="/_vercel/insights/script.js"></script>
