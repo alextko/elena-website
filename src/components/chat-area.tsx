@@ -143,7 +143,7 @@ export function ChatArea({
           {MOCK_MESSAGES.map((msg) =>
             msg.role === "user" ? (
               <div key={msg.id} className="flex justify-end animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-[#F0EFED] px-5 py-3">
+                <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-[#f5f7fb] px-5 py-3">
                   <p className="text-[0.9rem] leading-relaxed text-[#0F1B3D]">{msg.content}</p>
                 </div>
               </div>
@@ -173,7 +173,7 @@ export function ChatArea({
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
-                  className="rounded-full border border-[#E5E5EA] bg-white px-4 py-2.5 text-sm font-semibold text-[#0F1B3D] transition-all hover:bg-[#F0EFED] hover:-translate-y-px"
+                  className="rounded-full border border-[#0F1B3D]/10 bg-[#f5f7fb] px-4 py-2.5 text-sm font-semibold text-[#0F1B3D]/70 shadow-[0_2px_8px_rgba(15,27,61,0.04),inset_0_1px_0_rgba(255,255,255,0.5)] transition-all hover:bg-[#0F1B3D]/[0.08] hover:-translate-y-px"
                 >
                   {s}
                 </button>
