@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elena — Chat</title>
+  <link rel="icon" type="image/png" href="../images/favicon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+    }
+
+    /* ========== SIDEBAR ========== */
+    .sidebar {
+      width: 260px;
+      background: #F7F6F2;
+      border-right: 1px solid #E5E5EA;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      padding: 20px 20px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sidebar-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: #0F1B3D;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .sidebar-brand {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #0F1B3D;
+    }
+
+    .sidebar-actions {
+      padding: 0 12px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .sidebar-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: none;
+      background: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      color: #0F1B3D;
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+      transition: background 0.15s;
+    }
+
+    .sidebar-btn:hover { background: rgba(0, 0, 0, 0.05); }
+
+    .sidebar-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: #8E8E93;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .sidebar-divider {
+      height: 1px;
+      background: #E5E5EA;
+      margin: 8px 20px;
+    }
+
+    .sidebar-label {
+      padding: 12px 20px 6px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: #AEAEB2;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .sidebar-history {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 12px;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: #0F1B3D;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-item:hover { background: rgba(0, 0, 0, 0.05); }
+    .history-item.active { background: rgba(15, 27, 61, 0.08); font-weight: 500; }
+
+    .history-icon {
+      width: 16px;
+      height: 16px;
+      stroke: #AEAEB2;
+      fill: none;
+      stroke-width: 2;
+      flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid #E5E5EA;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #E5E5EA;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #8E8E93;
+      flex-shrink: 0;
+    }
+
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 0.85rem; font-weight: 500; color: #0F1B3D; }
+    .user-email-text { font-size: 0.75rem; color: #AEAEB2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ========== MAIN ========== */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #FFFFFF;
+      min-width: 0;
+    }
+
+    .main-header {
+      padding: 14px 24px;
+      border-bottom: 1px solid #F2F2F7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .main-title {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #0F1B3D;
+    }
+
+    /* ========== MESSAGES ========== */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px 0;
+    }
+
+    .message {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .message-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .message-avatar.elena {
+      background: #0F1B3D;
+      color: #fff;
+    }
+
+    .message-avatar.user {
+      background: #E8F5E9;
+      color: #2E7D32;
+    }
+
+    .message-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .message-sender {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #0F1B3D;
+      margin-bottom: 4px;
+    }
+
+    .message-text {
+      font-size: 0.95rem;
+      line-height: 1.65;
+      color: #1C1C1E;
+      font-weight: 400;
+    }
+
+    .message-text p { margin-bottom: 12px; }
+    .message-text p:last-child { margin-bottom: 0; }
+
+    /* User message — right aligned bubble */
+    .message.user-msg {
+      justify-content: flex-end;
+    }
+
+    .message.user-msg .message-content {
+      background: #F7F6F2;
+      padding: 12px 16px;
+      border-radius: 18px 18px 4px 18px;
+      max-width: 80%;
+    }
+
+    .message.user-msg .message-text {
+      font-size: 0.9rem;
+    }
+
+    /* Steps */
+    .message-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: #8E8E93;
+    }
+
+    .step-check {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #E8F5E9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step-check svg { width: 12px; height: 12px; stroke: #4CAF50; fill: none; stroke-width: 2.5; }
+
+    /* ========== INPUT BAR ========== */
+    .input-area {
+      padding: 16px 24px 24px;
+      max-width: 720px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .input-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #F7F6F2;
+      border: 1px solid #E5E5EA;
+      border-radius: 24px;
+      padding: 6px 8px 6px 16px;
+      transition: border-color 0.2s;
+    }
+
+    .input-bar:focus-within { border-color: #AEAEB2; }
+
+    .input-attach {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-attach svg { width: 20px; height: 20px; stroke: #AEAEB2; fill: none; stroke-width: 2; }
+
+    .input-field {
+      flex: 1;
+      border: none;
+      background: none;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: #0F1B3D;
+      outline: none;
+      padding: 10px 0;
+    }
+
+    .input-field::placeholder { color: #AEAEB2; }
+
+    .input-send {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: #0F1B3D;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.15s;
+      flex-shrink: 0;
+    }
+
+    .input-send:hover { opacity: 0.85; }
+    .input-send svg { width: 18px; height: 18px; stroke: #fff; fill: none; stroke-width: 2; }
+
+    .input-hint {
+      text-align: center;
+      font-size: 0.7rem;
+      color: #AEAEB2;
+      margin-top: 8px;
+    }
+
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">E</div>
+      <span class="sidebar-brand">elena</span>
+    </div>
+
+    <div class="sidebar-actions">
+      <button class="sidebar-btn">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Chat
+      </button>
+      <button class="sidebar-btn">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Search
+      </button>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-label">Today</div>
+    <div class="sidebar-history">
+      <div class="history-item active">
+        <svg class="history-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Help me find a cheaper pharmacy
+      </div>
+      <div class="history-item">
+        <svg class="history-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Insurance EOB question
+      </div>
+      <div class="history-item">
+        <svg class="history-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Schedule dentist appointment
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-label">Yesterday</div>
+    <div class="sidebar-history">
+      <div class="history-item">
+        <svg class="history-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Negotiate my hospital bill
+      </div>
+      <div class="history-item">
+        <svg class="history-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        What does my deductible mean
+      </div>
+    </div>
+
+    <div style="flex:1"></div>
+
+    <div class="sidebar-footer">
+      <div class="user-avatar">AR</div>
+      <div class="user-info">
+        <div class="user-name">Alex Reinhart</div>
+        <div class="user-email-text">alex@example.com</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="main-header">
+      <span class="main-title">Help me find a cheaper pharmacy</span>
+    </div>
+
+    <div class="messages">
+      <!-- User message -->
+      <div class="message user-msg">
+        <div class="message-content">
+          <div class="message-text">Can you help me find a cheaper pharmacy for my Lipitor refill?</div>
+        </div>
+      </div>
+
+      <!-- Elena message with steps -->
+      <div class="message">
+        <div class="message-avatar elena">E</div>
+        <div class="message-content">
+          <div class="message-sender">Elena</div>
+          <div class="message-steps">
+            <div class="step">
+              <div class="step-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Searching pricing databases
+            </div>
+            <div class="step">
+              <div class="step-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Checking your insurance coverage
+            </div>
+            <div class="step">
+              <div class="step-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Comparing nearby pharmacies
+            </div>
+          </div>
+          <div class="message-text">
+            <p>I checked your insurance and searched 4 pricing databases. Here's what I found for generic atorvastatin (Lipitor):</p>
+            <p><strong>Costco Pharmacy</strong> — $4.20/mo (no membership needed for pharmacy)<br>
+            <strong>Rx Outreach (mail order)</strong> — $6.00/mo<br>
+            <strong>CVS with your insurance</strong> — $12.00/mo<br>
+            <strong>Walgreens with GoodRx</strong> — $8.50/mo</p>
+            <p>Costco is your best bet at $4.20/month. Want me to transfer your prescription there? I can call them now.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- User message -->
+      <div class="message user-msg">
+        <div class="message-content">
+          <div class="message-text">Yes, please transfer it to Costco!</div>
+        </div>
+      </div>
+
+      <!-- Elena response -->
+      <div class="message">
+        <div class="message-avatar elena">E</div>
+        <div class="message-content">
+          <div class="message-sender">Elena</div>
+          <div class="message-text">
+            <p>On it! I'll call Costco Pharmacy to transfer your atorvastatin prescription. This usually takes about 24 hours. I'll let you know when it's ready for pickup.</p>
+            <p>You'll be saving <strong>$7.80/month</strong> compared to your current CVS price. That's $93.60 a year back in your pocket.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="input-area">
+      <div class="input-bar">
+        <button class="input-attach">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        </button>
+        <input class="input-field" type="text" placeholder="Ask Elena anything...">
+        <button class="input-send">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        </button>
+      </div>
+      <div class="input-hint">Elena can make mistakes. Always verify important health information.</div>
+    </div>
+  </main>
+
+</body>
+</html>
