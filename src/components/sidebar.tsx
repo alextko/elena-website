@@ -24,7 +24,7 @@ const HISTORY = {
 
 export function Sidebar() {
   return (
-    <div className="flex w-64 flex-shrink-0 flex-col overflow-hidden border-r border-border bg-muted/40">
+    <div className="flex w-64 flex-shrink-0 flex-col overflow-hidden border-r border-[#E5E5EA]/50 bg-[#F0EFED]/70 backdrop-blur-xl">
       {/* Header */}
       <div className="flex items-center gap-2.5 px-5 py-5">
         <img
