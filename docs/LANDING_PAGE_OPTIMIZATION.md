@@ -221,46 +221,103 @@ Each blog post should have:
 
 ---
 
-## Part 5: Budget Plan — 1K Daily Views This Week
+## Part 5: Budget Plan — $1K / 4-Day Test
+
+> **UPDATED March 24, 2026** — Major revisions based on verified algorithm research.
+> Key changes from prior version:
+> - **Reddit gets more budget** ($300, up from $160) — lowest CPC ($0.10-0.80), can target r/HealthInsurance directly, no health ad restrictions
+> - **Google Search gets most budget** ($400) — highest intent, but MUST use transactional keywords (AI Overviews cannibalize 68% of paid CTR on informational queries)
+> - **Meta gets minimal budget** ($100) — Tier 2 health ad restrictions likely, conversion optimization partially blocked for health apps
+> - **TikTok gets $200** — split between follower seeding ($60-100 Community Interaction) and Spark Ads ($100-140 on best organic post)
+> - **TikTok posting frequency reduced** to 3-5x/week (NOT 3-4x/day) — 2026 creator diversity score penalizes same-format daily posting
+> - **Google Search keywords changed** — target transactional ("medical bill help app") not informational ("how to dispute a medical bill") due to AI Overviews
+
+### Verified Platform Cost Benchmarks (March 2026)
+
+| Channel | CPC | CPM | Conversion Rate (click to signup) | Notes |
+|---|---|---|---|---|
+| Google Search (healthcare, transactional keywords) | $3-10 | N/A | 8-15% | AI Overviews reduce paid CTR 68% on informational queries. Use transactional keywords only. |
+| Reddit Ads (subreddit targeting) | $0.10-0.80 | $2-10 | 1-5% (but very cheap clicks) | Can target r/HealthInsurance, r/personalfinance directly. No health ad restrictions. Conversation Ads available. |
+| TikTok Spark Ads | $0.43 CPC | $7.80 | Varies | 30% lower CPA than In-Feed. Requires organic post to boost. |
+| TikTok In-Feed | $0.84 CPC | $9.20 | Varies | Worse than Spark on every metric. Use only for Community Interaction (follower growth). |
+| TikTok Community Interaction (follower growth) | N/A | $7.80-9.20 | 0.5-2% follow rate | Does NOT require Spark Ads (corrected). Can run as In-Feed. |
+| Meta (Health & Wellness, likely Tier 2) | $1.82 CPC | $4.76-12.46 | Unknown — conversion optimization may be blocked | Standard Lead/CompleteRegistration events may be blocked. Must use custom events. |
+
+### CRITICAL: Google AI Overview Warning
+
+Google AI Overviews now appear on 51-89% of healthcare queries. When they appear, paid ad CTR drops 68%.
+
+| Keyword Type | AI Overview Risk | Use For Ads? |
+|---|---|---|
+| "how to dispute a medical bill" | HIGH (100% informational) | NO — AI Overview steals the click |
+| "medical bill errors" | HIGH (informational) | NO |
+| "medical bill help" | MODERATE | MAYBE — test and monitor |
+| "medical bill help app" | LOW (transactional) | YES |
+| "hospital bill navigator app" | LOW (transactional) | YES |
+| "app to fight insurance denial" | LOW (transactional) | YES |
+| "negotiate hospital bill service" | LOW (transactional) | YES |
+
+### CRITICAL: Meta Tier 2 Risk
+
+Meta will likely classify Elena as Tier 2 (Health & Wellness). This means:
+- Standard conversion events (Lead, CompleteRegistration, Purchase) may be BLOCKED
+- You can only optimize for PageView or ViewContent
+- Custom audiences with health-implied names get flagged and disabled
+- Workaround: Use custom events in GTM with neutral names ("form_submit" not "waitlist_signup")
+- Frame Elena as "financial navigation / billing tool" NOT "healthcare app" in all Meta-facing copy and domain content
+
+### Budget Allocation ($1K / 4 Days)
+
+| Channel | Total Budget | Daily | Purpose | Landing Destination |
+|---|---|---|---|---|
+| Google Search | $400 | $100/day | Waitlist signups from transactional keywords | Landing page (`/lp/bills`) |
+| Reddit Ads | $300 | $75/day | Waitlist signups from r/HealthInsurance + r/personalfinance targeting | Blog posts (higher trust) or landing page |
+| TikTok (follower seeding) | $80 | $20/day x 4 days | Community Interaction — build 50-200 ICP followers | Profile (follow objective) |
+| TikTok (Spark Ads) | $120 | $40/day x 3 days (start Day 2) | Boost best organic post for traffic/conversions | Landing page (`/lp/calls`) |
+| Meta | $100 | $25/day | Small test — emoji-bullet static. Monitor for Tier 2 classification. | Landing page (`/lp/bills`) |
+| **Total** | **$1,000** | | | |
 
 ### Pre-requisites (Day 1, before spending)
 
-- [ ] Rebuild above-the-fold section (new headline, single-field form, social proof, no survey)
-- [ ] Create at least one dedicated landing page route (`/lp/calls` or similar)
-- [ ] Film 3 TikTok videos (Scripts 1, 2, 3 from ELENA_AD_STRATEGY_AND_SCRIPTS.md)
-- [ ] Create 2 Meta static images (Canva, Zocdoc emoji-bullet style)
-- [ ] Write 3 Google Search ad groups
-
-### Recommended Budget: $5,000-6,500/week (Scenario B from prior analysis)
-
-| Channel | Daily Spend | Expected Daily Clicks | Waitlist Conv. Rate | Daily Signups |
-|---|---|---|---|---|
-| Google Search (high intent) | $300 | 75-150 | 35-50% | 25-75 |
-| Reddit Ads | $150 | 75-150 | 25-40% | 20-60 |
-| TikTok In-Feed Ads | $250 | 350-500 | 15-20% | 50-100 |
-| Meta Traffic (retarget TikTok viewers) | $150 | 100-200 | 25-35% | 25-70 |
-| 2 micro-influencer posts (one-time) | $500 total | 200-500 spike | 30-45% | 60-225 |
-| **Total** | **~$850/day + $500 influencer** | **800-1,500** | **~30% blended** | **~240-450** |
-
-**Weekly total: ~$6,450**
+- [ ] Landing page above-the-fold rebuilt (new headline, single-field form, social proof)
+- [ ] At least one dedicated landing page route (`/lp/bills` and/or `/lp/calls`)
+- [ ] Blog posts published (for Reddit ad destinations — higher trust than direct landing page)
+- [ ] Film 1-2 short TikTok videos (20-40 sec, optimized for 70% completion rate)
+- [ ] Create 2 Meta static images in Canva (Scripts 2B, 2C from ELENA_FINAL_AD_SCRIPTS_MARCH2026.md)
+- [ ] Set up Google Search campaigns with TRANSACTIONAL keywords only (see keyword table above)
+- [ ] Set up Reddit Ads targeting r/HealthInsurance + r/personalfinance
+- [ ] Set up Meta custom conversion event in GTM (use neutral name like "form_submit")
+- [ ] TikTok pixel installed, Community Interaction campaign ready
 
 ### Day-by-day execution:
 
-**Day 1 (Today):**
-- 2 hrs: Rebuild landing page above-the-fold
-- 1 hr: Film 3 TikTok talking head videos
-- 1 hr: Create 2 Meta static images in Canva
-- 1 hr: Set up Google Search campaigns + TikTok In-Feed + Meta Traffic
-- 30 min: DM 5-10 micro-influencers for a $200-500 post within 48hrs
+**Day 1:**
+- Post 1 short (20-40 sec) organic TikTok — Script 2A "$1,300 in errors"
+- Launch TikTok Community Interaction ad ($20/day) boosting that post for followers
+- Launch Google Search ($100/day) with transactional keywords
+- Launch Reddit Ads ($75/day) targeting r/HealthInsurance + r/personalfinance, sending to blog posts
+- Launch Meta static test ($25/day) — monitor for Tier 2 classification
+- Publish first blog post if not already live
 
 **Day 2:**
-- Ads in learning phase. Expect ~300-500 daily views.
-- Confirm 1-2 influencer deals.
-- Publish first blog post.
-- Monitor UTM data and waitlist signup tracking.
+- Post second organic TikTok — Script 1A or 1D (pick best ICP)
+- Check Day 1 TikTok: did the follower ad generate 10-30 followers? If yes, good signal.
+- If Day 1 organic post hit >500 views, Spark Ad it ($40/day)
+- Monitor Google Search: which keywords are getting clicks? Kill any with AI Overview cannibalization (high impressions, near-zero clicks)
+- Monitor Reddit: click-through from ads, any engagement on blog posts
 
 **Day 3:**
-- Ads start optimizing. ~500-800 daily views.
+- Post third organic TikTok (different ICP than Day 2)
+- You should have 30-80 followers from Community Interaction
+- Organic posts start getting tested against these real followers (Phase 1 of new algorithm)
+- Shift TikTok budget: if Spark Ad is performing, increase to $60/day. Kill follower ad if you have 50+ followers.
+- Check Reddit: if blog posts are getting signups, increase to $100/day and pull from underperforming channel
+
+**Day 4:**
+- Final organic TikTok post
+- Read ALL data: which channel produced the most signups per dollar?
+- You should have 50-200 TikTok followers, enough for organic Phase 1 testing going forward
+- Kill anything that didn't produce signups. Double down on winner for Week 2.
 - Reddit ads go live.
 - Second blog post published.
 
