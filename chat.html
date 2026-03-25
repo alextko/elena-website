@@ -2828,7 +2828,7 @@
           <button class="chat-attach-btn" aria-label="Attach document">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
           </button>
-          <button class="chat-send-btn" id="chat-send-btn" aria-label="Send" disabled style="opacity: 0.4; cursor: default;">
+          <button class="chat-send-btn" id="chat-send-btn" aria-label="Send" onclick="showComingSoon()">
             <svg viewBox="0 0 20 20" fill="none">
               <path d="M10 16V4M4 10l6-6 6 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -3977,6 +3977,63 @@
         }
       });
     })();
+  </script>
+
+  <!-- Coming Soon Modal -->
+  <div id="coming-soon-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:2000; align-items:center; justify-content:center;" onclick="closeComingSoon()">
+    <div style="background:#fff; border-radius:20px; padding:40px 36px; max-width:400px; width:90%; text-align:center; box-shadow:0 16px 48px rgba(0,0,0,0.15);" onclick="event.stopPropagation()">
+      <h3 style="font-size:22px; font-weight:600; color:#0F1B3D; margin-bottom:8px;">Coming soon</h3>
+      <p style="font-size:15px; color:#5a6a82; font-weight:300; line-height:1.6; margin-bottom:24px;">We'll notify you when Elena is ready to help you out.</p>
+      <form id="coming-soon-form" style="display:flex; gap:10px;">
+        <input type="email" placeholder="Enter your email" required style="flex:1; padding:14px 20px; border:1px solid rgba(0,0,0,0.12); border-radius:100px; font-size:0.95rem; font-family:inherit; outline:none; min-width:0;">
+        <button type="submit" style="padding:14px 24px; background:#0F1B3D; border:none; border-radius:100px; color:#fff; font-size:0.95rem; font-weight:500; font-family:inherit; cursor:pointer; white-space:nowrap;">Notify Me</button>
+      </form>
+      <div id="coming-soon-success" style="display:none; padding:14px 24px; background:rgba(15,27,61,0.06); border-radius:100px; font-size:0.95rem; color:#0F1B3D; font-weight:500;">You're on the list!</div>
+    </div>
+  </div>
+
+  <script>
+    function showComingSoon() {
+      var overlay = document.getElementById('coming-soon-overlay');
+      overlay.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeComingSoon() {
+      document.getElementById('coming-soon-overlay').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeComingSoon();
+    });
+
+    document.getElementById('coming-soon-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var email = this.querySelector('input').value;
+      var form = this;
+      var btn = form.querySelector('button');
+      btn.textContent = 'Sending...';
+      btn.disabled = true;
+
+      var body = { email: email };
+      fetch(SUPABASE_URL + '/rest/v1/beta_signups', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(body)
+      }).then(function(resp) {
+        form.style.display = 'none';
+        document.getElementById('coming-soon-success').style.display = 'inline-block';
+      }).catch(function() {
+        form.style.display = 'none';
+        document.getElementById('coming-soon-success').style.display = 'inline-block';
+      });
+    });
   </script>
 
   <script defer src="/_vercel/insights/script.js"></script>
