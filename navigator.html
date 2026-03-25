@@ -2400,13 +2400,11 @@
                 </div>
               </div>
               <div class="gp-todo-divider"></div>
-              <div class="gp-todo-item gp-todo-done" onclick="toggleGpTodo(this)">
-                <div class="gp-checkbox gp-checkbox-checked">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
+              <div class="gp-todo-item" onclick="toggleGpTodo(this)">
+                <div class="gp-checkbox"></div>
                 <div class="gp-todo-content">
                   <div class="gp-todo-title">Refill prescription</div>
-                  <div class="gp-todo-subtitle">Completed</div>
+                  <div class="gp-todo-subtitle">Due today</div>
                 </div>
               </div>
             </div>
@@ -3229,9 +3227,7 @@
           if (entry.isIntersecting && !played) {
             played = true;
             var items = document.querySelectorAll('#gp-todo-list .gp-todo-item');
-            var unchecked = Array.from(items).filter(function(i) { return !i.classList.contains('gp-todo-done'); });
-
-            unchecked.forEach(function(item, i) {
+            Array.from(items).forEach(function(item, i) {
               setTimeout(function() {
                 var checkbox = item.querySelector('.gp-checkbox');
                 item.classList.add('gp-todo-done');
@@ -3294,7 +3290,7 @@
             }, 150);
           }, 150);
         }, 150);
-      }, 5000);
+      }, 3000);
     })();
   </script>
 
