@@ -2750,6 +2750,69 @@
   <!-- APP SPOTLIGHTS -->
   <section class="app-spotlights" id="how-it-works">
 
+    <!-- Spotlight 1: Game Plan (Salmon Card).text LEFT, card RIGHT -->
+    <div class="spotlight fade-in">
+      <div class="spotlight-text">
+        <h3>Your health game plan</h3>
+        <p>Elena builds a personalized daily plan: medications, follow-ups, screenings. Check things off as you go.</p>
+      </div>
+      <div class="spotlight-ui">
+        <div class="gp-card">
+          <div class="gp-title">Game Plan</div>
+          <div class="gp-calendar">
+            <div class="gp-cal-day">
+              <span class="gp-cal-label">Mon</span>
+              <span class="gp-cal-num">22</span>
+            </div>
+            <div class="gp-cal-day">
+              <span class="gp-cal-label">Tue</span>
+              <span class="gp-cal-num">23</span>
+            </div>
+            <div class="gp-cal-day gp-cal-today" id="gp-today">
+              <span class="gp-cal-label">Wed</span>
+              <span class="gp-cal-num" id="gp-today-num">24</span>
+            </div>
+            <div class="gp-cal-day">
+              <span class="gp-cal-label">Thu</span>
+              <span class="gp-cal-num">25</span>
+            </div>
+            <div class="gp-cal-day">
+              <span class="gp-cal-label">Fri</span>
+              <span class="gp-cal-num">26</span>
+            </div>
+          </div>
+          <div class="gp-todo-section">
+            <div class="gp-todo-header" id="gp-todo-header">To Do</div>
+            <div class="gp-todo-list" id="gp-todo-list">
+              <div class="gp-todo-item" onclick="toggleGpTodo(this)">
+                <div class="gp-checkbox"></div>
+                <div class="gp-todo-content">
+                  <div class="gp-todo-title">Take Vitamin D3</div>
+                  <div class="gp-todo-subtitle">Daily · Morning</div>
+                </div>
+              </div>
+              <div class="gp-todo-divider"></div>
+              <div class="gp-todo-item" onclick="toggleGpTodo(this)">
+                <div class="gp-checkbox"></div>
+                <div class="gp-todo-content">
+                  <div class="gp-todo-title">Schedule dermatology follow-up</div>
+                  <div class="gp-todo-subtitle">Due this week</div>
+                </div>
+              </div>
+              <div class="gp-todo-divider"></div>
+              <div class="gp-todo-item" onclick="toggleGpTodo(this)">
+                <div class="gp-checkbox"></div>
+                <div class="gp-todo-content">
+                  <div class="gp-todo-title">Refill prescription</div>
+                  <div class="gp-todo-subtitle">Due today</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Spotlight 2: Visit Timeline.text RIGHT, timeline LEFT -->
     <div class="spotlight spotlight-reverse fade-in">
       <div class="spotlight-text">
@@ -2852,69 +2915,6 @@
               <div class="ch-confirmation-doctor">Dr. James Park</div>
               <div class="ch-confirmation-detail">Thursday, Apr 10, 2026 at 2:00 PM</div>
               <div class="ch-confirmation-reason">Skin check follow-up</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Spotlight 1: Game Plan (Salmon Card).text LEFT, card RIGHT -->
-    <div class="spotlight fade-in">
-      <div class="spotlight-text">
-        <h3>Your health game plan</h3>
-        <p>Elena builds a personalized daily plan: medications, follow-ups, screenings. Check things off as you go.</p>
-      </div>
-      <div class="spotlight-ui">
-        <div class="gp-card">
-          <div class="gp-title">Game Plan</div>
-          <div class="gp-calendar">
-            <div class="gp-cal-day">
-              <span class="gp-cal-label">Mon</span>
-              <span class="gp-cal-num">22</span>
-            </div>
-            <div class="gp-cal-day">
-              <span class="gp-cal-label">Tue</span>
-              <span class="gp-cal-num">23</span>
-            </div>
-            <div class="gp-cal-day gp-cal-today" id="gp-today">
-              <span class="gp-cal-label">Wed</span>
-              <span class="gp-cal-num" id="gp-today-num">24</span>
-            </div>
-            <div class="gp-cal-day">
-              <span class="gp-cal-label">Thu</span>
-              <span class="gp-cal-num">25</span>
-            </div>
-            <div class="gp-cal-day">
-              <span class="gp-cal-label">Fri</span>
-              <span class="gp-cal-num">26</span>
-            </div>
-          </div>
-          <div class="gp-todo-section">
-            <div class="gp-todo-header" id="gp-todo-header">To Do</div>
-            <div class="gp-todo-list" id="gp-todo-list">
-              <div class="gp-todo-item" onclick="toggleGpTodo(this)">
-                <div class="gp-checkbox"></div>
-                <div class="gp-todo-content">
-                  <div class="gp-todo-title">Take Vitamin D3</div>
-                  <div class="gp-todo-subtitle">Daily · Morning</div>
-                </div>
-              </div>
-              <div class="gp-todo-divider"></div>
-              <div class="gp-todo-item" onclick="toggleGpTodo(this)">
-                <div class="gp-checkbox"></div>
-                <div class="gp-todo-content">
-                  <div class="gp-todo-title">Schedule dermatology follow-up</div>
-                  <div class="gp-todo-subtitle">Due this week</div>
-                </div>
-              </div>
-              <div class="gp-todo-divider"></div>
-              <div class="gp-todo-item" onclick="toggleGpTodo(this)">
-                <div class="gp-checkbox"></div>
-                <div class="gp-todo-content">
-                  <div class="gp-todo-title">Refill prescription</div>
-                  <div class="gp-todo-subtitle">Due today</div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
