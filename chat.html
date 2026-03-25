@@ -2040,26 +2040,38 @@
       overflow: hidden;
     }
 
-    .features-carousel-wrapper::before,
-    .features-carousel-wrapper::after {
-      content: '';
+    /* Progressive blur edges */
+    .features-carousel-wrapper .prog-blur {
       position: absolute;
       top: 0;
       bottom: 0;
-      width: 60px;
+      width: 120px;
       z-index: 2;
       pointer-events: none;
+      display: flex;
     }
 
-    .features-carousel-wrapper::before {
-      left: 0;
-      background: linear-gradient(to right, #FFFFFF, transparent);
+    .features-carousel-wrapper .prog-blur-left { left: 0; flex-direction: row; }
+    .features-carousel-wrapper .prog-blur-right { right: 0; flex-direction: row-reverse; }
+
+    .prog-blur-layer {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      backdrop-filter: blur(var(--blur));
+      -webkit-backdrop-filter: blur(var(--blur));
+      mask: linear-gradient(to var(--dir), rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+      -webkit-mask: linear-gradient(to var(--dir), rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
     }
 
-    .features-carousel-wrapper::after {
-      right: 0;
-      background: linear-gradient(to left, #FFFFFF, transparent);
-    }
+    .prog-blur-left .prog-blur-layer { left: 0; --dir: right; }
+    .prog-blur-right .prog-blur-layer { right: 0; --dir: left; }
+
+    .prog-blur-layer:nth-child(1) { width: 25%; --blur: 1px; z-index: 1; }
+    .prog-blur-layer:nth-child(2) { width: 50%; --blur: 2px; z-index: 2; }
+    .prog-blur-layer:nth-child(3) { width: 75%; --blur: 4px; z-index: 3; }
+    .prog-blur-layer:nth-child(4) { width: 100%; --blur: 8px; z-index: 4; }
+    .prog-blur-layer:nth-child(5) { width: 100%; --blur: 16px; z-index: 5; }
 
     .features-grid {
       display: flex;
@@ -2735,6 +2747,13 @@
     .trusted-strip-marquee {
       overflow: hidden;
       width: 100%;
+      position: relative;
+    }
+
+    .trusted-strip-marquee .prog-blur { width: 80px; }
+    .trusted-strip-marquee .prog-blur-layer {
+      backdrop-filter: blur(var(--blur));
+      -webkit-backdrop-filter: blur(var(--blur));
     }
 
     .trusted-strip-track {
@@ -2827,6 +2846,12 @@
     <div class="trusted-strip-hero">
       <div class="trusted-strip-label">Trusted by members insured with</div>
       <div class="trusted-strip-marquee">
+        <div class="prog-blur prog-blur-left">
+          <div class="prog-blur-layer"></div><div class="prog-blur-layer"></div><div class="prog-blur-layer"></div><div class="prog-blur-layer"></div><div class="prog-blur-layer"></div>
+        </div>
+        <div class="prog-blur prog-blur-right">
+          <div class="prog-blur-layer"></div><div class="prog-blur-layer"></div><div class="prog-blur-layer"></div><div class="prog-blur-layer"></div><div class="prog-blur-layer"></div>
+        </div>
         <div class="trusted-strip-track">
           <div class="trusted-strip-set">
             <img src="images/insurers/bcbs.svg" alt="Blue Cross Blue Shield"><img src="images/insurers/uhc.svg" alt="UnitedHealthcare"><img src="images/insurers/aetna.svg" alt="Aetna"><img src="images/insurers/cigna.svg" alt="Cigna"><img src="images/insurers/humana.svg" alt="Humana"><img src="images/insurers/kaiser.svg" alt="Kaiser Permanente"><img src="images/insurers/anthem.svg" alt="Anthem"><img src="images/insurers/medicare.svg" alt="Medicare"><img src="images/insurers/centene.svg" alt="Centene"><img src="images/insurers/oscar.svg" alt="Oscar Health"><img src="images/insurers/delta-dental.svg" alt="Delta Dental"><img src="images/insurers/vsp.svg" alt="VSP Vision">
@@ -3276,6 +3301,20 @@
   <!-- FEATURES + WAITLIST -->
   <section class="features" id="features" style="padding: 120px 0 100px;">
     <div class="features-carousel-wrapper">
+        <div class="prog-blur prog-blur-left">
+          <div class="prog-blur-layer"></div>
+          <div class="prog-blur-layer"></div>
+          <div class="prog-blur-layer"></div>
+          <div class="prog-blur-layer"></div>
+          <div class="prog-blur-layer"></div>
+        </div>
+        <div class="prog-blur prog-blur-right">
+          <div class="prog-blur-layer"></div>
+          <div class="prog-blur-layer"></div>
+          <div class="prog-blur-layer"></div>
+          <div class="prog-blur-layer"></div>
+          <div class="prog-blur-layer"></div>
+        </div>
         <div class="features-grid">
           <div class="feature-card img-hugging">
             <div class="feature-card-content">
