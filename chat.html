@@ -2526,12 +2526,13 @@
     }
 
     /* ========== INSURER MARQUEE (inside hero) ========== */
-    /* ========== TRUSTED BY STRIP ========== */
-    .trusted-strip {
+    /* ========== TRUSTED BY (in hero) ========== */
+    .trusted-strip-hero {
       position: relative;
-      z-index: 10;
-      background: #fff;
-      padding: 40px 0;
+      z-index: 2;
+      margin-top: 40px;
+      width: 100vw;
+      margin-left: calc(-50vw + 50%);
       text-align: center;
     }
 
@@ -2540,39 +2541,28 @@
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 2px;
-      color: #AEAEB2;
-      margin-bottom: 24px;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 16px;
     }
 
     .trusted-strip-marquee {
       overflow: hidden;
       width: 100%;
-      mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
-      -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
     }
 
     .trusted-strip-track {
       display: flex;
       align-items: center;
       width: max-content;
-      animation: trusted-scroll 40s linear infinite;
-      gap: 48px;
-    }
-
-    .trusted-strip-track:hover {
-      animation-play-state: paused;
+      animation: trusted-scroll 35s linear infinite;
+      gap: 40px;
     }
 
     .trusted-strip-track img {
-      height: 28px;
+      height: 24px;
       width: auto;
-      filter: grayscale(1) opacity(0.4);
+      filter: brightness(0) invert(1) opacity(0.3);
       flex-shrink: 0;
-      transition: filter 0.2s;
-    }
-
-    .trusted-strip-track img:hover {
-      filter: grayscale(0) opacity(0.8);
     }
 
     @keyframes trusted-scroll {
@@ -2623,39 +2613,36 @@
         <span class="suggestion-chip" data-text="Schedule an appointment with my doctor">Schedule an appointment</span>
       </div>
       <p class="hero-social-proof">Join founding members navigating healthcare together</p>
-    </div>
-  </section>
-
-  <!-- TRUSTED BY STRIP -->
-  <section class="trusted-strip">
-    <div class="trusted-strip-label">Trusted by members insured by</div>
-    <div class="trusted-strip-marquee">
-      <div class="trusted-strip-track">
-        <img src="https://img.logo.dev/bcbs.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Blue Cross Blue Shield">
-        <img src="https://img.logo.dev/uhc.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="UnitedHealthcare">
-        <img src="https://img.logo.dev/aetna.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Aetna">
-        <img src="https://img.logo.dev/cigna.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Cigna">
-        <img src="https://img.logo.dev/humana.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Humana">
-        <img src="https://img.logo.dev/kaiserpermanente.org?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Kaiser Permanente">
-        <img src="https://img.logo.dev/anthem.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Anthem">
-        <img src="https://img.logo.dev/molinahealthcare.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Molina">
-        <img src="https://img.logo.dev/centene.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Centene">
-        <img src="https://img.logo.dev/hioscar.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Oscar Health">
-        <img src="https://img.logo.dev/deltadental.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Delta Dental">
-        <img src="https://img.logo.dev/vsp.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="VSP Vision">
-        <!-- Duplicate for seamless loop -->
-        <img src="https://img.logo.dev/bcbs.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Blue Cross Blue Shield">
-        <img src="https://img.logo.dev/uhc.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="UnitedHealthcare">
-        <img src="https://img.logo.dev/aetna.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Aetna">
-        <img src="https://img.logo.dev/cigna.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Cigna">
-        <img src="https://img.logo.dev/humana.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Humana">
-        <img src="https://img.logo.dev/kaiserpermanente.org?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Kaiser Permanente">
-        <img src="https://img.logo.dev/anthem.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Anthem">
-        <img src="https://img.logo.dev/molinahealthcare.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Molina">
-        <img src="https://img.logo.dev/centene.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Centene">
-        <img src="https://img.logo.dev/hioscar.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Oscar Health">
-        <img src="https://img.logo.dev/deltadental.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Delta Dental">
-        <img src="https://img.logo.dev/vsp.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="VSP Vision">
+      <div class="trusted-strip-hero">
+        <div class="trusted-strip-label">Trusted by members insured by</div>
+        <div class="trusted-strip-marquee">
+          <div class="trusted-strip-track">
+            <img src="https://img.logo.dev/bcbs.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Blue Cross Blue Shield">
+            <img src="https://img.logo.dev/uhc.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="UnitedHealthcare">
+            <img src="https://img.logo.dev/aetna.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Aetna">
+            <img src="https://img.logo.dev/cigna.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Cigna">
+            <img src="https://img.logo.dev/humana.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Humana">
+            <img src="https://img.logo.dev/kaiserpermanente.org?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Kaiser Permanente">
+            <img src="https://img.logo.dev/anthem.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Anthem">
+            <img src="https://img.logo.dev/molinahealthcare.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Molina">
+            <img src="https://img.logo.dev/centene.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Centene">
+            <img src="https://img.logo.dev/hioscar.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Oscar Health">
+            <img src="https://img.logo.dev/deltadental.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Delta Dental">
+            <img src="https://img.logo.dev/vsp.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="VSP Vision">
+            <img src="https://img.logo.dev/bcbs.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Blue Cross Blue Shield">
+            <img src="https://img.logo.dev/uhc.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="UnitedHealthcare">
+            <img src="https://img.logo.dev/aetna.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Aetna">
+            <img src="https://img.logo.dev/cigna.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Cigna">
+            <img src="https://img.logo.dev/humana.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Humana">
+            <img src="https://img.logo.dev/kaiserpermanente.org?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Kaiser Permanente">
+            <img src="https://img.logo.dev/anthem.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Anthem">
+            <img src="https://img.logo.dev/molinahealthcare.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Molina">
+            <img src="https://img.logo.dev/centene.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Centene">
+            <img src="https://img.logo.dev/hioscar.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Oscar Health">
+            <img src="https://img.logo.dev/deltadental.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Delta Dental">
+            <img src="https://img.logo.dev/vsp.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="VSP Vision">
+          </div>
+        </div>
       </div>
     </div>
   </section>
