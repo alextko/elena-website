@@ -578,6 +578,32 @@
       line-height: 1.7;
     }
 
+    .manifesto-app-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 32px;
+      font-size: 0.9rem;
+      color: #5a6a82;
+      font-weight: 400;
+    }
+
+    .manifesto-app-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+    }
+
+    .manifesto-app-cta a {
+      color: #2E6BB5;
+      font-weight: 500;
+      text-decoration: none;
+    }
+
+    .manifesto-app-cta a:hover {
+      text-decoration: underline;
+    }
+
     .manifesto-col {
       flex: 1;
     }
@@ -2804,21 +2830,18 @@
 
 
 
-  <!-- MANIFESTO: TWO-COLUMN -->
+  <!-- MANIFESTO -->
   <section class="manifesto">
-    <div class="manifesto-inner fade-in" style="max-width: 960px; text-align: left;">
-      <div class="manifesto-col">
-        <div class="manifesto-label">Available now</div>
-        <h3 class="manifesto-col-title">Use Elena today</h3>
-        <p class="manifesto-col-body">Compare procedure prices, dispute medical bills, find in-network doctors, and get answers about your insurance. Elena handles the phone calls, the research, and the paperwork.</p>
-        <a href="#" class="manifesto-btn manifesto-btn-primary" onclick="document.getElementById('chat-hero-input').scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(function(){document.getElementById('chat-hero-input').focus()},500); return false;">Try Elena now</a>
-      </div>
-      <div class="manifesto-divider"></div>
-      <div class="manifesto-col">
-        <div class="manifesto-label">Coming soon</div>
-        <h3 class="manifesto-col-title">The Elena app</h3>
-        <p class="manifesto-col-body">All your health data, documents, and family's care in one place. A personal assistant that tracks follow-ups, manages medications, and keeps your whole family on top of their health.</p>
-        <a href="#waitlist" class="manifesto-btn manifesto-btn-secondary">Apply for early access</a>
+    <div class="manifesto-inner fade-in" style="max-width: 720px; text-align: center;">
+      <div class="manifesto-text">
+        <h2>Healthcare is built around providers. We're building it around you.</h2>
+        <p>Today, the center of your healthcare is your doctor's office. But most people see dozens of providers across multiple health systems. Records get scattered. Follow-ups get lost. Bills pile up. Nobody has the full picture.</p>
+        <p style="margin-top: 12px;">We think patients should be at the center of their own care. Elena puts a teammate in your pocket that helps you use the system, aggregates your health data and bills, and fights for you.</p>
+        <div class="manifesto-app-cta">
+          <img src="images/elena-icon.png" alt="Elena" class="manifesto-app-icon">
+          <span>The Elena app is coming soon.</span>
+          <a href="#waitlist">Apply for early access</a>
+        </div>
       </div>
     </div>
   </section>
