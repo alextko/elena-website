@@ -2630,6 +2630,14 @@
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
     }
 
+    .trusted-strip-set img {
+      height: 22px;
+      width: auto;
+      filter: brightness(0) invert(1);
+      opacity: 0.45;
+      flex-shrink: 0;
+    }
+
     @keyframes trusted-scroll {
       0% { transform: translateX(0); }
       100% { transform: translateX(-50%); }
@@ -2691,10 +2699,10 @@
       <div class="trusted-strip-marquee">
         <div class="trusted-strip-track">
           <div class="trusted-strip-set">
-            <span>Blue Cross Blue Shield</span><span>UnitedHealthcare</span><span>Aetna</span><span>Cigna</span><span>Humana</span><span>Kaiser Permanente</span><span>Anthem</span><span>Molina Healthcare</span><span>Centene</span><span>Oscar Health</span><span>Delta Dental</span><span>VSP Vision</span>
+            <img src="images/insurers/bcbs.svg" alt="Blue Cross Blue Shield"><img src="images/insurers/uhc.svg" alt="UnitedHealthcare"><span>Aetna</span><span>Cigna</span><span>Humana</span><img src="images/insurers/kaiser.png" alt="Kaiser Permanente"><span>Anthem</span><img src="images/insurers/medicare.svg" alt="Medicare"><span>Centene</span><img src="images/insurers/oscar.svg" alt="Oscar Health"><span>Delta Dental</span><span>VSP Vision</span>
           </div>
           <div class="trusted-strip-set">
-            <span>Blue Cross Blue Shield</span><span>UnitedHealthcare</span><span>Aetna</span><span>Cigna</span><span>Humana</span><span>Kaiser Permanente</span><span>Anthem</span><span>Molina Healthcare</span><span>Centene</span><span>Oscar Health</span><span>Delta Dental</span><span>VSP Vision</span>
+            <img src="images/insurers/bcbs.svg" alt="Blue Cross Blue Shield"><img src="images/insurers/uhc.svg" alt="UnitedHealthcare"><span>Aetna</span><span>Cigna</span><span>Humana</span><img src="images/insurers/kaiser.png" alt="Kaiser Permanente"><span>Anthem</span><img src="images/insurers/medicare.svg" alt="Medicare"><span>Centene</span><img src="images/insurers/oscar.svg" alt="Oscar Health"><span>Delta Dental</span><span>VSP Vision</span>
           </div>
         </div>
       </div>
