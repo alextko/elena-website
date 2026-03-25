@@ -578,30 +578,48 @@
       line-height: 1.7;
     }
 
-    .manifesto-app-cta {
-      display: inline-flex;
+    .manifesto-app-side {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 10px;
-      margin-top: 32px;
-      font-size: 0.9rem;
-      color: #5a6a82;
-      font-weight: 400;
+      gap: 16px;
     }
 
     .manifesto-app-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
+      width: 96px;
+      height: 96px;
+      border-radius: 22px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
     }
 
-    .manifesto-app-cta a {
-      color: #2E6BB5;
+    .manifesto-app-label {
+      font-size: 0.88rem;
+      font-weight: 400;
+      color: #5a6a82;
+      text-align: center;
+    }
+
+    .manifesto-app-btn {
+      display: inline-block;
+      padding: 14px 28px;
+      background: rgba(15, 27, 61, 0.06);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      border: 1px solid rgba(15, 27, 61, 0.12);
+      border-radius: 100px;
+      color: #0F1B3D;
+      font-size: 0.9rem;
       font-weight: 500;
+      font-family: inherit;
       text-decoration: none;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(15, 27, 61, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.6);
     }
 
-    .manifesto-app-cta a:hover {
-      text-decoration: underline;
+    .manifesto-app-btn:hover {
+      background: rgba(15, 27, 61, 0.1);
+      border-color: rgba(15, 27, 61, 0.2);
     }
 
     .manifesto-col {
@@ -2832,16 +2850,16 @@
 
   <!-- MANIFESTO -->
   <section class="manifesto">
-    <div class="manifesto-inner fade-in" style="max-width: 720px; text-align: center;">
+    <div class="manifesto-inner fade-in" style="max-width: 960px;">
       <div class="manifesto-text">
         <h2>Healthcare is built around providers. We're building it around you.</h2>
         <p>Today, the center of your healthcare is your doctor's office. But most people see dozens of providers across multiple health systems. Records get scattered. Follow-ups get lost. Bills pile up. Nobody has the full picture.</p>
         <p style="margin-top: 12px;">We think patients should be at the center of their own care. Elena puts a teammate in your pocket that helps you use the system, aggregates your health data and bills, and fights for you.</p>
-        <div class="manifesto-app-cta">
-          <img src="images/elena-icon.png" alt="Elena" class="manifesto-app-icon">
-          <span>The Elena app is coming soon.</span>
-          <a href="#waitlist">Apply for early access</a>
-        </div>
+      </div>
+      <div class="manifesto-app-side">
+        <img src="images/elena-icon.png" alt="Elena" class="manifesto-app-icon">
+        <p class="manifesto-app-label">The Elena app is coming soon.</p>
+        <a href="#waitlist" class="manifesto-app-btn">Apply for early access</a>
       </div>
     </div>
   </section>
