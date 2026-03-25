@@ -3979,6 +3979,62 @@
     })();
   </script>
 
+  <!-- Coming Soon Modal -->
+  <div id="coming-soon-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:2000; align-items:center; justify-content:center;" onclick="closeComingSoon()">
+    <div style="background:#fff; border-radius:20px; padding:40px 36px; max-width:400px; width:90%; text-align:center; box-shadow:0 16px 48px rgba(0,0,0,0.15);" onclick="event.stopPropagation()">
+      <h3 style="font-size:22px; font-weight:600; color:#0F1B3D; margin-bottom:8px;">Coming soon</h3>
+      <p style="font-size:15px; color:#5a6a82; font-weight:300; line-height:1.6; margin-bottom:24px;">We'll notify you when Elena is ready to help you out.</p>
+      <form id="coming-soon-form" style="display:flex; gap:10px;">
+        <input type="email" placeholder="Enter your email" required style="flex:1; padding:14px 20px; border:1px solid rgba(0,0,0,0.12); border-radius:100px; font-size:0.95rem; font-family:inherit; outline:none; min-width:0;">
+        <button type="submit" style="padding:14px 24px; background:#0F1B3D; border:none; border-radius:100px; color:#fff; font-size:0.95rem; font-weight:500; font-family:inherit; cursor:pointer; white-space:nowrap;">Notify Me</button>
+      </form>
+      <div id="coming-soon-success" style="display:none; padding:14px 24px; background:rgba(15,27,61,0.06); border-radius:100px; font-size:0.95rem; color:#0F1B3D; font-weight:500;">You're on the list!</div>
+    </div>
+  </div>
+
+  <script>
+    function showComingSoon() {
+      var overlay = document.getElementById('coming-soon-overlay');
+      overlay.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeComingSoon() {
+      document.getElementById('coming-soon-overlay').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeComingSoon();
+    });
+
+    document.getElementById('coming-soon-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var email = this.querySelector('input').value;
+      var form = this;
+      var btn = form.querySelector('button');
+      btn.textContent = 'Sending...';
+      btn.disabled = true;
+
+      fetch(SUPABASE_URL + '/rest/v1/beta_signups', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ email: email })
+      }).then(function(resp) {
+        form.style.display = 'none';
+        document.getElementById('coming-soon-success').style.display = 'inline-block';
+      }).catch(function() {
+        form.style.display = 'none';
+        document.getElementById('coming-soon-success').style.display = 'inline-block';
+      });
+    });
+  </script>
+
   <script defer src="/_vercel/insights/script.js"></script>
   <script defer src="https://cloud.umami.is/script.js" data-website-id="a3769e64-67ea-47d8-96ce-4dddd14e409d"></script>
 </body>
