@@ -5,39 +5,67 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Elena — Upload Documents</title>
   <link rel="icon" type="image/png" href="../images/favicon.png">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
 
     body {
-      font-family: 'Inter', -apple-system, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       color: #fff;
       background: #0a0a0a;
-      min-height: 100vh;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
+      min-height: 100vh;
     }
 
-    /* Background */
-    .bg {
+    /* ========== BACKGROUND ========== */
+    .hero-bg {
       position: fixed;
       inset: 0;
       z-index: 0;
-      background: url('../images/clouds.jpg') center center / cover no-repeat;
-      filter: brightness(0.7) saturate(0.6);
+      background: linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%, #2E6BB5 100%);
     }
 
-    .bg::after {
+    .hero-bg::after {
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg,
-        rgba(20, 40, 80, 0.6) 0%,
-        rgba(10, 10, 10, 0.85) 100%
-      );
+      background: radial-gradient(ellipse at 85% 130%, #F4B084 0%, #E8956D 25%, rgba(46, 107, 181, 0) 60%);
     }
 
-    /* Nav */
+    .hero-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.12;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+    }
+
+    .hero-blobs {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .hero-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+    }
+
+    .hero-blob-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(46, 107, 181, 0.5) 0%, transparent 70%); top: -10%; left: 20%; }
+    .hero-blob-2 { width: 600px; height: 600px; background: radial-gradient(circle, rgba(244, 176, 132, 0.35) 0%, transparent 70%); bottom: -20%; right: -5%; }
+    .hero-blob-3 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(26, 58, 110, 0.4) 0%, transparent 70%); top: 30%; right: 25%; }
+
+    /* ========== NAV ========== */
     nav {
       position: relative;
       z-index: 10;
@@ -62,14 +90,14 @@
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
     }
 
-    .nav-back {
+    .nav-cta {
       background: rgba(255, 255, 255, 0.08);
       backdrop-filter: blur(40px) saturate(1.8);
       -webkit-backdrop-filter: blur(40px) saturate(1.8);
       border: 1px solid rgba(255, 255, 255, 0.18);
       border-radius: 100px;
       padding: 10px 24px;
-      color: rgba(255, 255, 255, 0.8);
+      color: rgba(255, 255, 255, 0.85);
       text-decoration: none;
       font-size: 0.9rem;
       font-weight: 400;
@@ -77,99 +105,99 @@
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     }
 
-    .nav-back:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
+    .nav-cta:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
 
-    /* Container */
+    /* ========== PAGE ========== */
     .page {
       position: relative;
-      z-index: 1;
+      z-index: 5;
       display: flex;
       justify-content: center;
-      align-items: flex-start;
-      min-height: calc(100vh - 80px);
-      padding: 40px 24px 80px;
+      padding: 20px 24px 80px;
     }
 
-    /* Glass card */
-    .card {
+    .container {
       width: 100%;
       max-width: 440px;
-      background: rgba(255, 255, 255, 0.06);
-      backdrop-filter: blur(40px) saturate(1.8);
-      -webkit-backdrop-filter: blur(40px) saturate(1.8);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-top-color: rgba(255, 255, 255, 0.2);
-      border-radius: 24px;
-      padding: 40px 32px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     }
 
-    .card h1 {
-      font-size: 1.6rem;
-      font-weight: 600;
-      color: #fff;
-      margin-bottom: 6px;
-      letter-spacing: -0.02em;
-    }
-
-    .card .subtitle {
-      font-size: 0.9rem;
-      color: rgba(255, 255, 255, 0.5);
-      margin-bottom: 28px;
-      line-height: 1.5;
-    }
-
-    /* Auth form */
+    /* ========== AUTH ========== */
     .auth-section { display: block; }
     .app-section { display: none; }
+
+    h1 {
+      font-size: clamp(1.8rem, 4vw, 2.2rem);
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    h1 em {
+      font-style: italic;
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-weight: 400;
+    }
+
+    .subtitle {
+      font-size: 0.95rem;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
 
     label {
       display: block;
       font-size: 0.8rem;
-      font-weight: 500;
-      color: rgba(255, 255, 255, 0.5);
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.45);
       margin-bottom: 6px;
-      letter-spacing: 0.02em;
     }
 
     input[type="email"],
     input[type="password"] {
       width: 100%;
-      padding: 14px 16px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 12px;
+      padding: 16px 24px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-top-color: rgba(255, 255, 255, 0.3);
+      border-radius: 100px;
       font-size: 0.95rem;
       font-family: inherit;
+      font-weight: 400;
       color: #fff;
-      background: rgba(255, 255, 255, 0.06);
       outline: none;
-      margin-bottom: 14px;
-      transition: border-color 0.2s;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      transition: background 0.2s, border-color 0.2s;
     }
 
-    input::placeholder { color: rgba(255, 255, 255, 0.25); }
-    input:focus { border-color: rgba(255, 255, 255, 0.35); }
+    input::placeholder { color: rgba(255, 255, 255, 0.4); }
+    input:focus { background: rgba(255, 255, 255, 0.15); border-color: rgba(255, 255, 255, 0.4); }
 
     .btn {
       width: 100%;
-      padding: 14px;
+      padding: 16px;
       border: none;
-      border-radius: 12px;
+      border-radius: 100px;
       font-size: 0.95rem;
-      font-weight: 600;
+      font-weight: 500;
       font-family: inherit;
       cursor: pointer;
-      transition: opacity 0.2s;
+      transition: all 0.2s;
     }
 
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
     .btn-primary {
       background: #fff;
-      color: #0a0a0a;
+      color: #0F1B3D;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     }
 
-    .btn-primary:hover:not(:disabled) { opacity: 0.9; }
+    .btn-primary:hover:not(:disabled) { opacity: 0.92; }
 
     .btn-oauth {
       display: flex;
@@ -177,129 +205,113 @@
       justify-content: center;
       gap: 10px;
       width: 100%;
-      padding: 13px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.04);
+      padding: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-top-color: rgba(255, 255, 255, 0.25);
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
       font-size: 0.9rem;
-      font-weight: 500;
+      font-weight: 400;
       font-family: inherit;
-      color: rgba(255, 255, 255, 0.85);
+      color: rgba(255, 255, 255, 0.9);
       cursor: pointer;
-      transition: background 0.2s;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      transition: all 0.2s;
     }
 
-    .btn-oauth:hover { background: rgba(255, 255, 255, 0.1); }
+    .btn-oauth:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
 
-    .divider {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 20px 0;
-    }
-
+    .divider { display: flex; align-items: center; gap: 14px; margin: 24px 0; }
     .divider-line { flex: 1; height: 1px; background: rgba(255, 255, 255, 0.1); }
-    .divider-text { font-size: 0.75rem; color: rgba(255, 255, 255, 0.3); }
+    .divider-text { font-size: 0.8rem; color: rgba(255, 255, 255, 0.3); font-weight: 300; }
 
-    .error-msg {
-      color: #FF6B6B;
-      font-size: 0.85rem;
-      margin-bottom: 12px;
-      display: none;
-    }
-
+    .error-msg { color: #FF8A80; font-size: 0.85rem; margin-bottom: 14px; display: none; font-weight: 400; }
     .error-msg.visible { display: block; }
 
-    /* Upload area */
+    /* ========== UPLOAD ========== */
     .drop-zone {
       border: 2px dashed rgba(255, 255, 255, 0.15);
-      border-radius: 16px;
-      padding: 40px 24px;
+      border-radius: 20px;
+      padding: 44px 24px;
       text-align: center;
       cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
+      transition: all 0.2s;
       margin-bottom: 20px;
     }
 
-    .drop-zone:hover,
-    .drop-zone.dragover {
+    .drop-zone:hover, .drop-zone.dragover {
       border-color: rgba(255, 255, 255, 0.4);
       background: rgba(255, 255, 255, 0.04);
     }
 
     .drop-zone-icon { font-size: 1.8rem; margin-bottom: 10px; }
-    .drop-zone-text { font-size: 0.9rem; color: rgba(255, 255, 255, 0.5); line-height: 1.5; }
-    .drop-zone-text strong { color: #fff; }
-    .formats { font-size: 0.75rem; color: rgba(255, 255, 255, 0.3); margin-top: 6px; }
+    .drop-zone-text { font-size: 0.9rem; color: rgba(255, 255, 255, 0.5); font-weight: 300; }
+    .drop-zone-text strong { color: #fff; font-weight: 500; }
+    .formats { font-size: 0.75rem; color: rgba(255, 255, 255, 0.25); margin-top: 8px; }
 
-    /* File list */
     .file-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
 
     .file-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
+      display: flex; align-items: center; gap: 12px; padding: 14px 16px;
       background: rgba(255, 255, 255, 0.06);
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
     }
 
     .file-icon { font-size: 1rem; }
     .file-info { flex: 1; min-width: 0; }
     .file-name { font-size: 0.85rem; font-weight: 500; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .file-status { font-size: 0.75rem; color: rgba(255, 255, 255, 0.4); margin-top: 2px; }
-    .file-status.success { color: #34C759; }
-    .file-status.error { color: #FF6B6B; }
+    .file-status.success { color: #69F0AE; }
+    .file-status.error { color: #FF8A80; }
     .file-status.processing { color: rgba(255, 255, 255, 0.7); }
 
     .progress-bar { height: 3px; background: rgba(255, 255, 255, 0.1); border-radius: 2px; margin-top: 6px; overflow: hidden; }
     .progress-fill { height: 100%; background: #fff; border-radius: 2px; transition: width 0.3s; }
 
-    /* User header */
-    .user-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    .user-email { font-size: 0.8rem; color: rgba(255, 255, 255, 0.4); }
-    .sign-out { background: none; border: none; font-size: 0.8rem; color: rgba(255, 255, 255, 0.4); cursor: pointer; font-family: inherit; text-decoration: underline; }
+    .user-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+    .user-email { font-size: 0.85rem; color: rgba(255, 255, 255, 0.45); font-weight: 300; }
+    .sign-out { background: none; border: none; font-size: 0.85rem; color: rgba(255, 255, 255, 0.45); cursor: pointer; font-family: inherit; text-decoration: underline; font-weight: 300; }
     .sign-out:hover { color: #fff; }
 
-    /* Doc list */
-    .existing-docs { margin-top: 28px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
-    .existing-docs h2 { font-size: 1rem; font-weight: 600; margin-bottom: 14px; color: #fff; }
+    .existing-docs { margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+    .existing-docs h2 { font-size: 1rem; font-weight: 500; margin-bottom: 14px; }
 
-    .doc-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .doc-title { font-size: 0.85rem; font-weight: 500; color: #fff; }
+    .doc-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+    .doc-title { font-size: 0.85rem; font-weight: 500; }
     .doc-type { font-size: 0.75rem; color: rgba(255, 255, 255, 0.4); text-transform: capitalize; }
     .doc-date { font-size: 0.75rem; color: rgba(255, 255, 255, 0.25); margin-left: auto; }
-    .empty-docs { font-size: 0.85rem; color: rgba(255, 255, 255, 0.3); text-align: center; padding: 20px; }
+    .empty-docs { font-size: 0.85rem; color: rgba(255, 255, 255, 0.3); text-align: center; padding: 20px; font-weight: 300; }
 
     @media (max-width: 500px) {
-      .card { padding: 28px 20px; border-radius: 20px; }
       nav { padding: 16px 16px; }
+      .container { padding: 0 4px; }
     }
   </style>
 </head>
 <body>
 
-<div class="bg"></div>
+<div class="hero-bg"></div>
+<div class="hero-blobs">
+  <div class="hero-blob hero-blob-1"></div>
+  <div class="hero-blob hero-blob-2"></div>
+  <div class="hero-blob hero-blob-3"></div>
+</div>
 
 <nav>
   <a href="../" class="nav-logo">elena</a>
-  <a href="../" class="nav-back">Back to home</a>
+  <a href="../" class="nav-cta">Back to home</a>
 </nav>
 
 <div class="page">
-  <div class="card">
+  <div class="container">
 
-    <!-- Auth Section -->
+    <!-- Auth -->
     <div class="auth-section" id="auth-section">
-      <h1>Upload your documents</h1>
+      <h1>Upload your <em>documents</em></h1>
       <p class="subtitle">Sign in to upload medical documents, EOBs, lab results, and more to your Elena account.</p>
 
       <div class="error-msg" id="auth-error"></div>
@@ -329,14 +341,14 @@
       <button class="btn btn-primary" id="sign-in-btn" onclick="handleSignIn()">Sign in</button>
     </div>
 
-    <!-- App Section -->
+    <!-- App -->
     <div class="app-section" id="app-section">
       <div class="user-header">
         <span class="user-email" id="user-email"></span>
         <button class="sign-out" onclick="handleSignOut()">Sign out</button>
       </div>
 
-      <h1>Upload documents</h1>
+      <h1>Upload <em>documents</em></h1>
       <p class="subtitle">Drag and drop or click to browse.</p>
 
       <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
@@ -348,7 +360,7 @@
 
       <div class="file-list" id="file-list"></div>
 
-      <div class="existing-docs" id="existing-docs">
+      <div class="existing-docs">
         <h2>Your documents</h2>
         <div id="doc-list"></div>
       </div>
@@ -372,32 +384,17 @@
 
   (async () => {
     const { data: { session } } = await sb.auth.getSession();
-    if (session) {
-      accessToken = session.access_token;
-      showApp(session.user.email);
-    }
+    if (session) { accessToken = session.access_token; showApp(session.user.email); }
   })();
 
   async function handleGoogleSignIn() {
-    const { error } = await sb.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin + '/upload/' },
-    });
-    if (error) {
-      document.getElementById('auth-error').textContent = error.message;
-      document.getElementById('auth-error').classList.add('visible');
-    }
+    const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + '/upload/' } });
+    if (error) { document.getElementById('auth-error').textContent = error.message; document.getElementById('auth-error').classList.add('visible'); }
   }
 
   async function handleAppleSignIn() {
-    const { error } = await sb.auth.signInWithOAuth({
-      provider: 'apple',
-      options: { redirectTo: window.location.origin + '/upload/' },
-    });
-    if (error) {
-      document.getElementById('auth-error').textContent = error.message;
-      document.getElementById('auth-error').classList.add('visible');
-    }
+    const { error } = await sb.auth.signInWithOAuth({ provider: 'apple', options: { redirectTo: window.location.origin + '/upload/' } });
+    if (error) { document.getElementById('auth-error').textContent = error.message; document.getElementById('auth-error').classList.add('visible'); }
   }
 
   async function handleSignIn() {
@@ -405,163 +402,70 @@
     const password = document.getElementById('password').value;
     const errEl = document.getElementById('auth-error');
     const btn = document.getElementById('sign-in-btn');
-
-    if (!email || !password) {
-      errEl.textContent = 'Please enter your email and password.';
-      errEl.classList.add('visible');
-      return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = 'Signing in...';
-    errEl.classList.remove('visible');
-
+    if (!email || !password) { errEl.textContent = 'Please enter your email and password.'; errEl.classList.add('visible'); return; }
+    btn.disabled = true; btn.textContent = 'Signing in...'; errEl.classList.remove('visible');
     try {
       const { data, error } = await sb.auth.signInWithPassword({ email, password });
-      if (error) {
-        errEl.textContent = error.message;
-        errEl.classList.add('visible');
-        btn.disabled = false;
-        btn.textContent = 'Sign in';
-        return;
-      }
-      accessToken = data.session.access_token;
-      showApp(data.user.email);
-    } catch (e) {
-      errEl.textContent = e.message || 'Sign in failed.';
-      errEl.classList.add('visible');
-      btn.disabled = false;
-      btn.textContent = 'Sign in';
-    }
+      if (error) { errEl.textContent = error.message; errEl.classList.add('visible'); btn.disabled = false; btn.textContent = 'Sign in'; return; }
+      accessToken = data.session.access_token; showApp(data.user.email);
+    } catch (e) { errEl.textContent = e.message || 'Sign in failed.'; errEl.classList.add('visible'); btn.disabled = false; btn.textContent = 'Sign in'; }
   }
 
-  async function handleSignOut() {
-    await sb.auth.signOut();
-    accessToken = null;
-    document.getElementById('auth-section').style.display = 'block';
-    document.getElementById('app-section').style.display = 'none';
-  }
+  async function handleSignOut() { await sb.auth.signOut(); accessToken = null; document.getElementById('auth-section').style.display = 'block'; document.getElementById('app-section').style.display = 'none'; }
 
-  function showApp(email) {
-    document.getElementById('auth-section').style.display = 'none';
-    document.getElementById('app-section').style.display = 'block';
-    document.getElementById('user-email').textContent = email;
-    loadExistingDocs();
-  }
+  function showApp(email) { document.getElementById('auth-section').style.display = 'none'; document.getElementById('app-section').style.display = 'block'; document.getElementById('user-email').textContent = email; loadExistingDocs(); }
 
   const dropZone = document.getElementById('drop-zone');
   dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
   dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-  dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-    handleFiles(e.dataTransfer.files);
-  });
+  dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
 
   function handleFileSelect(e) { handleFiles(e.target.files); e.target.value = ''; }
-
-  async function handleFiles(fileList) {
-    for (const file of fileList) await uploadFile(file);
-  }
+  async function handleFiles(fileList) { for (const file of fileList) await uploadFile(file); }
 
   async function uploadFile(file) {
     const listEl = document.getElementById('file-list');
     const id = 'file-' + Date.now() + Math.random().toString(36).slice(2);
-    const item = document.createElement('div');
-    item.className = 'file-item';
-    item.id = id;
-    item.innerHTML = `
-      <span class="file-icon">📄</span>
-      <div class="file-info">
-        <div class="file-name">${file.name}</div>
-        <div class="file-status processing">Uploading...</div>
-        <div class="progress-bar"><div class="progress-fill" style="width: 10%"></div></div>
-      </div>
-    `;
+    const item = document.createElement('div'); item.className = 'file-item'; item.id = id;
+    item.innerHTML = `<span class="file-icon">📄</span><div class="file-info"><div class="file-name">${file.name}</div><div class="file-status processing">Uploading...</div><div class="progress-bar"><div class="progress-fill" style="width: 10%"></div></div></div>`;
     listEl.prepend(item);
-
     try {
-      const sessionId = 'web-' + Date.now();
-      const urlRes = await fetch(`${API_BASE}/documents/upload-url`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId, filename: file.name }),
-      });
+      const urlRes = await fetch(`${API_BASE}/documents/upload-url`, { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ session_id: 'web-' + Date.now(), filename: file.name }) });
       if (!urlRes.ok) throw new Error('Failed to get upload URL');
       const { upload_url, key, content_type, required_headers } = await urlRes.json();
-
-      updateFileStatus(id, 'Uploading to cloud...', 'processing', 40);
-
-      const uploadRes = await fetch(upload_url, {
-        method: 'PUT',
-        headers: { 'Content-Type': content_type, ...(required_headers || {}) },
-        body: file,
-      });
+      updateFileStatus(id, 'Uploading...', 'processing', 40);
+      const uploadRes = await fetch(upload_url, { method: 'PUT', headers: { 'Content-Type': content_type, ...(required_headers || {}) }, body: file });
       if (!uploadRes.ok) throw new Error('Upload failed');
-
-      updateFileStatus(id, 'Processing document...', 'processing', 70);
-
-      const docRes = await fetch(`${API_BASE}/structured-documents/upload`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ s3_key: key, filename: file.name, content_type: file.type || 'application/octet-stream', care_visit_id: null }),
-      });
-      if (!docRes.ok) {
-        const errData = await docRes.json().catch(() => ({}));
-        throw new Error(errData.detail || 'Processing failed');
-      }
+      updateFileStatus(id, 'Processing...', 'processing', 70);
+      const docRes = await fetch(`${API_BASE}/structured-documents/upload`, { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ s3_key: key, filename: file.name, content_type: file.type || 'application/octet-stream', care_visit_id: null }) });
+      if (!docRes.ok) { const e = await docRes.json().catch(() => ({})); throw new Error(e.detail || 'Processing failed'); }
       const result = await docRes.json();
-      const title = result.document.doc_title || file.name;
-      const type = result.document.doc_type.replace(/_/g, ' ');
-      updateFileStatus(id, `${title} (${type})`, 'success', 100);
+      updateFileStatus(id, `${result.document.doc_title || file.name} (${result.document.doc_type.replace(/_/g, ' ')})`, 'success', 100);
       loadExistingDocs();
-    } catch (err) {
-      updateFileStatus(id, err.message, 'error', 0);
-    }
+    } catch (err) { updateFileStatus(id, err.message, 'error', 0); }
   }
 
   function updateFileStatus(id, text, cls, progress) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const status = el.querySelector('.file-status');
-    status.textContent = text;
-    status.className = 'file-status ' + cls;
+    const el = document.getElementById(id); if (!el) return;
+    el.querySelector('.file-status').textContent = text;
+    el.querySelector('.file-status').className = 'file-status ' + cls;
     const fill = el.querySelector('.progress-fill');
-    if (progress > 0) fill.style.width = progress + '%';
-    else fill.parentElement.style.display = 'none';
+    if (progress > 0) fill.style.width = progress + '%'; else fill.parentElement.style.display = 'none';
     if (cls === 'success' || cls === 'error') setTimeout(() => { fill.parentElement.style.display = 'none'; }, 1000);
   }
 
   async function loadExistingDocs() {
     const listEl = document.getElementById('doc-list');
     try {
-      const res = await fetch(`${API_BASE}/structured-documents?profile_only=true`, {
-        headers: { 'Authorization': `Bearer ${accessToken}` },
-      });
+      const res = await fetch(`${API_BASE}/structured-documents?profile_only=true`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
       if (!res.ok) return;
       const docs = await res.json();
-      if (docs.length === 0) {
-        listEl.innerHTML = '<div class="empty-docs">No documents uploaded yet.</div>';
-        return;
-      }
-      listEl.innerHTML = docs.map(doc => `
-        <div class="doc-row">
-          <span class="file-icon">📄</span>
-          <div>
-            <div class="doc-title">${doc.doc_title || doc.filename}</div>
-            <div class="doc-type">${doc.doc_type.replace(/_/g, ' ')}</div>
-          </div>
-          <span class="doc-date">${doc.created_at.slice(0, 10)}</span>
-        </div>
-      `).join('');
-    } catch {
-      listEl.innerHTML = '<div class="empty-docs">Could not load documents.</div>';
-    }
+      if (!docs.length) { listEl.innerHTML = '<div class="empty-docs">No documents yet.</div>'; return; }
+      listEl.innerHTML = docs.map(d => `<div class="doc-row"><span class="file-icon">📄</span><div><div class="doc-title">${d.doc_title || d.filename}</div><div class="doc-type">${d.doc_type.replace(/_/g, ' ')}</div></div><span class="doc-date">${d.created_at.slice(0, 10)}</span></div>`).join('');
+    } catch { listEl.innerHTML = '<div class="empty-docs">Could not load documents.</div>'; }
   }
 
-  document.getElementById('password').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') handleSignIn();
-  });
+  document.getElementById('password').addEventListener('keydown', (e) => { if (e.key === 'Enter') handleSignIn(); });
 </script>
 
 </body>
