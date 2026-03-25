@@ -3899,15 +3899,15 @@
   </script>
 
   <!-- Coming Soon Modal -->
-  <div id="coming-soon-overlay" style="display:none; position:fixed; inset:0; background:linear-gradient(135deg, rgba(15,27,61,0.85) 0%, rgba(26,58,110,0.85) 30%, rgba(46,107,181,0.85) 60%, rgba(46,107,181,0.85) 100%); z-index:2000; align-items:center; justify-content:center; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);" onclick="closeComingSoon()">
-    <div style="background:rgba(255,255,255,0.1); backdrop-filter:blur(40px) saturate(1.8); -webkit-backdrop-filter:blur(40px) saturate(1.8); border:1px solid rgba(255,255,255,0.18); border-top-color:rgba(255,255,255,0.3); border-radius:24px; padding:48px 40px; max-width:420px; width:90%; text-align:center; box-shadow:0 16px 48px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15);" onclick="event.stopPropagation()">
-      <h3 style="font-size:24px; font-weight:300; color:#fff; margin-bottom:10px; letter-spacing:-0.02em;">Oops, sorry about that.</h3>
-      <p style="font-size:15px; color:rgba(255,255,255,0.7); font-weight:300; line-height:1.6; margin-bottom:28px;">Elena is undergoing some temporary maintenance. We'll let you know when she's ready to help you out.</p>
+  <div id="coming-soon-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.2); z-index:2000; align-items:center; justify-content:center; backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);" onclick="closeComingSoon()">
+    <div style="background:#fff; border-radius:24px; padding:48px 40px; max-width:420px; width:90%; text-align:center; box-shadow:0 16px 48px rgba(0,0,0,0.12);" onclick="event.stopPropagation()">
+      <h3 style="font-size:24px; font-weight:300; color:#0F1B3D; margin-bottom:10px; letter-spacing:-0.02em;">Oops, sorry about that.</h3>
+      <p style="font-size:15px; color:#5a6a82; font-weight:300; line-height:1.6; margin-bottom:28px;">Elena is undergoing some temporary maintenance. We'll let you know when she's ready to help you out.</p>
       <form id="coming-soon-form" style="display:flex; gap:10px;">
-        <input type="email" placeholder="Enter your email" required style="flex:1; padding:16px 24px; background:rgba(255,255,255,0.12); backdrop-filter:blur(40px); -webkit-backdrop-filter:blur(40px); border:1px solid rgba(255,255,255,0.25); border-top-color:rgba(255,255,255,0.35); border-radius:100px; font-size:1rem; font-family:inherit; font-weight:400; color:#fff; outline:none; min-width:0; box-shadow:0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15);">
-        <button type="submit" style="padding:16px 28px; background:rgba(255,255,255,0.08); backdrop-filter:blur(40px); -webkit-backdrop-filter:blur(40px); border:1px solid rgba(255,255,255,0.18); border-top-color:rgba(255,255,255,0.3); border-radius:100px; color:#fff; font-size:1rem; font-weight:500; font-family:inherit; cursor:pointer; white-space:nowrap; box-shadow:0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15); transition:all 0.2s;">Notify Me</button>
+        <input type="email" placeholder="Enter your email" required style="flex:1; padding:15px 22px; background:rgba(15,27,61,0.04); border:1px solid rgba(15,27,61,0.12); border-radius:100px; font-size:0.95rem; font-family:inherit; font-weight:300; color:#0F1B3D; outline:none; min-width:0; box-shadow:0 4px 16px rgba(15,27,61,0.06), inset 0 1px 0 rgba(255,255,255,0.6);">
+        <button type="submit" style="padding:15px 28px; background:rgba(15,27,61,0.08); border:1px solid rgba(15,27,61,0.12); border-radius:100px; color:#0F1B3D; font-size:0.95rem; font-weight:500; font-family:inherit; cursor:pointer; white-space:nowrap; box-shadow:0 4px 16px rgba(15,27,61,0.06), inset 0 1px 0 rgba(255,255,255,0.6); transition:all 0.2s;">Notify Me</button>
       </form>
-      <div id="coming-soon-success" style="display:none; padding:16px 28px; background:rgba(255,255,255,0.12); backdrop-filter:blur(40px); -webkit-backdrop-filter:blur(40px); border:1px solid rgba(255,255,255,0.25); border-radius:100px; font-size:1rem; color:#fff; font-weight:500; box-shadow:0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15);">You're on the list!</div>
+      <div id="coming-soon-success" style="display:none; padding:15px 28px; background:rgba(15,27,61,0.06); border:1px solid rgba(15,27,61,0.12); border-radius:100px; font-size:0.95rem; color:#0F1B3D; font-weight:500;">You're on the list!</div>
     </div>
   </div>
 
