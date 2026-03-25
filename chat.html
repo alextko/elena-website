@@ -2259,13 +2259,34 @@
     .chat-input-bar {
       display: flex;
       align-items: center;
-      background: #fff;
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
       border-radius: 28px;
-      border: 1px solid rgba(255,255,255,0.25);
-      max-width: 560px;
+      border: 1px solid rgba(255,255,255,0.2);
+      max-width: 600px;
       margin: 28px auto 0;
-      padding: 6px 6px 6px 20px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      padding: 16px 8px 16px 16px;
+      gap: 10px;
+    }
+
+    .chat-attach-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: rgba(255,255,255,0.5);
+      font-size: 20px;
+      line-height: 1;
+      flex-shrink: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+
+    .chat-attach-btn:hover {
+      color: rgba(255,255,255,0.8);
     }
 
     .chat-input-bar input {
@@ -2275,12 +2296,12 @@
       background: transparent;
       font-size: 16px;
       font-family: inherit;
-      color: #0F1B3D;
+      color: #fff;
       min-width: 0;
     }
 
     .chat-input-bar input::placeholder {
-      color: #8E8E93;
+      color: rgba(255,255,255,0.5);
     }
 
     .chat-send-btn {
@@ -2504,56 +2525,53 @@
       }
     }
 
-    /* ========== TRUSTED BY SECTION ========== */
-    .trusted-by {
-      position: relative;
-      z-index: 10;
-      background: #fff;
-      padding: 48px 32px;
+    /* ========== INSURER MARQUEE (inside hero) ========== */
+    .insurer-marquee-wrap {
+      margin-top: 32px;
       text-align: center;
-      overflow: hidden;
+      width: 100%;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
     }
 
-    .trusted-by-label {
-      font-size: 12px;
+    .insurer-marquee-label {
+      font-size: 11px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 2px;
-      color: #8E8E93;
-      margin-bottom: 24px;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 12px;
     }
 
-    .trusted-marquee {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+    .insurer-marquee {
       overflow: hidden;
+      mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+      -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
     }
 
-    .trusted-row {
-      display: flex;
-      width: max-content;
-    }
-
-    .trusted-row-inner {
+    .insurer-marquee-track {
       display: flex;
       align-items: center;
-      animation: trusted-scroll 30s linear infinite;
+      width: max-content;
+      animation: insurer-scroll 45s linear infinite;
     }
 
-    .trusted-row:nth-child(2) .trusted-row-inner {
-      animation-direction: reverse;
-    }
-
-    .trusted-row-inner img {
-      height: 40px;
-      width: auto;
-      margin: 0 24px;
-      filter: grayscale(1) opacity(0.5);
+    .insurer-marquee-track span {
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0.5px;
+      white-space: nowrap;
       flex-shrink: 0;
     }
 
-    @keyframes trusted-scroll {
+    .insurer-marquee-track .insurer-dot {
+      margin: 0 12px;
+      color: rgba(255,255,255,0.2);
+    }
+
+    @keyframes insurer-scroll {
       0% { transform: translateX(0); }
       100% { transform: translateX(-50%); }
     }
@@ -2584,6 +2602,9 @@
     <div class="hero-center">
       <h1>What can Elena help you with?</h1>
       <div class="chat-input-bar">
+        <button class="chat-attach-btn" aria-label="Attach document">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+        </button>
         <input type="text" id="chat-hero-input" placeholder="How much should an MRI cost with my insurance?">
         <button class="chat-send-btn" id="chat-send-btn" aria-label="Send">
           <svg viewBox="0 0 20 20" fill="none">
@@ -2598,6 +2619,14 @@
         <span class="suggestion-chip" data-text="Schedule an appointment with my doctor">Schedule an appointment</span>
       </div>
       <p class="hero-social-proof">Join founding members navigating healthcare together</p>
+      <div class="insurer-marquee-wrap">
+        <div class="insurer-marquee-label">Trusted by members insured by</div>
+        <div class="insurer-marquee">
+          <div class="insurer-marquee-track">
+            <span>Blue Cross Blue Shield</span><span class="insurer-dot">&middot;</span><span>UnitedHealthcare</span><span class="insurer-dot">&middot;</span><span>Aetna</span><span class="insurer-dot">&middot;</span><span>Cigna</span><span class="insurer-dot">&middot;</span><span>Humana</span><span class="insurer-dot">&middot;</span><span>Kaiser Permanente</span><span class="insurer-dot">&middot;</span><span>Anthem</span><span class="insurer-dot">&middot;</span><span>Molina</span><span class="insurer-dot">&middot;</span><span>Centene</span><span class="insurer-dot">&middot;</span><span>Oscar Health</span><span class="insurer-dot">&middot;</span><span>Delta Dental</span><span class="insurer-dot">&middot;</span><span>VSP Vision</span><span class="insurer-dot">&middot;</span><span>Blue Cross Blue Shield</span><span class="insurer-dot">&middot;</span><span>UnitedHealthcare</span><span class="insurer-dot">&middot;</span><span>Aetna</span><span class="insurer-dot">&middot;</span><span>Cigna</span><span class="insurer-dot">&middot;</span><span>Humana</span><span class="insurer-dot">&middot;</span><span>Kaiser Permanente</span><span class="insurer-dot">&middot;</span><span>Anthem</span><span class="insurer-dot">&middot;</span><span>Molina</span><span class="insurer-dot">&middot;</span><span>Centene</span><span class="insurer-dot">&middot;</span><span>Oscar Health</span><span class="insurer-dot">&middot;</span><span>Delta Dental</span><span class="insurer-dot">&middot;</span><span>VSP Vision</span><span class="insurer-dot">&middot;</span>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -2616,44 +2645,6 @@
     </div>
   </section>
 
-  <!-- TRUSTED BY -->
-  <section class="trusted-by">
-    <div class="trusted-by-label">Trusted by members insured by</div>
-    <div class="trusted-marquee">
-      <div class="trusted-row">
-        <div class="trusted-row-inner">
-          <img src="https://img.logo.dev/bcbs.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="BCBS">
-          <img src="https://img.logo.dev/uhc.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="UHC">
-          <img src="https://img.logo.dev/aetna.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Aetna">
-          <img src="https://img.logo.dev/cigna.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Cigna">
-          <img src="https://img.logo.dev/humana.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Humana">
-          <img src="https://img.logo.dev/kaiserpermanente.org?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Kaiser Permanente">
-          <img src="https://img.logo.dev/bcbs.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="BCBS">
-          <img src="https://img.logo.dev/uhc.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="UHC">
-          <img src="https://img.logo.dev/aetna.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Aetna">
-          <img src="https://img.logo.dev/cigna.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Cigna">
-          <img src="https://img.logo.dev/humana.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Humana">
-          <img src="https://img.logo.dev/kaiserpermanente.org?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Kaiser Permanente">
-        </div>
-      </div>
-      <div class="trusted-row">
-        <div class="trusted-row-inner">
-          <img src="https://img.logo.dev/anthem.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Anthem">
-          <img src="https://img.logo.dev/molinahealthcare.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Molina">
-          <img src="https://img.logo.dev/centene.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Centene">
-          <img src="https://img.logo.dev/hioscar.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Oscar">
-          <img src="https://img.logo.dev/deltadental.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Delta Dental">
-          <img src="https://img.logo.dev/vsp.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="VSP">
-          <img src="https://img.logo.dev/anthem.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Anthem">
-          <img src="https://img.logo.dev/molinahealthcare.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Molina">
-          <img src="https://img.logo.dev/centene.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Centene">
-          <img src="https://img.logo.dev/hioscar.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Oscar">
-          <img src="https://img.logo.dev/deltadental.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="Delta Dental">
-          <img src="https://img.logo.dev/vsp.com?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&format=png&size=128" alt="VSP">
-        </div>
-      </div>
-    </div>
-  </section>
 
   <!-- COMMUNITY PERKS -->
   <section class="community-perks">
@@ -2730,13 +2721,11 @@
                 </div>
               </div>
               <div class="gp-todo-divider"></div>
-              <div class="gp-todo-item gp-todo-done" onclick="toggleGpTodo(this)">
-                <div class="gp-checkbox gp-checkbox-checked">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
+              <div class="gp-todo-item" onclick="toggleGpTodo(this)">
+                <div class="gp-checkbox"></div>
                 <div class="gp-todo-content">
                   <div class="gp-todo-title">Refill prescription</div>
-                  <div class="gp-todo-subtitle">Completed</div>
+                  <div class="gp-todo-subtitle">Due today</div>
                 </div>
               </div>
             </div>
@@ -3528,8 +3517,8 @@
     const checkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 
     window.toggleGpTodo = function(item) {
-      const checkbox = item.querySelector('.gp-checkbox');
-      const isDone = item.classList.contains('gp-todo-done');
+      var checkbox = item.querySelector('.gp-checkbox');
+      var isDone = item.classList.contains('gp-todo-done');
 
       if (isDone) {
         item.classList.remove('gp-todo-done');
@@ -3541,23 +3530,48 @@
         checkbox.innerHTML = checkSvg;
       }
 
-      // Check if all todos are done — today circle becomes a checkmark
-      const items = document.querySelectorAll('#gp-todo-list .gp-todo-item');
-      const allDone = Array.from(items).every(i => i.classList.contains('gp-todo-done'));
-      const todayNum = document.getElementById('gp-today-num');
-      const todayDay = document.getElementById('gp-today');
+      checkAllDone();
+    };
+
+    function checkAllDone() {
+      var items = document.querySelectorAll('#gp-todo-list .gp-todo-item');
+      var allDone = Array.from(items).every(function(i) { return i.classList.contains('gp-todo-done'); });
+      var todayNum = document.getElementById('gp-today-num');
       if (allDone) {
         todayNum.innerHTML = '✓';
         todayNum.style.fontSize = '16px';
-        todayDay.style.background = '#2E7D32';
-        todayDay.querySelector('.gp-cal-label').style.color = '#FFFFFF';
       } else {
         todayNum.textContent = '24';
         todayNum.style.fontSize = '';
-        todayDay.style.background = '';
-        todayDay.querySelector('.gp-cal-label').style.color = '';
       }
-    };
+    }
+
+    // Auto-animate todos checking off when scrolled into view
+    (function() {
+      var gpCard = document.querySelector('.gp-card');
+      if (!gpCard) return;
+      var played = false;
+
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting && !played) {
+            played = true;
+            var items = document.querySelectorAll('#gp-todo-list .gp-todo-item');
+            Array.from(items).forEach(function(item, i) {
+              setTimeout(function() {
+                var checkbox = item.querySelector('.gp-checkbox');
+                item.classList.add('gp-todo-done');
+                checkbox.classList.add('gp-checkbox-checked');
+                checkbox.innerHTML = checkSvg;
+                checkAllDone();
+              }, 1200 + (i * 800));
+            });
+          }
+        });
+      }, { threshold: 0.4 });
+
+      observer.observe(gpCard);
+    })();
 
     // MRI chat staggered animation
     (function() {
@@ -3606,7 +3620,7 @@
             }, 150);
           }, 150);
         }, 150);
-      }, 5000);
+      }, 3000);
     })();
   </script>
 
