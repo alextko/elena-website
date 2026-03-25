@@ -3,9 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Elena — Put Healthcare on Autopilot</title>
-  <meta name="description" content="Elena is your AI-powered healthcare assistant. Chat with an AI that calls doctors, negotiates bills, compares drug prices, and manages your entire medical life.">
-  <link rel="icon" type="image/png" href="images/favicon.png">
+  <title>Elena - Fight Medical Bill Errors</title>
+  <meta name="description" content="80% of hospital bills have errors. Elena reads every line, finds the errors, and fights them for you. Join the waitlist.">
+  <meta property="og:title" content="Elena - Fight Medical Bill Errors">
+  <meta property="og:description" content="Upload your medical bill. Elena finds the errors and fights them for you.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://elena-health.com/lp/bills">
+  <link rel="canonical" href="https://elena-health.com/lp/bills">
+  <link rel="icon" type="image/png" href="/images/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
@@ -15,6 +20,7 @@
     record_mask_text_selector: ""
   });
   mixpanel.track_pageview();
+  mixpanel.register({'landing_variant': 'lp_bills'});
   </script>
   <style>
     *, *::before, *::after {
@@ -356,7 +362,7 @@
       top: 0;
       height: 100vh;
       width: 100%;
-      background: url('images/phone-bg.jpg') center bottom / cover no-repeat;
+      background: url('/images/phone-bg.jpg') center bottom / cover no-repeat;
       margin-bottom: -100vh;
       z-index: 0;
     }
@@ -793,41 +799,13 @@
       overflow: hidden;
     }
 
-    .features-carousel-wrapper::before,
-    .features-carousel-wrapper::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 60px;
-      z-index: 2;
-      pointer-events: none;
-    }
-
-    .features-carousel-wrapper::before {
-      left: 0;
-      background: linear-gradient(to right, #f5f7fb, transparent);
-    }
-
-    .features-carousel-wrapper::after {
-      right: 0;
-      background: linear-gradient(to left, #f5f7fb, transparent);
-    }
 
     .features-grid {
       display: flex;
       gap: 20px;
-      animation: carousel-scroll 30s linear infinite;
-      width: max-content;
-    }
-
-    .features-grid:hover {
-      animation-play-state: paused;
-    }
-
-    @keyframes carousel-scroll {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
+      justify-content: center;
+      flex-wrap: wrap;
+      padding: 0 32px;
     }
 
     .feature-card {
@@ -884,12 +862,12 @@
       z-index: 0;
     }
 
-    .feature-card.img-couch    { background-image: url('images/feature-couch.jpg'); }
-    .feature-card.img-meds     { background-image: url('images/feature-meds.jpg'); }
-    .feature-card.img-phone    { background-image: url('images/feature-phone.jpg'); }
-    .feature-card.img-family   { background-image: url('images/feature-family.jpg'); }
-    .feature-card.img-hugging  { background-image: url('images/feature-hugging.jpg'); }
-    .feature-card.img-meditate { background-image: url('images/feature-meditate.jpg'); }
+    .feature-card.img-couch    { background-image: url('/images/feature-couch.jpg'); }
+    .feature-card.img-meds     { background-image: url('/images/feature-meds.jpg'); }
+    .feature-card.img-phone    { background-image: url('/images/feature-phone.jpg'); }
+    .feature-card.img-family   { background-image: url('/images/feature-family.jpg'); }
+    .feature-card.img-hugging  { background-image: url('/images/feature-hugging.jpg'); }
+    .feature-card.img-meditate { background-image: url('/images/feature-meditate.jpg'); }
 
     /* (Waitlist is now inline within features section) */
 
@@ -1136,11 +1114,6 @@
   <!-- NAV -->
   <nav>
     <a href="#" class="nav-logo">elena</a>
-    <div class="nav-links">
-      <a href="#how-it-works">How it Works</a>
-      <a href="#features">Features</a>
-    </div>
-    <a href="/upload" class="nav-cta">Log in</a>
   </nav>
 
   <!-- HERO: Dark clouds -->
@@ -1153,26 +1126,16 @@
       <div class="hero-blob hero-blob-4"></div>
     </div>
     <div class="hero-content">
-      <h1>Elena fights your bills and<br>calls your insurance.</h1>
-      <p class="hero-subtitle">The AI healthcare companion that handles the calls you don't want to make.</p>
+      <h1>Elena finds the errors in<br>your medical bill.</h1>
+      <p class="hero-subtitle">80% of hospital bills have errors. Elena reads every line.</p>
       <div class="waitlist-flow" id="hero-waitlist-flow">
         <form class="hero-email-form" id="hero-waitlist-form">
           <input type="email" placeholder="Enter your email" required>
           <button type="submit">Get Early Access</button>
         </form>
-        <div class="survey-step" id="hero-survey" style="display:none;">
-          <p class="survey-label">What are you most interested in? <span class="survey-hint">(pick all that apply)</span></p>
-          <div class="survey-options dark">
-            <label class="survey-chip"><input type="checkbox" value="price_transparency"><span>Price transparency</span></label>
-            <label class="survey-chip"><input type="checkbox" value="bill_fighting"><span>Bill fighting &amp; prior auth</span></label>
-            <label class="survey-chip"><input type="checkbox" value="health_data"><span>All my health data in one place</span></label>
-            <label class="survey-chip"><input type="checkbox" value="automation"><span>Automation (phone calls, forms)</span></label>
-          </div>
-          <button class="survey-submit-btn dark" id="hero-survey-submit">Submit</button>
-          <button class="survey-skip-btn" id="hero-survey-skip">Skip</button>
-        </div>
-        <div class="hero-success" id="hero-waitlist-success">You're in! We'll reach out when early access is ready.</div>
-        <p class="waitlist-social-proof" style="font-size: 0.85rem; font-weight: 400; color: rgba(255,255,255,0.6); margin-top: 14px;">Join 2,000+ founding members navigating healthcare together</p>
+
+        <div class="hero-success" id="hero-waitlist-success">You're in — you're one of the first to get Elena. We'll reach out when early access is ready.</div>
+        <p class="waitlist-social-proof" style="font-size: 0.85rem; font-weight: 400; color: rgba(255,255,255,0.6); margin-top: 14px;">Join founding members navigating healthcare together</p>
       </div>
     </div>
     <div class="scroll-indicator">
@@ -1184,27 +1147,6 @@
     <div class="hero-pill"></div>
   </section>
 
-  <!-- COMMUNITY PERKS -->
-  <section class="community-perks">
-    <div class="perks-inner fade-in">
-      <h2>Your membership starts now.</h2>
-      <p class="perks-subtitle">Founding members get immediate access to:</p>
-      <div class="perks-grid">
-        <div class="perk-card">
-          <h3>Private WhatsApp community</h3>
-          <p>People dealing with the same stuff you are. Ask questions, share what worked, get real answers.</p>
-        </div>
-        <div class="perk-card">
-          <h3>Weekly healthcare newsletter</h3>
-          <p>Short, useful tips on saving money, picking providers, and understanding your coverage.</p>
-        </div>
-        <div class="perk-card">
-          <h3>Monthly live Q&A sessions</h3>
-          <p>Bring your questions to real navigators and providers. No scripts, no runaround.</p>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <!-- MANIFESTO -->
   <section class="manifesto" id="how-it-works">
@@ -1218,7 +1160,7 @@
         <div class="phone-device">
           <div class="phone-screen">
             <video autoplay muted loop playsinline>
-              <source src="images/elena-demo.mp4" type="video/mp4">
+              <source src="/images/elena-demo.mp4" type="video/mp4">
             </video>
           </div>
         </div>
@@ -1262,17 +1204,10 @@
   <section class="features" id="features">
     <div class="features-carousel-wrapper">
         <div class="features-grid">
-          <!-- Original cards -->
           <div class="feature-card img-couch">
             <div class="feature-card-content">
               <h3>She actually calls for you.</h3>
               <p>Elena calls doctors' offices, asks your questions, and reports back. No hold music.</p>
-            </div>
-          </div>
-          <div class="feature-card img-meds">
-            <div class="feature-card-content">
-              <h3>Find the cheapest meds.</h3>
-              <p>Searches pricing databases and your insurance to find the lowest price for every prescription.</p>
             </div>
           </div>
           <div class="feature-card img-phone">
@@ -1281,59 +1216,10 @@
               <p>Snap your card, and Elena handles the rest. Deductibles, copays, what's covered.</p>
             </div>
           </div>
-          <div class="feature-card img-hugging">
-            <div class="feature-card-content">
-              <h3>Your whole health, one place.</h3>
-              <p>Conditions, meds, allergies, doctors. Always up to date, always with you.</p>
-            </div>
-          </div>
-          <div class="feature-card img-meditate">
-            <div class="feature-card-content">
-              <h3>Stay on top of it.</h3>
-              <p>Personalized reminders and habits so checkups, screenings, and refills never slip.</p>
-            </div>
-          </div>
-          <div class="feature-card img-family">
-            <div class="feature-card-content">
-              <h3>Your whole family, covered.</h3>
-              <p>Manage healthcare for parents, kids, and partners all under one account.</p>
-            </div>
-          </div>
-          <!-- Duplicate for seamless loop -->
-          <div class="feature-card img-couch">
-            <div class="feature-card-content">
-              <h3>She actually calls for you.</h3>
-              <p>Elena calls doctors' offices, asks your questions, and reports back. No hold music.</p>
-            </div>
-          </div>
           <div class="feature-card img-meds">
             <div class="feature-card-content">
               <h3>Find the cheapest meds.</h3>
               <p>Searches pricing databases and your insurance to find the lowest price for every prescription.</p>
-            </div>
-          </div>
-          <div class="feature-card img-phone">
-            <div class="feature-card-content">
-              <h3>Insurance, decoded.</h3>
-              <p>Snap your card, and Elena handles the rest. Deductibles, copays, what's covered.</p>
-            </div>
-          </div>
-          <div class="feature-card img-hugging">
-            <div class="feature-card-content">
-              <h3>Your whole health, one place.</h3>
-              <p>Conditions, meds, allergies, doctors. Always up to date, always with you.</p>
-            </div>
-          </div>
-          <div class="feature-card img-meditate">
-            <div class="feature-card-content">
-              <h3>Stay on top of it.</h3>
-              <p>Personalized reminders and habits so checkups, screenings, and refills never slip.</p>
-            </div>
-          </div>
-          <div class="feature-card img-family">
-            <div class="feature-card-content">
-              <h3>Your whole family, covered.</h3>
-              <p>Manage healthcare for parents, kids, and partners all under one account.</p>
             </div>
           </div>
         </div>
@@ -1353,18 +1239,8 @@
               <input type="email" placeholder="Enter your email" required>
               <button type="submit">Get Early Access</button>
             </form>
-            <div class="survey-step" id="bottom-survey" style="display:none;">
-              <p class="survey-label light">What are you most interested in? <span class="survey-hint">(pick all that apply)</span></p>
-              <div class="survey-options light">
-                <label class="survey-chip light"><input type="checkbox" value="price_transparency"><span>Price transparency</span></label>
-                <label class="survey-chip light"><input type="checkbox" value="bill_fighting"><span>Bill fighting &amp; prior auth</span></label>
-                <label class="survey-chip light"><input type="checkbox" value="health_data"><span>All my health data in one place</span></label>
-                <label class="survey-chip light"><input type="checkbox" value="automation"><span>Automation (phone calls, forms)</span></label>
-              </div>
-              <button class="survey-submit-btn light" id="bottom-survey-submit">Submit</button>
-              <button class="survey-skip-btn light" id="bottom-survey-skip">Skip</button>
-            </div>
-            <div class="success-message" id="waitlist-success">You're in! We'll reach out when early access is ready.</div>
+
+            <div class="success-message" id="waitlist-success">You're in — you're one of the first to get Elena. We'll reach out when early access is ready.</div>
           </div>
         </div>
       </div>
@@ -1377,10 +1253,6 @@
     </div>
     <div class="footer-bottom">
       <span>&copy; 2026 Elena AI. All rights reserved.</span>
-      <div class="footer-links">
-        <a href="/blog">Resources</a>
-        <a href="https://www.tiktok.com/@elenahealth" target="_blank" rel="noopener">TikTok</a>
-      </div>
       <span>Made with love in NYC</span>
     </div>
     <div class="footer-fine-print">
@@ -1438,41 +1310,23 @@
       }
     }
 
-    function setupWaitlistFlow(formId, surveyId, surveySubmitId, surveySkipId, successId, hideSelectors) {
-      const form = document.getElementById(formId);
-      const survey = document.getElementById(surveyId);
-      const surveySubmit = document.getElementById(surveySubmitId);
-      const surveySkip = document.getElementById(surveySkipId);
-      const successEl = document.getElementById(successId);
-      const hideEls = (hideSelectors || []).map(s => document.querySelector(s)).filter(Boolean);
-      let savedEmail = '';
+    // Hero form — direct submit, no survey
+    document.getElementById('hero-waitlist-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = e.target.querySelector('input[type="email"]').value;
+      e.target.style.display = 'none';
+      document.querySelector('.hero-subtitle').style.display = 'none';
+      document.querySelector('.waitlist-social-proof').style.display = 'none';
+      submitToSupabase(email, [], document.getElementById('hero-waitlist-success'));
+    });
 
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        savedEmail = form.querySelector('input[type="email"]').value;
-        form.style.display = 'none';
-        survey.style.display = 'block';
-        hideEls.forEach(el => el.style.display = 'none');
-      });
-
-      surveySubmit.addEventListener('click', () => {
-        const checked = survey.querySelectorAll('input[type="checkbox"]:checked');
-        const interests = Array.from(checked).map(cb => cb.value);
-        survey.style.display = 'none';
-        submitToSupabase(savedEmail, interests, successEl);
-      });
-
-      surveySkip.addEventListener('click', () => {
-        survey.style.display = 'none';
-        submitToSupabase(savedEmail, [], successEl);
-      });
-    }
-
-    // Hero form
-    setupWaitlistFlow('hero-waitlist-form', 'hero-survey', 'hero-survey-submit', 'hero-survey-skip', 'hero-waitlist-success', ['.hero-subtitle', '.waitlist-social-proof']);
-
-    // Bottom form
-    setupWaitlistFlow('waitlist-form', 'bottom-survey', 'bottom-survey-submit', 'bottom-survey-skip', 'waitlist-success');
+    // Bottom form — direct submit, no survey
+    document.getElementById('waitlist-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = e.target.querySelector('input[type="email"]').value;
+      e.target.style.display = 'none';
+      submitToSupabase(email, [], document.getElementById('waitlist-success'));
+    });
   </script>
 
 
