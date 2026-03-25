@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -44,7 +45,7 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
 
   return (
     <Popover>
-      <PopoverTrigger asChild>{children}</PopoverTrigger>
+      <PopoverTrigger render={children as React.ReactElement}></PopoverTrigger>
       <PopoverContent
         side="top"
         align="start"

@@ -143,7 +143,7 @@ export function ChatArea({
           {MOCK_MESSAGES.map((msg) =>
             msg.role === "user" ? (
               <div key={msg.id} className="flex justify-end animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-[#f5f7fb] px-5 py-3">
+                <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-[#e8ecf4] px-5 py-3">
                   <p className="text-[0.9rem] leading-relaxed text-[#0F1B3D]">{msg.content}</p>
                 </div>
               </div>

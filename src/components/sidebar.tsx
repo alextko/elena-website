@@ -29,7 +29,7 @@ export function Sidebar() {
         <img
           src="/images/elena-icon-cropped.png"
           alt="Elena"
-          className="h-10 w-10 rounded-xl"
+          className="h-12 w-12 rounded-xl"
         />
         <span className="text-lg font-extrabold text-[#0F1B3D]">elena</span>
       </div>
