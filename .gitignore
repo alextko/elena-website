@@ -3,3 +3,6 @@ node_modules/
 .env.local
 .vercel/
 *.swp
+.next
+node_modules
+.env*.local
