@@ -111,7 +111,7 @@ export function ChatArea({
   const [streamingId, setStreamingId] = useState<string | null>("4"); // Last message streams
 
   return (
-    <div className="relative flex flex-1 flex-col min-w-0 bg-[#F7F6F2]">
+    <div className="relative flex flex-1 flex-col min-w-0 bg-[#F0EFED]">
       {/* Grain texture overlay */}
       <div
         className="pointer-events-none absolute inset-0 z-0 opacity-[0.08] mix-blend-overlay"
@@ -120,16 +120,9 @@ export function ChatArea({
         }}
       />
 
-      {/* Warm peach glow */}
-      <div
-        className="pointer-events-none absolute right-[-200px] top-[10%] h-[600px] w-[600px] rounded-full opacity-30 z-0"
-        style={{
-          background: "radial-gradient(circle, #F4B084 0%, #E8956D 30%, transparent 70%)",
-        }}
-      />
 
       {/* Top bar */}
-      <div className="relative z-10 flex items-center border-b border-[#E5E5EA]/60 bg-[#F7F6F2]/80 backdrop-blur-sm px-4 py-3">
+      <div className="relative z-10 flex items-center border-b border-[#E5E5EA]/60 bg-[#F0EFED]/80 backdrop-blur-sm px-4 py-3">
         <Button
           variant="ghost"
           size="icon"
