@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Plus, Search, MessageSquare } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 
 const HISTORY = {
   Today: [
@@ -59,11 +59,10 @@ export function Sidebar() {
             {items.map((item, i) => (
               <button
                 key={i}
-                className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-accent ${
+                className={`flex w-full items-center rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-accent ${
                   i === 0 && label === "Today" ? "bg-accent font-medium" : ""
                 }`}
               >
-                <MessageSquare className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                 <span className="truncate">{item}</span>
               </button>
             ))}
