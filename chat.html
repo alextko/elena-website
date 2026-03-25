@@ -2104,17 +2104,31 @@
     footer::after {
       content: '';
       position: absolute;
-      bottom: -40%;
-      right: -10%;
-      width: 50%;
-      height: 80%;
-      background: radial-gradient(ellipse, rgba(244,176,132,0.35) 0%, rgba(232,149,109,0.15) 30%, transparent 65%);
+      inset: 0;
+      background: radial-gradient(ellipse at 85% 130%,
+        #F4B084 0%,
+        #E8956D 25%,
+        rgba(46, 107, 181, 0) 60%
+      );
+      pointer-events: none;
+    }
+
+    footer::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.12;
+      mix-blend-mode: overlay;
       pointer-events: none;
     }
 
     .footer-inner {
       max-width: 960px;
       margin: 0 auto;
+      position: relative;
+      z-index: 2;
     }
 
     .footer-brand {
@@ -2137,6 +2151,8 @@
       margin: 0 auto;
       display: flex;
       justify-content: space-between;
+      position: relative;
+      z-index: 2;
       align-items: center;
       font-size: 0.78rem;
       color: rgba(255, 255, 255, 0.35);
@@ -2148,6 +2164,8 @@
     .footer-fine-print {
       max-width: 960px;
       margin: 16px auto 0;
+      position: relative;
+      z-index: 2;
       font-size: 0.7rem;
       color: rgba(255, 255, 255, 0.25);
       font-weight: 300;
@@ -2591,12 +2609,18 @@
     .trusted-strip-track {
       display: flex;
       align-items: center;
-      width: max-content;
-      animation: trusted-scroll 35s linear infinite;
-      gap: 40px;
+      animation: trusted-scroll 30s linear infinite;
     }
 
-    .trusted-strip-track span {
+    .trusted-strip-set {
+      display: flex;
+      align-items: center;
+      gap: 40px;
+      padding-right: 40px;
+      flex-shrink: 0;
+    }
+
+    .trusted-strip-set span {
       font-size: 14px;
       font-weight: 700;
       color: rgba(255,255,255,0.45);
@@ -2666,7 +2690,12 @@
       <div class="trusted-strip-label">Trusted by members insured by</div>
       <div class="trusted-strip-marquee">
         <div class="trusted-strip-track">
-          <span>Blue Cross Blue Shield</span><span>UnitedHealthcare</span><span>Aetna</span><span>Cigna</span><span>Humana</span><span>Kaiser Permanente</span><span>Anthem</span><span>Molina Healthcare</span><span>Centene</span><span>Oscar Health</span><span>Delta Dental</span><span>VSP Vision</span><span>Blue Cross Blue Shield</span><span>UnitedHealthcare</span><span>Aetna</span><span>Cigna</span><span>Humana</span><span>Kaiser Permanente</span><span>Anthem</span><span>Molina Healthcare</span><span>Centene</span><span>Oscar Health</span><span>Delta Dental</span><span>VSP Vision</span>
+          <div class="trusted-strip-set">
+            <span>Blue Cross Blue Shield</span><span>UnitedHealthcare</span><span>Aetna</span><span>Cigna</span><span>Humana</span><span>Kaiser Permanente</span><span>Anthem</span><span>Molina Healthcare</span><span>Centene</span><span>Oscar Health</span><span>Delta Dental</span><span>VSP Vision</span>
+          </div>
+          <div class="trusted-strip-set">
+            <span>Blue Cross Blue Shield</span><span>UnitedHealthcare</span><span>Aetna</span><span>Cigna</span><span>Humana</span><span>Kaiser Permanente</span><span>Anthem</span><span>Molina Healthcare</span><span>Centene</span><span>Oscar Health</span><span>Delta Dental</span><span>VSP Vision</span>
+          </div>
         </div>
       </div>
     </div>
