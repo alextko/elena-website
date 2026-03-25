@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" fill="none">
+  <defs>
+    <!-- Mask: white = visible, black = cut out -->
+    <mask id="screen-cutout">
+      <rect width="390" height="844" fill="white"/>
+      <rect x="14" y="14" width="362" height="816" rx="46" ry="46" fill="black"/>
+    </mask>
+  </defs>
+  <!-- Outer body with screen hole cut out -->
+  <rect x="1" y="1" width="388" height="842" rx="58" ry="58"
+        fill="#1c1c1e" stroke="#3a3a3c" stroke-width="2"
+        mask="url(#screen-cutout)"/>
+  <!-- Dynamic Island (sits on top of screen area) -->
+  <rect x="138" y="22" width="114" height="34" rx="17" ry="17" fill="#1c1c1e"/>
+  <!-- Side button right (power) -->
+  <rect x="389" y="180" width="3" height="80" rx="1.5" ry="1.5" fill="#2c2c2e"/>
+  <!-- Side buttons left (vol up, vol down, mute) -->
+  <rect x="-2" y="160" width="3" height="34" rx="1.5" ry="1.5" fill="#2c2c2e"/>
+  <rect x="-2" y="210" width="3" height="60" rx="1.5" ry="1.5" fill="#2c2c2e"/>
+  <rect x="-2" y="285" width="3" height="60" rx="1.5" ry="1.5" fill="#2c2c2e"/>
+  <!-- Subtle top edge highlight -->
+  <rect x="80" y="1.5" width="230" height="0.5" rx="0.25" fill="rgba(255,255,255,0.12)"/>
+</svg>
