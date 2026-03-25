@@ -2822,7 +2822,7 @@
       <p class="hero-subtitle">Elena is a personal health assistant. She can make calls, use a computer, and write emails, and she's an expert in navigating the healthcare system.</p>
       <div class="chat-input-bar">
         <div class="chat-input-top">
-          <input type="text" id="chat-hero-input" placeholder="How much should an MRI cost with my insurance?">
+          <input type="text" id="chat-hero-input" placeholder="How much should an MRI cost with my insurance?" onkeydown="if(event.key==='Enter'){event.preventDefault();showComingSoon();}">
         </div>
         <div class="chat-input-bottom">
           <button class="chat-attach-btn" aria-label="Attach document">
