@@ -3189,8 +3189,8 @@
     const checkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 
     window.toggleGpTodo = function(item) {
-      const checkbox = item.querySelector('.gp-checkbox');
-      const isDone = item.classList.contains('gp-todo-done');
+      var checkbox = item.querySelector('.gp-checkbox');
+      var isDone = item.classList.contains('gp-todo-done');
 
       if (isDone) {
         item.classList.remove('gp-todo-done');
@@ -3202,23 +3202,50 @@
         checkbox.innerHTML = checkSvg;
       }
 
-      // Check if all todos are done — today circle becomes a checkmark
-      const items = document.querySelectorAll('#gp-todo-list .gp-todo-item');
-      const allDone = Array.from(items).every(i => i.classList.contains('gp-todo-done'));
-      const todayNum = document.getElementById('gp-today-num');
-      const todayDay = document.getElementById('gp-today');
+      checkAllDone();
+    };
+
+    function checkAllDone() {
+      var items = document.querySelectorAll('#gp-todo-list .gp-todo-item');
+      var allDone = Array.from(items).every(function(i) { return i.classList.contains('gp-todo-done'); });
+      var todayNum = document.getElementById('gp-today-num');
       if (allDone) {
         todayNum.innerHTML = '✓';
         todayNum.style.fontSize = '16px';
-        todayDay.style.background = '#2E7D32';
-        todayDay.querySelector('.gp-cal-label').style.color = '#FFFFFF';
       } else {
         todayNum.textContent = '24';
         todayNum.style.fontSize = '';
-        todayDay.style.background = '';
-        todayDay.querySelector('.gp-cal-label').style.color = '';
       }
-    };
+    }
+
+    // Auto-animate todos checking off when scrolled into view
+    (function() {
+      var gpCard = document.querySelector('.gp-card');
+      if (!gpCard) return;
+      var played = false;
+
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting && !played) {
+            played = true;
+            var items = document.querySelectorAll('#gp-todo-list .gp-todo-item');
+            var unchecked = Array.from(items).filter(function(i) { return !i.classList.contains('gp-todo-done'); });
+
+            unchecked.forEach(function(item, i) {
+              setTimeout(function() {
+                var checkbox = item.querySelector('.gp-checkbox');
+                item.classList.add('gp-todo-done');
+                checkbox.classList.add('gp-checkbox-checked');
+                checkbox.innerHTML = checkSvg;
+                checkAllDone();
+              }, 1200 + (i * 800));
+            });
+          }
+        });
+      }, { threshold: 0.4 });
+
+      observer.observe(gpCard);
+    })();
 
     // MRI chat staggered animation
     (function() {
