@@ -91,6 +91,7 @@ export interface MeResponse {
 
 export interface SubscriptionResponse {
   plan: string;
+  tier: string;  // free / standard / premium
   status: string;
   credits_remaining: number;
   current_period_end?: string | null;

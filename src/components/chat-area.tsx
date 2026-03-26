@@ -127,7 +127,7 @@ export function ChatArea({
   const [pendingFiles, setPendingFiles] = useState<{ file: File; key: string }[]>([]);
   const [uploading, setUploading] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
-  const [upgradeReason, setUpgradeReason] = useState<"document_limit" | "credits_exhausted">("document_limit");
+  const [upgradeReason, setUpgradeReason] = useState<"upgrade_required" | "limit_reached" | "feature_blocked" | "document_limit">("document_limit");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -435,9 +435,9 @@ export function ChatArea({
         },
         // onError
         (error) => {
-          // Check if this is a credit exhaustion error — show upgrade modal
-          if (error.includes("credits") || error.includes("Upgrade")) {
-            setUpgradeReason("credits_exhausted");
+          // Check if this is an upgrade/limit error — show upgrade modal
+          if (error.includes("credits") || error.includes("Upgrade") || error.includes("upgrade")) {
+            setUpgradeReason("upgrade_required");
             setUpgradeOpen(true);
             setToolLabel(null);
             setIsLoading(false);

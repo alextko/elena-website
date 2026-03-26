@@ -302,24 +302,26 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
                   })}
                 </div>
 
-                {/* Credits summary */}
+                {/* Plan summary */}
                 <div
-                  className={`rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden ${subscription?.plan !== "pro" ? "cursor-pointer hover:bg-[#F7F6F2] transition-colors" : ""}`}
-                  onClick={subscription?.plan !== "pro" ? () => { setOpen(false); setUpgradeOpen(true); } : undefined}
+                  className={`rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden ${(subscription?.tier || "free") === "free" ? "cursor-pointer hover:bg-[#F7F6F2] transition-colors" : ""}`}
+                  onClick={(subscription?.tier || "free") === "free" ? () => { setOpen(false); setUpgradeOpen(true); } : undefined}
                 >
                   <div className="flex items-center gap-3 px-3.5 py-3.5">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7F6F2]">
                       <Sparkles className="h-[18px] w-[18px] text-[#0F1B3D]" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[16px] font-semibold text-[#1C1C1E]">
-                        {credits !== null ? `${credits} credits` : "Loading..."}
+                      <p className="text-[16px] font-semibold text-[#1C1C1E] capitalize">
+                        {subscription?.tier || "Free"} Plan
                       </p>
-                      <p className="text-[13px] text-[#8E8E93] mt-px capitalize">
-                        {subscription?.plan || "Free"} plan
+                      <p className="text-[13px] text-[#8E8E93] mt-px">
+                        {(subscription?.tier || "free") === "free"
+                          ? "Tap to upgrade"
+                          : subscription?.plan?.includes("annual") ? "Annual" : "Monthly"}
                       </p>
                     </div>
-                    {subscription?.plan !== "pro" && (
+                    {(subscription?.tier || "free") === "free" && (
                       <ChevronRight className="h-[18px] w-[18px] text-[#0F1B3D] shrink-0" />
                     )}
                   </div>
