@@ -50,7 +50,7 @@ export interface ChatMessageItem {
   created_at: string;
   doctor_results?: DoctorResult[] | null;
   review_results?: ReviewResult | null;
-  booking_result?: BookingResult | null;
+  booking_result?: BookingResultPayload | null;
   location_results?: LocationResult[] | null;
   bill_analysis?: BillAnalysis | null;
   negotiation_result?: NegotiationResult | null;
@@ -105,11 +105,16 @@ export interface DoctorResult {
   address?: string | null;
   city?: string | null;
   state?: string | null;
+  postal_code?: string | null;
   phone_number?: string | null;
   npi_number?: string | null;
   in_network?: boolean | null;
+  latitude?: number | null;
+  longitude?: number | null;
   negotiated_rate?: number | null;
+  estimated_total?: number | null;
   estimated_oop?: number | null;
+  facility_type?: string | null;
   healthgrades_rating?: number | null;
   google_rating?: number | null;
   google_review_count?: number | null;
@@ -121,9 +126,17 @@ export interface LocationResult {
   name: string;
   category?: string | null;
   address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postal_code?: string | null;
   phone_number?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   rating?: number | null;
   review_count?: number | null;
+  distance_km?: number | null;
+  in_network?: boolean | null;
+  providers?: string[] | null;
 }
 
 export interface SourcePayload {
@@ -173,9 +186,20 @@ export interface DoctorItem {
   id?: string;
   name: string;
   specialty: string;
+  credential?: string;
   practice_name?: string;
   phone?: string;
   address?: string;
+}
+
+// --- Insurance cards (api_insurance.py) ---
+
+export interface InsuranceCard {
+  id?: string;
+  card_type: string;
+  structured_data: Record<string, string | null>;
+  front_url?: string | null;
+  back_url?: string | null;
 }
 
 // --- Appointments / Care Visits (api_appointments.py) ---
@@ -188,6 +212,52 @@ export interface AppointmentItem {
   confirmed_time?: string | null;
   reason_for_visit?: string | null;
   status?: string;
+}
+
+// --- Booking Status Polling (api_booking.py) ---
+
+export interface BookingStatusResponse {
+  booking_id: string;
+  phase: string;
+  message: string;
+  question?: string | null;
+  field_name?: string | null;
+  result?: Record<string, unknown> | null;
+  elapsed_seconds: number;
+  attempt_count?: number;
+  cancel_requested?: boolean;
+  provider_name?: string | null;
+  provider_specialty?: string | null;
+  provider_phone?: string | null;
+  reason_for_visit?: string | null;
+  is_cancellation?: boolean;
+  is_reschedule?: boolean;
+  original_date?: string | null;
+  original_time?: string | null;
+  google_calendar_url?: string | null;
+  apple_calendar_url?: string | null;
+  booking_result?: BookingResultPayload | null;
+  suggestions?: string[] | null;
+}
+
+export interface BookingResultPayload {
+  booking_id: string;
+  status: string;
+  provider_name: string;
+  provider_specialty?: string | null;
+  provider_phone?: string | null;
+  confirmed_date?: string | null;
+  confirmed_time?: string | null;
+  reason_for_visit?: string | null;
+  transcript_summary?: string | null;
+  notes?: string | null;
+  is_cancellation?: boolean;
+  is_reschedule?: boolean;
+  original_date?: string | null;
+  original_time?: string | null;
+  additional_answers?: Record<string, string> | null;
+  google_calendar_url?: string | null;
+  apple_calendar_url?: string | null;
 }
 
 export interface CareVisit {

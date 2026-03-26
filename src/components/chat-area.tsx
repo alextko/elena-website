@@ -5,13 +5,17 @@ import { Button } from "@/components/ui/button";
 import { PanelLeft, Plus, ArrowUp, Paperclip, X } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
 import { usePollChat } from "@/hooks/usePollChat";
+import { useBookingPoll } from "@/hooks/useBookingPoll";
 import {
   DoctorResultsCard,
   LocationResultsCard,
   ReviewsCard,
-  SavingsCard,
   NegotiationCard,
   SourcesFooter,
+  BookingStatusBubble,
+  AppointmentConfirmationCard,
+  AddToCalendarCard,
+  BookingQuestionCard,
 } from "@/components/chat-cards";
 import type {
   ChatMessageItem,
@@ -21,8 +25,8 @@ import type {
   LocationResult,
   ReviewResult,
   SourcePayload,
-  BillAnalysis,
   NegotiationResult,
+  BookingResultPayload,
 } from "@/lib/types";
 
 type Attachment = {
@@ -40,8 +44,8 @@ type Message = {
   locationResults?: LocationResult[] | null;
   reviewResults?: ReviewResult | null;
   webSources?: SourcePayload[] | null;
-  billAnalysis?: BillAnalysis | null;
   negotiationResult?: NegotiationResult | null;
+  bookingResult?: BookingResultPayload | null;
 };
 
 function renderMarkdown(text: string) {
@@ -100,12 +104,14 @@ export function ChatArea({
   activeSessionId,
   onSessionCreated,
   initialQuery,
+  isNewChat,
 }: {
   onToggleSidebar: () => void;
   sidebarOpen: boolean;
   activeSessionId: string | null;
   onSessionCreated: (id: string) => void;
   initialQuery?: string | null;
+  isNewChat?: boolean;
 }) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -127,6 +133,7 @@ export function ChatArea({
   const initialQuerySentRef = useRef(false);
   const scrollEndRef = useRef<HTMLDivElement>(null);
   const { sendAndPoll, cancel } = usePollChat();
+  const booking = useBookingPoll();
   const msgIdCounter = useRef(0);
 
   const nextId = () => {
@@ -163,13 +170,15 @@ export function ChatArea({
       // Load existing session messages
       sessionIdRef.current = activeSessionId;
       loadMessages(activeSessionId);
-    } else {
-      // New chat — fetch welcome
+    } else if (isNewChat) {
+      // User explicitly started a new chat — fetch welcome
       sessionIdRef.current = null;
       fetchWelcome();
     }
+    // When activeSessionId is null and isNewChat is false, we're still loading
+    // sessions — don't create a new welcome session yet.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSessionId]);
+  }, [activeSessionId, isNewChat]);
 
   async function loadMessages(sessionId: string) {
     try {
@@ -185,8 +194,8 @@ export function ChatArea({
           doctorResults: m.doctor_results,
           locationResults: m.location_results,
           reviewResults: m.review_results,
-          billAnalysis: m.bill_analysis,
           negotiationResult: m.negotiation_result,
+          bookingResult: m.booking_result ?? undefined,
         }));
       setMessages(mapped);
       // Set title from first user message
@@ -231,29 +240,84 @@ export function ChatArea({
     }
   }, [initialQuery, welcomeMessage]);
 
+  // Handle booking completion — add confirmation card + summary as a message
+  const bookingCompletedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!booking.status) return;
+    const { phase, booking_result: result } = booking.status;
+    const id = booking.bookingId;
+
+    // Only process terminal phases once per booking
+    if (
+      (phase === "completed" || phase === "failed" || phase === "cancelled") &&
+      id &&
+      bookingCompletedRef.current !== id
+    ) {
+      bookingCompletedRef.current = id;
+
+      // Add the summary + booking result as an assistant message
+      const summaryId = nextId();
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: summaryId,
+          role: "assistant",
+          content: booking.status?.message || "",
+          isStreaming: true,
+          bookingResult: result || undefined,
+        },
+      ]);
+      setStreamingId(summaryId);
+
+      // Update suggestions if the booking status has them
+      if (booking.status?.suggestions) {
+        setSuggestions(booking.status.suggestions);
+      }
+    }
+  }, [booking.status, booking.bookingId]);
+
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+    await uploadFiles(Array.from(files));
+    // Reset input so the same file can be selected again
+    e.target.value = "";
+  }
 
-    // We need a session_id to upload — use the ref or create a placeholder
+  function removePendingFile(key: string) {
+    setPendingFiles((prev) => prev.filter((f) => f.key !== key));
+  }
+
+  const SUPPORTED_EXTENSIONS = new Set([
+    ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif",
+  ]);
+
+  function isFileSupported(file: File) {
+    const ext = ("." + file.name.split(".").pop()).toLowerCase();
+    if (SUPPORTED_EXTENSIONS.has(ext)) return true;
+    if (file.type.startsWith("image/")) return true;
+    if (file.type === "application/pdf") return true;
+    return false;
+  }
+
+  async function uploadFiles(files: File[]) {
+    const supported = files.filter(isFileSupported);
+    if (supported.length === 0) return;
+
     const sid = sessionIdRef.current || "pending";
     setUploading(true);
 
     const uploaded: { file: File; key: string }[] = [];
-    for (const file of Array.from(files)) {
+    for (const file of supported) {
       try {
-        // 1. Get presigned URL
         const urlRes = await apiFetch("/documents/upload-url", {
           method: "POST",
           body: JSON.stringify({ session_id: sid, filename: file.name }),
         });
         if (!urlRes.ok) continue;
         const { upload_url, key, content_type, required_headers } = await urlRes.json();
-
-        // 2. Upload file to S3
         const headers: Record<string, string> = { "Content-Type": content_type, ...required_headers };
         await fetch(upload_url, { method: "PUT", body: file, headers });
-
         uploaded.push({ file, key });
       } catch {
         // Skip failed uploads
@@ -262,12 +326,20 @@ export function ChatArea({
 
     setPendingFiles((prev) => [...prev, ...uploaded]);
     setUploading(false);
-    // Reset input so the same file can be selected again
-    e.target.value = "";
   }
 
-  function removePendingFile(key: string) {
-    setPendingFiles((prev) => prev.filter((f) => f.key !== key));
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      uploadFiles(files);
+    }
   }
 
   const handleSend = useCallback(
@@ -323,7 +395,6 @@ export function ChatArea({
               locationResults: chatResult.location_results,
               reviewResults: chatResult.review_results,
               webSources: chatResult.web_sources,
-              billAnalysis: undefined,
               negotiationResult: undefined,
             },
           ]);
@@ -346,6 +417,11 @@ export function ChatArea({
           // Clear welcome after first message
           setWelcomeHeading(null);
           setWelcomeMessage(null);
+
+          // Start booking poll if a call was initiated
+          if (chatResult.booking_id) {
+            booking.start(chatResult.booking_id);
+          }
         },
         // onError
         (error) => {
@@ -371,7 +447,11 @@ export function ChatArea({
   handleSendRef.current = handleSend;
 
   return (
-    <div className="relative flex flex-1 flex-col min-w-0 h-dvh overflow-hidden bg-white">
+    <div
+      className="relative flex flex-1 flex-col min-w-0 h-dvh overflow-hidden bg-white"
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => e.preventDefault()}
+    >
       {/* Grain texture overlay */}
       <div
         className="pointer-events-none absolute inset-0 z-0 opacity-[0.08] mix-blend-overlay"
@@ -448,24 +528,37 @@ export function ChatArea({
                     ))
                   )}
                 </div>
-                {/* Structured result cards */}
-                {msg.doctorResults && msg.doctorResults.length > 0 && (
-                  <DoctorResultsCard doctors={msg.doctorResults} />
-                )}
-                {msg.locationResults && msg.locationResults.length > 0 && (
-                  <LocationResultsCard locations={msg.locationResults} />
-                )}
-                {msg.reviewResults && (
-                  <ReviewsCard data={msg.reviewResults} />
-                )}
-                {msg.billAnalysis && (
-                  <SavingsCard data={msg.billAnalysis} />
-                )}
-                {msg.negotiationResult && (
-                  <NegotiationCard data={msg.negotiationResult} />
-                )}
-                {msg.webSources && msg.webSources.length > 0 && (
-                  <SourcesFooter sources={msg.webSources} />
+                {/* Structured result cards — hidden while streaming, fade in after */}
+                {msg.id !== streamingId && (
+                  <div className={msg.isStreaming === false || !msg.isStreaming ? "elena-card-enter" : ""}>
+                    {msg.doctorResults && msg.doctorResults.length > 0 && (
+                      <DoctorResultsCard
+                        doctors={msg.doctorResults}
+                        onBookDoctor={(doc) => handleSend(`Book an appointment with ${doc.name}`)}
+                      />
+                    )}
+                    {msg.locationResults && msg.locationResults.length > 0 && (
+                      <LocationResultsCard locations={msg.locationResults} />
+                    )}
+                    {msg.reviewResults && (
+                      <ReviewsCard data={msg.reviewResults} />
+                    )}
+                    {msg.negotiationResult && (
+                      <NegotiationCard data={msg.negotiationResult} />
+                    )}
+                    {msg.bookingResult && msg.bookingResult.status === "confirmed" && (
+                      <>
+                        <AppointmentConfirmationCard result={msg.bookingResult} />
+                        <AddToCalendarCard result={msg.bookingResult} />
+                      </>
+                    )}
+                    {msg.bookingResult && msg.bookingResult.status !== "confirmed" && (
+                      <AppointmentConfirmationCard result={msg.bookingResult} />
+                    )}
+                    {msg.webSources && msg.webSources.length > 0 && (
+                      <SourcesFooter sources={msg.webSources} />
+                    )}
+                  </div>
                 )}
               </div>
             )
@@ -485,6 +578,25 @@ export function ChatArea({
                 </span>
               )}
             </div>
+          )}
+
+          {/* Active booking call status */}
+          {booking.status &&
+            booking.status.phase !== "completed" &&
+            booking.status.phase !== "failed" &&
+            booking.status.phase !== "cancelled" && (
+              <BookingStatusBubble
+                status={booking.status}
+                onCancel={booking.cancel}
+              />
+            )}
+
+          {/* Mid-call question from voice agent */}
+          {booking.status?.phase === "needs_info" && booking.status.question && (
+            <BookingQuestionCard
+              question={booking.status.question}
+              onAnswer={booking.respond}
+            />
           )}
 
           {/* Suggestion chips */}
@@ -507,7 +619,11 @@ export function ChatArea({
       </div>
 
       {/* Input bar */}
-      <div className="flex-shrink-0 relative z-10 mx-auto w-full max-w-2xl px-4 pb-6 pt-2">
+      <div
+        className="flex-shrink-0 relative z-10 mx-auto w-full max-w-2xl px-4 pb-6 pt-2"
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
         {/* Pending file chips */}
         {pendingFiles.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pb-2">
@@ -530,7 +646,7 @@ export function ChatArea({
             ref={fileInputRef}
             type="file"
             className="hidden"
-            accept="image/*,.pdf,.jpg,.jpeg,.png,.heic"
+            accept="image/*,.pdf,.jpg,.jpeg,.png,.gif,.webp,.heic,.heif"
             multiple
             onChange={handleFileSelect}
           />

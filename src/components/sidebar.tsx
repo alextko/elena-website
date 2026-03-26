@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Plus, Search } from "lucide-react";
 import { ProfilePopover } from "@/components/profile-popover";
 import { useAuth } from "@/lib/auth-context";
@@ -44,11 +44,19 @@ function SidebarProfile() {
   return (
     <ProfilePopover>
       <button className="flex w-full items-center gap-2.5 border-t border-[#0F1B3D]/[0.06] px-5 py-4 text-left transition-colors hover:bg-[#0F1B3D]/[0.03]">
-        <Avatar className="h-8 w-8">
-          <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-xs font-semibold text-[#0F1B3D]/50">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
+        {profileData?.profilePictureUrl ? (
+          <img
+            src={profileData.profilePictureUrl}
+            alt={displayName}
+            className="h-8 w-8 rounded-full object-cover flex-shrink-0"
+          />
+        ) : (
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-xs font-semibold text-[#0F1B3D]/50">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="text-sm font-bold text-[#0F1B3D]">{displayName}</p>
@@ -143,8 +151,11 @@ export function Sidebar({
         )}
       </div>
 
+      {/* Fade-out gradient above profile */}
+      <div className="flex-shrink-0 pointer-events-none h-8 -mb-8 relative z-10 bg-gradient-to-t from-[#f5f7fb] to-transparent" />
+
       {/* Profile — pinned to bottom, never scrolls */}
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0 relative z-10 shadow-[0_-4px_12px_rgba(15,27,61,0.06)]">
         <SidebarProfile />
       </div>
     </div>

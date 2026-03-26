@@ -128,3 +128,65 @@
     @apply font-sans;
   }
 }
+
+/* Elena card design tokens */
+:root {
+  --elena-navy: #0F1B3D;
+  --elena-bg: #F7F6F2;
+  --elena-card-bg: #FFFFFF;
+  --elena-warm-bg: #F0EFED;
+  --elena-border: #E5E5EA;
+  --elena-border-light: #F2F2F7;
+  --elena-text-primary: #1C1C1E;
+  --elena-text-secondary: #8E8E93;
+  --elena-text-muted: #AEAEB2;
+  --elena-green: #34C759;
+  --elena-green-dark: #1B7A3D;
+  --elena-green-bg: #E8F5EC;
+  --elena-gold: #F5A623;
+  --elena-selected-bg: #EEF1FE;
+  --elena-selected-border: #0F1B3D;
+  --elena-hospital-orange: #E65100;
+  --elena-freestanding-green: #2E7D32;
+}
+
+/* Card shadow utility */
+.elena-card-shadow {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.elena-card-shadow-sm {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* Card fade-in after streaming */
+@keyframes elena-card-reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.elena-card-enter {
+  animation: elena-card-reveal 0.4s ease-out forwards;
+}
+
+/* Booking call shake animation */
+@keyframes booking-shake {
+  0%, 100% { transform: rotate(0deg); }
+  10% { transform: rotate(-12deg); }
+  20% { transform: rotate(12deg); }
+  30% { transform: rotate(-10deg); }
+  40% { transform: rotate(10deg); }
+  50% { transform: rotate(-6deg); }
+  60% { transform: rotate(6deg); }
+  70% { transform: rotate(0deg); }
+}
+
+.animate-booking-shake {
+  animation: booking-shake 1.2s ease-in-out infinite;
+  display: inline-block;
+  transform-origin: center;
+}
+
+/* Mapbox overrides */
+.mapboxgl-canvas { border-radius: 12px 12px 0 0; }
+.mapboxgl-ctrl-attrib { display: none !important; }

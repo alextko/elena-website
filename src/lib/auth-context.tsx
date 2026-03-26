@@ -12,18 +12,21 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/apiFetch";
-import type { MeResponse, DoctorItem, AppointmentItem, SubscriptionResponse } from "@/lib/types";
+import type { MeResponse, DoctorItem, CareVisit, SubscriptionResponse, InsuranceCard } from "@/lib/types";
 
 interface AuthContextValue {
   session: Session | null;
   user: User | null;
   loading: boolean;
   profileId: string | null;
-  profileData: { firstName: string; lastName: string; email: string } | null;
+  profileData: { firstName: string; lastName: string; email: string; profilePictureUrl?: string | null } | null;
+  updateProfilePicture: (url: string | null) => void;
   // Cached profile popover data
   doctors: DoctorItem[];
-  appointments: AppointmentItem[];
+  careVisits: CareVisit[];
   credits: number | null;
+  subscription: SubscriptionResponse | null;
+  insuranceCards: InsuranceCard[];
   profileDetailsLoaded: boolean;
   fetchProfileDetails: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
@@ -50,12 +53,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     firstName: string;
     lastName: string;
     email: string;
+    profilePictureUrl?: string | null;
   } | null>(null);
 
   // Cached profile popover data — persists across sidebar toggles
   const [doctors, setDoctors] = useState<DoctorItem[]>([]);
-  const [appointments, setAppointments] = useState<AppointmentItem[]>([]);
+  const [careVisits, setCareVisits] = useState<CareVisit[]>([]);
   const [credits, setCredits] = useState<number | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null);
+  const [insuranceCards, setInsuranceCards] = useState<InsuranceCard[]>([]);
   const [profileDetailsLoaded, setProfileDetailsLoaded] = useState(false);
 
   const profileFetchedRef = useRef(false);
@@ -77,12 +83,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           firstName: primary.first_name,
           lastName: primary.last_name,
           email: data.email || "",
+          profilePictureUrl: primary.profile_picture_url || null,
         });
       } else {
         setProfileData({
           firstName: "",
           lastName: "",
           email: data.email || "",
+          profilePictureUrl: null,
         });
       }
     } catch {
@@ -109,11 +117,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
 
       promises.push(
-        apiFetch("/appointments")
+        apiFetch("/care-visits")
           .then(async (res) => {
             if (!res.ok) return;
-            const data: AppointmentItem[] = await res.json();
-            setAppointments(data);
+            const data: CareVisit[] = await res.json();
+            setCareVisits(data);
+          })
+          .catch(() => {}),
+      );
+
+      promises.push(
+        apiFetch("/insurance/cards")
+          .then(async (res) => {
+            if (!res.ok) return;
+            const data = await res.json();
+            // API returns { medical: {id, provider, plan_name, ...flat fields}, dental: {...}, ... }
+            const cards: InsuranceCard[] = [];
+            for (const [cardType, record] of Object.entries(data)) {
+              if (record && typeof record === "object") {
+                const r = record as Record<string, unknown>;
+                // Fields are flat on the record — treat the whole record as structured_data
+                const structured: Record<string, string | null> = {};
+                for (const [k, v] of Object.entries(r)) {
+                  if (k === "id" || k === "profile_id" || k === "created_at" || k === "updated_at"
+                      || k.endsWith("_s3_key") || k.endsWith("_s3_url")) continue;
+                  structured[k] = v != null ? String(v) : null;
+                }
+                cards.push({
+                  id: r.id as string | undefined,
+                  card_type: cardType,
+                  structured_data: structured,
+                  front_url: (r.front_s3_url as string) || null,
+                  back_url: (r.back_s3_url as string) || null,
+                });
+              }
+            }
+            setInsuranceCards(cards);
           })
           .catch(() => {}),
       );
@@ -125,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (!res.ok) return;
           const data: SubscriptionResponse = await res.json();
           setCredits(data.credits_remaining);
+          setSubscription(data);
         })
         .catch(() => {}),
     );
@@ -156,8 +196,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfileId(null);
         setProfileData(null);
         setDoctors([]);
-        setAppointments([]);
+        setCareVisits([]);
         setCredits(null);
+        setSubscription(null);
+        setInsuranceCards([]);
         setProfileDetailsLoaded(false);
         profileFetchedRef.current = false;
       }
@@ -166,6 +208,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, [fetchProfile]);
+
+  const updateProfilePicture = useCallback((url: string | null) => {
+    setProfileData((prev) =>
+      prev ? { ...prev, profilePictureUrl: url } : prev,
+    );
+  }, []);
 
   const signIn = useCallback(
     async (email: string, password: string) => {
@@ -209,8 +257,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfileId(null);
     setProfileData(null);
     setDoctors([]);
-    setAppointments([]);
+    setCareVisits([]);
     setCredits(null);
+    setSubscription(null);
+    setInsuranceCards([]);
     setProfileDetailsLoaded(false);
     profileFetchedRef.current = false;
   }, []);
@@ -224,10 +274,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profileId,
         profileData,
         doctors,
-        appointments,
+        careVisits,
         credits,
+        subscription,
+        insuranceCards,
         profileDetailsLoaded,
         fetchProfileDetails,
+        updateProfilePicture,
         signIn,
         signUp,
         signInWithGoogle,

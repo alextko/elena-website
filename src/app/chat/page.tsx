@@ -21,7 +21,10 @@ export default function ChatPage() {
   // Read pending query from landing page (set before auth redirect)
   useEffect(() => {
     const q = localStorage.getItem("elena_pending_query");
-    if (q) setPendingQuery(q);
+    if (q) {
+      setPendingQuery(q);
+      setIsNewChat(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -50,24 +53,36 @@ export default function ChatPage() {
   useEffect(() => {
     if (!loading && session && !sessionsFetchedRef.current) {
       sessionsFetchedRef.current = true;
-      fetchSessions();
+      fetchSessions().then(() => {});
     }
   }, [loading, session, fetchSessions]);
+
+  // Auto-open most recent session (unless there's a pending query from landing)
+  useEffect(() => {
+    if (!loadingSessions && sessions.length > 0 && activeSessionId === null && !pendingQuery) {
+      setActiveSessionId(sessions[0].id);
+    }
+  }, [loadingSessions, sessions, activeSessionId, pendingQuery]);
 
   const handleSessionCreated = useCallback(
     (sessionId: string) => {
       setActiveSessionId(sessionId);
+      setIsNewChat(false);
       fetchSessions();
     },
     [fetchSessions],
   );
 
+  const [isNewChat, setIsNewChat] = useState(false);
+
   const handleNewChat = useCallback(() => {
     setActiveSessionId(null);
+    setIsNewChat(true);
   }, []);
 
   const handleSelectSession = useCallback((sessionId: string) => {
     setActiveSessionId(sessionId);
+    setIsNewChat(false);
   }, []);
 
   if (loading) {
@@ -97,6 +112,7 @@ export default function ChatPage() {
         activeSessionId={activeSessionId}
         onSessionCreated={handleSessionCreated}
         initialQuery={pendingQuery}
+        isNewChat={isNewChat}
       />
     </div>
   );
