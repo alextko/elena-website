@@ -1,36 +1,12 @@
 "use client";
 
 import * as React from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, Stethoscope, Calendar, CreditCard, LogOut, ChevronRight } from "lucide-react";
-
-// Mock data — will be fetched from API later
-const MOCK_USER = {
-  name: "Alex Reinhart",
-  email: "alex@example.com",
-  initials: "AR",
-  hasAppAccount: true,
-  credits: 5,
-};
-
-const MOCK_DOCUMENTS = [
-  { id: "1", title: "After Visit Summary - Dec 2024", type: "medical_record", date: "2024-12-19" },
-  { id: "2", title: "Byrd EOB Office Visit", type: "eob", date: "2026-02-19" },
-  { id: "3", title: "HPP ODED 1500 SoB", type: "bill", date: "2026-03-22" },
-];
-
-const MOCK_PROVIDERS = [
-  { name: "Dr. Justine Kramer", specialty: "Orthopedics", practice: "NYC Ortho" },
-  { name: "Dr. Anthony Bittar", specialty: "Primary Care", practice: "City Health Partners" },
-  { name: "Dr. Sarah Chen", specialty: "Dentist", practice: "Bright Smile Dental" },
-];
-
-const MOCK_VISITS = [
-  { type: "Primary Care", doctor: "Dr. Anthony Bittar", date: "Apr 2, 2026" },
-  { type: "Orthopedics", doctor: "Dr. Justine Kramer", date: "Apr 30, 2026" },
-];
+import { Stethoscope, Calendar, CreditCard, LogOut, ChevronRight } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { useRouter } from "next/navigation";
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
@@ -41,67 +17,94 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
 }
 
 export function ProfilePopover({ children }: { children: React.ReactNode }) {
-  const user = MOCK_USER;
+  const {
+    user,
+    profileId,
+    profileData,
+    doctors,
+    appointments,
+    credits,
+    profileDetailsLoaded,
+    fetchProfileDetails,
+    signOut,
+  } = useAuth();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+
+  // Fetch profile details lazily on first open — cached in auth context
+  useEffect(() => {
+    if (open && !profileDetailsLoaded) {
+      fetchProfileDetails();
+    }
+  }, [open, profileDetailsLoaded, fetchProfileDetails]);
+
+  const displayName =
+    profileData?.firstName && profileData?.lastName
+      ? `${profileData.firstName} ${profileData.lastName}`
+      : user?.email?.split("@")[0] || "User";
+  const initials = profileData?.firstName
+    ? `${profileData.firstName[0]}${profileData.lastName?.[0] || ""}`.toUpperCase()
+    : (user?.email?.[0] || "U").toUpperCase();
+  const email = user?.email || "";
+  const hasProfile = !!profileId;
+
+  // Dedupe
+  const uniqueAppointments = appointments.filter(
+    (v, i, arr) => arr.findIndex((a) => a.booking_id === v.booking_id) === i,
+  );
+  const uniqueDoctors = doctors.filter(
+    (d, i, arr) => arr.findIndex((x) => x.name === d.name && x.specialty === d.specialty) === i,
+  );
+
+  async function handleSignOut() {
+    await signOut();
+    router.push("/");
+  }
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={children as React.ReactElement}></DialogTrigger>
       <DialogContent
         showCloseButton
         className="w-full max-w-md rounded-2xl border-[#0F1B3D]/[0.08] bg-[#f5f7fb] p-0 shadow-xl"
       >
-        <ScrollArea className="max-h-[80vh]">
+        <div className="max-h-[80vh] overflow-y-auto">
           <div className="p-6">
             {/* User header */}
             <div className="flex items-center gap-4 pb-4">
               <Avatar className="h-12 w-12">
                 <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-base font-semibold text-[#0F1B3D]/50">
-                  {user.initials}
+                  {initials}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <p className="text-base font-bold text-[#0F1B3D]">{user.name}</p>
-                <p className="truncate text-sm text-[#0F1B3D]/40">{user.email}</p>
+                <p className="text-base font-bold text-[#0F1B3D]">{displayName}</p>
+                <p className="truncate text-sm text-[#0F1B3D]/40">{email}</p>
               </div>
             </div>
 
             <div className="h-px bg-[#0F1B3D]/[0.06]" />
 
-            {/* Documents */}
-            <SectionHeader>Documents</SectionHeader>
-            <div className="space-y-1">
-              {MOCK_DOCUMENTS.map((doc) => (
-                <button
-                  key={doc.id}
-                  className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-[#0F1B3D]/[0.04]"
-                >
-                  <FileText className="h-4 w-4 flex-shrink-0 text-[#0F1B3D]/30" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-[#0F1B3D]/70">{doc.title}</p>
-                  </div>
-                  <span className="text-xs text-[#0F1B3D]/25">{doc.date}</span>
-                </button>
-              ))}
-              <button className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-[#0F1B3D]/40 transition-colors hover:text-[#0F1B3D]/60">
-                Upload document
-              </button>
-            </div>
-
-            {/* Providers — only for app users */}
-            {user.hasAppAccount && (
+            {/* Providers */}
+            {hasProfile && (
               <>
-                <div className="mt-2 h-px bg-[#0F1B3D]/[0.06]" />
                 <SectionHeader>Your Providers</SectionHeader>
                 <div className="space-y-1">
-                  {MOCK_PROVIDERS.map((provider) => (
+                  {uniqueDoctors.length === 0 && profileDetailsLoaded && (
+                    <p className="px-2 py-2 text-sm text-[#0F1B3D]/30">No providers added yet</p>
+                  )}
+                  {uniqueDoctors.map((provider, i) => (
                     <div
-                      key={provider.name}
+                      key={provider.id || i}
                       className="flex items-center gap-3 rounded-lg px-2 py-2"
                     >
                       <Stethoscope className="h-4 w-4 flex-shrink-0 text-[#0F1B3D]/30" />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm text-[#0F1B3D]/70">{provider.name}</p>
-                        <p className="truncate text-xs text-[#0F1B3D]/30">{provider.specialty} · {provider.practice}</p>
+                        <p className="truncate text-xs text-[#0F1B3D]/30">
+                          {provider.specialty}
+                          {provider.practice_name ? ` · ${provider.practice_name}` : ""}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -109,21 +112,26 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
               </>
             )}
 
-            {/* Upcoming visits — only for app users */}
-            {user.hasAppAccount && MOCK_VISITS.length > 0 && (
+            {/* Upcoming appointments */}
+            {hasProfile && uniqueAppointments.length > 0 && (
               <>
                 <div className="mt-2 h-px bg-[#0F1B3D]/[0.06]" />
                 <SectionHeader>Upcoming Visits</SectionHeader>
                 <div className="space-y-1">
-                  {MOCK_VISITS.map((visit, i) => (
+                  {uniqueAppointments.map((visit) => (
                     <div
-                      key={i}
+                      key={visit.booking_id}
                       className="flex items-center gap-3 rounded-lg px-2 py-2"
                     >
                       <Calendar className="h-4 w-4 flex-shrink-0 text-[#0F1B3D]/30" />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm text-[#0F1B3D]/70">{visit.type} — {visit.doctor}</p>
-                        <p className="text-xs text-[#0F1B3D]/30">{visit.date}</p>
+                        <p className="truncate text-sm text-[#0F1B3D]/70">
+                          {visit.provider_specialty || "Visit"} — {visit.provider_name}
+                        </p>
+                        <p className="text-xs text-[#0F1B3D]/30">
+                          {visit.confirmed_date}
+                          {visit.confirmed_time ? ` at ${visit.confirmed_time}` : ""}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -137,7 +145,9 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
             <div className="flex items-center justify-between py-4">
               <div className="flex items-center gap-2">
                 <CreditCard className="h-4 w-4 text-[#0F1B3D]/30" />
-                <span className="text-sm text-[#0F1B3D]/50">{user.credits} credits</span>
+                <span className="text-sm text-[#0F1B3D]/50">
+                  {credits !== null ? `${credits} credits` : "Loading..."}
+                </span>
               </div>
               <button className="flex items-center gap-0.5 text-sm font-semibold text-[#0F1B3D]/60 transition-colors hover:text-[#0F1B3D]">
                 Upgrade
@@ -148,12 +158,15 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
             <div className="h-px bg-[#0F1B3D]/[0.06]" />
 
             {/* Sign out */}
-            <button className="flex w-full items-center gap-2 py-4 text-sm text-[#0F1B3D]/40 transition-colors hover:text-[#0F1B3D]/60">
+            <button
+              onClick={handleSignOut}
+              className="flex w-full items-center gap-2 py-4 text-sm text-[#0F1B3D]/40 transition-colors hover:text-[#0F1B3D]/60"
+            >
               <LogOut className="h-4 w-4" />
               Sign out
             </button>
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
