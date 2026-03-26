@@ -6,6 +6,7 @@ import { PanelLeft, Plus, ArrowUp, Paperclip, X } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
 import { usePollChat } from "@/hooks/usePollChat";
 import { useBookingPoll } from "@/hooks/useBookingPoll";
+import { UpgradeModal } from "@/components/upgrade-modal";
 import {
   DoctorResultsCard,
   LocationResultsCard,
@@ -125,6 +126,8 @@ export function ChatArea({
 
   const [pendingFiles, setPendingFiles] = useState<{ file: File; key: string }[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<"document_limit" | "credits_exhausted">("document_limit");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -314,6 +317,13 @@ export function ChatArea({
           method: "POST",
           body: JSON.stringify({ session_id: sid, filename: file.name }),
         });
+        // Handle document limit (402)
+        if (urlRes.status === 402) {
+          setUpgradeReason("document_limit");
+          setUpgradeOpen(true);
+          setUploading(false);
+          return;
+        }
         if (!urlRes.ok) continue;
         const { upload_url, key, content_type, required_headers } = await urlRes.json();
         const headers: Record<string, string> = { "Content-Type": content_type, ...required_headers };
@@ -425,6 +435,14 @@ export function ChatArea({
         },
         // onError
         (error) => {
+          // Check if this is a credit exhaustion error — show upgrade modal
+          if (error.includes("credits") || error.includes("Upgrade")) {
+            setUpgradeReason("credits_exhausted");
+            setUpgradeOpen(true);
+            setToolLabel(null);
+            setIsLoading(false);
+            return;
+          }
           const errorId = nextId();
           setMessages((prev) => [
             ...prev,
@@ -452,6 +470,7 @@ export function ChatArea({
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => e.preventDefault()}
     >
+      <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} reason={upgradeReason} />
       {/* Grain texture overlay */}
       <div
         className="pointer-events-none absolute inset-0 z-0 opacity-[0.08] mix-blend-overlay"

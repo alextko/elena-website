@@ -29,6 +29,7 @@ interface AuthContextValue {
   insuranceCards: InsuranceCard[];
   profileDetailsLoaded: boolean;
   fetchProfileDetails: () => Promise<void>;
+  refreshSubscription: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<{ error: string | null }>;
@@ -173,6 +174,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfileDetailsLoaded(true);
   }, [profileId, profileDetailsLoaded]);
 
+  // Refresh just subscription/credits — used after Stripe checkout redirect
+  const refreshSubscription = useCallback(async () => {
+    try {
+      const res = await apiFetch("/web/subscription");
+      if (!res.ok) return;
+      const data: SubscriptionResponse = await res.json();
+      setCredits(data.credits_remaining);
+      setSubscription(data);
+    } catch {
+      // Network error — ignore
+    }
+  }, []);
+
   useEffect(() => {
     // Restore session from localStorage
     supabase.auth.getSession().then(({ data: { session: s } }) => {
@@ -280,6 +294,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         insuranceCards,
         profileDetailsLoaded,
         fetchProfileDetails,
+        refreshSubscription,
         updateProfilePicture,
         signIn,
         signUp,

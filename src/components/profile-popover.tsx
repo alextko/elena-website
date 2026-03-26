@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useState, useEffect, useRef } from "react";
+import { UpgradeModal } from "@/components/upgrade-modal";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -116,6 +117,7 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
   } = useAuth();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("health");
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -195,6 +197,8 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
   }
 
   return (
+    <>
+    <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} />
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={children as React.ReactElement}></DialogTrigger>
       <DialogContent
@@ -299,7 +303,10 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
                 </div>
 
                 {/* Credits summary */}
-                <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
+                <div
+                  className={`rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden ${subscription?.plan !== "pro" ? "cursor-pointer hover:bg-[#F7F6F2] transition-colors" : ""}`}
+                  onClick={subscription?.plan !== "pro" ? () => { setOpen(false); setUpgradeOpen(true); } : undefined}
+                >
                   <div className="flex items-center gap-3 px-3.5 py-3.5">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7F6F2]">
                       <Sparkles className="h-[18px] w-[18px] text-[#0F1B3D]" />
@@ -312,7 +319,9 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
                         {subscription?.plan || "Free"} plan
                       </p>
                     </div>
-                    <ChevronRight className="h-[18px] w-[18px] text-[#0F1B3D] shrink-0" />
+                    {subscription?.plan !== "pro" && (
+                      <ChevronRight className="h-[18px] w-[18px] text-[#0F1B3D] shrink-0" />
+                    )}
                   </div>
                 </div>
               </div>
@@ -531,6 +540,7 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
 
