@@ -31,9 +31,9 @@ const PLANS = {
     annualMonthly: 15.0,
     features: [
       { icon: Phone, text: "5 calls per month" },
-      { icon: FileText, text: "Unlimited documents & bills" },
-      { icon: Zap, text: "All searches & cost estimates" },
-      { icon: Shield, text: "Appeal letters & negotiation scripts" },
+      { icon: FileText, text: "Unlimited document uploads" },
+      { icon: Zap, text: "Unlimited bill analysis" },
+      { icon: Shield, text: "All searches free forever" },
     ],
   },
   premium: {
