@@ -25,11 +25,17 @@ import type {
   NegotiationResult,
 } from "@/lib/types";
 
+type Attachment = {
+  name: string;
+  key: string;
+};
+
 type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
   isStreaming?: boolean;
+  attachments?: Attachment[];
   doctorResults?: DoctorResult[] | null;
   locationResults?: LocationResult[] | null;
   reviewResults?: ReviewResult | null;
@@ -112,6 +118,7 @@ export function ChatArea({
   const [pendingFiles, setPendingFiles] = useState<{ file: File; key: string }[]>([]);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const sessionIdRef = useRef<string | null>(activeSessionId);
   const hasCreatedSessionRef = useRef(false);
@@ -250,19 +257,29 @@ export function ChatArea({
       if (!message || isLoading) return;
 
       setInput("");
+      if (textareaRef.current) textareaRef.current.style.height = "auto";
       setSuggestions([]);
       setToolLabel(null);
 
-      // Optimistic user message
+      // Collect document keys from pending uploads before clearing
+      const sentFiles = pendingFiles.map((f) => ({ name: f.file.name, key: f.key }));
+      const docKeys = pendingFiles.map((f) => f.key);
+      setPendingFiles([]);
+
+      // Optimistic user message (with inline attachment indicators)
       const userMsgId = nextId();
-      setMessages((prev) => [...prev, { id: userMsgId, role: "user", content: message }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: userMsgId,
+          role: "user",
+          content: message,
+          attachments: sentFiles.length > 0 ? sentFiles : undefined,
+        },
+      ]);
       setChatTitle((prev) => prev || message.slice(0, 60));
 
       setIsLoading(true);
-
-      // Collect document keys from pending uploads
-      const docKeys = pendingFiles.map((f) => f.key);
-      setPendingFiles([]);
 
       const result = await sendAndPoll(
         {
@@ -377,6 +394,19 @@ export function ChatArea({
             msg.role === "user" ? (
               <div key={msg.id} className="flex justify-end animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-[#e8ecf4] px-5 py-3">
+                  {msg.attachments && msg.attachments.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {msg.attachments.map((att) => (
+                        <span
+                          key={att.key}
+                          className="inline-flex items-center gap-1 rounded-lg bg-[#0F1B3D]/[0.06] px-2.5 py-1 text-xs text-[#0F1B3D]/60"
+                        >
+                          <Paperclip className="h-3 w-3" />
+                          <span className="max-w-[140px] truncate">{att.name}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   <p className="text-[0.9rem] leading-relaxed text-[#0F1B3D]">{msg.content}</p>
                 </div>
               </div>
@@ -473,7 +503,7 @@ export function ChatArea({
             ))}
           </div>
         )}
-        <div className="flex items-center gap-2 rounded-[28px] border border-[#E5E5EA] bg-white px-2 py-1.5 shadow-[0_1px_4px_rgba(0,0,0,0.06)] transition-all focus-within:shadow-[0_2px_8px_rgba(0,0,0,0.1)] focus-within:border-[#AEAEB2]">
+        <div className="flex items-end gap-2 rounded-[28px] border border-[#E5E5EA] bg-white px-2 py-1.5 shadow-[0_1px_4px_rgba(0,0,0,0.06)] transition-all focus-within:shadow-[0_2px_8px_rgba(0,0,0,0.1)] focus-within:border-[#AEAEB2]">
           <input
             ref={fileInputRef}
             type="file"
@@ -484,7 +514,7 @@ export function ChatArea({
           />
           <button
             type="button"
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[#AEAEB2] hover:text-[#0F1B3D] hover:bg-[#0F1B3D]/[0.04] transition-colors disabled:opacity-50"
+            className="flex h-8 w-8 mb-0.5 flex-shrink-0 items-center justify-center rounded-full text-[#AEAEB2] hover:text-[#0F1B3D] hover:bg-[#0F1B3D]/[0.04] transition-colors disabled:opacity-50"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
           >
@@ -494,11 +524,19 @@ export function ChatArea({
               <Plus className="h-4 w-4" />
             )}
           </button>
-          <input
-            className="flex-1 bg-transparent text-sm text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] py-2"
+          <textarea
+            ref={textareaRef}
+            className="flex-1 resize-none bg-transparent text-sm leading-normal text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] py-2 max-h-32 overflow-y-auto"
             placeholder="Ask Elena anything..."
+            rows={1}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              // Auto-resize: reset height then set to scrollHeight
+              const el = e.target;
+              el.style.height = "auto";
+              el.style.height = `${el.scrollHeight}px`;
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -508,7 +546,7 @@ export function ChatArea({
           />
           <Button
             size="icon"
-            className="h-[34px] w-[34px] flex-shrink-0 rounded-full bg-[#0F1B3D] hover:bg-[#0F1B3D]/90 disabled:opacity-40"
+            className="h-[34px] w-[34px] mb-0.5 flex-shrink-0 rounded-full bg-[#0F1B3D] hover:bg-[#0F1B3D]/90 disabled:opacity-40"
             onClick={() => handleSend()}
             disabled={isLoading || (!input.trim() && pendingFiles.length === 0)}
           >

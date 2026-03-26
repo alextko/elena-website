@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/apiFetch";
@@ -15,6 +15,7 @@ export default function ChatPage() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<ChatSessionItem[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
+  const sessionsFetchedRef = useRef(false);
 
   useEffect(() => {
     if (!loading && !session) {
@@ -38,12 +39,13 @@ export default function ChatPage() {
     setLoadingSessions(false);
   }, []);
 
+  // Fetch sessions once when authenticated — not on every token refresh
   useEffect(() => {
-    if (!loading && session) {
+    if (!loading && session && !sessionsFetchedRef.current) {
+      sessionsFetchedRef.current = true;
       fetchSessions();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, session]);
+  }, [loading, session, fetchSessions]);
 
   const handleSessionCreated = useCallback(
     (sessionId: string) => {

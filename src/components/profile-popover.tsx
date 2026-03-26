@@ -4,12 +4,9 @@ import * as React from "react";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, Stethoscope, Calendar, CreditCard, LogOut, ChevronRight } from "lucide-react";
+import { Stethoscope, Calendar, CreditCard, LogOut, ChevronRight } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { apiFetch } from "@/lib/apiFetch";
 import { useRouter } from "next/navigation";
-import type { DoctorItem, AppointmentItem, SubscriptionResponse } from "@/lib/types";
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
@@ -20,62 +17,26 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
 }
 
 export function ProfilePopover({ children }: { children: React.ReactNode }) {
-  const { user, profileId, profileData, signOut } = useAuth();
+  const {
+    user,
+    profileId,
+    profileData,
+    doctors,
+    appointments,
+    credits,
+    profileDetailsLoaded,
+    fetchProfileDetails,
+    signOut,
+  } = useAuth();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [doctors, setDoctors] = useState<DoctorItem[]>([]);
-  const [appointments, setAppointments] = useState<AppointmentItem[]>([]);
-  const [credits, setCredits] = useState<number | null>(null);
-  const [loaded, setLoaded] = useState(false);
 
-  // Fetch profile data when popover opens
+  // Fetch profile details lazily on first open — cached in auth context
   useEffect(() => {
-    if (!open || loaded) return;
-
-    const fetchData = async () => {
-      const promises: Promise<void>[] = [];
-
-      // Fetch doctors (requires profileId)
-      if (profileId) {
-        promises.push(
-          apiFetch(`/profile/${profileId}/doctors`)
-            .then(async (res) => {
-              if (!res.ok) return;
-              const data = await res.json();
-              setDoctors(data.doctors || []);
-            })
-            .catch(() => {}),
-        );
-
-        // Fetch appointments
-        promises.push(
-          apiFetch("/appointments")
-            .then(async (res) => {
-              if (!res.ok) return;
-              const data: AppointmentItem[] = await res.json();
-              setAppointments(data);
-            })
-            .catch(() => {}),
-        );
-      }
-
-      // Fetch subscription/credits
-      promises.push(
-        apiFetch("/web/subscription")
-          .then(async (res) => {
-            if (!res.ok) return;
-            const data: SubscriptionResponse = await res.json();
-            setCredits(data.credits_remaining);
-          })
-          .catch(() => {}),
-      );
-
-      await Promise.all(promises);
-      setLoaded(true);
-    };
-
-    fetchData();
-  }, [open, loaded, profileId]);
+    if (open && !profileDetailsLoaded) {
+      fetchProfileDetails();
+    }
+  }, [open, profileDetailsLoaded, fetchProfileDetails]);
 
   const displayName =
     profileData?.firstName && profileData?.lastName
@@ -86,6 +47,14 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
     : (user?.email?.[0] || "U").toUpperCase();
   const email = user?.email || "";
   const hasProfile = !!profileId;
+
+  // Dedupe
+  const uniqueAppointments = appointments.filter(
+    (v, i, arr) => arr.findIndex((a) => a.booking_id === v.booking_id) === i,
+  );
+  const uniqueDoctors = doctors.filter(
+    (d, i, arr) => arr.findIndex((x) => x.name === d.name && x.specialty === d.specialty) === i,
+  );
 
   async function handleSignOut() {
     await signOut();
@@ -99,7 +68,7 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
         showCloseButton
         className="w-full max-w-md rounded-2xl border-[#0F1B3D]/[0.08] bg-[#f5f7fb] p-0 shadow-xl"
       >
-        <ScrollArea className="max-h-[80vh]">
+        <div className="max-h-[80vh] overflow-y-auto">
           <div className="p-6">
             {/* User header */}
             <div className="flex items-center gap-4 pb-4">
@@ -116,15 +85,15 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
 
             <div className="h-px bg-[#0F1B3D]/[0.06]" />
 
-            {/* Providers — only if user has a profile (completed onboarding) */}
+            {/* Providers */}
             {hasProfile && (
               <>
                 <SectionHeader>Your Providers</SectionHeader>
                 <div className="space-y-1">
-                  {doctors.length === 0 && loaded && (
+                  {uniqueDoctors.length === 0 && profileDetailsLoaded && (
                     <p className="px-2 py-2 text-sm text-[#0F1B3D]/30">No providers added yet</p>
                   )}
-                  {doctors.map((provider, i) => (
+                  {uniqueDoctors.map((provider, i) => (
                     <div
                       key={provider.id || i}
                       className="flex items-center gap-3 rounded-lg px-2 py-2"
@@ -143,13 +112,13 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
               </>
             )}
 
-            {/* Upcoming appointments — only if user has a profile */}
-            {hasProfile && appointments.length > 0 && (
+            {/* Upcoming appointments */}
+            {hasProfile && uniqueAppointments.length > 0 && (
               <>
                 <div className="mt-2 h-px bg-[#0F1B3D]/[0.06]" />
                 <SectionHeader>Upcoming Visits</SectionHeader>
                 <div className="space-y-1">
-                  {appointments.map((visit) => (
+                  {uniqueAppointments.map((visit) => (
                     <div
                       key={visit.booking_id}
                       className="flex items-center gap-3 rounded-lg px-2 py-2"
@@ -197,7 +166,7 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
               Sign out
             </button>
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
