@@ -99,11 +99,13 @@ export function ChatArea({
   onToggleSidebar,
   activeSessionId,
   onSessionCreated,
+  initialQuery,
 }: {
   onToggleSidebar: () => void;
   sidebarOpen: boolean;
   activeSessionId: string | null;
   onSessionCreated: (id: string) => void;
+  initialQuery?: string | null;
 }) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -122,6 +124,7 @@ export function ChatArea({
 
   const sessionIdRef = useRef<string | null>(activeSessionId);
   const hasCreatedSessionRef = useRef(false);
+  const initialQuerySentRef = useRef(false);
   const scrollEndRef = useRef<HTMLDivElement>(null);
   const { sendAndPoll, cancel } = usePollChat();
   const msgIdCounter = useRef(0);
@@ -211,6 +214,22 @@ export function ChatArea({
       setSuggestions(["What can you help me with?", "Find a cheaper pharmacy", "Help with my insurance"]);
     }
   }
+
+  // Auto-send initial query from landing page after welcome loads
+  const handleSendRef = useRef<(text?: string) => Promise<void>>(undefined);
+
+  useEffect(() => {
+    if (
+      initialQuery &&
+      !initialQuerySentRef.current &&
+      sessionIdRef.current &&
+      handleSendRef.current
+    ) {
+      initialQuerySentRef.current = true;
+      localStorage.removeItem("elena_pending_query");
+      handleSendRef.current(initialQuery);
+    }
+  }, [initialQuery, welcomeMessage]);
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
@@ -347,6 +366,9 @@ export function ChatArea({
     },
     [input, isLoading, sendAndPoll, onSessionCreated, welcomeMessage, pendingFiles],
   );
+
+  // Keep ref in sync for auto-send effect
+  handleSendRef.current = handleSend;
 
   return (
     <div className="relative flex flex-1 flex-col min-w-0 h-dvh overflow-hidden bg-white">

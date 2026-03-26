@@ -1,0 +1,61 @@
+/* ========== KEYFRAMES ========== */
+@keyframes carousel-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes gentle-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+
+@keyframes trusted-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ========== NOISE TEXTURE ========== */
+.noise-texture::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.12;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* ========== FADE IN ========== */
+.fade-in {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ========== CAROUSEL ========== */
+.carousel-scroll {
+  animation: carousel-scroll 30s linear infinite;
+}
+
+.carousel-scroll:hover {
+  animation-play-state: paused;
+}
+
+/* ========== FEATURE CARD BACKGROUNDS ========== */
+.feature-card-bg {
+  background-size: cover;
+  background-position: center;
+}
+
+.img-couch    { background-image: url('/images/feature-couch.jpg'); }
+.img-meds     { background-image: url('/images/feature-meds.jpg'); }
+.img-phone    { background-image: url('/images/feature-phone.jpg'); }
+.img-family   { background-image: url('/images/feature-family.jpg'); }
+.img-hugging  { background-image: url('/images/feature-hugging.jpg'); }
+.img-meditate { background-image: url('/images/feature-meditate.jpg'); }

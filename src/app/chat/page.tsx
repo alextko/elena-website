@@ -15,11 +15,18 @@ export default function ChatPage() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<ChatSessionItem[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
+  const [pendingQuery, setPendingQuery] = useState<string | null>(null);
   const sessionsFetchedRef = useRef(false);
+
+  // Read pending query from landing page (set before auth redirect)
+  useEffect(() => {
+    const q = localStorage.getItem("elena_pending_query");
+    if (q) setPendingQuery(q);
+  }, []);
 
   useEffect(() => {
     if (!loading && !session) {
-      router.replace("/login");
+      router.replace("/");
     }
   }, [loading, session, router]);
 
@@ -89,6 +96,7 @@ export default function ChatPage() {
         sidebarOpen={sidebarOpen}
         activeSessionId={activeSessionId}
         onSessionCreated={handleSessionCreated}
+        initialQuery={pendingQuery}
       />
     </div>
   );
