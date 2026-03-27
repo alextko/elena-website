@@ -425,6 +425,12 @@ export function ChatArea({
           setToolLabel(null);
           setIsLoading(false);
 
+          // Show upgrade popup if a gated tool was blocked
+          if (chatResult.error_code === "upgrade_required") {
+            setUpgradeReason("upgrade_required");
+            setUpgradeOpen(true);
+          }
+
           // Update session ref
           if (chatResult.session_id) {
             sessionIdRef.current = chatResult.session_id;
