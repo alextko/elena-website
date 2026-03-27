@@ -128,7 +128,7 @@ export function ProfilePopover({
 }) {
   const {
     user, profileId, profileData, doctors, careVisits,
-    credits, subscription, insuranceCards, todos,
+    subscription, insuranceCards, todos,
     toggleTodo, createTodo, updateTodo, deleteTodo,
     profileDetailsLoaded, fetchProfileDetails, updateProfilePicture, signOut,
   } = useAuth();

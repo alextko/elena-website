@@ -24,7 +24,6 @@ interface AuthContextValue {
   // Cached profile popover data
   doctors: DoctorItem[];
   careVisits: CareVisit[];
-  credits: number | null;
   subscription: SubscriptionResponse | null;
   insuranceCards: InsuranceCard[];
   todos: CareTodo[];
@@ -65,7 +64,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Cached profile popover data — persists across sidebar toggles
   const [doctors, setDoctors] = useState<DoctorItem[]>([]);
   const [careVisits, setCareVisits] = useState<CareVisit[]>([]);
-  const [credits, setCredits] = useState<number | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null);
   const [insuranceCards, setInsuranceCards] = useState<InsuranceCard[]>([]);
   const [todos, setTodos] = useState<CareTodo[]>([]);
@@ -180,7 +178,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .then(async (res) => {
           if (!res.ok) return;
           const data: SubscriptionResponse = await res.json();
-          setCredits(data.credits_remaining);
           setSubscription(data);
         })
         .catch(() => {}),
@@ -196,7 +193,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiFetch("/web/subscription");
       if (!res.ok) return;
       const data: SubscriptionResponse = await res.json();
-      setCredits(data.credits_remaining);
       setSubscription(data);
     } catch {
       // Network error — ignore
@@ -227,7 +223,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfileData(null);
         setDoctors([]);
         setCareVisits([]);
-        setCredits(null);
         setSubscription(null);
         setInsuranceCards([]);
         setTodos([]);
@@ -352,7 +347,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfileData(null);
     setDoctors([]);
     setCareVisits([]);
-    setCredits(null);
     setSubscription(null);
     setInsuranceCards([]);
     setTodos([]);
@@ -370,7 +364,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profileData,
         doctors,
         careVisits,
-        credits,
         subscription,
         insuranceCards,
         todos,

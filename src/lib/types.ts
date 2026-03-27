@@ -28,7 +28,6 @@ export interface ChatResponse {
   location_results?: LocationResult[] | null;
   profile_updates?: Record<string, string> | null;
   error_code?: string | null;
-  credits_remaining?: number | null;
   upgrade_url?: string | null;
 }
 
@@ -93,7 +92,6 @@ export interface SubscriptionResponse {
   plan: string;
   tier: string;  // free / standard / premium
   status: string;
-  credits_remaining: number;
   current_period_end?: string | null;
   cancel_at_period_end: boolean;
 }

@@ -72,12 +72,14 @@ export function Sidebar({
   activeSessionId,
   onSelectSession,
   onNewChat,
+  onBookMessage,
   sessions,
   loadingSessions,
 }: {
   activeSessionId: string | null;
   onSelectSession: (id: string) => void;
   onNewChat: () => void;
+  onBookMessage?: (msg: string) => void;
   sessions: ChatSessionItem[];
   loadingSessions: boolean;
 }) {
