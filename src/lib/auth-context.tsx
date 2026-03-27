@@ -12,7 +12,7 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/apiFetch";
-import type { MeResponse, DoctorItem, CareVisit, SubscriptionResponse, InsuranceCard } from "@/lib/types";
+import type { MeResponse, DoctorItem, CareVisit, CareTodo, CareTodoCreate, SubscriptionResponse, InsuranceCard } from "@/lib/types";
 
 interface AuthContextValue {
   session: Session | null;
@@ -27,6 +27,11 @@ interface AuthContextValue {
   credits: number | null;
   subscription: SubscriptionResponse | null;
   insuranceCards: InsuranceCard[];
+  todos: CareTodo[];
+  toggleTodo: (id: string) => Promise<void>;
+  createTodo: (data: CareTodoCreate) => Promise<CareTodo | null>;
+  updateTodo: (id: string, data: Partial<CareTodoCreate> & { status?: string }) => Promise<void>;
+  deleteTodo: (id: string) => Promise<void>;
   profileDetailsLoaded: boolean;
   fetchProfileDetails: () => Promise<void>;
   refreshSubscription: () => Promise<void>;
@@ -63,6 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [credits, setCredits] = useState<number | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null);
   const [insuranceCards, setInsuranceCards] = useState<InsuranceCard[]>([]);
+  const [todos, setTodos] = useState<CareTodo[]>([]);
   const [profileDetailsLoaded, setProfileDetailsLoaded] = useState(false);
 
   const profileFetchedRef = useRef(false);
@@ -123,6 +129,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (!res.ok) return;
             const data: CareVisit[] = await res.json();
             setCareVisits(data);
+          })
+          .catch(() => {}),
+      );
+
+      promises.push(
+        apiFetch("/todos")
+          .then(async (res) => {
+            if (!res.ok) return;
+            const data: CareTodo[] = await res.json();
+            setTodos(data);
           })
           .catch(() => {}),
       );
@@ -214,6 +230,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCredits(null);
         setSubscription(null);
         setInsuranceCards([]);
+        setTodos([]);
         setProfileDetailsLoaded(false);
         profileFetchedRef.current = false;
       }
@@ -227,6 +244,69 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfileData((prev) =>
       prev ? { ...prev, profilePictureUrl: url } : prev,
     );
+  }, []);
+
+  const toggleTodo = useCallback(async (id: string) => {
+    setTodos((prev) =>
+      prev.map((t) =>
+        t.id === id
+          ? { ...t, status: t.status === "completed" ? "pending" : "completed" }
+          : t,
+      ) as CareTodo[],
+    );
+    const todo = todos.find((t) => t.id === id);
+    const newStatus = todo?.status === "completed" ? "pending" : "completed";
+    try {
+      await apiFetch(`/todos/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({ status: newStatus }),
+      });
+    } catch {
+      // Revert on failure
+      setTodos((prev) =>
+        prev.map((t) =>
+          t.id === id ? { ...t, status: todo?.status || "pending" } : t,
+        ) as CareTodo[],
+      );
+    }
+  }, [todos]);
+
+  const createTodo = useCallback(async (data: CareTodoCreate): Promise<CareTodo | null> => {
+    try {
+      const res = await apiFetch("/todos", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) return null;
+      const created: CareTodo = await res.json();
+      setTodos((prev) => [...prev, created]);
+      return created;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const updateTodo = useCallback(async (id: string, data: Partial<CareTodoCreate> & { status?: string }) => {
+    try {
+      const res = await apiFetch(`/todos/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) return;
+      const updated: CareTodo = await res.json();
+      setTodos((prev) => prev.map((t) => (t.id === id ? updated : t)));
+    } catch {
+      // silent
+    }
+  }, []);
+
+  const deleteTodo = useCallback(async (id: string) => {
+    setTodos((prev) => prev.filter((t) => t.id !== id));
+    try {
+      await apiFetch(`/todos/${id}`, { method: "DELETE" });
+    } catch {
+      // Already removed from UI
+    }
   }, []);
 
   const signIn = useCallback(
@@ -275,6 +355,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCredits(null);
     setSubscription(null);
     setInsuranceCards([]);
+    setTodos([]);
     setProfileDetailsLoaded(false);
     profileFetchedRef.current = false;
   }, []);
@@ -292,6 +373,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         credits,
         subscription,
         insuranceCards,
+        todos,
+        toggleTodo,
+        createTodo,
+        updateTodo,
+        deleteTodo,
         profileDetailsLoaded,
         fetchProfileDetails,
         refreshSubscription,

@@ -173,27 +173,39 @@ export function UpgradeModal({
                 <div className="flex items-baseline justify-between mb-3">
                   <p className="text-[15px] font-bold text-[#0F1B3D]">{plan.name}</p>
                   <div className="flex items-baseline gap-1">
-                    <AnimatePresence mode="popLayout">
-                      <motion.span
-                        key={`${tier}-${billing}`}
-                        initial={{ opacity: 0, y: 8, filter: "blur(4px)" }}
-                        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                        exit={{ opacity: 0, y: -8, filter: "blur(4px)" }}
-                        transition={{ duration: 0.25 }}
-                        className="text-2xl font-bold text-[#0F1B3D]"
-                      >
-                        ${price}
-                      </motion.span>
-                    </AnimatePresence>
+                    <span className="relative text-2xl font-bold text-[#0F1B3D] w-[85px] text-right inline-block">
+                      <AnimatePresence mode="wait">
+                        <motion.span
+                          key={`${tier}-${billing}`}
+                          initial={{ opacity: 0, y: 6, filter: "blur(3px)" }}
+                          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                          exit={{ opacity: 0, y: -6, filter: "blur(3px)" }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute right-0"
+                        >
+                          ${price}
+                        </motion.span>
+                      </AnimatePresence>
+                    </span>
                     <span className="text-sm text-[#8E8E93]">/mo</span>
                   </div>
                 </div>
 
-                {billing === "annual" && (
-                  <p className="text-[11px] text-[#8E8E93] mb-2">
-                    Billed as ${plan.annual}/year
-                  </p>
-                )}
+                <p className="text-[11px] text-[#8E8E93] mb-2 h-4">
+                  <AnimatePresence mode="wait">
+                    {billing === "annual" && (
+                      <motion.span
+                        key="annual-label"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        Billed as ${plan.annual}/year
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </p>
 
                 <ul className="space-y-1.5 mb-3">
                   {plan.features.map((f) => (

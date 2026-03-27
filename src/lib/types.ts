@@ -261,6 +261,38 @@ export interface BookingResultPayload {
   apple_calendar_url?: string | null;
 }
 
+// --- Care Todos / Game Plan (api_todos.py) ---
+
+export interface CareTodo {
+  id: string;
+  profile_id: string;
+  title: string;
+  subtitle: string;
+  color: string;
+  book_message: string;
+  status: "pending" | "completed" | "dismissed";
+  category: string;
+  frequency: "once" | "daily" | "weekly" | "monthly";
+  recurrence_interval: number;
+  due_date?: string | null;
+  due_time?: string | null;
+  sort_order: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CareTodoCreate {
+  title: string;
+  subtitle?: string;
+  color?: string;
+  frequency?: string;
+  recurrence_interval?: number;
+  due_date?: string | null;
+  due_time?: string | null;
+  book_message?: string;
+  category?: string;
+}
+
 export interface CareVisit {
   id: string;
   visit_type: string;
@@ -269,5 +301,8 @@ export interface CareVisit {
   location?: string | null;
   visit_date: string;
   summary?: string;
+  rating?: number | null;
+  review?: string | null;
+  labs?: { name: string; value: string; flag?: string }[];
   documents?: string[];
 }

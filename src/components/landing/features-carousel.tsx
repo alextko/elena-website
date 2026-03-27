@@ -109,33 +109,8 @@ export default function FeaturesCarousel({
       className="relative z-10 bg-white text-[#0F1B3D]"
       style={{ padding: "100px 0 80px" }}
     >
-      {/* CTA section */}
-      <div className="max-w-[1080px] mx-auto px-8">
-        <div className="text-center mt-20 mb-12 ">
-          <h2
-            className="font-light tracking-[-0.025em]"
-            style={{
-              fontSize: "clamp(1.8rem, 3.5vw, 2.5rem)",
-              color: "#0F1B3D",
-            }}
-          >
-            Apply for early access.
-          </h2>
-        </div>
-
-        <div className="text-center mb-16 ">
-          <button
-            onClick={onAuthRequired}
-            className="inline-flex items-center justify-center px-8 py-4 rounded-full text-base font-semibold cursor-pointer border-none transition-all duration-200 hover:scale-105"
-            style={{
-              background: "#0F1B3D",
-              color: "#FFFFFF",
-            }}
-          >
-            Get Started
-          </button>
-        </div>
-      </div>
+      {/* Spacer */}
+      <div className="h-12" />
     </section>
   );
 }

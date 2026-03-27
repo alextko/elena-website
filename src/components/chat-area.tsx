@@ -105,6 +105,8 @@ export function ChatArea({
   activeSessionId,
   onSessionCreated,
   initialQuery,
+  bookMessage,
+  onBookMessageConsumed,
   isNewChat,
 }: {
   onToggleSidebar: () => void;
@@ -112,6 +114,8 @@ export function ChatArea({
   activeSessionId: string | null;
   onSessionCreated: (id: string) => void;
   initialQuery?: string | null;
+  bookMessage?: string | null;
+  onBookMessageConsumed?: () => void;
   isNewChat?: boolean;
 }) {
   const [input, setInput] = useState("");
@@ -242,6 +246,14 @@ export function ChatArea({
       handleSendRef.current(initialQuery);
     }
   }, [initialQuery, welcomeMessage]);
+
+  // Auto-send book message from game plan
+  useEffect(() => {
+    if (bookMessage && sessionIdRef.current && handleSendRef.current) {
+      handleSendRef.current(bookMessage);
+      onBookMessageConsumed?.();
+    }
+  }, [bookMessage, onBookMessageConsumed]);
 
   // Handle booking completion — add confirmation card + summary as a message
   const bookingCompletedRef = useRef<string | null>(null);
@@ -435,10 +447,15 @@ export function ChatArea({
         },
         // onError
         (error) => {
-          // Check if this is an upgrade/limit error — show upgrade modal
+          // Check if this is an upgrade/limit error
           if (error.includes("credits") || error.includes("Upgrade") || error.includes("upgrade")) {
             setUpgradeReason("upgrade_required");
             setUpgradeOpen(true);
+            const upgradeId = nextId();
+            setMessages((prev) => [
+              ...prev,
+              { id: upgradeId, role: "assistant", content: "__upgrade_prompt__" },
+            ]);
             setToolLabel(null);
             setIsLoading(false);
             return;
@@ -490,7 +507,7 @@ export function ChatArea({
           <PanelLeft className="h-4 w-4" />
         </Button>
         <span className="flex-1 text-center text-sm font-extrabold text-[#0F1B3D] truncate">
-          {chatTitle || "New Chat"}
+          {chatTitle || ""}
         </span>
         <div className="w-8" />
       </div>
@@ -531,6 +548,19 @@ export function ChatArea({
                   <p className="text-[0.9rem] leading-relaxed text-[#0F1B3D]">{msg.content}</p>
                 </div>
               </div>
+            ) : msg.content === "__upgrade_prompt__" ? (
+              <div key={msg.id} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="rounded-2xl bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)] p-5 text-center">
+                  <p className="text-[15px] font-semibold text-white mb-1">You&apos;ve run out of credits</p>
+                  <p className="text-[13px] text-white/60 mb-4">Upgrade your plan to keep chatting with Elena.</p>
+                  <button
+                    onClick={() => { setUpgradeReason("upgrade_required"); setUpgradeOpen(true); }}
+                    className="rounded-full bg-white/95 px-6 py-2.5 text-sm font-semibold text-[#0F1B3D] hover:bg-white transition-colors shadow-[0_4px_16px_rgba(0,0,0,0.1)]"
+                  >
+                    Upgrade to continue chatting
+                  </button>
+                </div>
+              </div>
             ) : (
               <div key={msg.id} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div className="text-[0.9rem] leading-[1.75] text-[#1C1C1E]">
@@ -550,15 +580,15 @@ export function ChatArea({
                 {/* Structured result cards — hidden while streaming, fade in after */}
                 {msg.id !== streamingId && (
                   <div className={msg.isStreaming === false || !msg.isStreaming ? "elena-card-enter" : ""}>
-                    {msg.doctorResults && msg.doctorResults.length > 0 && (
+                    {/* Show location card if present (pharmacies, labs, etc.), otherwise doctor card */}
+                    {msg.locationResults && msg.locationResults.length > 0 ? (
+                      <LocationResultsCard locations={msg.locationResults} />
+                    ) : msg.doctorResults && msg.doctorResults.length > 0 ? (
                       <DoctorResultsCard
                         doctors={msg.doctorResults}
                         onBookDoctor={(doc) => handleSend(`Book an appointment with ${doc.name}`)}
                       />
-                    )}
-                    {msg.locationResults && msg.locationResults.length > 0 && (
-                      <LocationResultsCard locations={msg.locationResults} />
-                    )}
+                    ) : null}
                     {msg.reviewResults && (
                       <ReviewsCard data={msg.reviewResults} />
                     )}
@@ -583,16 +613,12 @@ export function ChatArea({
             )
           )}
 
-          {/* Tool progress indicator */}
+          {/* Thinking / tool progress indicator */}
           {isLoading && (
-            <div className="flex items-center gap-2 animate-in fade-in duration-300">
-              <div className="flex gap-1">
-                <span className="h-2 w-2 rounded-full bg-[#0F1B3D]/30 animate-bounce [animation-delay:0ms]" />
-                <span className="h-2 w-2 rounded-full bg-[#0F1B3D]/30 animate-bounce [animation-delay:150ms]" />
-                <span className="h-2 w-2 rounded-full bg-[#0F1B3D]/30 animate-bounce [animation-delay:300ms]" />
-              </div>
+            <div className="flex items-center gap-2.5 animate-in fade-in duration-300">
+              <span className="h-2 w-2 rounded-full bg-[#0F1B3D]/30 animate-thinking-pulse flex-shrink-0" />
               {toolLabel && (
-                <span className="text-sm text-[#0F1B3D]/40 animate-in fade-in duration-200">
+                <span className="text-[15px] font-semibold text-[#0F1B3D]/40 animate-in fade-in duration-200">
                   {toolLabel}
                 </span>
               )}
@@ -633,7 +659,7 @@ export function ChatArea({
             </div>
           )}
 
-          <div ref={scrollEndRef} />
+          <div ref={scrollEndRef} className="h-6" />
         </div>
       </div>
 

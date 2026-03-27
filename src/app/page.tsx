@@ -5,8 +5,153 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { AuthModal } from "@/components/auth-modal";
 import Spotlights from "@/components/landing/spotlights";
-import FeaturesCarousel from "@/components/landing/features-carousel";
 import "./landing.css";
+
+const STATS = [
+  { value: 86, suffix: "%", label: "have delayed care due to cost uncertainty" },
+  { value: 76, suffix: "%", label: "received a surprise medical bill" },
+  { value: 95, suffix: "%", label: "want a price transparency tool" },
+  { value: 90, suffix: "%", label: "want help navigating the system" },
+];
+
+function CountUp({ target, suffix, active }: { target: number; suffix: string; active: boolean }) {
+  const [count, setCount] = useState(0);
+  const hasRun = useRef(false);
+
+  useEffect(() => {
+    if (!active || hasRun.current) return;
+    hasRun.current = true;
+    const duration = 1200;
+    const steps = 40;
+    const increment = target / steps;
+    let current = 0;
+    let step = 0;
+    const timer = setInterval(() => {
+      step++;
+      // Ease-out: fast start, slow finish
+      const progress = 1 - Math.pow(1 - step / steps, 3);
+      current = Math.round(progress * target);
+      setCount(current);
+      if (step >= steps) {
+        setCount(target);
+        clearInterval(timer);
+      }
+    }, duration / steps);
+    return () => clearInterval(timer);
+  }, [active, target]);
+
+  return (
+    <span>
+      {active ? count : 0}{suffix}
+    </span>
+  );
+}
+
+function StatsBar() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
+      { threshold: 0.3 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <section
+      ref={ref}
+      className="relative z-10 py-20 px-8 max-md:py-14 max-md:px-5 overflow-hidden"
+      style={{
+        background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 40%, #2E6BB5 100%)",
+      }}
+    >
+      {/* Warm accent glow */}
+      <div
+        className="absolute -bottom-[30%] -left-[10%] w-[60%] h-[80%] pointer-events-none"
+        style={{ background: "radial-gradient(ellipse, rgba(244,176,132,0.2) 0%, transparent 70%)" }}
+      />
+      <div
+        className="absolute -top-[20%] -right-[5%] w-[40%] h-[60%] pointer-events-none"
+        style={{ background: "radial-gradient(ellipse, rgba(46,107,181,0.3) 0%, transparent 70%)" }}
+      />
+
+      <div className="relative mx-auto max-w-[960px]">
+        {/* Title */}
+        <div className="text-center mb-14">
+          <p className="text-[11px] font-semibold uppercase tracking-[2px] text-white/30 mb-4">
+            Our data shows
+          </p>
+          <h2 className="text-[clamp(2rem,4.5vw,3.2rem)] leading-[1.15] tracking-tight text-white">
+            <span className="font-light">The state of the</span>
+            <br />
+            <span className="font-extrabold">U.S. Healthcare System</span>
+            {" "}
+            <em className="font-normal italic font-[family-name:var(--font-dm-serif)] text-[#F4B084]">is broken.</em>
+          </h2>
+        </div>
+
+
+        {/* Stats grid */}
+        <div className="grid grid-cols-4 gap-6 max-md:grid-cols-2 max-md:gap-10">
+          {STATS.map((stat, i) => {
+            const accents = ["#F4B084", "#93B5E1", "#FFFFFF", "#F4B084"];
+            const delays = [0, 150, 300, 450];
+            return (
+              <div
+                key={stat.label}
+                className="text-center transition-all duration-700 ease-out"
+                style={{
+                  opacity: visible ? 1 : 0,
+                  transform: visible ? "translateY(0)" : "translateY(20px)",
+                  transitionDelay: `${delays[i]}ms`,
+                }}
+              >
+                <div
+                  className="text-[clamp(3rem,6vw,4.5rem)] font-extrabold leading-none mb-3"
+                  style={{ color: accents[i] }}
+                >
+                  <CountUp target={stat.value} suffix={stat.suffix} active={visible} />
+                </div>
+                <p className="text-[15px] font-light text-white/60 leading-snug">
+                  {stat.label.split(" ").map((word, wi) => {
+                    const highlights = ["delayed", "surprise", "transparency", "navigating"];
+                    if (highlights.some((h) => word.toLowerCase().includes(h))) {
+                      return <em key={wi} className="font-semibold italic text-white/90 font-[family-name:var(--font-dm-serif)]">{word} </em>;
+                    }
+                    return <span key={wi}>{word} </span>;
+                  })}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center justify-center gap-4 mt-12">
+          <a
+            href="/research"
+            className="text-sm font-medium text-white/50 underline hover:text-white/80 transition-colors"
+          >
+            Read the full report
+          </a>
+          <span className="text-white/20">|</span>
+          <a
+            href="https://forms.gle/z4fSReqNxGgeT38p7"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-light text-white/40 underline hover:text-white/70 transition-colors"
+          >
+            Take the survey
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 const SUGGESTIONS = [
   { label: "Compare Prices", text: "Compare MRI prices near me" },
@@ -154,7 +299,7 @@ export default function LandingPage() {
         <div className="absolute inset-0 z-0 bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)]">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_130%,#F4B084_0%,#E8956D_25%,rgba(46,107,181,0)_60%)]" />
         </div>
-        <div className="noise-texture absolute inset-0 z-[3]" />
+        {/* noise texture removed */}
 
         {/* Blobs */}
         <div className="absolute inset-0 z-[2] overflow-hidden pointer-events-none">
@@ -208,7 +353,7 @@ export default function LandingPage() {
           </div>
 
           {/* Suggestion chips */}
-          <div className="text-[11px] font-semibold uppercase tracking-[2px] text-white/40 text-center mt-7 mb-3.5">
+          <div className="text-[11px] font-semibold uppercase tracking-[1.5px] text-white/40 text-center mt-7 mb-3.5">
             Common problems Elena can solve
           </div>
           <div className="flex gap-2.5 justify-center flex-nowrap px-3 max-md:overflow-x-auto max-md:justify-start max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
@@ -216,7 +361,7 @@ export default function LandingPage() {
               <button
                 key={s.label}
                 onClick={() => handleChipClick(s.text)}
-                className="bg-white/10 border border-white/20 rounded-[22px] px-[18px] py-2.5 text-sm font-semibold text-white whitespace-nowrap cursor-pointer transition-all hover:bg-white/[0.18] hover:border-white/[0.35]"
+                className="bg-white/10 border border-white/20 rounded-[22px] px-[18px] py-2.5 text-sm font-normal text-white/90 whitespace-nowrap cursor-pointer transition-all hover:bg-white/[0.18] hover:border-white/[0.35] active:scale-[0.97]"
               >
                 {s.label}
               </button>
@@ -244,7 +389,7 @@ export default function LandingPage() {
                       key={`${set}-${ins.alt}`}
                       src={ins.src}
                       alt={ins.alt}
-                      className="h-7 w-auto brightness-0 invert opacity-45 shrink-0"
+                      className="h-7 w-auto brightness-0 invert opacity-30 shrink-0"
                     />
                   ))}
                 </div>
@@ -254,14 +399,17 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* STATS BAR */}
+      <StatsBar />
+
       {/* MANIFESTO */}
-      <section className="relative z-10 py-[120px] px-8 bg-[#f5f7fb] max-md:py-20 max-md:px-5">
+      <section className="relative z-10 py-[120px] px-8 bg-[#F7F6F2] max-md:py-20 max-md:px-5">
         <div className="mx-auto max-w-[960px] flex items-center gap-16 max-md:flex-col max-md:text-center">
           <div className="flex-1">
             <p className="text-[1.05rem] font-light text-[#5a6a82] leading-[1.7] mb-4">
               The healthcare system isn&apos;t built for you.
             </p>
-            <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-light tracking-tight text-[#0F1B3D] leading-tight mb-7">
+            <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-semibold tracking-tight text-[#0F1B3D] leading-tight mb-7">
               Elena is.
             </h2>
             <p className="text-[1.05rem] font-light text-[#5a6a82] leading-[1.7]">
@@ -278,12 +426,6 @@ export default function LandingPage() {
               className="w-[280px] h-[280px] rounded-[56px] shadow-[0_16px_48px_rgba(0,0,0,0.12)] bg-[#0F1B3D]"
             />
             <p className="text-[0.7rem] font-light text-[#AEAEB2] text-center">App coming soon</p>
-            <button
-              onClick={() => setAuthModalOpen(true)}
-              className="inline-block px-7 py-3.5 bg-[rgba(15,27,61,0.06)] backdrop-blur-[40px] border border-[rgba(15,27,61,0.12)] rounded-full text-[#0F1B3D] text-[0.9rem] font-medium no-underline transition-all shadow-[0_4px_16px_rgba(15,27,61,0.06),inset_0_1px_0_rgba(255,255,255,0.6)] hover:bg-[rgba(15,27,61,0.1)] hover:border-[rgba(15,27,61,0.2)]"
-            >
-              Apply for early access
-            </button>
           </div>
         </div>
       </section>
@@ -291,26 +433,46 @@ export default function LandingPage() {
       {/* SPOTLIGHTS */}
       <Spotlights />
 
-      {/* FEATURES CAROUSEL */}
-      <FeaturesCarousel onAuthRequired={() => setAuthModalOpen(true)} />
-
       {/* FOOTER */}
-      <footer className="relative z-10 pt-20 pb-10 px-8 bg-[#0F1B3D] text-white overflow-hidden">
-        <div className="absolute -bottom-[40%] -right-[10%] w-1/2 h-4/5 pointer-events-none bg-[radial-gradient(ellipse,rgba(244,176,132,0.15)_0%,transparent_70%)]" />
-        <div className="mx-auto max-w-[960px]">
-          <div className="text-[clamp(3rem,8vw,5rem)] font-light tracking-tight text-white mb-4">elena</div>
-          <p className="text-base font-light text-white/50 mb-12">Your family&apos;s health, in one place.</p>
-        </div>
-        <div className="mx-auto max-w-[960px] flex justify-between items-center text-[0.78rem] text-white/35 font-normal pt-6 border-t border-white/10 max-md:flex-col max-md:gap-1.5 max-md:text-center">
-          <span>&copy; 2026 Elena AI. All rights reserved.</span>
-          <div className="flex gap-5">
-            <a href="/blog" className="text-white/45 no-underline text-[0.78rem] font-normal transition-colors hover:text-white/70">Resources</a>
-            <a href="https://www.tiktok.com/@elenahealth" target="_blank" rel="noopener noreferrer" className="text-white/45 no-underline text-[0.78rem] font-normal transition-colors hover:text-white/70">TikTok</a>
+      <footer className="relative z-10 pt-20 pb-10 px-8 text-white overflow-hidden" style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%, #2E6BB5 100%)" }}>
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_85%_130%,rgba(244,176,132,0.25)_0%,rgba(232,149,109,0.15)_25%,transparent_60%)]" />
+        <div className="relative mx-auto max-w-[960px]">
+          <div className="text-[clamp(3rem,8vw,5rem)] font-light tracking-tight text-white mb-2">elena</div>
+          <p className="text-base font-light text-white/60 mb-12">Your healthcare assistant.</p>
+
+          {/* Link columns */}
+          <div className="grid grid-cols-3 gap-8 mb-10 max-md:grid-cols-1 max-md:text-center">
+            <div>
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[2px] text-white/30 mb-3">Product</p>
+              <div className="flex flex-col gap-2">
+                <a href="#how-it-works" className="text-sm text-white/60 no-underline transition-colors hover:text-white">How it Works</a>
+                <a href="#features" className="text-sm text-white/60 no-underline transition-colors hover:text-white">Features</a>
+              </div>
+            </div>
+            <div>
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[2px] text-white/30 mb-3">Legal</p>
+              <div className="flex flex-col gap-2">
+                <a href="/terms-of-service" className="text-sm text-white/60 no-underline transition-colors hover:text-white">Terms of Service</a>
+                <a href="/privacy-policy" className="text-sm text-white/60 no-underline transition-colors hover:text-white">Privacy Policy</a>
+              </div>
+            </div>
+            <div>
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[2px] text-white/30 mb-3">Connect</p>
+              <div className="flex flex-col gap-2">
+                <a href="/blog" className="text-sm text-white/60 no-underline transition-colors hover:text-white">Blog</a>
+                <a href="/research" className="text-sm text-white/60 no-underline transition-colors hover:text-white">Research</a>
+                <a href="https://www.tiktok.com/@elenahealth" target="_blank" rel="noopener noreferrer" className="text-sm text-white/60 no-underline transition-colors hover:text-white">TikTok</a>
+              </div>
+            </div>
           </div>
-          <span>Made with love in NYC</span>
-        </div>
-        <div className="mx-auto max-w-[960px] mt-4 text-[0.7rem] text-white/25 font-light text-center leading-relaxed">
-          Elena helps you navigate healthcare costs and logistics — not a substitute for medical advice. Pricing data from CMS-mandated hospital price transparency files.
+
+          <div className="pt-6 border-t border-white/10 flex justify-between items-center text-[0.78rem] text-white/30 max-md:flex-col max-md:gap-1.5 max-md:text-center">
+            <span>&copy; 2026 Elena AI. All rights reserved.</span>
+            <span>Made with love in NYC</span>
+          </div>
+          <div className="mt-4 text-[0.7rem] text-white/20 font-light text-center leading-relaxed">
+            Elena helps you navigate healthcare costs and logistics. Not a substitute for medical advice. Pricing data from CMS-mandated hospital price transparency files.
+          </div>
         </div>
       </footer>
 

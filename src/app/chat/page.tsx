@@ -30,6 +30,7 @@ function ChatPageInner() {
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [pendingQuery, setPendingQuery] = useState<string | null>(null);
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+  const [bookMessage, setBookMessage] = useState<string | null>(null);
   const sessionsFetchedRef = useRef(false);
 
   // Read pending query from landing page (set before auth redirect)
@@ -141,6 +142,7 @@ function ChatPageInner() {
           activeSessionId={activeSessionId}
           onSelectSession={handleSelectSession}
           onNewChat={handleNewChat}
+          onBookMessage={(msg) => setBookMessage(msg)}
           sessions={sessions}
           loadingSessions={loadingSessions}
         />
@@ -151,6 +153,8 @@ function ChatPageInner() {
         activeSessionId={activeSessionId}
         onSessionCreated={handleSessionCreated}
         initialQuery={pendingQuery}
+        bookMessage={bookMessage}
+        onBookMessageConsumed={() => setBookMessage(null)}
         isNewChat={isNewChat}
       />
     </div>

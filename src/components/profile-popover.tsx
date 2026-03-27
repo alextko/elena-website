@@ -16,11 +16,21 @@ import {
   Eye,
   SmilePlus,
   FileText,
+  Plus,
   PlusCircle,
   Pencil,
+  ArrowLeft,
+  Phone,
+  MapPin,
+  X,
+  Upload,
+  Download,
+  CheckSquare,
+  CircleDot,
 } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
+import type { CareTodo, CareTodoCreate, CareVisit, DoctorItem } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import type { InsuranceCard } from "@/lib/types";
 
@@ -109,10 +119,17 @@ function todayStr() {
 
 // ─── Main component ───
 
-export function ProfilePopover({ children }: { children: React.ReactNode }) {
+export function ProfilePopover({
+  children,
+  onBookMessage,
+}: {
+  children: React.ReactNode;
+  onBookMessage?: (message: string) => void;
+}) {
   const {
     user, profileId, profileData, doctors, careVisits,
-    credits, subscription, insuranceCards,
+    credits, subscription, insuranceCards, todos,
+    toggleTodo, createTodo, updateTodo, deleteTodo,
     profileDetailsLoaded, fetchProfileDetails, updateProfilePicture, signOut,
   } = useAuth();
   const router = useRouter();
@@ -121,6 +138,10 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
   const [activeTab, setActiveTab] = useState<Tab>("health");
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<typeof doctors[number] | null>(null);
+  const [selectedVisit, setSelectedVisit] = useState<typeof careVisits[number] | null>(null);
+  const [editingTodo, setEditingTodo] = useState<{ mode: "create" } | { mode: "edit"; todo: typeof todos[number] } | null>(null);
+  const [addingProvider, setAddingProvider] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const todayRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -153,20 +174,37 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
   }, [open, profileDetailsLoaded, fetchProfileDetails]);
 
   const visitsScrollRef = useRef<HTMLDivElement>(null);
+  const [showTodayBtn, setShowTodayBtn] = useState(false);
+  const todayOffsetRef = useRef(0);
+
+  function scrollToToday(animated = true) {
+    const container = visitsScrollRef.current;
+    const todayEl = todayRef.current;
+    if (!container || !todayEl) return;
+    const offset = todayEl.offsetTop - container.offsetTop - 4;
+    todayOffsetRef.current = offset;
+    container.scrollTo({ top: Math.max(0, offset), behavior: animated ? "smooth" : "instant" });
+  }
 
   // Auto-scroll visits so today is at the top of the visible area
   useEffect(() => {
-    if (activeTab === "visits" && todayRef.current && visitsScrollRef.current) {
-      requestAnimationFrame(() => {
-        const container = visitsScrollRef.current;
-        const todayEl = todayRef.current;
-        if (!container || !todayEl) return;
-        // Scroll so today marker is ~4px from the top of the container
-        const offset = todayEl.offsetTop - container.offsetTop - 4;
-        container.scrollTop = Math.max(0, offset);
-      });
+    if (activeTab === "visits" && careVisits.length > 0) {
+      // Wait for DOM to render
+      const timer = setTimeout(() => scrollToToday(false), 80);
+      return () => clearTimeout(timer);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, careVisits]);
+
+  function handleVisitsScroll() {
+    const container = visitsScrollRef.current;
+    if (!container) return;
+    const todayEl = todayRef.current;
+    if (!todayEl) { setShowTodayBtn(false); return; }
+    const todayTop = todayEl.offsetTop - container.offsetTop;
+    const nearToday = Math.abs(todayTop - container.scrollTop) < 80;
+    setShowTodayBtn(!nearToday);
+  }
 
   const displayName =
     profileData?.firstName && profileData?.lastName
@@ -203,10 +241,122 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
       <DialogTrigger render={children as React.ReactElement}></DialogTrigger>
       <DialogContent
         showCloseButton
-        className="w-full max-w-md rounded-2xl border-[#0F1B3D]/[0.08] bg-[#F7F6F2] p-0 shadow-xl"
+        className="w-[90vw] max-w-lg rounded-2xl border-[#0F1B3D]/[0.08] bg-[#F7F6F2] p-0 shadow-xl"
       >
-        <div ref={scrollRef} className="max-h-[80vh] overflow-y-auto">
-          <div className="p-6">
+        <div ref={scrollRef} className="max-h-[60vh] overflow-y-auto">
+          {/* ═══════════ PROVIDER DETAIL VIEW ═══════════ */}
+          {selectedProvider && (
+            <div className="p-6 pb-8 animate-in fade-in duration-200">
+              <button
+                onClick={() => setSelectedProvider(null)}
+                className="flex items-center gap-1.5 text-sm font-medium text-[#0F1B3D]/50 hover:text-[#0F1B3D] transition-colors mb-4"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </button>
+
+              <div className="flex items-center gap-3 mb-5">
+                {(() => { const Icon = specialtyIcon(selectedProvider.specialty); return (
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0F1B3D]/[0.06]">
+                    <Icon className="h-5 w-5 text-[#0F1B3D]" />
+                  </div>
+                ); })()}
+                <div className="min-w-0 flex-1">
+                  <p className="text-[18px] font-extrabold text-[#0F1B3D]">
+                    {selectedProvider.name || selectedProvider.specialty}
+                  </p>
+                  {selectedProvider.credential && (
+                    <p className="text-[13px] text-[#8E8E93]">{selectedProvider.credential}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
+                {[
+                  { label: "Specialty", value: selectedProvider.specialty },
+                  { label: "Practice", value: selectedProvider.practice_name },
+                  { label: "Phone", value: selectedProvider.phone },
+                  { label: "Address", value: selectedProvider.address },
+                ].filter(r => r.value).map((row, i, arr) => (
+                  <React.Fragment key={row.label}>
+                    <div className="flex items-center justify-between px-4 py-3.5">
+                      <span className="text-[14px] text-[#8E8E93]">{row.label}</span>
+                      {row.label === "Phone" ? (
+                        <a href={`tel:${row.value}`} className="text-[14px] font-medium text-[#2563EB]">
+                          {row.value}
+                        </a>
+                      ) : (
+                        <span className="text-[14px] font-medium text-[#0F1B3D] text-right max-w-[60%] truncate">
+                          {row.value}
+                        </span>
+                      )}
+                    </div>
+                    {i < arr.length - 1 && <div className="h-px bg-[#E5E5EA] mx-4" />}
+                  </React.Fragment>
+                ))}
+              </div>
+
+              {selectedProvider.phone && (
+                <a
+                  href={`tel:${selectedProvider.phone}`}
+                  className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-[#0F1B3D] px-4 py-3 text-[15px] font-semibold text-white hover:bg-[#0F1B3D]/90 transition-colors"
+                >
+                  <Phone className="h-4 w-4" />
+                  Call Office
+                </a>
+              )}
+
+              {selectedProvider.address && (
+                <a
+                  href={`https://maps.apple.com/?q=${encodeURIComponent(selectedProvider.address)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 flex items-center justify-center gap-2 rounded-2xl border border-[#0F1B3D]/10 bg-white px-4 py-3 text-[15px] font-semibold text-[#0F1B3D]/70 hover:bg-[#0F1B3D]/[0.04] transition-colors"
+                >
+                  <MapPin className="h-4 w-4" />
+                  Get Directions
+                </a>
+              )}
+            </div>
+          )}
+
+          {/* ═══════════ VISIT DETAIL VIEW ═══════════ */}
+          {selectedVisit && !selectedProvider && (
+            <VisitDetailPanel
+              visit={selectedVisit}
+              onClose={() => setSelectedVisit(null)}
+              onBookMessage={onBookMessage}
+              onClosePopover={() => setOpen(false)}
+            />
+          )}
+
+          {/* ═══════════ ADD PROVIDER ═══════════ */}
+          {addingProvider && !selectedProvider && !selectedVisit && !editingTodo && (
+            <AddProviderPanel
+              profileId={profileId}
+              onClose={() => setAddingProvider(false)}
+              onSaved={(doc) => {
+                setAddingProvider(false);
+                // Refresh profile details to get updated doctor list
+                fetchProfileDetails();
+              }}
+            />
+          )}
+
+          {/* ═══════════ TODO EDITOR ═══════════ */}
+          {editingTodo && !selectedProvider && !selectedVisit && !addingProvider && (
+            <TodoEditorPanel
+              editingTodo={editingTodo}
+              onClose={() => setEditingTodo(null)}
+              onCreate={createTodo}
+              onUpdate={updateTodo}
+              onDelete={deleteTodo}
+            />
+          )}
+
+          {/* ═══════════ MAIN PROFILE CONTENT ═══════════ */}
+          {!selectedProvider && !selectedVisit && !editingTodo && !addingProvider && (
+          <div className="p-6 pb-8">
             {/* User header */}
             <div className="flex items-center gap-4 pb-4">
               <input
@@ -262,10 +412,159 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
             {/* ═══════════ HEALTH TAB ═══════════ */}
             {activeTab === "health" && (
               <div className="space-y-3">
+                {/* ── Game Plan (salmon card) ── */}
+                <div
+                  className="rounded-[22px] pt-[18px] pb-2 overflow-hidden"
+                  style={{ background: "#F4B084", boxShadow: "0 12px 40px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.05)" }}
+                >
+                  {/* Title */}
+                  <div className="px-6 mb-4">
+                    <div className="text-[28px] font-extrabold" style={{ color: "#5C1A2A" }}>
+                      Game Plan
+                    </div>
+                  </div>
+
+                  {/* Calendar strip */}
+                  {(() => {
+                    const now = new Date();
+                    const dayOfWeek = now.getDay();
+                    const monday = new Date(now);
+                    monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
+                    const days = Array.from({ length: 7 }, (_, i) => {
+                      const d = new Date(monday);
+                      d.setDate(monday.getDate() + i);
+                      return {
+                        label: d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2),
+                        num: d.getDate(),
+                        isToday: d.toDateString() === now.toDateString(),
+                        isFuture: d > now && d.toDateString() !== now.toDateString(),
+                      };
+                    });
+                    return (
+                      <div className="flex justify-center gap-[10px] px-6 pb-4">
+                        {days.map((day) => (
+                          <div key={day.label + day.num} className="flex flex-col items-center gap-1 w-11">
+                            <span
+                              className="text-[11px] font-semibold uppercase"
+                              style={{ color: day.isToday ? "#5C1A2A" : "#7A3040" }}
+                            >
+                              {day.label}
+                            </span>
+                            <span
+                              className="w-9 h-9 rounded-full flex items-center justify-center text-base font-bold"
+                              style={{
+                                color: day.isFuture ? "#7A3040" : "#5C1A2A",
+                                background: day.isToday ? "#FFFFFF" : "transparent",
+                                opacity: day.isFuture ? 0.5 : 1,
+                              }}
+                            >
+                              {day.num}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
+                  {/* To Do section */}
+                  <div className="px-6 pb-4">
+                    <div className="flex items-center justify-between px-2 mb-[10px]">
+                      <span className="text-[15px] font-bold" style={{ color: "#5C1A2A" }}>To Do</span>
+                      <button
+                        onClick={() => setEditingTodo({ mode: "create" })}
+                        className="transition-opacity hover:opacity-70"
+                      >
+                        <Plus className="h-[22px] w-[22px]" style={{ color: "#5C1A2A" }} />
+                      </button>
+                    </div>
+
+                    {todos.filter((t) => t.status !== "dismissed").length === 0 && profileDetailsLoaded && (
+                      <div className="rounded-[14px] px-[14px] py-8 text-center" style={{ background: "rgba(255,255,255,0.3)" }}>
+                        <p className="text-[15px] font-semibold" style={{ color: "#5C1A2A" }}>All caught up!</p>
+                        <p className="text-[13px] mt-1" style={{ color: "#7A3040" }}>Your health tasks will appear here.</p>
+                      </div>
+                    )}
+
+                    {todos.filter((t) => t.status !== "dismissed").length > 0 && (
+                      <div className="rounded-[14px] px-[14px] py-[10px]" style={{ background: "rgba(255,255,255,0.3)" }}>
+                        {todos
+                          .filter((t) => t.status !== "dismissed")
+                          .sort((a, b) => {
+                            if (a.status !== b.status) return a.status === "pending" ? -1 : 1;
+                            return a.sort_order - b.sort_order;
+                          })
+                          .map((todo, i) => (
+                            <React.Fragment key={todo.id}>
+                              {i > 0 && (
+                                <div className="h-px mx-[14px]" style={{ background: "rgba(92,26,42,0.2)" }} />
+                              )}
+                              <div className="flex items-center gap-3 py-[10px]">
+                                {/* Checkbox */}
+                                <button
+                                  onClick={() => toggleTodo(todo.id)}
+                                  className="w-8 h-8 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors duration-200"
+                                  style={{
+                                    borderColor: todo.status === "completed" ? "#5C1A2A" : "#7A3040",
+                                    background: todo.status === "completed" ? "#5C1A2A" : "transparent",
+                                  }}
+                                >
+                                  {todo.status === "completed" && (
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                  )}
+                                </button>
+
+                                {/* Title + subtitle */}
+                                <button
+                                  className="flex-1 min-w-0 text-left"
+                                  onClick={() => setEditingTodo({ mode: "edit", todo })}
+                                >
+                                  <div
+                                    className="text-[17px] font-semibold transition-all duration-200 truncate"
+                                    style={{
+                                      color: todo.status === "completed" ? "#7A3040" : "#5C1A2A",
+                                      textDecoration: todo.status === "completed" ? "line-through" : "none",
+                                    }}
+                                  >
+                                    {todo.title}
+                                  </div>
+                                  {(todo.subtitle || todo.due_time) && (
+                                    <div className="text-[13px] mt-[1px] truncate" style={{ color: "#7A3040" }}>
+                                      {todo.due_time && <span>{todo.due_time.replace(/^0/, "")} · </span>}
+                                      {todo.subtitle}
+                                    </div>
+                                  )}
+                                </button>
+
+                                {/* Book button */}
+                                {todo.status === "pending" && todo.book_message && onBookMessage && (
+                                  <button
+                                    onClick={() => { onBookMessage(todo.book_message); setOpen(false); }}
+                                    className="shrink-0 rounded-full px-4 py-[7px] text-[13px] font-semibold text-white transition-colors"
+                                    style={{ background: "#0F1B3D" }}
+                                  >
+                                    Book
+                                  </button>
+                                )}
+                              </div>
+                            </React.Fragment>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 {/* Providers */}
                 <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
-                  <div className="px-3.5 pt-3.5 pb-1">
+                  <div className="flex items-center justify-between px-3.5 pt-3.5 pb-1">
                     <h3 className="text-[15px] font-extrabold text-[#0F1B3D]">Providers</h3>
+                    <button
+                      onClick={() => setAddingProvider(true)}
+                      className="transition-opacity hover:opacity-70"
+                    >
+                      <Plus className="h-[18px] w-[18px] text-[#0F1B3D]" />
+                    </button>
                   </div>
                   {uniqueDoctors.length === 0 && profileDetailsLoaded && (
                     <div className="px-3.5 py-10 text-center">
@@ -285,7 +584,10 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
                     return (
                       <React.Fragment key={provider.id || i}>
                         {i > 0 && <div className="h-px bg-[#E5E5EA] ml-[62px] mr-3.5" />}
-                        <div className="flex items-center gap-3 px-3.5 py-3.5">
+                        <button
+                          className="flex w-full items-center gap-3 px-3.5 py-3.5 text-left hover:bg-[#0F1B3D]/[0.02] transition-colors"
+                          onClick={() => setSelectedProvider(provider)}
+                        >
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7F6F2]">
                             <Icon className="h-[18px] w-[18px] text-[#0F1B3D]" />
                           </div>
@@ -296,7 +598,7 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
                             )}
                           </div>
                           <ChevronRight className="h-[18px] w-[18px] text-[#0F1B3D] shrink-0" />
-                        </div>
+                        </button>
                       </React.Fragment>
                     );
                   })}
@@ -344,15 +646,24 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
                 {sortedVisits.length > 0 && (
                   <div className="rounded-3xl bg-[#DBEAFE] overflow-hidden">
                     {/* Fixed header above the scroll area */}
-                    <div className="px-4 pt-4 pb-2">
+                    <div className="flex items-center justify-between px-4 pt-4 pb-2">
                       <h3 className="text-[24px] font-extrabold text-[#0F1B3D]">Timeline</h3>
+                      {showTodayBtn && (
+                        <button
+                          onClick={() => scrollToToday(true)}
+                          className="text-[13px] font-semibold text-[#2563EB] hover:text-[#1D4ED8] transition-colors"
+                        >
+                          Today
+                        </button>
+                      )}
                     </div>
 
                     {/* Scrollable timeline — fixed height, today scrolled to top */}
                     <div
                       ref={visitsScrollRef}
-                      className="overflow-y-auto px-2 pb-4"
+                      className="overflow-y-auto px-2 pb-64"
                       style={{ height: "320px" }}
+                      onScroll={handleVisitsScroll}
                     >
                     {sortedVisits.map((visit, i) => {
                       const isFuture = visit.visit_date > today;
@@ -437,7 +748,10 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
                             </div>
 
                             {/* Card */}
-                            <div className="flex-1 min-w-0 bg-white rounded-[14px] shadow-[0_1px_4px_rgba(0,0,0,0.05)] px-3.5 py-3 mb-3 ml-2.5">
+                            <button
+                              className="flex-1 min-w-0 bg-white rounded-[14px] shadow-[0_1px_4px_rgba(0,0,0,0.05)] px-3.5 py-3 mb-3 ml-2.5 text-left hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-shadow cursor-pointer"
+                              onClick={() => setSelectedVisit(visit)}
+                            >
                               {/* Date + file icon */}
                               <div className="flex items-center justify-between">
                                 <p className="text-xs font-semibold text-[#6B9BD2]">
@@ -467,7 +781,7 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
                                     {visit.summary}
                                   </p>
                                 )}
-                            </div>
+                            </button>
                           </div>
                         </React.Fragment>
                       );
@@ -497,9 +811,9 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
 
             {/* ═══════════ INSURANCE TAB ═══════════ */}
             {activeTab === "insurance" && (
-              <div className="space-y-0">
+              <div className="space-y-0 pb-2">
                 {/* Insurance cards carousel-style display */}
-                <div className="flex gap-3 overflow-x-auto pb-3 -mx-1 px-1 snap-x snap-mandatory scrollbar-hide">
+                <div className="flex gap-3 overflow-x-auto pb-4 -mx-2 px-2 snap-x snap-mandatory scrollbar-hide">
                   <InsuranceCardDisplay card={medicalCard} label="Medical" dark />
                   <InsuranceCardDisplay card={dentalCard} label="Dental" dark={false} />
                   <InsuranceCardDisplay card={visionCard} label="Vision" dark />
@@ -539,10 +853,691 @@ export function ProfilePopover({ children }: { children: React.ReactNode }) {
               Sign out
             </button>
           </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
     </>
+  );
+}
+
+// ═══════════════════════════════════════════════════
+//  Insurance card visual (carousel-style)
+// ═══════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════
+//  Todo Editor Panel (create / edit)
+// ═══════════════════════════════════════════════════
+
+const TODO_COLORS = [
+  "#0F1B3D", "#3B82F6", "#8B5CF6", "#EC4899", "#EF4444",
+  "#F59E0B", "#10B981", "#06B6D4", "#6366F1",
+];
+
+const FREQUENCY_OPTIONS = [
+  { value: "once", label: "One-time" },
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+];
+
+// ═══════════════════════════════════════════════════
+//  Visit Detail Panel (full view with notes, docs, rating)
+// ═══════════════════════════════════════════════════
+
+interface VisitNote {
+  id: string;
+  description: string;
+  key_points: { text?: string; point?: string }[];
+  action_items: { text?: string; item?: string }[];
+  duration_seconds: number;
+  is_personal_note: boolean;
+  visit_id?: string | null;
+}
+
+interface StructuredDocument {
+  id: string;
+  filename: string;
+  doc_type: string;
+  doc_title: string;
+  content_type: string;
+  download_url?: string | null;
+}
+
+function VisitDetailPanel({
+  visit,
+  onClose,
+  onBookMessage,
+  onClosePopover,
+}: {
+  visit: CareVisit;
+  onClose: () => void;
+  onBookMessage?: (msg: string) => void;
+  onClosePopover: () => void;
+}) {
+  const { profileId } = useAuth();
+  const [notes, setNotes] = useState<VisitNote[]>([]);
+  const [docs, setDocs] = useState<StructuredDocument[]>([]);
+  const [loadingExtra, setLoadingExtra] = useState(true);
+  const [rating, setRating] = useState(visit.rating || 0);
+  const [review, setReview] = useState(visit.review || "");
+  const [savingReview, setSavingReview] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const docInputRef = useRef<HTMLInputElement>(null);
+
+  const isPast = visit.visit_date <= new Date().toISOString().slice(0, 10);
+
+  // Fetch notes and documents for this visit
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoadingExtra(true);
+      const promises: Promise<void>[] = [];
+
+      // Notes
+      promises.push(
+        apiFetch("/notes")
+          .then(async (res) => {
+            if (!res.ok || cancelled) return;
+            const allNotes: VisitNote[] = await res.json();
+            setNotes(allNotes.filter((n) => n.visit_id === visit.id));
+          })
+          .catch(() => {}),
+      );
+
+      // Structured documents
+      promises.push(
+        apiFetch(`/structured-documents?care_visit_id=${visit.id}`)
+          .then(async (res) => {
+            if (!res.ok || cancelled) return;
+            const data: StructuredDocument[] = await res.json();
+            setDocs(data);
+          })
+          .catch(() => {}),
+      );
+
+      await Promise.all(promises);
+      if (!cancelled) setLoadingExtra(false);
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [visit.id]);
+
+  async function handleSaveReview() {
+    if (!rating) return;
+    setSavingReview(true);
+    try {
+      await apiFetch(`/care-visits/${visit.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ rating, review: review.trim() || null }),
+      });
+    } catch {}
+    setSavingReview(false);
+  }
+
+  async function handleDocUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !profileId) return;
+    e.target.value = "";
+    setUploadingDoc(true);
+    try {
+      // 1. Get presigned URL
+      const urlRes = await apiFetch("/documents/upload-url", {
+        method: "POST",
+        body: JSON.stringify({ session_id: visit.id, filename: file.name }),
+      });
+      if (!urlRes.ok) { setUploadingDoc(false); return; }
+      const { upload_url, key, content_type, required_headers } = await urlRes.json();
+
+      // 2. Upload to S3
+      const headers: Record<string, string> = { "Content-Type": content_type, ...required_headers };
+      await fetch(upload_url, { method: "PUT", body: file, headers });
+
+      // 3. Process via structured documents
+      const processRes = await apiFetch("/structured-documents/upload", {
+        method: "POST",
+        body: JSON.stringify({
+          s3_key: key,
+          filename: file.name,
+          content_type: content_type,
+          care_visit_id: visit.id,
+        }),
+      });
+      if (processRes.ok) {
+        const data = await processRes.json();
+        if (data.document) {
+          setDocs((prev) => [data.document, ...prev]);
+        }
+      }
+    } catch {}
+    setUploadingDoc(false);
+  }
+
+  function handleScheduleAgain() {
+    if (onBookMessage && visit.doctor_name) {
+      onBookMessage(`Schedule a follow-up with ${visit.doctor_name}`);
+      onClosePopover();
+    }
+  }
+
+  return (
+    <div className="p-6 pb-8 animate-in fade-in duration-200">
+      <button
+        onClick={onClose}
+        className="flex items-center gap-1.5 text-sm font-medium text-[#0F1B3D]/50 hover:text-[#0F1B3D] transition-colors mb-4"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back
+      </button>
+
+      {/* Visit header */}
+      <div className="mb-5">
+        <p className="text-[22px] font-extrabold text-[#0F1B3D]">{visit.visit_type}</p>
+        <p className="text-[14px] text-[#8E8E93] mt-1">
+          {formatVisitDate(visit.visit_date)}
+          {visit.doctor_name ? ` · ${visit.doctor_name}` : ""}
+        </p>
+        {visit.location && (
+          <p className="text-[13px] text-[#AEAEB2] mt-0.5">{visit.location}</p>
+        )}
+      </div>
+
+      {/* Schedule again */}
+      {visit.doctor_name && onBookMessage && (
+        <button
+          onClick={handleScheduleAgain}
+          className="mb-4 flex items-center justify-center gap-2 w-full rounded-2xl border border-[#0F1B3D]/10 bg-white px-4 py-2.5 text-[14px] font-semibold text-[#0F1B3D]/70 hover:bg-[#0F1B3D]/[0.04] transition-colors"
+        >
+          <Calendar className="h-4 w-4" />
+          Schedule again
+        </button>
+      )}
+
+      {/* Summary */}
+      {visit.summary &&
+        visit.summary !== "past visit" &&
+        visit.summary !== "upcoming visit" && (
+        <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] p-4 mb-3">
+          <h4 className="text-[13px] font-bold text-[#0F1B3D]/40 uppercase tracking-wider mb-2">Summary</h4>
+          <p className="text-[14px] leading-relaxed text-[#1C1C1E]">{visit.summary}</p>
+        </div>
+      )}
+
+      {/* Visit Notes */}
+      {notes.length > 0 && (
+        <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] p-4 mb-3">
+          <h4 className="text-[13px] font-bold text-[#0F1B3D]/40 uppercase tracking-wider mb-3">Visit Notes</h4>
+          {notes.map((note) => (
+            <div key={note.id} className="mb-3 last:mb-0">
+              {note.description && (
+                <p className="text-[14px] font-semibold text-[#0F1B3D] mb-1.5">{note.description}</p>
+              )}
+              {note.duration_seconds > 0 && (
+                <p className="text-[12px] text-[#AEAEB2] mb-2">
+                  {Math.round(note.duration_seconds / 60)} min recording
+                </p>
+              )}
+              {/* Key Points */}
+              {note.key_points && note.key_points.length > 0 && (
+                <div className="mb-2">
+                  <p className="text-[12px] font-bold text-[#0F1B3D]/30 uppercase tracking-wider mb-1">Key Points</p>
+                  <ul className="space-y-1">
+                    {note.key_points.map((kp, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[14px] text-[#1C1C1E] leading-relaxed">
+                        <CircleDot className="h-3 w-3 mt-1.5 shrink-0 text-[#0F1B3D]/30" />
+                        {kp.text || kp.point || ""}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {/* Action Items */}
+              {note.action_items && note.action_items.length > 0 && (
+                <div>
+                  <p className="text-[12px] font-bold text-[#0F1B3D]/30 uppercase tracking-wider mb-1">Action Items</p>
+                  <ul className="space-y-1">
+                    {note.action_items.map((ai, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[14px] text-[#1C1C1E] leading-relaxed">
+                        <CheckSquare className="h-3.5 w-3.5 mt-1 shrink-0 text-[#0F1B3D]/30" />
+                        {ai.text || ai.item || ""}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Labs */}
+      {visit.labs && visit.labs.length > 0 && (
+        <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden mb-3">
+          <div className="px-4 pt-4 pb-2">
+            <h4 className="text-[13px] font-bold text-[#0F1B3D]/40 uppercase tracking-wider">Lab Results</h4>
+          </div>
+          {visit.labs.map((lab, i) => (
+            <React.Fragment key={i}>
+              {i > 0 && <div className="h-px bg-[#E5E5EA] mx-4" />}
+              <div className="flex items-center justify-between px-4 py-3">
+                <span className="text-[14px] text-[#1C1C1E]">{lab.name}</span>
+                <span className={`text-[14px] font-semibold ${
+                  lab.flag === "high" ? "text-orange-500" :
+                  lab.flag === "low" ? "text-red-500" :
+                  "text-[#0F1B3D]"
+                }`}>
+                  {lab.value}
+                  {lab.flag && lab.flag !== "normal" && (
+                    <span className="ml-1.5 text-[11px] font-bold uppercase">{lab.flag}</span>
+                  )}
+                </span>
+              </div>
+            </React.Fragment>
+          ))}
+        </div>
+      )}
+
+      {/* Documents */}
+      <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden mb-3">
+        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+          <h4 className="text-[13px] font-bold text-[#0F1B3D]/40 uppercase tracking-wider">Documents</h4>
+          <input
+            ref={docInputRef}
+            type="file"
+            accept="image/*,.pdf,.jpg,.jpeg,.png,.gif,.webp,.heic,.heif"
+            className="hidden"
+            onChange={handleDocUpload}
+          />
+          <button
+            onClick={() => docInputRef.current?.click()}
+            disabled={uploadingDoc}
+            className="transition-opacity hover:opacity-70"
+          >
+            {uploadingDoc ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0F1B3D]/30 border-t-transparent" />
+            ) : (
+              <Upload className="h-4 w-4 text-[#0F1B3D]/40" />
+            )}
+          </button>
+        </div>
+
+        {loadingExtra && docs.length === 0 && (
+          <div className="px-4 py-4 text-center">
+            <div className="h-4 w-4 mx-auto animate-spin rounded-full border-2 border-[#0F1B3D]/20 border-t-[#0F1B3D]/60" />
+          </div>
+        )}
+
+        {!loadingExtra && docs.length === 0 && (
+          <div className="px-4 py-4 text-center">
+            <p className="text-[13px] text-[#AEAEB2]">No documents yet. Tap + to upload.</p>
+          </div>
+        )}
+
+        {docs.map((doc, i) => (
+          <React.Fragment key={doc.id}>
+            {i > 0 && <div className="h-px bg-[#E5E5EA] mx-4" />}
+            <div className="flex items-center gap-3 px-4 py-3">
+              <FileText className="h-4 w-4 text-[#34C759] shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[14px] text-[#1C1C1E] truncate">{doc.doc_title || doc.filename}</p>
+                <p className="text-[12px] text-[#AEAEB2] capitalize">{doc.doc_type.replace(/_/g, " ")}</p>
+              </div>
+              {doc.download_url && (
+                <a
+                  href={doc.download_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 text-[#0F1B3D]/30 hover:text-[#0F1B3D] transition-colors"
+                >
+                  <Download className="h-4 w-4" />
+                </a>
+              )}
+            </div>
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* Rating & Review (past visits only) */}
+      {isPast && (
+        <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] p-4 mb-3">
+          <h4 className="text-[13px] font-bold text-[#0F1B3D]/40 uppercase tracking-wider mb-2">
+            Rate {visit.doctor_name || "this visit"}
+          </h4>
+          <div className="flex items-center gap-1 mb-3">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <button
+                key={s}
+                onClick={() => setRating(s)}
+                className="transition-transform hover:scale-110"
+              >
+                <Star
+                  className="h-7 w-7"
+                  fill={s <= rating ? "#F5A623" : "none"}
+                  stroke={s <= rating ? "#F5A623" : "#D1D5DB"}
+                />
+              </button>
+            ))}
+          </div>
+          <textarea
+            value={review}
+            onChange={(e) => setReview(e.target.value)}
+            placeholder="How was your experience?"
+            rows={3}
+            className="w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[14px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 resize-none"
+          />
+          {rating > 0 && (
+            <button
+              onClick={handleSaveReview}
+              disabled={savingReview}
+              className="mt-2 w-full rounded-xl bg-[#0F1B3D] px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-[#0F1B3D]/90 disabled:opacity-40 transition-colors"
+            >
+              {savingReview ? "Saving..." : "Save Review"}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Call provider */}
+      {visit.doctor_phone && (
+        <a
+          href={`tel:${visit.doctor_phone}`}
+          className="mt-2 flex items-center justify-center gap-2 rounded-2xl bg-[#0F1B3D] px-4 py-3 text-[15px] font-semibold text-white hover:bg-[#0F1B3D]/90 transition-colors"
+        >
+          <Phone className="h-4 w-4" />
+          Call {visit.doctor_name || "Provider"}
+        </a>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════
+//  Add Provider Panel
+// ═══════════════════════════════════════════════════
+
+const SPECIALTY_OPTIONS = [
+  "Primary Care", "Dentist", "Eye Doctor", "OB/GYN", "Dermatologist",
+  "Cardiologist", "Orthopedic", "Neurologist", "Psychiatrist", "Allergist",
+  "ENT", "Urologist", "Gastroenterologist", "Pulmonologist", "Endocrinologist",
+  "Oncologist", "Rheumatologist", "Pediatrician", "Chiropractor",
+  "Physical Therapy", "Podiatrist", "Pharmacy", "Other",
+];
+
+function AddProviderPanel({
+  profileId,
+  onClose,
+  onSaved,
+}: {
+  profileId: string | null;
+  onClose: () => void;
+  onSaved: (doc: DoctorItem) => void;
+}) {
+  const [name, setName] = useState("");
+  const [specialty, setSpecialty] = useState("Primary Care");
+  const [practiceName, setPracticeName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    if (!name.trim() || !profileId) return;
+    setSaving(true);
+    try {
+      const res = await apiFetch(`/profile/${profileId}/doctors/add`, {
+        method: "POST",
+        body: JSON.stringify({
+          name: name.trim(),
+          specialty,
+          practice_name: practiceName.trim() || undefined,
+          phone: phone.trim() || undefined,
+          address: address.trim() || undefined,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        onSaved(data.doctor || { name: name.trim(), specialty });
+      }
+    } catch {
+      // silent
+    }
+    setSaving(false);
+  }
+
+  return (
+    <div className="p-6 pb-8 animate-in fade-in duration-200">
+      <button
+        onClick={onClose}
+        className="flex items-center gap-1.5 text-sm font-medium text-[#0F1B3D]/50 hover:text-[#0F1B3D] transition-colors mb-4"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back
+      </button>
+
+      <h3 className="text-[20px] font-extrabold text-[#0F1B3D] mb-5">Add Provider</h3>
+
+      <div className="space-y-4">
+        <div>
+          <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Name</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Dr. Sarah Smith"
+            className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30"
+          />
+        </div>
+
+        <div>
+          <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Specialty</label>
+          <select
+            value={specialty}
+            onChange={(e) => setSpecialty(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+          >
+            {SPECIALTY_OPTIONS.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Practice</label>
+          <input
+            type="text"
+            value={practiceName}
+            onChange={(e) => setPracticeName(e.target.value)}
+            placeholder="Optional"
+            className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30"
+          />
+        </div>
+
+        <div>
+          <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Phone</label>
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="Optional"
+            className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30"
+          />
+        </div>
+
+        <div>
+          <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Address</label>
+          <input
+            type="text"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="Optional"
+            className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30"
+          />
+        </div>
+      </div>
+
+      <button
+        onClick={handleSave}
+        disabled={!name.trim() || saving}
+        className="mt-6 w-full rounded-2xl bg-[#0F1B3D] px-4 py-3 text-[15px] font-semibold text-white hover:bg-[#0F1B3D]/90 disabled:opacity-40 transition-colors"
+      >
+        {saving ? "Saving..." : "Add Provider"}
+      </button>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════
+//  Todo Editor Panel (create / edit)
+// ═══════════════════════════════════════════════════
+
+function TodoEditorPanel({
+  editingTodo,
+  onClose,
+  onCreate,
+  onUpdate,
+  onDelete,
+}: {
+  editingTodo: { mode: "create" } | { mode: "edit"; todo: CareTodo };
+  onClose: () => void;
+  onCreate: (data: CareTodoCreate) => Promise<CareTodo | null>;
+  onUpdate: (id: string, data: Partial<CareTodoCreate> & { status?: string }) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}) {
+  const isEdit = editingTodo.mode === "edit";
+  const existing = isEdit ? editingTodo.todo : null;
+
+  const [title, setTitle] = useState(existing?.title || "");
+  const [subtitle, setSubtitle] = useState(existing?.subtitle || "");
+  const [color, setColor] = useState(existing?.color || "#0F1B3D");
+  const [frequency, setFrequency] = useState<string>(existing?.frequency || "once");
+  const [dueDate, setDueDate] = useState(existing?.due_date || "");
+  const [dueTime, setDueTime] = useState(existing?.due_time || "");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    if (!title.trim()) return;
+    setSaving(true);
+    const data: CareTodoCreate = {
+      title: title.trim(),
+      subtitle: subtitle.trim(),
+      frequency,
+      due_date: dueDate || null,
+      due_time: dueTime || null,
+    };
+    if (isEdit && existing) {
+      await onUpdate(existing.id, data);
+    } else {
+      await onCreate(data);
+    }
+    setSaving(false);
+    onClose();
+  }
+
+  async function handleDelete() {
+    if (!isEdit || !existing) return;
+    await onDelete(existing.id);
+    onClose();
+  }
+
+  return (
+    <div className="p-6 pb-8 animate-in fade-in duration-200">
+      <button
+        onClick={onClose}
+        className="flex items-center gap-1.5 text-sm font-medium text-[#0F1B3D]/50 hover:text-[#0F1B3D] transition-colors mb-4"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back
+      </button>
+
+      <h3 className="text-[20px] font-extrabold text-[#0F1B3D] mb-5">
+        {isEdit ? "Edit Task" : "New Task"}
+      </h3>
+
+      <div className="space-y-4">
+        {/* Title */}
+        <div>
+          <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Title</label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Schedule annual physical"
+            className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30"
+          />
+        </div>
+
+        {/* Subtitle */}
+        <div>
+          <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Description</label>
+          <input
+            type="text"
+            value={subtitle}
+            onChange={(e) => setSubtitle(e.target.value)}
+            placeholder="Optional details"
+            className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30"
+          />
+        </div>
+
+        {/* Frequency */}
+        <div>
+          <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Frequency</label>
+          <div className="flex gap-2 mt-2 flex-wrap">
+            {FREQUENCY_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setFrequency(opt.value)}
+                className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
+                  frequency === opt.value
+                    ? "bg-[#0F1B3D] text-white"
+                    : "bg-white border border-[#E5E5EA] text-[#0F1B3D]/60"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Due date */}
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Due Date</label>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Time</label>
+            <input
+              type="time"
+              value={dueTime}
+              onChange={(e) => setDueTime(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <button
+        onClick={handleSave}
+        disabled={!title.trim() || saving}
+        className="mt-6 w-full rounded-2xl bg-[#0F1B3D] px-4 py-3 text-[15px] font-semibold text-white hover:bg-[#0F1B3D]/90 disabled:opacity-40 transition-colors"
+      >
+        {saving ? "Saving..." : isEdit ? "Save Changes" : "Add Task"}
+      </button>
+
+      {isEdit && (
+        <button
+          onClick={handleDelete}
+          className="mt-2 w-full rounded-2xl border border-red-200 px-4 py-3 text-[15px] font-semibold text-red-500 hover:bg-red-50 transition-colors"
+        >
+          Delete Task
+        </button>
+      )}
+    </div>
   );
 }
 

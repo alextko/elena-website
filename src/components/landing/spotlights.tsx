@@ -129,7 +129,18 @@ function SpotlightRow({
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
+      { threshold: 0.15 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div
@@ -158,8 +169,11 @@ function SpotlightRow({
         </p>
       </div>
       <div
-        className="shrink-0 w-[420px] max-md:w-full max-md:max-w-[420px]"
+        className="max-md:mx-auto"
         style={{
+          flexShrink: 0,
+          width: 340,
+          maxWidth: 340,
           fontFamily:
             "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, sans-serif",
         }}
@@ -226,7 +240,7 @@ function GamePlanCard() {
     <div
       ref={cardRef}
       className="rounded-[22px] pt-[18px] pb-2 overflow-hidden"
-      style={{ background: "#F4B084" }}
+      style={{ background: "#F4B084", boxShadow: "0 12px 40px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.05)" }}
     >
       {/* Title */}
       <div
@@ -392,7 +406,7 @@ function VisitTimeline() {
     <>
       <div
         className="rounded-[24px] p-6 overflow-hidden"
-        style={{ background: "#DBEAFE" }}
+        style={{ background: "#DBEAFE", boxShadow: "0 12px 40px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.05)" }}
       >
         <div
           className="text-2xl font-extrabold mb-4"
@@ -807,7 +821,7 @@ function VisitTimeline() {
    ================================================================ */
 function PhoneCallingCard() {
   return (
-    <div>
+    <div className="rounded-[22px] p-5" style={{ background: "#F7F6F2", boxShadow: "0 12px 40px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.05)" }}>
       <div className="flex items-center gap-2 py-3">
         <span
           className="text-lg leading-none inline-block"
@@ -946,7 +960,7 @@ function InsuranceCarousel() {
   ];
 
   return (
-    <div className="flex flex-col items-center w-[280px]">
+    <div className="flex flex-col items-center w-[340px]">
       <div
         className="overflow-hidden rounded-[20px] relative w-full"
         style={{ boxShadow: "0 8px 16px rgba(0,0,0,0.18)" }}
@@ -1150,7 +1164,7 @@ function MriPricingChat() {
     <div
       ref={chatRef}
       className="flex flex-col gap-[18px] rounded-2xl p-6"
-      style={{ background: "#F7F6F2" }}
+      style={{ background: "#F7F6F2", boxShadow: "0 16px 48px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06)" }}
     >
       {/* User message */}
       <div className={animClass(0, true)}>
@@ -1431,7 +1445,7 @@ export default function Spotlights() {
     <section
       id="how-it-works"
       className="relative z-10"
-      style={{ background: "#f5f7fb", padding: "80px 0 120px" }}
+      style={{ background: "#FFFFFF", padding: "80px 0 120px" }}
     >
       {/* 1. Game Plan */}
       <SpotlightRow

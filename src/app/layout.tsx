@@ -27,7 +27,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Elena — Your Healthcare Assistant",
+  title: "Elena | Your Healthcare Assistant",
   description:
     "Elena is your AI-powered healthcare assistant. Chat with an AI that calls doctors, negotiates bills, compares drug prices, and manages your entire medical life.",
   icons: { icon: "/images/favicon.png" },
