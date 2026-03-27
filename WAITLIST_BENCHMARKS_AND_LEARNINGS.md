@@ -1,3 +1,4 @@
+
 # Waitlist Landing Page Benchmarks & Learnings (2025-2026)
 
 *Compiled: March 24, 2026*
