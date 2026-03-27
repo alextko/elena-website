@@ -31,6 +31,7 @@ function ChatPageInner() {
   const [pendingQuery, setPendingQuery] = useState<string | null>(null);
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
   const [bookMessage, setBookMessage] = useState<string | null>(null);
+  const [isNewChat, setIsNewChat] = useState(false);
   const sessionsFetchedRef = useRef(false);
 
   // Read pending query from landing page (set before auth redirect)
@@ -87,10 +88,10 @@ function ChatPageInner() {
 
   // Auto-open most recent session (unless there's a pending query from landing)
   useEffect(() => {
-    if (!loadingSessions && sessions.length > 0 && activeSessionId === null && !pendingQuery) {
+    if (!loadingSessions && sessions.length > 0 && activeSessionId === null && !pendingQuery && !isNewChat) {
       setActiveSessionId(sessions[0].id);
     }
-  }, [loadingSessions, sessions, activeSessionId, pendingQuery]);
+  }, [loadingSessions, sessions, activeSessionId, pendingQuery, isNewChat]);
 
   const handleSessionCreated = useCallback(
     (sessionId: string) => {
@@ -100,8 +101,6 @@ function ChatPageInner() {
     },
     [fetchSessions],
   );
-
-  const [isNewChat, setIsNewChat] = useState(false);
 
   const handleNewChat = useCallback(() => {
     setActiveSessionId(null);

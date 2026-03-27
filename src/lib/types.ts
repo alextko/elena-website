@@ -259,6 +259,16 @@ export interface BookingResultPayload {
   apple_calendar_url?: string | null;
 }
 
+// --- Habits (api_habits.py) ---
+
+export interface Habit {
+  id: string;
+  title: string;
+  subtitle: string;
+  color: string;
+  sort_order: number;
+}
+
 // --- Care Todos / Game Plan (api_todos.py) ---
 
 export interface CareTodo {

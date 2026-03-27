@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, X } from "lucide-react";
 import { ProfilePopover } from "@/components/profile-popover";
 import { useAuth } from "@/lib/auth-context";
 import type { ChatSessionItem } from "@/lib/types";
@@ -29,7 +30,7 @@ function groupByDate(sessions: ChatSessionItem[]): Record<string, ChatSessionIte
   return groups;
 }
 
-function SidebarProfile() {
+function SidebarProfile({ onBookMessage }: { onBookMessage?: (msg: string) => void }) {
   const { user, profileData } = useAuth();
 
   const displayName =
@@ -42,7 +43,7 @@ function SidebarProfile() {
   const email = user?.email || "";
 
   return (
-    <ProfilePopover>
+    <ProfilePopover onBookMessage={onBookMessage}>
       <button className="flex w-full items-center gap-2.5 border-t border-[#0F1B3D]/[0.06] px-5 py-4 text-left transition-colors hover:bg-[#0F1B3D]/[0.03]">
         {profileData?.profilePictureUrl ? (
           <img
@@ -83,18 +84,33 @@ export function Sidebar({
   sessions: ChatSessionItem[];
   loadingSessions: boolean;
 }) {
-  const grouped = groupByDate(sessions);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredSessions = searchQuery.trim()
+    ? sessions.filter((s) => {
+        const q = searchQuery.toLowerCase();
+        return (
+          (s.title && s.title.toLowerCase().includes(q)) ||
+          (s.preview && s.preview.toLowerCase().includes(q))
+        );
+      })
+    : sessions;
+
+  const grouped = groupByDate(filteredSessions);
   const groupOrder = ["Today", "Yesterday", "Last week", "Older"];
 
   return (
     <div className="flex h-dvh w-64 flex-shrink-0 flex-col bg-[#f5f7fb]">
       {/* Header */}
       <div className="flex-shrink-0 flex items-center gap-2.5 px-5 pt-5 pb-4">
-        <img
-          src="/images/elena-icon-cropped.png"
-          alt="Elena"
-          className="h-12 w-12 rounded-xl"
-        />
+        <div className="h-12 w-12 rounded-xl overflow-hidden bg-[#0F1B3D] shrink-0">
+          <img
+            src="/images/elena-icon-cropped.png"
+            alt="Elena"
+            className="h-full w-full object-cover"
+            style={{ transform: "scale(1.1)" }}
+          />
+        </div>
         <span className="text-lg font-extrabold text-[#0F1B3D]">elena</span>
       </div>
 
@@ -107,10 +123,24 @@ export function Sidebar({
           <Plus className="h-4 w-4" />
           New Chat
         </button>
-        <button className="flex w-full items-center justify-center gap-2 rounded-full border border-[#0F1B3D]/10 bg-[#0F1B3D]/[0.04] py-2.5 text-sm font-medium text-[#0F1B3D]/70 shadow-[0_2px_8px_rgba(15,27,61,0.04),inset_0_1px_0_rgba(255,255,255,0.5)] transition-all hover:bg-[#0F1B3D]/[0.08]">
-          <Search className="h-4 w-4" />
-          Search
-        </button>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#0F1B3D]/30 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search chats..."
+            className="w-full rounded-full border border-[#0F1B3D]/10 bg-[#0F1B3D]/[0.04] py-2.5 pl-8 pr-8 text-sm text-[#0F1B3D]/70 placeholder:text-[#0F1B3D]/30 outline-none focus:border-[#0F1B3D]/20 focus:bg-white transition-colors"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#0F1B3D]/30 hover:text-[#0F1B3D]/60"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* History — scrollable, min-h-0 is the key flexbox scroll fix */}
@@ -119,9 +149,9 @@ export function Sidebar({
           <div className="flex items-center justify-center py-8">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#0F1B3D]/20 border-t-[#0F1B3D]/60" />
           </div>
-        ) : sessions.length === 0 ? (
+        ) : filteredSessions.length === 0 ? (
           <p className="px-3 py-8 text-center text-xs text-[#0F1B3D]/30">
-            No conversations yet
+            {searchQuery ? "No matching chats" : "No conversations yet"}
           </p>
         ) : (
           groupOrder.map((label) => {
@@ -158,7 +188,7 @@ export function Sidebar({
 
       {/* Profile — pinned to bottom, never scrolls */}
       <div className="flex-shrink-0 relative z-10 shadow-[0_-4px_12px_rgba(15,27,61,0.06)]">
-        <SidebarProfile />
+        <SidebarProfile onBookMessage={onBookMessage} />
       </div>
     </div>
   );

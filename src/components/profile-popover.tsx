@@ -27,10 +27,11 @@ import {
   Download,
   CheckSquare,
   CircleDot,
+  Trash2,
 } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
-import type { CareTodo, CareTodoCreate, CareVisit, DoctorItem } from "@/lib/types";
+import type { CareTodo, CareTodoCreate, CareVisit, DoctorItem, Habit } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import type { InsuranceCard } from "@/lib/types";
 
@@ -128,8 +129,9 @@ export function ProfilePopover({
 }) {
   const {
     user, profileId, profileData, doctors, careVisits,
-    subscription, insuranceCards, todos,
-    toggleTodo, createTodo, updateTodo, deleteTodo,
+    subscription, insuranceCards, todos, habits, habitCompletions,
+    toggleHabit, toggleTodo, createTodo, updateTodo, deleteTodo,
+    refreshTodos, refreshDoctors, refreshVisits, refreshInsurance,
     profileDetailsLoaded, fetchProfileDetails, updateProfilePicture, signOut,
   } = useAuth();
   const router = useRouter();
@@ -171,7 +173,9 @@ export function ProfilePopover({
 
   useEffect(() => {
     if (open && !profileDetailsLoaded) fetchProfileDetails();
-  }, [open, profileDetailsLoaded, fetchProfileDetails]);
+    // Refresh todos every time the popover opens (they change frequently between app/web)
+    if (open && profileDetailsLoaded) refreshTodos();
+  }, [open, profileDetailsLoaded, fetchProfileDetails, refreshTodos]);
 
   const visitsScrollRef = useRef<HTMLDivElement>(null);
   const [showTodayBtn, setShowTodayBtn] = useState(false);
@@ -246,78 +250,12 @@ export function ProfilePopover({
         <div ref={scrollRef} className="max-h-[60vh] overflow-y-auto">
           {/* ═══════════ PROVIDER DETAIL VIEW ═══════════ */}
           {selectedProvider && (
-            <div className="p-6 pb-8 animate-in fade-in duration-200">
-              <button
-                onClick={() => setSelectedProvider(null)}
-                className="flex items-center gap-1.5 text-sm font-medium text-[#0F1B3D]/50 hover:text-[#0F1B3D] transition-colors mb-4"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back
-              </button>
-
-              <div className="flex items-center gap-3 mb-5">
-                {(() => { const Icon = specialtyIcon(selectedProvider.specialty); return (
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0F1B3D]/[0.06]">
-                    <Icon className="h-5 w-5 text-[#0F1B3D]" />
-                  </div>
-                ); })()}
-                <div className="min-w-0 flex-1">
-                  <p className="text-[18px] font-extrabold text-[#0F1B3D]">
-                    {selectedProvider.name || selectedProvider.specialty}
-                  </p>
-                  {selectedProvider.credential && (
-                    <p className="text-[13px] text-[#8E8E93]">{selectedProvider.credential}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
-                {[
-                  { label: "Specialty", value: selectedProvider.specialty },
-                  { label: "Practice", value: selectedProvider.practice_name },
-                  { label: "Phone", value: selectedProvider.phone },
-                  { label: "Address", value: selectedProvider.address },
-                ].filter(r => r.value).map((row, i, arr) => (
-                  <React.Fragment key={row.label}>
-                    <div className="flex items-center justify-between px-4 py-3.5">
-                      <span className="text-[14px] text-[#8E8E93]">{row.label}</span>
-                      {row.label === "Phone" ? (
-                        <a href={`tel:${row.value}`} className="text-[14px] font-medium text-[#2563EB]">
-                          {row.value}
-                        </a>
-                      ) : (
-                        <span className="text-[14px] font-medium text-[#0F1B3D] text-right max-w-[60%] truncate">
-                          {row.value}
-                        </span>
-                      )}
-                    </div>
-                    {i < arr.length - 1 && <div className="h-px bg-[#E5E5EA] mx-4" />}
-                  </React.Fragment>
-                ))}
-              </div>
-
-              {selectedProvider.phone && (
-                <a
-                  href={`tel:${selectedProvider.phone}`}
-                  className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-[#0F1B3D] px-4 py-3 text-[15px] font-semibold text-white hover:bg-[#0F1B3D]/90 transition-colors"
-                >
-                  <Phone className="h-4 w-4" />
-                  Call Office
-                </a>
-              )}
-
-              {selectedProvider.address && (
-                <a
-                  href={`https://maps.apple.com/?q=${encodeURIComponent(selectedProvider.address)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 flex items-center justify-center gap-2 rounded-2xl border border-[#0F1B3D]/10 bg-white px-4 py-3 text-[15px] font-semibold text-[#0F1B3D]/70 hover:bg-[#0F1B3D]/[0.04] transition-colors"
-                >
-                  <MapPin className="h-4 w-4" />
-                  Get Directions
-                </a>
-              )}
-            </div>
+            <ProviderDetailPanel
+              provider={selectedProvider}
+              profileId={profileId}
+              onClose={() => setSelectedProvider(null)}
+              onUpdated={() => { setSelectedProvider(null); refreshDoctors(); }}
+            />
           )}
 
           {/* ═══════════ VISIT DETAIL VIEW ═══════════ */}
@@ -327,6 +265,7 @@ export function ProfilePopover({
               onClose={() => setSelectedVisit(null)}
               onBookMessage={onBookMessage}
               onClosePopover={() => setOpen(false)}
+              onUpdated={() => { setSelectedVisit(null); refreshVisits(); }}
             />
           )}
 
@@ -335,10 +274,9 @@ export function ProfilePopover({
             <AddProviderPanel
               profileId={profileId}
               onClose={() => setAddingProvider(false)}
-              onSaved={(doc) => {
+              onSaved={() => {
                 setAddingProvider(false);
-                // Refresh profile details to get updated doctor list
-                fetchProfileDetails();
+                refreshDoctors();
               }}
             />
           )}
@@ -433,12 +371,15 @@ export function ProfilePopover({
                     const days = Array.from({ length: 7 }, (_, i) => {
                       const d = new Date(monday);
                       d.setDate(monday.getDate() + i);
-                      return {
-                        label: d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2),
-                        num: d.getDate(),
-                        isToday: d.toDateString() === now.toDateString(),
-                        isFuture: d > now && d.toDateString() !== now.toDateString(),
-                      };
+                      const dateKey = d.toISOString().slice(0, 10);
+                      const isToday = d.toDateString() === now.toDateString();
+                      const isFuture = d > now && !isToday;
+                      // Day is complete if all habits are done for that date
+                      const dayCompletions = habitCompletions[dateKey];
+                      const allDone = !isFuture && habits.length > 0 && dayCompletions
+                        ? habits.every((h) => dayCompletions.has(h.id))
+                        : false;
+                      return { label: d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2), num: d.getDate(), isToday, isFuture, allDone };
                     });
                     return (
                       <div className="flex justify-center gap-[10px] px-6 pb-4">
@@ -453,12 +394,18 @@ export function ProfilePopover({
                             <span
                               className="w-9 h-9 rounded-full flex items-center justify-center text-base font-bold"
                               style={{
-                                color: day.isFuture ? "#7A3040" : "#5C1A2A",
+                                color: day.isToday ? "#5C1A2A" : day.isFuture ? "#7A3040" : "#5C1A2A",
                                 background: day.isToday ? "#FFFFFF" : "transparent",
                                 opacity: day.isFuture ? 0.5 : 1,
                               }}
                             >
-                              {day.num}
+                              {!day.isFuture && day.allDone ? (
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={day.isToday ? "#5C1A2A" : "#5C1A2A"} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              ) : (
+                                day.num
+                              )}
                             </span>
                           </div>
                         ))}
@@ -478,80 +425,122 @@ export function ProfilePopover({
                       </button>
                     </div>
 
-                    {todos.filter((t) => t.status !== "dismissed").length === 0 && profileDetailsLoaded && (
-                      <div className="rounded-[14px] px-[14px] py-8 text-center" style={{ background: "rgba(255,255,255,0.3)" }}>
-                        <p className="text-[15px] font-semibold" style={{ color: "#5C1A2A" }}>All caught up!</p>
-                        <p className="text-[13px] mt-1" style={{ color: "#7A3040" }}>Your health tasks will appear here.</p>
-                      </div>
-                    )}
+                    {(() => {
+                      // Merge habits and care todos into one list
+                      type GamePlanItem =
+                        | { type: "habit"; id: string; title: string; subtitle: string; color: string; completed: boolean; sortOrder: number }
+                        | { type: "todo"; todo: CareTodo; sortOrder: number };
 
-                    {todos.filter((t) => t.status !== "dismissed").length > 0 && (
-                      <div className="rounded-[14px] px-[14px] py-[10px]" style={{ background: "rgba(255,255,255,0.3)" }}>
-                        {todos
+                      const items: GamePlanItem[] = [
+                        ...habits.map((h, i) => ({
+                          type: "habit" as const,
+                          id: h.id,
+                          title: h.title,
+                          subtitle: h.subtitle,
+                          color: h.color,
+                          completed: !!(habitCompletions[new Date().toISOString().slice(0, 10)]?.has(h.id)),
+                          sortOrder: h.sort_order,
+                        })),
+                        ...todos
                           .filter((t) => t.status !== "dismissed")
-                          .sort((a, b) => {
-                            if (a.status !== b.status) return a.status === "pending" ? -1 : 1;
-                            return a.sort_order - b.sort_order;
-                          })
-                          .map((todo, i) => (
-                            <React.Fragment key={todo.id}>
-                              {i > 0 && (
-                                <div className="h-px mx-[14px]" style={{ background: "rgba(92,26,42,0.2)" }} />
-                              )}
-                              <div className="flex items-center gap-3 py-[10px]">
-                                {/* Checkbox */}
-                                <button
-                                  onClick={() => toggleTodo(todo.id)}
-                                  className="w-8 h-8 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors duration-200"
-                                  style={{
-                                    borderColor: todo.status === "completed" ? "#5C1A2A" : "#7A3040",
-                                    background: todo.status === "completed" ? "#5C1A2A" : "transparent",
-                                  }}
-                                >
-                                  {todo.status === "completed" && (
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                      <polyline points="20 6 9 17 4 12" />
-                                    </svg>
-                                  )}
-                                </button>
+                          .map((t) => ({
+                            type: "todo" as const,
+                            todo: t,
+                            sortOrder: t.sort_order + 1000, // habits first
+                          })),
+                      ];
 
-                                {/* Title + subtitle */}
-                                <button
-                                  className="flex-1 min-w-0 text-left"
-                                  onClick={() => setEditingTodo({ mode: "edit", todo })}
-                                >
-                                  <div
-                                    className="text-[17px] font-semibold transition-all duration-200 truncate"
+                      // Sort: uncompleted first, then by sort order
+                      items.sort((a, b) => {
+                        const aCompleted = a.type === "habit" ? a.completed : a.todo.status === "completed";
+                        const bCompleted = b.type === "habit" ? b.completed : b.todo.status === "completed";
+                        if (aCompleted !== bCompleted) return aCompleted ? 1 : -1;
+                        return a.sortOrder - b.sortOrder;
+                      });
+
+                      if (items.length === 0 && profileDetailsLoaded) {
+                        return (
+                          <div className="rounded-[14px] px-[14px] py-8 text-center" style={{ background: "rgba(255,255,255,0.3)" }}>
+                            <p className="text-[15px] font-semibold" style={{ color: "#5C1A2A" }}>All caught up!</p>
+                            <p className="text-[13px] mt-1" style={{ color: "#7A3040" }}>Your health tasks will appear here.</p>
+                          </div>
+                        );
+                      }
+
+                      if (items.length === 0) return null;
+
+                      return (
+                        <div className="rounded-[14px] px-[14px] py-[10px]" style={{ background: "rgba(255,255,255,0.3)" }}>
+                          {items.map((item, i) => {
+                            const isHabit = item.type === "habit";
+                            const completed = isHabit ? item.completed : item.todo.status === "completed";
+                            const title = isHabit ? item.title : item.todo.title;
+                            const subtitle = isHabit ? item.subtitle : item.todo.subtitle;
+                            const dueTime = isHabit ? null : item.todo.due_time;
+                            const bookMsg = isHabit ? null : item.todo.book_message;
+                            const itemId = isHabit ? item.id : item.todo.id;
+
+                            return (
+                              <React.Fragment key={itemId}>
+                                {i > 0 && (
+                                  <div className="h-px mx-[14px]" style={{ background: "rgba(92,26,42,0.2)" }} />
+                                )}
+                                <div className="flex items-center gap-3 py-[10px]">
+                                  {/* Checkbox */}
+                                  <button
+                                    onClick={() => isHabit ? toggleHabit(item.id) : toggleTodo(item.todo.id)}
+                                    className="w-8 h-8 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors duration-200"
                                     style={{
-                                      color: todo.status === "completed" ? "#7A3040" : "#5C1A2A",
-                                      textDecoration: todo.status === "completed" ? "line-through" : "none",
+                                      borderColor: completed ? "#5C1A2A" : "#7A3040",
+                                      background: completed ? "#5C1A2A" : "transparent",
                                     }}
                                   >
-                                    {todo.title}
-                                  </div>
-                                  {(todo.subtitle || todo.due_time) && (
-                                    <div className="text-[13px] mt-[1px] truncate" style={{ color: "#7A3040" }}>
-                                      {todo.due_time && <span>{todo.due_time.replace(/^0/, "")} · </span>}
-                                      {todo.subtitle}
-                                    </div>
-                                  )}
-                                </button>
-
-                                {/* Book button */}
-                                {todo.status === "pending" && todo.book_message && onBookMessage && (
-                                  <button
-                                    onClick={() => { onBookMessage(todo.book_message); setOpen(false); }}
-                                    className="shrink-0 rounded-full px-4 py-[7px] text-[13px] font-semibold text-white transition-colors"
-                                    style={{ background: "#0F1B3D" }}
-                                  >
-                                    Book
+                                    {completed && (
+                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="20 6 9 17 4 12" />
+                                      </svg>
+                                    )}
                                   </button>
-                                )}
-                              </div>
-                            </React.Fragment>
-                          ))}
-                      </div>
-                    )}
+
+                                  {/* Title + subtitle */}
+                                  <button
+                                    className="flex-1 min-w-0 text-left"
+                                    onClick={!isHabit ? () => setEditingTodo({ mode: "edit", todo: item.todo }) : undefined}
+                                  >
+                                    <div
+                                      className="text-[17px] font-semibold transition-all duration-200 truncate"
+                                      style={{
+                                        color: completed ? "#7A3040" : "#5C1A2A",
+                                        textDecoration: completed ? "line-through" : "none",
+                                      }}
+                                    >
+                                      {title}
+                                    </div>
+                                    {(subtitle || dueTime) && (
+                                      <div className="text-[13px] mt-[1px] truncate" style={{ color: "#7A3040" }}>
+                                        {dueTime && <span>{dueTime.replace(/^0/, "")} · </span>}
+                                        {subtitle}
+                                      </div>
+                                    )}
+                                  </button>
+
+                                  {/* Book button */}
+                                  {!completed && bookMsg && onBookMessage && (
+                                    <button
+                                      onClick={() => { onBookMessage(bookMsg); setOpen(false); }}
+                                      className="shrink-0 rounded-full px-4 py-[7px] text-[13px] font-semibold text-white transition-colors"
+                                      style={{ background: "#0F1B3D" }}
+                                    >
+                                      Book
+                                    </button>
+                                  )}
+                                </div>
+                              </React.Fragment>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -822,21 +811,24 @@ export function ProfilePopover({
                 {/* Expandable detail sections */}
                 <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden mt-3">
                   <InsuranceDetailRow
-                    icon={Pill} label="Medical" card={medicalCard} fields={MEDICAL_FIELDS}
+                    icon={Pill} label="Medical" card={medicalCard} cardType="medical" fields={MEDICAL_FIELDS}
                     expanded={expandedCard === "medical"}
                     onToggle={() => setExpandedCard(expandedCard === "medical" ? null : "medical")}
+                    onRefresh={refreshInsurance}
                   />
                   <div className="h-px bg-[#E5E5EA] ml-[62px] mr-3.5" />
                   <InsuranceDetailRow
-                    icon={SmilePlus} label="Dental" card={dentalCard} fields={DENTAL_FIELDS}
+                    icon={SmilePlus} label="Dental" card={dentalCard} cardType="dental" fields={DENTAL_FIELDS}
                     expanded={expandedCard === "dental"}
                     onToggle={() => setExpandedCard(expandedCard === "dental" ? null : "dental")}
+                    onRefresh={refreshInsurance}
                   />
                   <div className="h-px bg-[#E5E5EA] ml-[62px] mr-3.5" />
                   <InsuranceDetailRow
-                    icon={Eye} label="Vision" card={visionCard} fields={VISION_FIELDS}
+                    icon={Eye} label="Vision" card={visionCard} cardType="vision" fields={VISION_FIELDS}
                     expanded={expandedCard === "vision"}
                     onToggle={() => setExpandedCard(expandedCard === "vision" ? null : "vision")}
+                    onRefresh={refreshInsurance}
                   />
                 </div>
               </div>
@@ -909,11 +901,13 @@ function VisitDetailPanel({
   onClose,
   onBookMessage,
   onClosePopover,
+  onUpdated,
 }: {
   visit: CareVisit;
   onClose: () => void;
   onBookMessage?: (msg: string) => void;
   onClosePopover: () => void;
+  onUpdated: () => void;
 }) {
   const { profileId } = useAuth();
   const [notes, setNotes] = useState<VisitNote[]>([]);
@@ -925,7 +919,42 @@ function VisitDetailPanel({
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const docInputRef = useRef<HTMLInputElement>(null);
 
+  // Edit mode
+  const [editing, setEditing] = useState(false);
+  const [editType, setEditType] = useState(visit.visit_type);
+  const [editDoctor, setEditDoctor] = useState(visit.doctor_name || "");
+  const [editLocation, setEditLocation] = useState(visit.location || "");
+  const [editDate, setEditDate] = useState(visit.visit_date);
+  const [editSummary, setEditSummary] = useState(visit.summary || "");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
   const isPast = visit.visit_date <= new Date().toISOString().slice(0, 10);
+
+  async function handleSaveEdit() {
+    setSavingEdit(true);
+    try {
+      await apiFetch(`/care-visits/${visit.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          visit_type: editType.trim(),
+          doctor_name: editDoctor.trim() || null,
+          location: editLocation.trim() || null,
+          visit_date: editDate,
+          summary: editSummary.trim(),
+        }),
+      });
+      onUpdated();
+    } catch {}
+    setSavingEdit(false);
+  }
+
+  async function handleDeleteVisit() {
+    try {
+      await apiFetch(`/care-visits/${visit.id}`, { method: "DELETE" });
+      onUpdated();
+    } catch {}
+  }
 
   // Fetch notes and documents for this visit
   useEffect(() => {
@@ -1022,26 +1051,86 @@ function VisitDetailPanel({
 
   return (
     <div className="p-6 pb-8 animate-in fade-in duration-200">
-      <button
-        onClick={onClose}
-        className="flex items-center gap-1.5 text-sm font-medium text-[#0F1B3D]/50 hover:text-[#0F1B3D] transition-colors mb-4"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back
-      </button>
-
-      {/* Visit header */}
-      <div className="mb-5">
-        <p className="text-[22px] font-extrabold text-[#0F1B3D]">{visit.visit_type}</p>
-        <p className="text-[14px] text-[#8E8E93] mt-1">
-          {formatVisitDate(visit.visit_date)}
-          {visit.doctor_name ? ` · ${visit.doctor_name}` : ""}
-        </p>
-        {visit.location && (
-          <p className="text-[13px] text-[#AEAEB2] mt-0.5">{visit.location}</p>
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={editing ? () => setEditing(false) : onClose}
+          className="flex items-center gap-1.5 text-sm font-medium text-[#0F1B3D]/50 hover:text-[#0F1B3D] transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {editing ? "Cancel" : "Back"}
+        </button>
+        {!editing && (
+          <div className="flex items-center gap-2">
+            <button onClick={() => setEditing(true)} className="text-[#0F1B3D]/40 hover:text-[#0F1B3D] transition-colors">
+              <Pencil className="h-4 w-4" />
+            </button>
+            <button onClick={() => setConfirmDelete(true)} className="text-[#0F1B3D]/40 hover:text-red-500 transition-colors">
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
         )}
       </div>
 
+      {confirmDelete && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 mb-4">
+          <p className="text-[14px] font-semibold text-red-600 mb-2">Delete this visit?</p>
+          <div className="flex gap-2">
+            <button onClick={handleDeleteVisit} className="flex-1 rounded-xl bg-red-500 py-2 text-[13px] font-semibold text-white hover:bg-red-600 transition-colors">Delete</button>
+            <button onClick={() => setConfirmDelete(false)} className="flex-1 rounded-xl border border-[#E5E5EA] py-2 text-[13px] font-semibold text-[#0F1B3D]/60 hover:bg-[#0F1B3D]/[0.04] transition-colors">Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit form */}
+      {editing ? (
+        <div className="space-y-4 mb-5">
+          <div>
+            <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Visit Type</label>
+            <input type="text" value={editType} onChange={(e) => setEditType(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30" />
+          </div>
+          <div>
+            <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Doctor</label>
+            <input type="text" value={editDoctor} onChange={(e) => setEditDoctor(e.target.value)} placeholder="Optional"
+              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30" />
+          </div>
+          <div>
+            <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Location</label>
+            <input type="text" value={editLocation} onChange={(e) => setEditLocation(e.target.value)} placeholder="Optional"
+              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30" />
+          </div>
+          <div>
+            <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Date</label>
+            <input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30" />
+          </div>
+          <div>
+            <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Summary</label>
+            <textarea value={editSummary} onChange={(e) => setEditSummary(e.target.value)} rows={3} placeholder="Visit notes..."
+              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 resize-none" />
+          </div>
+          <button onClick={handleSaveEdit} disabled={!editType.trim() || savingEdit}
+            className="w-full rounded-2xl bg-[#0F1B3D] px-4 py-3 text-[15px] font-semibold text-white hover:bg-[#0F1B3D]/90 disabled:opacity-40 transition-colors">
+            {savingEdit ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Visit header */}
+          <div className="mb-5">
+            <p className="text-[22px] font-extrabold text-[#0F1B3D]">{visit.visit_type}</p>
+            <p className="text-[14px] text-[#8E8E93] mt-1">
+              {formatVisitDate(visit.visit_date)}
+              {visit.doctor_name ? ` · ${visit.doctor_name}` : ""}
+            </p>
+            {visit.location && (
+              <p className="text-[13px] text-[#AEAEB2] mt-0.5">{visit.location}</p>
+            )}
+          </div>
+        </>
+      )}
+
+      {!editing && (<>
       {/* Schedule again */}
       {visit.doctor_name && onBookMessage && (
         <button
@@ -1247,6 +1336,224 @@ function VisitDetailPanel({
           Call {visit.doctor_name || "Provider"}
         </a>
       )}
+      </>)}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════
+//  Add Provider Panel
+// ═══════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════
+//  Provider Detail Panel (view / edit / delete)
+// ═══════════════════════════════════════════════════
+
+function ProviderDetailPanel({
+  provider,
+  profileId,
+  onClose,
+  onUpdated,
+}: {
+  provider: DoctorItem;
+  profileId: string | null;
+  onClose: () => void;
+  onUpdated: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(provider.name || "");
+  const [specialty, setSpecialty] = useState(provider.specialty || "Primary Care");
+  const [credential, setCredential] = useState(provider.credential || "");
+  const [practiceName, setPracticeName] = useState(provider.practice_name || "");
+  const [phone, setPhone] = useState(provider.phone || "");
+  const [address, setAddress] = useState(provider.address || "");
+  const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  async function handleSave() {
+    if (!profileId || !provider.id) return;
+    setSaving(true);
+    try {
+      await apiFetch(`/profile/${profileId}/doctors/${provider.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          name: name.trim(),
+          specialty,
+          credential: credential || undefined,
+          practice_name: practiceName.trim() || undefined,
+          phone: phone.trim() || undefined,
+          address: address.trim() || undefined,
+        }),
+      });
+      onUpdated();
+    } catch {}
+    setSaving(false);
+  }
+
+  async function handleDelete() {
+    if (!profileId || !provider.id) return;
+    try {
+      await apiFetch(`/profile/${profileId}/doctors/${provider.id}`, { method: "DELETE" });
+      onUpdated();
+    } catch {}
+  }
+
+  const Icon = specialtyIcon(provider.specialty);
+
+  if (!editing) {
+    return (
+      <div className="p-6 pb-8 animate-in fade-in duration-200">
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={onClose}
+            className="flex items-center gap-1.5 text-sm font-medium text-[#0F1B3D]/50 hover:text-[#0F1B3D] transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setEditing(true)}
+              className="text-[#0F1B3D]/40 hover:text-[#0F1B3D] transition-colors"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setConfirmDelete(true)}
+              className="text-[#0F1B3D]/40 hover:text-red-500 transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        {confirmDelete && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 mb-4">
+            <p className="text-[14px] font-semibold text-red-600 mb-2">Delete this provider?</p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleDelete}
+                className="flex-1 rounded-xl bg-red-500 py-2 text-[13px] font-semibold text-white hover:bg-red-600 transition-colors"
+              >
+                Delete
+              </button>
+              <button
+                onClick={() => setConfirmDelete(false)}
+                className="flex-1 rounded-xl border border-[#E5E5EA] py-2 text-[13px] font-semibold text-[#0F1B3D]/60 hover:bg-[#0F1B3D]/[0.04] transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center gap-3 mb-5">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0F1B3D]/[0.06]">
+            <Icon className="h-5 w-5 text-[#0F1B3D]" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[18px] font-extrabold text-[#0F1B3D]">
+              {provider.name || provider.specialty}
+            </p>
+            {provider.credential && (
+              <p className="text-[13px] text-[#8E8E93]">{provider.credential}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
+          {[
+            { label: "Specialty", value: provider.specialty },
+            { label: "Practice", value: provider.practice_name },
+            { label: "Phone", value: provider.phone },
+            { label: "Address", value: provider.address },
+          ].filter(r => r.value).map((row, i, arr) => (
+            <React.Fragment key={row.label}>
+              <div className="flex items-center justify-between px-4 py-3.5">
+                <span className="text-[14px] text-[#8E8E93]">{row.label}</span>
+                {row.label === "Phone" ? (
+                  <a href={`tel:${row.value}`} className="text-[14px] font-medium text-[#2563EB]">{row.value}</a>
+                ) : (
+                  <span className="text-[14px] font-medium text-[#0F1B3D] text-right max-w-[60%] truncate">{row.value}</span>
+                )}
+              </div>
+              {i < arr.length - 1 && <div className="h-px bg-[#E5E5EA] mx-4" />}
+            </React.Fragment>
+          ))}
+        </div>
+
+        {provider.phone && (
+          <a href={`tel:${provider.phone}`} className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-[#0F1B3D] px-4 py-3 text-[15px] font-semibold text-white hover:bg-[#0F1B3D]/90 transition-colors">
+            <Phone className="h-4 w-4" /> Call Office
+          </a>
+        )}
+        {provider.address && (
+          <a href={`https://maps.apple.com/?q=${encodeURIComponent(provider.address)}`} target="_blank" rel="noopener noreferrer" className="mt-2 flex items-center justify-center gap-2 rounded-2xl border border-[#0F1B3D]/10 bg-white px-4 py-3 text-[15px] font-semibold text-[#0F1B3D]/70 hover:bg-[#0F1B3D]/[0.04] transition-colors">
+            <MapPin className="h-4 w-4" /> Get Directions
+          </a>
+        )}
+      </div>
+    );
+  }
+
+  // Edit mode
+  return (
+    <div className="p-6 pb-8 animate-in fade-in duration-200">
+      <button
+        onClick={() => setEditing(false)}
+        className="flex items-center gap-1.5 text-sm font-medium text-[#0F1B3D]/50 hover:text-[#0F1B3D] transition-colors mb-4"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Cancel
+      </button>
+
+      <h3 className="text-[20px] font-extrabold text-[#0F1B3D] mb-5">Edit Provider</h3>
+
+      <div className="space-y-4">
+        <div>
+          <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Name</label>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30" />
+        </div>
+        <div>
+          <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Specialty</label>
+          <select value={specialty} onChange={(e) => setSpecialty(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30">
+            {SPECIALTY_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Credential</label>
+          <div className="flex gap-2 mt-1">
+            {["MD/DO", "PA", "NP", "Other"].map((c) => (
+              <button key={c} onClick={() => setCredential(credential === c ? "" : c)}
+                className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${credential === c ? "bg-[#0F1B3D] text-white" : "bg-white border border-[#E5E5EA] text-[#0F1B3D]/60"}`}>
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Practice</label>
+          <input type="text" value={practiceName} onChange={(e) => setPracticeName(e.target.value)} placeholder="Optional"
+            className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30" />
+        </div>
+        <div>
+          <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Phone</label>
+          <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Optional"
+            className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30" />
+        </div>
+        <div>
+          <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Address</label>
+          <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Optional"
+            className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30" />
+        </div>
+      </div>
+
+      <button onClick={handleSave} disabled={!name.trim() || saving}
+        className="mt-6 w-full rounded-2xl bg-[#0F1B3D] px-4 py-3 text-[15px] font-semibold text-white hover:bg-[#0F1B3D]/90 disabled:opacity-40 transition-colors">
+        {saving ? "Saving..." : "Save Changes"}
+      </button>
     </div>
   );
 }
@@ -1651,18 +1958,90 @@ function InsuranceDetailRow({
   icon: Icon,
   label,
   card,
+  cardType,
   fields,
   expanded,
   onToggle,
+  onRefresh,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   card: InsuranceCard | undefined;
+  cardType: string;
   fields: [string, string][];
   expanded: boolean;
   onToggle: () => void;
+  onRefresh: () => void;
 }) {
   const hasData = card && Object.values(card.structured_data).some((v) => v);
+  const [editing, setEditing] = useState(false);
+  const [editValues, setEditValues] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const cardFileRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  // Init edit values when entering edit mode
+  function startEditing() {
+    if (!card) return;
+    const vals: Record<string, string> = {};
+    for (const [key] of fields) {
+      vals[key] = card.structured_data[key] || "";
+    }
+    setEditValues(vals);
+    setEditing(true);
+  }
+
+  function handleFieldChange(key: string, value: string) {
+    setEditValues((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handleSaveFields() {
+    if (!card?.id) return;
+    setSaving(true);
+    try {
+      const updates: Record<string, string | null> = {};
+      for (const [key, val] of Object.entries(editValues)) {
+        updates[key] = val.trim() || null;
+      }
+      await apiFetch(`/insurance/cards/${cardType}/${card.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ updates }),
+      });
+      setEditing(false);
+      onRefresh();
+    } catch {}
+    setSaving(false);
+  }
+
+  async function handleDelete() {
+    if (!card?.id) return;
+    try {
+      await apiFetch(`/insurance/cards/${cardType}/${card.id}`, { method: "DELETE" });
+      setConfirmDelete(false);
+      onRefresh();
+    } catch {}
+  }
+
+  async function handleCardUpload(e: React.ChangeEvent<HTMLInputElement>, side: "front" | "back") {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("image", file);
+      form.append("card_type", cardType);
+      form.append("side", side);
+      await apiFetch("/insurance/ocr", {
+        method: "POST",
+        body: form,
+      });
+      onRefresh();
+    } catch {}
+    setUploading(false);
+  }
 
   return (
     <>
@@ -1680,45 +2059,103 @@ function InsuranceDetailRow({
         />
       </button>
 
-      {expanded && hasData && (
+      {expanded && (
         <div className="px-3.5 pb-4">
-          {/* Card images */}
-          {(card!.front_url || card!.back_url) && (
+          {/* Action buttons */}
+          {hasData && (
             <div className="flex gap-2 mb-3">
-              {card!.front_url && (
-                <div className="flex-1 h-[120px] rounded-[10px] bg-[#F7F6F2] overflow-hidden">
-                  <img src={card!.front_url} alt="Front" className="w-full h-full object-cover" />
-                </div>
+              {!editing ? (
+                <button onClick={startEditing} className="flex items-center gap-1.5 text-[13px] font-medium text-[#2563EB] hover:text-[#1D4ED8] transition-colors">
+                  <Pencil className="h-3.5 w-3.5" /> Edit
+                </button>
+              ) : (
+                <button onClick={() => setEditing(false)} className="text-[13px] font-medium text-[#8E8E93]">Cancel</button>
               )}
-              {card!.back_url && (
-                <div className="flex-1 h-[120px] rounded-[10px] bg-[#F7F6F2] overflow-hidden">
-                  <img src={card!.back_url} alt="Back" className="w-full h-full object-cover" />
-                </div>
-              )}
+              <span className="text-[#E5E5EA]">|</span>
+              <button onClick={() => setConfirmDelete(true)} className="text-[13px] font-medium text-red-400 hover:text-red-500 transition-colors">
+                Delete
+              </button>
             </div>
           )}
 
-          {/* Fields */}
-          {fields.map(([key, fieldLabel]) => {
-            const value = card!.structured_data[key];
-            if (!value) return null;
-            return (
-              <div key={key} className="mb-2.5">
-                <p className="text-[13px] font-medium text-[#8E8E93] mb-1 ml-1">{fieldLabel}</p>
-                <div className="bg-white rounded-xl border border-[#E5E5EA] px-3.5 py-3.5">
-                  <p className="text-[16px] text-[#1C1C1E]">{value}</p>
+          {confirmDelete && (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-3 mb-3">
+              <p className="text-[13px] font-semibold text-red-600 mb-2">Delete {label.toLowerCase()} insurance?</p>
+              <div className="flex gap-2">
+                <button onClick={handleDelete} className="flex-1 rounded-lg bg-red-500 py-1.5 text-[12px] font-semibold text-white">Delete</button>
+                <button onClick={() => setConfirmDelete(false)} className="flex-1 rounded-lg border border-[#E5E5EA] py-1.5 text-[12px] font-semibold text-[#0F1B3D]/60">Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {/* Card images + upload */}
+          <div className="flex gap-2 mb-3">
+            <input ref={cardFileRef} type="file" accept="image/*" className="hidden"
+              onChange={(e) => handleCardUpload(e, "front")} />
+            {card?.front_url ? (
+              <div className="flex-1 h-[120px] rounded-[10px] bg-[#F7F6F2] overflow-hidden relative group cursor-pointer"
+                onClick={() => cardFileRef.current?.click()}>
+                <img src={card.front_url} alt="Front" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                  <Upload className="h-5 w-5 text-white" />
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+            ) : (
+              <button
+                onClick={() => cardFileRef.current?.click()}
+                className="flex-1 h-[120px] rounded-[10px] border-2 border-dashed border-[#E5E5EA] flex flex-col items-center justify-center gap-1 text-[#AEAEB2] hover:border-[#0F1B3D]/20 hover:text-[#0F1B3D]/40 transition-colors"
+              >
+                {uploading ? (
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#AEAEB2] border-t-transparent" />
+                ) : (
+                  <>
+                    <Upload className="h-5 w-5" />
+                    <span className="text-[11px] font-medium">Upload front</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
 
-      {expanded && !hasData && (
-        <div className="px-3.5 pb-4 text-center">
-          <p className="text-[13px] text-[#AEAEB2]">
-            Upload your {label.toLowerCase()} card in the app to see details here.
-          </p>
+          {/* Fields */}
+          {editing ? (
+            <>
+              {fields.map(([key, fieldLabel]) => (
+                <div key={key} className="mb-2.5">
+                  <p className="text-[13px] font-medium text-[#8E8E93] mb-1 ml-1">{fieldLabel}</p>
+                  <input
+                    type="text"
+                    value={editValues[key] || ""}
+                    onChange={(e) => handleFieldChange(key, e.target.value)}
+                    className="w-full bg-white rounded-xl border border-[#E5E5EA] px-3.5 py-3 text-[15px] text-[#1C1C1E] outline-none focus:border-[#0F1B3D]/30"
+                  />
+                </div>
+              ))}
+              <button onClick={handleSaveFields} disabled={saving}
+                className="w-full rounded-xl bg-[#0F1B3D] px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-[#0F1B3D]/90 disabled:opacity-40 transition-colors mt-1">
+                {saving ? "Saving..." : "Save"}
+              </button>
+            </>
+          ) : hasData ? (
+            fields.map(([key, fieldLabel]) => {
+              const value = card!.structured_data[key];
+              if (!value) return null;
+              return (
+                <div key={key} className="mb-2.5">
+                  <p className="text-[13px] font-medium text-[#8E8E93] mb-1 ml-1">{fieldLabel}</p>
+                  <div className="bg-white rounded-xl border border-[#E5E5EA] px-3.5 py-3.5">
+                    <p className="text-[16px] text-[#1C1C1E]">{value}</p>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="text-center py-2">
+              <p className="text-[13px] text-[#AEAEB2]">
+                Upload your {label.toLowerCase()} card to see details here.
+              </p>
+            </div>
+          )}
         </div>
       )}
     </>

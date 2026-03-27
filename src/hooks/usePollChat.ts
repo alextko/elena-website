@@ -12,10 +12,12 @@ interface PollChatParams {
 
 const MAX_RETRIES = 10;
 const RETRY_DELAY_MS = 1500;
+const POLL_TIMEOUT_MS = 3000; // Abort long-poll after 3s to get tool label updates
 
 export function usePollChat() {
   const activeRequestRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const cancelledRef = useRef(false);
 
   const sendAndPoll = useCallback(
     async (
@@ -24,9 +26,11 @@ export function usePollChat() {
       onDone: (result: ChatResponse) => void,
       onError: (error: string) => void,
     ) => {
+      cancelledRef.current = false;
       let consecutiveFailures = 0;
       let chatRequestId: string | null = null;
       let sessionId: string | null = params.session_id;
+      let hitPaywall = false;
 
       // POST /chat/send to get a chat_request_id
       const sendRequest = async (): Promise<boolean> => {
@@ -62,27 +66,36 @@ export function usePollChat() {
 
       // 1. Initial send
       if (!(await sendRequest())) {
+        if (hitPaywall) return { session_id: sessionId };
+
         consecutiveFailures++;
         await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
 
         if (!(await sendRequest())) {
-          if (!chatRequestId) {
-            // sendRequest already called onError for 402
+          if (!chatRequestId && !hitPaywall) {
             onError("Could not reach the server. Please check your connection.");
           }
           return { session_id: sessionId };
         }
       }
 
-      // 2. Long-poll loop
+      // 2. Poll loop — use short timeouts so tool label updates appear quickly
       while (true) {
         const controller = new AbortController();
         abortRef.current = controller;
+
+        // Auto-abort after POLL_TIMEOUT_MS to break out of the backend's
+        // long-poll hold and pick up intermediate tool_label changes.
+        const timeout = setTimeout(
+          () => controller.abort(),
+          POLL_TIMEOUT_MS,
+        );
 
         try {
           const res = await apiFetch(`/chat/poll/${chatRequestId}`, {
             signal: controller.signal,
           });
+          clearTimeout(timeout);
 
           if (res.status === 404) {
             // Server restarted — re-send to get new request ID
@@ -114,7 +127,12 @@ export function usePollChat() {
             onToolProgress(data.tool_label);
           }
         } catch (err: unknown) {
-          if (err instanceof Error && err.name === "AbortError") break;
+          clearTimeout(timeout);
+
+          if (err instanceof Error && err.name === "AbortError") {
+            if (cancelledRef.current) break; // User cancelled
+            continue; // Timeout — re-poll to get fresh tool_label
+          }
 
           consecutiveFailures++;
           if (consecutiveFailures > MAX_RETRIES) {
@@ -135,6 +153,7 @@ export function usePollChat() {
   );
 
   const cancel = useCallback(() => {
+    cancelledRef.current = true;
     abortRef.current?.abort();
     activeRequestRef.current = null;
   }, []);

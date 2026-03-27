@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import ReactDOM from "react-dom";
 
 /* ================================================================
    VISIT DATA  (used by the timeline modal)
@@ -169,11 +170,8 @@ function SpotlightRow({
         </p>
       </div>
       <div
-        className="max-md:mx-auto"
+        className="shrink-0 w-[420px] max-md:w-full max-md:max-w-[420px]"
         style={{
-          flexShrink: 0,
-          width: 340,
-          maxWidth: 340,
           fontFamily:
             "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, sans-serif",
         }}
@@ -597,8 +595,8 @@ function VisitTimeline() {
         </div>
       </div>
 
-      {/* Visit Detail Modal */}
-      {visit && (
+      {/* Visit Detail Modal — rendered via portal to escape parent transforms */}
+      {visit && typeof document !== "undefined" && ReactDOM.createPortal(
         <>
           <div
             className="fixed inset-0 z-[1000] transition-opacity duration-300"
@@ -606,9 +604,8 @@ function VisitTimeline() {
             onClick={closeModal}
           />
           <div
-            className="fixed bottom-0 left-1/2 z-[1001] w-full max-w-[480px] max-h-[85vh] bg-white overflow-y-auto"
+            className="fixed bottom-0 left-0 right-0 z-[1001] mx-auto w-full max-w-[480px] max-h-[85vh] bg-white overflow-y-auto"
             style={{
-              transform: "translateX(-50%)",
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
               boxShadow: "0 -8px 32px rgba(0,0,0,0.15)",
@@ -810,7 +807,8 @@ function VisitTimeline() {
               )}
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </>
   );
@@ -960,7 +958,7 @@ function InsuranceCarousel() {
   ];
 
   return (
-    <div className="flex flex-col items-center w-[340px]">
+    <div className="flex flex-col items-center w-[280px]">
       <div
         className="overflow-hidden rounded-[20px] relative w-full"
         style={{ boxShadow: "0 8px 16px rgba(0,0,0,0.18)" }}

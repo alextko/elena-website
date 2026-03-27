@@ -12,7 +12,7 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/apiFetch";
-import type { MeResponse, DoctorItem, CareVisit, CareTodo, CareTodoCreate, SubscriptionResponse, InsuranceCard } from "@/lib/types";
+import type { MeResponse, DoctorItem, CareVisit, CareTodo, CareTodoCreate, Habit, SubscriptionResponse, InsuranceCard } from "@/lib/types";
 
 interface AuthContextValue {
   session: Session | null;
@@ -27,10 +27,17 @@ interface AuthContextValue {
   subscription: SubscriptionResponse | null;
   insuranceCards: InsuranceCard[];
   todos: CareTodo[];
+  habits: Habit[];
+  habitCompletions: Record<string, Set<string>>; // date -> habit IDs completed
+  toggleHabit: (id: string) => Promise<void>;
   toggleTodo: (id: string) => Promise<void>;
   createTodo: (data: CareTodoCreate) => Promise<CareTodo | null>;
   updateTodo: (id: string, data: Partial<CareTodoCreate> & { status?: string }) => Promise<void>;
   deleteTodo: (id: string) => Promise<void>;
+  refreshTodos: () => Promise<void>;
+  refreshDoctors: () => Promise<void>;
+  refreshVisits: () => Promise<void>;
+  refreshInsurance: () => Promise<void>;
   profileDetailsLoaded: boolean;
   fetchProfileDetails: () => Promise<void>;
   refreshSubscription: () => Promise<void>;
@@ -67,6 +74,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null);
   const [insuranceCards, setInsuranceCards] = useState<InsuranceCard[]>([]);
   const [todos, setTodos] = useState<CareTodo[]>([]);
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [habitCompletions, setHabitCompletions] = useState<Record<string, Set<string>>>({});
   const [profileDetailsLoaded, setProfileDetailsLoaded] = useState(false);
 
   const profileFetchedRef = useRef(false);
@@ -137,6 +146,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (!res.ok) return;
             const data: CareTodo[] = await res.json();
             setTodos(data);
+          })
+          .catch(() => {}),
+      );
+
+      // Habits + week completions (for calendar strip checkmarks)
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      const startDate = monday.toISOString().slice(0, 10);
+      const endDate = sunday.toISOString().slice(0, 10);
+
+      promises.push(
+        apiFetch("/habits")
+          .then(async (res) => {
+            if (!res.ok) return;
+            const data: Habit[] = await res.json();
+            setHabits(data);
+          })
+          .catch(() => {}),
+      );
+      promises.push(
+        apiFetch(`/habits/completions?start_date=${startDate}&end_date=${endDate}`)
+          .then(async (res) => {
+            if (!res.ok) return;
+            const data: Record<string, Record<string, boolean>> = await res.json();
+            // data shape: { "habit_id": { "YYYY-MM-DD": true }, ... }
+            // Convert to: { "YYYY-MM-DD": Set<habit_id> }
+            const byDate: Record<string, Set<string>> = {};
+            for (const [habitId, dates] of Object.entries(data)) {
+              for (const [dateKey, done] of Object.entries(dates)) {
+                if (done) {
+                  if (!byDate[dateKey]) byDate[dateKey] = new Set();
+                  byDate[dateKey].add(habitId);
+                }
+              }
+            }
+            setHabitCompletions(byDate);
           })
           .catch(() => {}),
       );
@@ -226,6 +275,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSubscription(null);
         setInsuranceCards([]);
         setTodos([]);
+        setHabits([]);
+        setHabitCompletions({});
         setProfileDetailsLoaded(false);
         profileFetchedRef.current = false;
       }
@@ -266,6 +317,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [todos]);
 
+  const toggleHabit = useCallback(async (id: string) => {
+    const today = new Date().toISOString().slice(0, 10);
+    setHabitCompletions((prev) => {
+      const next = { ...prev };
+      const todaySet = new Set(next[today] || []);
+      if (todaySet.has(id)) todaySet.delete(id);
+      else todaySet.add(id);
+      next[today] = todaySet;
+      return next;
+    });
+    try {
+      await apiFetch("/habits/completions", {
+        method: "POST",
+        body: JSON.stringify({ habit_id: id, completed_date: today }),
+      });
+    } catch {}
+  }, []);
+
   const createTodo = useCallback(async (data: CareTodoCreate): Promise<CareTodo | null> => {
     try {
       const res = await apiFetch("/todos", {
@@ -302,6 +371,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // Already removed from UI
     }
+  }, []);
+
+  const refreshTodos = useCallback(async () => {
+    try {
+      const res = await apiFetch("/todos");
+      if (!res.ok) return;
+      const data: CareTodo[] = await res.json();
+      setTodos(data);
+    } catch {}
+  }, []);
+
+  const refreshDoctors = useCallback(async () => {
+    if (!profileId) return;
+    try {
+      const res = await apiFetch(`/profile/${profileId}/doctors`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setDoctors(data.doctors || []);
+    } catch {}
+  }, [profileId]);
+
+  const refreshVisits = useCallback(async () => {
+    try {
+      const res = await apiFetch("/care-visits");
+      if (!res.ok) return;
+      const data: CareVisit[] = await res.json();
+      setCareVisits(data);
+    } catch {}
+  }, []);
+
+  const refreshInsurance = useCallback(async () => {
+    try {
+      const res = await apiFetch("/insurance/cards");
+      if (!res.ok) return;
+      const data = await res.json();
+      const cards: InsuranceCard[] = [];
+      for (const [cardType, record] of Object.entries(data)) {
+        if (record && typeof record === "object") {
+          const r = record as Record<string, unknown>;
+          const structured: Record<string, string | null> = {};
+          for (const [k, v] of Object.entries(r)) {
+            if (k === "id" || k === "profile_id" || k === "created_at" || k === "updated_at"
+                || k.endsWith("_s3_key") || k.endsWith("_s3_url")) continue;
+            structured[k] = v != null ? String(v) : null;
+          }
+          cards.push({
+            id: r.id as string | undefined,
+            card_type: cardType,
+            structured_data: structured,
+            front_url: (r.front_s3_url as string) || null,
+            back_url: (r.back_s3_url as string) || null,
+          });
+        }
+      }
+      setInsuranceCards(cards);
+    } catch {}
   }, []);
 
   const signIn = useCallback(
@@ -350,6 +475,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSubscription(null);
     setInsuranceCards([]);
     setTodos([]);
+    setHabits([]);
+    setHabitCompletions({});
     setProfileDetailsLoaded(false);
     profileFetchedRef.current = false;
   }, []);
@@ -367,10 +494,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         subscription,
         insuranceCards,
         todos,
+        habits,
+        habitCompletions,
+        toggleHabit,
         toggleTodo,
         createTodo,
         updateTodo,
         deleteTodo,
+        refreshTodos,
+        refreshDoctors,
+        refreshVisits,
+        refreshInsurance,
         profileDetailsLoaded,
         fetchProfileDetails,
         refreshSubscription,
