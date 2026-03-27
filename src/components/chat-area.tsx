@@ -447,19 +447,6 @@ export function ChatArea({
         },
         // onError
         (error) => {
-          // Check if this is an upgrade/limit error
-          if (error.includes("credits") || error.includes("Upgrade") || error.includes("upgrade")) {
-            setUpgradeReason("upgrade_required");
-            setUpgradeOpen(true);
-            const upgradeId = nextId();
-            setMessages((prev) => [
-              ...prev,
-              { id: upgradeId, role: "assistant", content: "__upgrade_prompt__" },
-            ]);
-            setToolLabel(null);
-            setIsLoading(false);
-            return;
-          }
           const errorId = nextId();
           setMessages((prev) => [
             ...prev,
@@ -546,19 +533,6 @@ export function ChatArea({
                     </div>
                   )}
                   <p className="text-[0.9rem] leading-relaxed text-[#0F1B3D]">{msg.content}</p>
-                </div>
-              </div>
-            ) : msg.content === "__upgrade_prompt__" ? (
-              <div key={msg.id} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="rounded-2xl bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)] p-5 text-center">
-                  <p className="text-[15px] font-semibold text-white mb-1">You&apos;ve run out of credits</p>
-                  <p className="text-[13px] text-white/60 mb-4">Upgrade your plan to keep chatting with Elena.</p>
-                  <button
-                    onClick={() => { setUpgradeReason("upgrade_required"); setUpgradeOpen(true); }}
-                    className="rounded-full bg-white/95 px-6 py-2.5 text-sm font-semibold text-[#0F1B3D] hover:bg-white transition-colors shadow-[0_4px_16px_rgba(0,0,0,0.1)]"
-                  >
-                    Upgrade to continue chatting
-                  </button>
                 </div>
               </div>
             ) : (

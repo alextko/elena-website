@@ -47,15 +47,6 @@ export function usePollChat() {
           });
 
           if (!sendRes.ok) {
-            // Check for credit exhaustion
-            if (sendRes.status === 402) {
-              const detail = await sendRes.json().catch(() => null);
-              onError(
-                detail?.detail?.message ||
-                  "You've used all your credits. Upgrade to continue.",
-              );
-              return false;
-            }
             return false;
           }
 
