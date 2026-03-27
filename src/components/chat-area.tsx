@@ -586,7 +586,7 @@ export function ChatArea({
                         <AddToCalendarCard result={msg.bookingResult} />
                       </>
                     )}
-                    {msg.bookingResult && msg.bookingResult.status !== "confirmed" && (
+                    {msg.bookingResult && msg.bookingResult.status !== "confirmed" && msg.bookingResult.status !== "escalated" && (
                       <AppointmentConfirmationCard result={msg.bookingResult} />
                     )}
                     {msg.webSources && msg.webSources.length > 0 && (
