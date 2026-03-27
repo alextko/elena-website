@@ -30,10 +30,10 @@ const PLANS = {
     annual: 179.99,
     annualMonthly: 15.0,
     features: [
-      { icon: Phone, text: "5 calls per month" },
+      { icon: Phone, text: "10 calls per month" },
       { icon: FileText, text: "Unlimited document uploads" },
-      { icon: Zap, text: "Unlimited bill analysis" },
-      { icon: Shield, text: "All searches free forever" },
+      { icon: Zap, text: "Unlimited bill analysis & searches" },
+      { icon: Shield, text: "Appeal letters & negotiation scripts" },
     ],
   },
   premium: {
