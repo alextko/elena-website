@@ -132,6 +132,7 @@ export function ChatArea({
   const [uploading, setUploading] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState<"upgrade_required" | "limit_reached" | "feature_blocked" | "document_limit">("document_limit");
+  const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -428,6 +429,7 @@ export function ChatArea({
           // Show upgrade popup if a gated tool was blocked
           if (chatResult.error_code === "upgrade_required") {
             setUpgradeReason("upgrade_required");
+            setUpgradeFeature(chatResult.gated_feature || undefined);
             setUpgradeOpen(true);
           }
 
@@ -480,7 +482,7 @@ export function ChatArea({
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => e.preventDefault()}
     >
-      <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} reason={upgradeReason} />
+      <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} reason={upgradeReason} featureName={upgradeFeature} />
       {/* Grain texture overlay */}
       <div
         className="pointer-events-none absolute inset-0 z-0 opacity-[0.08] mix-blend-overlay"
@@ -562,7 +564,10 @@ export function ChatArea({
                   <div className={msg.isStreaming === false || !msg.isStreaming ? "elena-card-enter" : ""}>
                     {/* Show location card if present (pharmacies, labs, etc.), otherwise doctor card */}
                     {msg.locationResults && msg.locationResults.length > 0 ? (
-                      <LocationResultsCard locations={msg.locationResults} />
+                      <LocationResultsCard
+                        locations={msg.locationResults}
+                        onCall={(loc) => handleSend(`Call ${loc.name} at ${loc.phone_number}`)}
+                      />
                     ) : msg.doctorResults && msg.doctorResults.length > 0 ? (
                       <DoctorResultsCard
                         doctors={msg.doctorResults}

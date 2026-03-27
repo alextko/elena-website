@@ -74,12 +74,21 @@ export function UpgradeModal({
     ? "Document limit reached"
     : "Upgrade your plan";
 
+  const featureDescriptions: Record<string, string> = {
+    call_provider: "Upgrade to have Elena make phone calls on your behalf.",
+    search_provider_rates: "Upgrade to search and compare provider pricing.",
+    upload_document: "Free accounts can upload up to 2 documents.",
+    analyze_bill: "Upgrade to get AI-powered bill analysis and savings.",
+  };
+
   const description = isStandardLimitReached
     ? "Upgrade to Premium for unlimited calls and more."
     : reason === "feature_blocked"
     ? `${featureLabel.charAt(0).toUpperCase() + featureLabel.slice(1)} is available on paid plans.`
     : reason === "document_limit"
     ? "Free accounts can upload up to 2 documents."
+    : featureName && featureDescriptions[featureName]
+    ? featureDescriptions[featureName]
     : "Unlock the full power of Elena.";
 
   async function handleUpgrade(tier: Tier) {

@@ -29,6 +29,7 @@ export interface ChatResponse {
   profile_updates?: Record<string, string> | null;
   error_code?: string | null;
   upgrade_url?: string | null;
+  gated_feature?: string | null;
 }
 
 // --- Session History (api_chat.py:480-485) ---

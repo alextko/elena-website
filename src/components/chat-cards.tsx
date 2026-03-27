@@ -575,8 +575,10 @@ export function DoctorResultsCard({
 
 export function LocationResultsCard({
   locations,
+  onCall,
 }: {
   locations: LocationResult[];
+  onCall?: (loc: LocationResult) => void;
 }) {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -666,14 +668,13 @@ export function LocationResultsCard({
 
                 {/* Action buttons */}
                 <div className="flex items-center gap-2 shrink-0">
-                  {loc.phone_number && (
-                    <a
-                      href={`tel:${loc.phone_number}`}
-                      onClick={(e) => e.stopPropagation()}
+                  {loc.phone_number && onCall && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onCall(loc); }}
                       className="flex h-[30px] w-[30px] items-center justify-center rounded-full border-[1.5px] border-[var(--elena-border)] text-[var(--elena-navy)] hover:bg-[var(--elena-warm-bg)] transition-colors"
                     >
                       <Phone className="h-3.5 w-3.5" />
-                    </a>
+                    </button>
                   )}
                   {loc.latitude != null && loc.longitude != null && (
                     <a
