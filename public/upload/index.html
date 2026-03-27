@@ -107,51 +107,6 @@
 
     .nav-cta:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
 
-    .nav-right { display: flex; align-items: center; gap: 10px; }
-
-    .upgrade-btn {
-      display: none;
-      align-items: center;
-      gap: 6px;
-      padding: 9px 20px;
-      border: none;
-      border-radius: 100px;
-      background: linear-gradient(135deg, #F4B084 0%, #E8956D 100%);
-      color: #0F1B3D;
-      font-size: 0.85rem;
-      font-weight: 600;
-      font-family: inherit;
-      cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: 0 2px 12px rgba(244, 176, 132, 0.3);
-    }
-
-    .upgrade-btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(244, 176, 132, 0.4); }
-    .upgrade-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .upgrade-btn.visible { display: flex; }
-
-    .plan-badge {
-      display: none;
-      padding: 6px 14px;
-      border-radius: 100px;
-      font-size: 0.75rem;
-      font-weight: 500;
-      font-family: inherit;
-      background: rgba(105, 240, 174, 0.15);
-      color: #69F0AE;
-      border: 1px solid rgba(105, 240, 174, 0.25);
-    }
-
-    .plan-badge.visible { display: block; }
-
-    .credits-hint {
-      font-size: 0.75rem;
-      color: rgba(255, 255, 255, 0.35);
-      font-weight: 300;
-      text-align: right;
-      margin-top: 4px;
-    }
-
     /* ========== PAGE ========== */
     .page {
       position: relative;
@@ -348,11 +303,7 @@
 
 <nav>
   <a href="../" class="nav-logo">elena</a>
-  <div class="nav-right">
-    <span class="plan-badge" id="plan-badge">Pro</span>
-    <button class="upgrade-btn" id="upgrade-btn" onclick="handleUpgrade()">Upgrade to Pro</button>
-    <a href="../" class="nav-cta">Back to home</a>
-  </div>
+  <a href="../" class="nav-cta">Back to home</a>
 </nav>
 
 <div class="page">
@@ -370,6 +321,10 @@
         Continue with Google
       </button>
 
+      <button class="btn btn-oauth" onclick="handleAppleSignIn()" style="margin-top: 10px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.32 2.32-2.12 4.45-3.74 4.25z"/></svg>
+        Continue with Apple
+      </button>
 
       <div class="divider">
         <div class="divider-line"></div>
@@ -418,9 +373,7 @@
 <script>
   const SUPABASE_URL = 'https://livbrrqqxnvnxhggguig.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpdmJycnFxeG52bnhoZ2dndWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Njc1MzYsImV4cCI6MjA4NzA0MzUzNn0.MkOKc7MWq5zoR3OY7wZgOsPwvjjKSij0ln1nF6inxP0';
-  const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:8000'
-    : 'https://elena-backend-production-production.up.railway.app';
+  const API_BASE = 'https://elena-backend-production-production.up.railway.app';
 
   if (!window.supabase || !window.supabase.createClient) {
     document.getElementById('auth-error').textContent = 'Page failed to load. Please refresh.';
@@ -439,6 +392,10 @@
     if (error) { document.getElementById('auth-error').textContent = error.message; document.getElementById('auth-error').classList.add('visible'); }
   }
 
+  async function handleAppleSignIn() {
+    const { error } = await sb.auth.signInWithOAuth({ provider: 'apple', options: { redirectTo: window.location.origin + '/upload/' } });
+    if (error) { document.getElementById('auth-error').textContent = error.message; document.getElementById('auth-error').classList.add('visible'); }
+  }
 
   async function handleSignIn() {
     const email = document.getElementById('email').value.trim();
@@ -454,98 +411,9 @@
     } catch (e) { errEl.textContent = e.message || 'Sign in failed.'; errEl.classList.add('visible'); btn.disabled = false; btn.textContent = 'Sign in'; }
   }
 
-  let currentPlan = null;
+  async function handleSignOut() { await sb.auth.signOut(); accessToken = null; document.getElementById('auth-section').style.display = 'block'; document.getElementById('app-section').style.display = 'none'; }
 
-  async function handleSignOut() {
-    await sb.auth.signOut();
-    accessToken = null;
-    currentPlan = null;
-    document.getElementById('auth-section').style.display = 'block';
-    document.getElementById('app-section').style.display = 'none';
-    document.getElementById('upgrade-btn').classList.remove('visible');
-    document.getElementById('plan-badge').classList.remove('visible');
-  }
-
-  function showApp(email) {
-    document.getElementById('auth-section').style.display = 'none';
-    document.getElementById('app-section').style.display = 'block';
-    document.getElementById('user-email').textContent = email;
-
-    // Show upgrade button immediately (default for logged-in users).
-    // loadSubscription will hide it if user is already on pro.
-    document.getElementById('upgrade-btn').classList.add('visible');
-
-    loadExistingDocs();
-    loadSubscription();
-
-    // Handle post-checkout redirect
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('billing') === 'success') {
-      window.history.replaceState({}, '', window.location.pathname);
-      // Re-fetch subscription after short delay (webhook may still be processing)
-      setTimeout(loadSubscription, 2000);
-    }
-  }
-
-  async function loadSubscription() {
-    const upgradeBtn = document.getElementById('upgrade-btn');
-    const planBadge = document.getElementById('plan-badge');
-    try {
-      const res = await fetch(API_BASE + '/web/subscription', {
-        headers: { 'Authorization': 'Bearer ' + accessToken },
-      });
-      if (!res.ok) {
-        console.warn('loadSubscription failed:', res.status, await res.text().catch(() => ''));
-        return;
-      }
-      const sub = await res.json();
-      currentPlan = sub.plan;
-
-      if (sub.plan === 'pro' && sub.status === 'active') {
-        upgradeBtn.classList.remove('visible');
-        planBadge.classList.add('visible');
-        planBadge.textContent = 'Pro';
-      } else {
-        planBadge.classList.remove('visible');
-        upgradeBtn.classList.add('visible');
-        upgradeBtn.textContent = sub.credits_remaining > 0
-          ? 'Upgrade to Pro (' + sub.credits_remaining + ' free left)'
-          : 'Upgrade to Pro';
-      }
-    } catch (e) {
-      // API unreachable — keep upgrade button visible (already shown in showApp)
-      console.warn('loadSubscription error:', e);
-    }
-  }
-
-  async function handleUpgrade() {
-    const btn = document.getElementById('upgrade-btn');
-    btn.disabled = true;
-    btn.textContent = 'Loading...';
-    try {
-      const res = await fetch(API_BASE + '/web/checkout', {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + accessToken,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          success_url: window.location.origin + '/upload/?billing=success',
-          cancel_url: window.location.href,
-        }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || 'Failed to start checkout');
-      }
-      const { checkout_url } = await res.json();
-      window.location.href = checkout_url;
-    } catch (e) {
-      btn.disabled = false;
-      btn.textContent = 'Upgrade to Pro';
-      alert(e.message || 'Something went wrong. Please try again.');
-    }
-  }
+  function showApp(email) { document.getElementById('auth-section').style.display = 'none'; document.getElementById('app-section').style.display = 'block'; document.getElementById('user-email').textContent = email; loadExistingDocs(); }
 
   const dropZone = document.getElementById('drop-zone');
   dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });

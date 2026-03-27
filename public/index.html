@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elena — Put Healthcare on Autopilot</title>
+  <meta name="description" content="Elena is your AI-powered healthcare assistant. Chat with an AI that calls doctors, negotiates bills, compares drug prices, and manages your entire medical life.">
+  <link rel="icon" type="image/png" href="images/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <script>(function(f,b){if(!b.__SV){var e,g,i,h;window.mixpanel=b;b._i=[];b.init=function(e,f,c){function g(a,d){var b=d.split(".");2==b.length&&(a=a[b[0]],d=b[1]);a[d]=function(){a.push([d].concat(Array.prototype.slice.call(arguments,0)))}}var a=b;"undefined"!==typeof c?a=b[c]=[]:c="mixpanel";a.people=a.people||[];a.toString=function(a){var d="mixpanel";"mixpanel"!==c&&(d+="."+c);a||(d+=" (stub)");return d};a.people.toString=function(){return a.toString(1)+".people (stub)"};i="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking start_batch_senders people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");for(h=0;h<i.length;h++)g(a,i[h]);var j="set set_once union unset remove delete".split(" ");a.get_group=function(){function b(c){d[c]=function(){call2_args=arguments;call2=[c].concat(Array.prototype.slice.call(call2_args,0));a.push([e,call2])}}for(var d={},e=["get_group"].concat(Array.prototype.slice.call(arguments,0)),c=0;c<j.length;c++)b(j[c]);return d};b._i.push([e,f,c])};b.__SV=1.2;e=f.createElement("script");e.type="text/javascript";e.async=!0;e.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===f.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";g=f.getElementsByTagName("script")[0];g.parentNode.insertBefore(e,g)}})(document,window.mixpanel||[]);
+  mixpanel.init("e9b69d05debaeec0b454f2cdfba21d2d", {
+    record_sessions_percent: 100,
+    record_mask_text_selector: ""
+  });
+  mixpanel.track_pageview();
+  </script>
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #fff;
+      background: #0a0a0a;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ========== NAV ========== */
+    nav {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-top-color: rgba(255, 255, 255, 0.3);
+      border-radius: 18px 18px 18px 4px;
+      padding: 10px 20px;
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: #fff;
+      text-decoration: none;
+      letter-spacing: -0.01em;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .nav-links {
+      display: flex;
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-top-color: rgba(255, 255, 255, 0.25);
+      border-radius: 100px;
+      padding: 6px 8px;
+      gap: 4px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+
+    .nav-links a {
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 400;
+      padding: 8px 24px;
+      border-radius: 100px;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-cta {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-top-color: rgba(255, 255, 255, 0.3);
+      border-radius: 100px;
+      padding: 12px 28px;
+      color: rgba(255, 255, 255, 0.9);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 400;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .nav-cta:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* ========== HERO ========== */
+    .hero {
+      position: relative;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background: linear-gradient(135deg,
+        #0F1B3D 0%,
+        #1A3A6E 30%,
+        #2E6BB5 60%,
+        #2E6BB5 100%
+      );
+    }
+
+    /* Peachy orange radial glow in bottom-right */
+    .hero-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 85% 130%,
+        #F4B084 0%,
+        #E8956D 25%,
+        rgba(46, 107, 181, 0) 60%
+      );
+    }
+
+    /* Subtle grain texture */
+    .hero-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.12;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+    }
+
+    /* Interactive gradient blobs */
+    .hero-blobs {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .hero-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      will-change: transform;
+      transition: transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+
+    .hero-blob-1 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(46, 107, 181, 0.5) 0%, transparent 70%);
+      top: -10%;
+      left: 20%;
+    }
+
+    .hero-blob-2 {
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(244, 176, 132, 0.35) 0%, transparent 70%);
+      bottom: -20%;
+      right: -5%;
+    }
+
+    .hero-blob-3 {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(26, 58, 110, 0.4) 0%, transparent 70%);
+      top: 30%;
+      right: 25%;
+    }
+
+    .hero-blob-4 {
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(232, 149, 109, 0.25) 0%, transparent 70%);
+      bottom: 10%;
+      left: 5%;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 5vw, 3.8rem);
+      font-weight: 300;
+      line-height: 1.15;
+      letter-spacing: -0.025em;
+      color: #ffffff;
+    }
+
+    .hero-subtitle {
+      font-size: 1.15rem;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.85);
+      margin-top: 16px;
+      letter-spacing: 0.01em;
+    }
+
+    .hero-email-form {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+      max-width: 480px;
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero-email-form input[type="email"] {
+      flex: 1;
+      padding: 16px 24px;
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-top-color: rgba(255, 255, 255, 0.35);
+      border-radius: 100px;
+      font-size: 1rem;
+      font-family: inherit;
+      font-weight: 400;
+      color: #fff;
+      outline: none;
+      min-width: 0;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .hero-email-form input[type="email"]:focus {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .hero-email-form input[type="email"]::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .hero-email-form button {
+      padding: 16px 32px;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-top-color: rgba(255, 255, 255, 0.3);
+      border-radius: 100px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .hero-email-form button:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .hero-success {
+      display: none;
+      margin-top: 24px;
+      padding: 16px 32px;
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-top-color: rgba(255, 255, 255, 0.35);
+      color: #fff;
+      border-radius: 100px;
+      font-weight: 500;
+      font-size: 1rem;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .scroll-indicator {
+      position: relative;
+      z-index: 1;
+      margin-top: 72px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.95rem;
+      font-weight: 300;
+      letter-spacing: 0.01em;
+      animation: gentle-bounce 3s ease-in-out infinite;
+    }
+
+    .scroll-arrow {
+      opacity: 0.5;
+    }
+
+    @keyframes gentle-bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(6px); }
+    }
+
+    .hero-pill {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 100px;
+      z-index: 1;
+    }
+
+    /* ========== PHONE SECTION ========== */
+    .phone-section {
+      position: relative;
+      height: 350vh;
+    }
+
+    .phone-section-bg {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      width: 100%;
+      background: url('images/phone-bg.jpg') center bottom / cover no-repeat;
+      margin-bottom: -100vh;
+      z-index: 0;
+    }
+
+    /* Top fade matching hero blue */
+    .phone-section-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg,
+        rgba(45, 85, 140, 0.85) 0%,
+        rgba(50, 95, 155, 0.4) 15%,
+        rgba(0, 0, 0, 0.05) 35%,
+        transparent 50%
+      );
+    }
+
+    /* Phone sticks in center while scrolling, stays within its section */
+    .phone-wrapper {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      will-change: transform;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .phone-frame-container {
+      transform: scale(2.5);
+      transform-origin: center center;
+      opacity: 0;
+      filter: blur(20px);
+      transition: filter 0.1s ease-out;
+    }
+
+    /* ========== iPHONE (Apple bezel image overlay) ========== */
+
+    .phone-device {
+      position: relative;
+      width: 290px;
+      height: 600px;
+      background: #1a1a1c;
+      border-radius: 48px;
+      padding: 10px;
+      box-shadow:
+        0 40px 80px rgba(0, 0, 0, 0.5),
+        0 15px 30px rgba(0, 0, 0, 0.35),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      border-radius: 38px;
+      overflow: hidden;
+      background: #000;
+      position: relative;
+    }
+
+    .phone-screen video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* ========== COMMUNITY PERKS ========== */
+    .community-perks {
+      position: relative;
+      z-index: 10;
+      background: #fff;
+      padding: 80px 32px;
+    }
+
+    .perks-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .perks-inner h2 {
+      font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+      font-weight: 300;
+      letter-spacing: -0.025em;
+      color: #0F1B3D;
+      margin-bottom: 8px;
+    }
+
+    .perks-subtitle {
+      font-size: 1.05rem;
+      font-weight: 300;
+      color: #5a6a82;
+      margin-bottom: 48px;
+    }
+
+    .perks-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      text-align: left;
+    }
+
+    .perk-card {
+      background: #f5f7fb;
+      border-radius: 20px;
+      padding: 32px 28px;
+    }
+
+    .perk-card h3 {
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: #0F1B3D;
+      margin-bottom: 8px;
+    }
+
+    .perk-card p {
+      font-size: 0.88rem;
+      font-weight: 300;
+      color: #5a6a82;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 768px) {
+      .perks-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .community-perks {
+        padding: 60px 20px;
+      }
+    }
+
+    /* ========== MANIFESTO ========== */
+    .manifesto {
+      position: relative;
+      z-index: 10;
+      padding: 120px 32px 100px;
+      background: #f5f7fb;
+    }
+
+    .manifesto-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 60px;
+    }
+
+    .manifesto-text {
+      flex: 1;
+    }
+
+    .manifesto h2 {
+      font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+      font-weight: 300;
+      letter-spacing: -0.025em;
+      color: #0F1B3D;
+      line-height: 1.2;
+      margin-bottom: 20px;
+    }
+
+    .manifesto p {
+      font-size: 1.05rem;
+      font-weight: 300;
+      color: #5a6a82;
+      line-height: 1.7;
+    }
+
+    .manifesto-phone {
+      flex-shrink: 0;
+    }
+
+    .manifesto-phone .phone-device {
+      width: 240px;
+      height: 500px;
+      border-radius: 40px;
+      padding: 8px;
+    }
+
+    .manifesto-phone .phone-screen {
+      border-radius: 32px;
+    }
+
+    /* ========== STAT BANNER ========== */
+    .stat-banner {
+      position: relative;
+      z-index: 10;
+      background: #0F1B3D;
+      padding: 64px 32px;
+      text-align: center;
+    }
+
+    .stat-banner-inner {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .stat-banner-text {
+      font-size: clamp(1.3rem, 2.5vw, 1.8rem);
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.9);
+      line-height: 1.4;
+      letter-spacing: -0.015em;
+    }
+
+    .stat-banner-text strong {
+      font-weight: 600;
+      color: #F4B084;
+    }
+
+    .stat-banner-sub {
+      margin-top: 12px;
+      font-size: 1rem;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* ========== SURVEY STEP ========== */
+    .waitlist-flow {
+      max-width: 480px;
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .survey-step {
+      text-align: center;
+    }
+
+    .survey-label {
+      font-size: 1rem;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 16px;
+    }
+
+    .survey-label.light {
+      color: #333;
+    }
+
+    .survey-hint {
+      font-weight: 300;
+      font-size: 0.85rem;
+      opacity: 0.6;
+    }
+
+    .survey-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .survey-chip {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .survey-chip input {
+      display: none;
+    }
+
+    .survey-chip span {
+      padding: 10px 20px;
+      border-radius: 100px;
+      font-size: 0.88rem;
+      font-weight: 400;
+      font-family: inherit;
+      transition: all 0.2s;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .survey-chip:hover span {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .survey-chip input:checked + span {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.5);
+      color: #fff;
+    }
+
+    /* Light variant for bottom form */
+    .survey-chip.light span {
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      color: #555;
+    }
+
+    .survey-chip.light:hover span {
+      background: #f5f5f5;
+      border-color: rgba(0, 0, 0, 0.2);
+    }
+
+    .survey-chip.light input:checked + span {
+      background: #0F1B3D;
+      border-color: #0F1B3D;
+      color: #fff;
+    }
+
+    .survey-submit-btn {
+      padding: 14px 36px;
+      border-radius: 100px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .survey-submit-btn.dark {
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .survey-submit-btn.dark:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .survey-submit-btn.light {
+      background: #0F1B3D;
+      color: #fff;
+    }
+
+    .survey-submit-btn.light:hover {
+      background: #1A3A6E;
+    }
+
+    .survey-skip-btn {
+      display: block;
+      margin: 10px auto 0;
+      background: none;
+      border: none;
+      font-size: 0.82rem;
+      font-weight: 300;
+      font-family: inherit;
+      cursor: pointer;
+      color: rgba(255, 255, 255, 0.5);
+      transition: color 0.2s;
+    }
+
+    .survey-skip-btn:hover {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .survey-skip-btn.light {
+      color: #aaa;
+    }
+
+    .survey-skip-btn.light:hover {
+      color: #666;
+    }
+
+    /* ========== TRUST STRIP ========== */
+    .trust-strip {
+      position: relative;
+      z-index: 10;
+      background: #f5f7fb;
+      padding: 40px 32px;
+    }
+
+    .trust-strip-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      flex-wrap: wrap;
+    }
+
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.88rem;
+      font-weight: 400;
+      color: #3a4a65;
+    }
+
+    .trust-icon {
+      display: flex;
+      align-items: center;
+      color: #2E6BB5;
+    }
+
+    /* ========== FEATURES ========== */
+    .features {
+      position: relative;
+      z-index: 10;
+      padding: 100px 0 80px;
+      background: #f5f7fb;
+      color: #0F1B3D;
+      overflow: hidden;
+    }
+
+    .features-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    .features-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .features-header h2 {
+      font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+      font-weight: 300;
+      letter-spacing: -0.025em;
+      color: #0F1B3D;
+    }
+
+    .inline-waitlist {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+
+    .features-carousel-wrapper {
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .features-carousel-wrapper::before,
+    .features-carousel-wrapper::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 60px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .features-carousel-wrapper::before {
+      left: 0;
+      background: linear-gradient(to right, #f5f7fb, transparent);
+    }
+
+    .features-carousel-wrapper::after {
+      right: 0;
+      background: linear-gradient(to left, #f5f7fb, transparent);
+    }
+
+    .features-grid {
+      display: flex;
+      gap: 20px;
+      animation: carousel-scroll 30s linear infinite;
+      width: max-content;
+    }
+
+    .features-grid:hover {
+      animation-play-state: paused;
+    }
+
+    @keyframes carousel-scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .feature-card {
+      position: relative;
+      border-radius: 28px;
+      padding: 0;
+      min-height: 380px;
+      width: 340px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      overflow: hidden;
+      transition: transform 0.3s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .feature-card-content {
+      position: relative;
+      z-index: 1;
+      padding: 32px 28px;
+    }
+
+    .feature-card h3 {
+      font-size: 1.25rem;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #fff;
+      letter-spacing: -0.01em;
+    }
+
+    .feature-card p {
+      font-size: 0.88rem;
+      color: rgba(255, 255, 255, 0.8);
+      line-height: 1.55;
+      font-weight: 300;
+    }
+
+    /* Card backgrounds */
+    .feature-card {
+      background-size: cover;
+      background-position: center;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(15,27,61,0.75) 0%, rgba(15,27,61,0.15) 50%, rgba(15,27,61,0.05) 100%);
+      border-radius: 28px;
+      z-index: 0;
+    }
+
+    .feature-card.img-couch    { background-image: url('images/feature-couch.jpg'); }
+    .feature-card.img-meds     { background-image: url('images/feature-meds.jpg'); }
+    .feature-card.img-phone    { background-image: url('images/feature-phone.jpg'); }
+    .feature-card.img-family   { background-image: url('images/feature-family.jpg'); }
+    .feature-card.img-hugging  { background-image: url('images/feature-hugging.jpg'); }
+    .feature-card.img-meditate { background-image: url('images/feature-meditate.jpg'); }
+
+    /* (Waitlist is now inline within features section) */
+
+    .email-form {
+      display: flex;
+      gap: 10px;
+      max-width: 460px;
+      margin: 0 auto;
+    }
+
+    .email-form input[type="email"] {
+      flex: 1;
+      padding: 15px 22px;
+      background: rgba(15, 27, 61, 0.04);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(15, 27, 61, 0.12);
+      border-radius: 100px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      font-weight: 300;
+      color: #0F1B3D;
+      outline: none;
+      transition: background 0.2s, border-color 0.2s;
+      min-width: 0;
+      box-shadow: 0 4px 16px rgba(15, 27, 61, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    .email-form input[type="email"]::placeholder {
+      color: rgba(15, 27, 61, 0.35);
+    }
+
+    .email-form input[type="email"]:focus {
+      background: rgba(15, 27, 61, 0.07);
+      border-color: rgba(15, 27, 61, 0.2);
+    }
+
+    .email-form button {
+      padding: 15px 30px;
+      background: rgba(15, 27, 61, 0.08);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(15, 27, 61, 0.12);
+      border-radius: 100px;
+      color: #0F1B3D;
+      font-size: 0.95rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(15, 27, 61, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    .email-form button:hover {
+      background: rgba(15, 27, 61, 0.14);
+      border-color: rgba(15, 27, 61, 0.2);
+    }
+
+    .form-note {
+      font-size: 0.78rem;
+      color: #aaa;
+      margin-top: 16px;
+      font-weight: 300;
+    }
+
+    .success-message {
+      display: none;
+      padding: 15px 30px;
+      background: rgba(15, 27, 61, 0.06);
+      backdrop-filter: blur(40px) saturate(1.8);
+      -webkit-backdrop-filter: blur(40px) saturate(1.8);
+      border: 1px solid rgba(15, 27, 61, 0.12);
+      color: #0F1B3D;
+      border-radius: 100px;
+      font-weight: 400;
+      font-size: 0.95rem;
+      box-shadow: 0 4px 16px rgba(15, 27, 61, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    /* ========== FOOTER ========== */
+    footer {
+      position: relative;
+      z-index: 10;
+      padding: 80px 32px 40px;
+      background: #0F1B3D;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    footer::after {
+      content: '';
+      position: absolute;
+      bottom: -40%;
+      right: -10%;
+      width: 50%;
+      height: 80%;
+      background: radial-gradient(ellipse, rgba(244,176,132,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .footer-inner {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .footer-brand {
+      font-size: clamp(3rem, 8vw, 5rem);
+      font-weight: 300;
+      letter-spacing: -0.03em;
+      color: #fff;
+      margin-bottom: 16px;
+    }
+
+    .footer-tagline {
+      font-size: 1rem;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 48px;
+    }
+
+    .footer-bottom {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+      color: rgba(255, 255, 255, 0.35);
+      font-weight: 400;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 20px;
+    }
+
+    .footer-links a {
+      color: rgba(255, 255, 255, 0.45);
+      text-decoration: none;
+      font-size: 0.78rem;
+      font-weight: 400;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .footer-fine-print {
+      max-width: 960px;
+      margin: 16px auto 0;
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.25);
+      font-weight: 300;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 768px) {
+      .footer-bottom {
+        flex-direction: column;
+        gap: 6px;
+        text-align: center;
+      }
+
+      .trust-strip-inner {
+        flex-direction: column;
+        gap: 20px;
+        align-items: center;
+      }
+    }
+
+    /* ========== ANIMATIONS ========== */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 768px) {
+      nav {
+        padding: 16px 16px;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .manifesto-inner {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .manifesto-phone .phone-device {
+        width: 200px;
+        height: 420px;
+      }
+
+      .phone-device {
+        width: 250px;
+        height: 520px;
+        border-radius: 40px;
+      }
+
+      .phone-screen {
+        border-radius: 32px;
+      }
+
+      .features {
+        padding: 80px 20px;
+      }
+
+      .feature-card {
+        width: 260px;
+        min-height: 320px;
+      }
+
+      .waitlist {
+        padding: 80px 20px 100px;
+      }
+
+      .hero-email-form,
+      .email-form {
+        flex-direction: column;
+      }
+
+      .email-form button {
+        padding: 16px 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="#" class="nav-logo">elena</a>
+    <div class="nav-links">
+      <a href="#how-it-works">How it Works</a>
+      <a href="#features">Features</a>
+    </div>
+    <a href="/upload" class="nav-cta">Log in</a>
+  </nav>
+
+  <!-- HERO: Dark clouds -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-blobs">
+      <div class="hero-blob hero-blob-1"></div>
+      <div class="hero-blob hero-blob-2"></div>
+      <div class="hero-blob hero-blob-3"></div>
+      <div class="hero-blob hero-blob-4"></div>
+    </div>
+    <div class="hero-content">
+      <h1>Elena fights your bills and<br>calls your insurance.</h1>
+      <p class="hero-subtitle">The AI healthcare companion that handles the calls you don't want to make.</p>
+      <div class="waitlist-flow" id="hero-waitlist-flow">
+        <form class="hero-email-form" id="hero-waitlist-form">
+          <input type="email" placeholder="Enter your email" required>
+          <button type="submit">Get Early Access</button>
+        </form>
+        <div class="survey-step" id="hero-survey" style="display:none;">
+          <p class="survey-label">What are you most interested in? <span class="survey-hint">(pick all that apply)</span></p>
+          <div class="survey-options dark">
+            <label class="survey-chip"><input type="checkbox" value="price_transparency"><span>Price transparency</span></label>
+            <label class="survey-chip"><input type="checkbox" value="bill_fighting"><span>Bill fighting &amp; prior auth</span></label>
+            <label class="survey-chip"><input type="checkbox" value="health_data"><span>All my health data in one place</span></label>
+            <label class="survey-chip"><input type="checkbox" value="automation"><span>Automation (phone calls, forms)</span></label>
+          </div>
+          <button class="survey-submit-btn dark" id="hero-survey-submit">Submit</button>
+          <button class="survey-skip-btn" id="hero-survey-skip">Skip</button>
+        </div>
+        <div class="hero-success" id="hero-waitlist-success">You're in! We'll reach out when early access is ready.</div>
+        <p class="waitlist-social-proof" style="font-size: 0.85rem; font-weight: 400; color: rgba(255,255,255,0.6); margin-top: 14px;">Join 2,000+ founding members navigating healthcare together</p>
+      </div>
+    </div>
+    <div class="scroll-indicator">
+      Scroll
+      <svg class="scroll-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M8 3v8.5M4 8l4 4.5L12 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="hero-pill"></div>
+  </section>
+
+  <!-- COMMUNITY PERKS -->
+  <section class="community-perks">
+    <div class="perks-inner fade-in">
+      <h2>Your membership starts now.</h2>
+      <p class="perks-subtitle">Founding members get immediate access to:</p>
+      <div class="perks-grid">
+        <div class="perk-card">
+          <h3>Private WhatsApp community</h3>
+          <p>People dealing with the same stuff you are. Ask questions, share what worked, get real answers.</p>
+        </div>
+        <div class="perk-card">
+          <h3>Weekly healthcare newsletter</h3>
+          <p>Short, useful tips on saving money, picking providers, and understanding your coverage.</p>
+        </div>
+        <div class="perk-card">
+          <h3>Monthly live Q&A sessions</h3>
+          <p>Bring your questions to real navigators and providers. No scripts, no runaround.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MANIFESTO -->
+  <section class="manifesto" id="how-it-works">
+    <div class="manifesto-inner fade-in">
+      <div class="manifesto-text">
+        <h2>Healthcare costs shouldn't be a mystery.</h2>
+        <p>Since 2021, federal law requires hospitals and insurers to publish their actual negotiated prices. The problem? That data is buried in massive spreadsheets no one can read.</p>
+        <p style="margin-top: 12px;">Elena pulls from these CMS-mandated price transparency files, compares costs across providers in your area, and shows you what you'll actually pay — before you book.</p>
+      </div>
+      <div class="manifesto-phone">
+        <div class="phone-device">
+          <div class="phone-screen">
+            <video autoplay muted loop playsinline>
+              <source src="images/elena-demo.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STAT BANNER -->
+  <section class="stat-banner">
+    <div class="stat-banner-inner fade-in">
+      <p class="stat-banner-text">The same MRI can cost <strong>$400</strong> or <strong>$2,500</strong> depending on where you go.</p>
+      <p class="stat-banner-sub">Elena finds the real price before you book.</p>
+    </div>
+  </section>
+
+  <!-- TRUST SIGNALS -->
+  <section class="trust-strip">
+    <div class="trust-strip-inner">
+      <div class="trust-item">
+        <span class="trust-icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1L12.5 6.5L18.5 7.3L14.2 11.4L15.3 17.3L10 14.5L4.7 17.3L5.8 11.4L1.5 7.3L7.5 6.5L10 1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </span>
+        <span>Your data is never sold</span>
+      </div>
+      <div class="trust-item">
+        <span class="trust-icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2C6 2 3 5 3 8.5C3 14 10 18 10 18C10 18 17 14 17 8.5C17 5 14 2 10 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </span>
+        <span>Built by people frustrated by the same system</span>
+      </div>
+      <div class="trust-item">
+        <span class="trust-icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 18a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" stroke-width="1.5"/><path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span>Not medical advice — Elena helps with costs and logistics</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES + WAITLIST -->
+  <section class="features" id="features">
+    <div class="features-carousel-wrapper">
+        <div class="features-grid">
+          <!-- Original cards -->
+          <div class="feature-card img-couch">
+            <div class="feature-card-content">
+              <h3>She actually calls for you.</h3>
+              <p>Elena calls doctors' offices, asks your questions, and reports back. No hold music.</p>
+            </div>
+          </div>
+          <div class="feature-card img-meds">
+            <div class="feature-card-content">
+              <h3>Find the cheapest meds.</h3>
+              <p>Searches pricing databases and your insurance to find the lowest price for every prescription.</p>
+            </div>
+          </div>
+          <div class="feature-card img-phone">
+            <div class="feature-card-content">
+              <h3>Insurance, decoded.</h3>
+              <p>Snap your card, and Elena handles the rest. Deductibles, copays, what's covered.</p>
+            </div>
+          </div>
+          <div class="feature-card img-hugging">
+            <div class="feature-card-content">
+              <h3>Your whole health, one place.</h3>
+              <p>Conditions, meds, allergies, doctors. Always up to date, always with you.</p>
+            </div>
+          </div>
+          <div class="feature-card img-meditate">
+            <div class="feature-card-content">
+              <h3>Stay on top of it.</h3>
+              <p>Personalized reminders and habits so checkups, screenings, and refills never slip.</p>
+            </div>
+          </div>
+          <div class="feature-card img-family">
+            <div class="feature-card-content">
+              <h3>Your whole family, covered.</h3>
+              <p>Manage healthcare for parents, kids, and partners all under one account.</p>
+            </div>
+          </div>
+          <!-- Duplicate for seamless loop -->
+          <div class="feature-card img-couch">
+            <div class="feature-card-content">
+              <h3>She actually calls for you.</h3>
+              <p>Elena calls doctors' offices, asks your questions, and reports back. No hold music.</p>
+            </div>
+          </div>
+          <div class="feature-card img-meds">
+            <div class="feature-card-content">
+              <h3>Find the cheapest meds.</h3>
+              <p>Searches pricing databases and your insurance to find the lowest price for every prescription.</p>
+            </div>
+          </div>
+          <div class="feature-card img-phone">
+            <div class="feature-card-content">
+              <h3>Insurance, decoded.</h3>
+              <p>Snap your card, and Elena handles the rest. Deductibles, copays, what's covered.</p>
+            </div>
+          </div>
+          <div class="feature-card img-hugging">
+            <div class="feature-card-content">
+              <h3>Your whole health, one place.</h3>
+              <p>Conditions, meds, allergies, doctors. Always up to date, always with you.</p>
+            </div>
+          </div>
+          <div class="feature-card img-meditate">
+            <div class="feature-card-content">
+              <h3>Stay on top of it.</h3>
+              <p>Personalized reminders and habits so checkups, screenings, and refills never slip.</p>
+            </div>
+          </div>
+          <div class="feature-card img-family">
+            <div class="feature-card-content">
+              <h3>Your whole family, covered.</h3>
+              <p>Manage healthcare for parents, kids, and partners all under one account.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="features-inner">
+        <div class="features-header fade-in" style="margin-top: 80px;">
+          <h2>Join the Elena community.</h2>
+          <p style="color: #5a6a82; font-size: 1.05rem; font-weight: 300; margin-top: 12px; max-width: 540px; margin-left: auto; margin-right: auto; line-height: 1.7;">
+            Get immediate access to our WhatsApp community, weekly newsletter, and live Q&A sessions — plus early access when Elena launches.
+          </p>
+        </div>
+
+        <div class="inline-waitlist fade-in" id="waitlist">
+          <div class="waitlist-flow" id="bottom-waitlist-flow">
+            <form class="email-form" id="waitlist-form">
+              <input type="email" placeholder="Enter your email" required>
+              <button type="submit">Get Early Access</button>
+            </form>
+            <div class="survey-step" id="bottom-survey" style="display:none;">
+              <p class="survey-label light">What are you most interested in? <span class="survey-hint">(pick all that apply)</span></p>
+              <div class="survey-options light">
+                <label class="survey-chip light"><input type="checkbox" value="price_transparency"><span>Price transparency</span></label>
+                <label class="survey-chip light"><input type="checkbox" value="bill_fighting"><span>Bill fighting &amp; prior auth</span></label>
+                <label class="survey-chip light"><input type="checkbox" value="health_data"><span>All my health data in one place</span></label>
+                <label class="survey-chip light"><input type="checkbox" value="automation"><span>Automation (phone calls, forms)</span></label>
+              </div>
+              <button class="survey-submit-btn light" id="bottom-survey-submit">Submit</button>
+              <button class="survey-skip-btn light" id="bottom-survey-skip">Skip</button>
+            </div>
+            <div class="success-message" id="waitlist-success">You're in! We'll reach out when early access is ready.</div>
+          </div>
+        </div>
+      </div>
+  </section>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">elena</div>
+      <p class="footer-tagline">Put healthcare on autopilot.</p>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 Elena AI. All rights reserved.</span>
+      <div class="footer-links">
+        <a href="/blog">Resources</a>
+        <a href="https://www.tiktok.com/@elenahealth" target="_blank" rel="noopener">TikTok</a>
+      </div>
+      <span>Made with love in NYC</span>
+    </div>
+    <div class="footer-fine-print">
+      Elena helps you navigate healthcare costs and logistics — not a substitute for medical advice. Pricing data from CMS-mandated hospital price transparency files.
+    </div>
+  </footer>
+
+  <script>
+    // Fade-in on scroll
+    const fadeObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.fade-in').forEach(el => fadeObserver.observe(el));
+
+    // Form handling — saves email + interests to Supabase
+    const SUPABASE_URL = 'https://livbrrqqxnvnxhggguig.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpdmJycnFxeG52bnhoZ2dndWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Njc1MzYsImV4cCI6MjA4NzA0MzUzNn0.MkOKc7MWq5zoR3OY7wZgOsPwvjjKSij0ln1nF6inxP0';
+
+    // Capture UTM params from URL on page load
+    const utmParams = {};
+    const urlParams = new URLSearchParams(window.location.search);
+    ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach(key => {
+      const val = urlParams.get(key);
+      if (val) utmParams[key] = val;
+    });
+
+    async function submitToSupabase(email, interests, successEl) {
+      try {
+        const body = { email, ...utmParams };
+        if (interests.length > 0) {
+          body.interests = interests;
+        }
+        const resp = await fetch(`${SUPABASE_URL}/rest/v1/beta_signups`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify(body)
+        });
+        if (resp.status === 409) {
+          successEl.textContent = "You're already signed up! We'll be in touch.";
+        }
+        if (!resp.ok && resp.status !== 409) throw new Error('Signup failed');
+        successEl.style.display = 'inline-block';
+      } catch (err) {
+        console.error('Signup error:', err);
+        successEl.textContent = 'Something went wrong — please try again.';
+        successEl.style.display = 'inline-block';
+      }
+    }
+
+    function setupWaitlistFlow(formId, surveyId, surveySubmitId, surveySkipId, successId, hideSelectors) {
+      const form = document.getElementById(formId);
+      const survey = document.getElementById(surveyId);
+      const surveySubmit = document.getElementById(surveySubmitId);
+      const surveySkip = document.getElementById(surveySkipId);
+      const successEl = document.getElementById(successId);
+      const hideEls = (hideSelectors || []).map(s => document.querySelector(s)).filter(Boolean);
+      let savedEmail = '';
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        savedEmail = form.querySelector('input[type="email"]').value;
+        form.style.display = 'none';
+        survey.style.display = 'block';
+        hideEls.forEach(el => el.style.display = 'none');
+      });
+
+      surveySubmit.addEventListener('click', () => {
+        const checked = survey.querySelectorAll('input[type="checkbox"]:checked');
+        const interests = Array.from(checked).map(cb => cb.value);
+        survey.style.display = 'none';
+        submitToSupabase(savedEmail, interests, successEl);
+      });
+
+      surveySkip.addEventListener('click', () => {
+        survey.style.display = 'none';
+        submitToSupabase(savedEmail, [], successEl);
+      });
+    }
+
+    // Hero form
+    setupWaitlistFlow('hero-waitlist-form', 'hero-survey', 'hero-survey-submit', 'hero-survey-skip', 'hero-waitlist-success', ['.hero-subtitle', '.waitlist-social-proof']);
+
+    // Bottom form
+    setupWaitlistFlow('waitlist-form', 'bottom-survey', 'bottom-survey-submit', 'bottom-survey-skip', 'waitlist-success');
+  </script>
+
+
+
+  <script>
+    // Interactive gradient blobs — follow cursor with parallax
+    (function() {
+      const hero = document.querySelector('.hero');
+      const blobs = document.querySelectorAll('.hero-blob');
+      // Each blob moves at a different speed for parallax depth
+      const speeds = [0.04, -0.03, 0.025, -0.02];
+
+      let mouse = { x: 0, y: 0 };
+      let current = { x: 0, y: 0 };
+      let raf;
+
+      hero.addEventListener('mousemove', (e) => {
+        const rect = hero.getBoundingClientRect();
+        // Center-relative: -0.5 to 0.5
+        mouse.x = (e.clientX - rect.left) / rect.width - 0.5;
+        mouse.y = (e.clientY - rect.top) / rect.height - 0.5;
+      });
+
+      // On mobile, gentle drift based on scroll
+      window.addEventListener('scroll', () => {
+        const progress = Math.min(1, window.scrollY / window.innerHeight);
+        mouse.y = progress * 0.3 - 0.15;
+        mouse.x = Math.sin(progress * 2) * 0.1;
+      }, { passive: true });
+
+      function animate() {
+        // Smooth lerp
+        current.x += (mouse.x - current.x) * 0.05;
+        current.y += (mouse.y - current.y) * 0.05;
+
+        blobs.forEach((blob, i) => {
+          const dx = current.x * speeds[i] * 1000;
+          const dy = current.y * speeds[i] * 1000;
+          blob.style.transform = `translate(${dx}px, ${dy}px)`;
+        });
+
+        raf = requestAnimationFrame(animate);
+      }
+
+      animate();
+    })();
+  </script>
+
+  <script defer src="/_vercel/insights/script.js"></script>
+  <script defer src="https://cloud.umami.is/script.js" data-website-id="a3769e64-67ea-47d8-96ce-4dddd14e409d"></script>
+</body>
+</html>

@@ -2822,13 +2822,13 @@
       <p class="hero-subtitle">Elena is a personal health assistant. She can make calls, use a computer, and write emails, and she's an expert in navigating the healthcare system.</p>
       <div class="chat-input-bar">
         <div class="chat-input-top">
-          <input type="text" id="chat-hero-input" placeholder="How much should an MRI cost with my insurance?" onkeydown="if(event.key==='Enter'){event.preventDefault();showComingSoon();}">
+          <input type="text" id="chat-hero-input" placeholder="How much should an MRI cost with my insurance?">
         </div>
         <div class="chat-input-bottom">
           <button class="chat-attach-btn" aria-label="Attach document">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
           </button>
-          <button class="chat-send-btn" id="chat-send-btn" aria-label="Send" onclick="showComingSoon()">
+          <button class="chat-send-btn" id="chat-send-btn" aria-label="Send" disabled style="opacity: 0.4; cursor: default;">
             <svg viewBox="0 0 20 20" fill="none">
               <path d="M10 16V4M4 10l6-6 6 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -3894,65 +3894,89 @@
       });
     })();
 
-    // Chat hero: send button and Enter both open coming soon modal
-    // (handlers are inline on the HTML elements via onclick/onkeydown)
-  </script>
+    // Chat hero: submit triggers chat gate flow
+    (function() {
+      var input = document.getElementById('chat-hero-input');
+      var sendBtn = document.getElementById('chat-send-btn');
+      var responseSection = document.getElementById('chat-response-section');
+      var responseInner = document.getElementById('chat-response-inner');
+      var gateOverlay = document.getElementById('chat-gate-overlay');
+      if (!input || !sendBtn || !responseSection) return;
 
-  <!-- Coming Soon Modal -->
-  <div id="coming-soon-overlay" style="display:none; position:fixed; inset:0; background:linear-gradient(135deg, rgba(15,27,61,0.85) 0%, rgba(26,58,110,0.85) 30%, rgba(46,107,181,0.85) 60%, rgba(46,107,181,0.85) 100%); z-index:2000; align-items:center; justify-content:center; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);" onclick="closeComingSoon()">
-    <div style="background:rgba(255,255,255,0.1); backdrop-filter:blur(40px) saturate(1.8); -webkit-backdrop-filter:blur(40px) saturate(1.8); border:1px solid rgba(255,255,255,0.18); border-top-color:rgba(255,255,255,0.3); border-radius:24px; padding:48px 40px; max-width:420px; width:90%; text-align:center; box-shadow:0 16px 48px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15);" onclick="event.stopPropagation()">
-      <h3 style="font-size:24px; font-weight:300; color:#fff; margin-bottom:10px; letter-spacing:-0.02em;">Coming soon</h3>
-      <p style="font-size:15px; color:rgba(255,255,255,0.7); font-weight:300; line-height:1.6; margin-bottom:28px;">We'll notify you when Elena is ready to help you out.</p>
-      <form id="coming-soon-form" style="display:flex; gap:10px;">
-        <input type="email" placeholder="Enter your email" required style="flex:1; padding:16px 24px; background:rgba(255,255,255,0.12); backdrop-filter:blur(40px); -webkit-backdrop-filter:blur(40px); border:1px solid rgba(255,255,255,0.25); border-top-color:rgba(255,255,255,0.35); border-radius:100px; font-size:1rem; font-family:inherit; font-weight:400; color:#fff; outline:none; min-width:0; box-shadow:0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15);">
-        <button type="submit" style="padding:16px 28px; background:rgba(255,255,255,0.08); backdrop-filter:blur(40px); -webkit-backdrop-filter:blur(40px); border:1px solid rgba(255,255,255,0.18); border-top-color:rgba(255,255,255,0.3); border-radius:100px; color:#fff; font-size:1rem; font-weight:500; font-family:inherit; cursor:pointer; white-space:nowrap; box-shadow:0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15); transition:all 0.2s;">Notify Me</button>
-      </form>
-      <div id="coming-soon-success" style="display:none; padding:16px 28px; background:rgba(255,255,255,0.12); backdrop-filter:blur(40px); -webkit-backdrop-filter:blur(40px); border:1px solid rgba(255,255,255,0.25); border-radius:100px; font-size:1rem; color:#fff; font-weight:500; box-shadow:0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15);">You're on the list!</div>
-    </div>
-  </div>
+      var defaultResponses = {
+        'mri': "Based on your Blue Cross PPO plan, an MRI of the knee typically costs between $180-$450 out of pocket depending on where you go. I found 3 imaging centers near you. The best price is at Sunrise Imaging Center at around $180 after insurance...",
+        'bill': "I'd be happy to help you review that bill. ER bills often contain errors or charges that can be disputed. Let me walk you through the most common issues I see and how we can get this resolved...",
+        'doctor': "I can help you find in-network doctors near you. Based on your insurance plan, I'm searching for providers within 10 miles who are accepting new patients and have strong ratings...",
+        'schedule': "I'll call your doctor's office and find available appointment times that work with your schedule. I'll check their availability, confirm they accept your insurance, and book it for you...",
+        'insurance': "Great question! Let me break down what your plan covers. With your current plan, you have coverage for preventive care at 100%, specialist visits with a $50 copay, and prescription drugs on a tiered formulary...",
+        'default': "That's a great question. Let me look into that for you. Based on what I know about your healthcare situation, here's what I can tell you..."
+      };
 
-  <script>
-    function showComingSoon() {
-      var overlay = document.getElementById('coming-soon-overlay');
-      overlay.style.display = 'flex';
-      document.body.style.overflow = 'hidden';
-    }
+      function getResponse(query) {
+        var q = query.toLowerCase();
+        if (q.indexOf('mri') !== -1 || q.indexOf('cost') !== -1 || q.indexOf('price') !== -1) return defaultResponses['mri'];
+        if (q.indexOf('bill') !== -1 || q.indexOf('er') !== -1 || q.indexOf('dispute') !== -1 || q.indexOf('charge') !== -1) return defaultResponses['bill'];
+        if (q.indexOf('doctor') !== -1 || q.indexOf('in-network') !== -1 || q.indexOf('find') !== -1) return defaultResponses['doctor'];
+        if (q.indexOf('schedule') !== -1 || q.indexOf('appointment') !== -1 || q.indexOf('call') !== -1 || q.indexOf('book') !== -1) return defaultResponses['schedule'];
+        if (q.indexOf('insurance') !== -1 || q.indexOf('cover') !== -1 || q.indexOf('plan') !== -1) return defaultResponses['insurance'];
+        return defaultResponses['default'];
+      }
 
-    function closeComingSoon() {
-      document.getElementById('coming-soon-overlay').style.display = 'none';
-      document.body.style.overflow = '';
-    }
+      function submitChat() {
+        var query = input.value.trim();
+        if (!query) return;
 
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') closeComingSoon();
-    });
+        // Track in Mixpanel
+        if (window.mixpanel) mixpanel.track('chat_hero_submit', { query: query });
 
-    document.getElementById('coming-soon-form').addEventListener('submit', function(e) {
-      e.preventDefault();
-      var email = this.querySelector('input').value;
-      var form = this;
-      var btn = form.querySelector('button');
-      btn.textContent = 'Sending...';
-      btn.disabled = true;
+        // Show response section
+        responseSection.style.display = 'block';
 
-      var body = { email: email };
-      fetch(SUPABASE_URL + '/rest/v1/beta_signups', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify(body)
-      }).then(function(resp) {
-        form.style.display = 'none';
-        document.getElementById('coming-soon-success').style.display = 'inline-block';
-      }).catch(function() {
-        form.style.display = 'none';
-        document.getElementById('coming-soon-success').style.display = 'inline-block';
+        // Build user bubble
+        responseInner.innerHTML = '<div class="chat-bubble-user">' + query.replace(/</g, '&lt;') + '</div>';
+
+        // Scroll to response
+        setTimeout(function() {
+          responseSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+
+        // Show thinking dots
+        setTimeout(function() {
+          var thinking = document.createElement('div');
+          thinking.className = 'chat-thinking';
+          thinking.id = 'chat-thinking';
+          thinking.innerHTML = '<span></span><span></span><span></span>';
+          responseInner.appendChild(thinking);
+        }, 400);
+
+        // Show first line of response
+        setTimeout(function() {
+          var thinking = document.getElementById('chat-thinking');
+          if (thinking) thinking.remove();
+
+          var response = getResponse(query);
+          var firstSentence = response.split('...')[0] + '...';
+
+          var bubble = document.createElement('div');
+          bubble.className = 'chat-bubble-elena';
+          bubble.textContent = firstSentence;
+          responseInner.appendChild(bubble);
+        }, 1900);
+
+        // Show gate overlay
+        setTimeout(function() {
+          gateOverlay.style.display = 'block';
+        }, 2900);
+      }
+
+      sendBtn.addEventListener('click', submitChat);
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          submitChat();
+        }
       });
-    });
+    })();
   </script>
 
   <script defer src="/_vercel/insights/script.js"></script>

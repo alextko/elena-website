@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Elena — Ask Elena Anything</title>
-  <meta name="description" content="Ask Elena about healthcare costs, insurance coverage, appointment scheduling, and more. Your AI healthcare assistant.">
+  <title>Elena - Your AI Healthcare Companion</title>
+  <meta name="description" content="Elena is your AI-powered care navigator. Organize your family's health records, schedule appointments, get reminders, and never let anything fall through the cracks.">
   <link rel="icon" type="image/png" href="images/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +14,7 @@
     record_sessions_percent: 100,
     record_mask_text_selector: ""
   });
-  mixpanel.register({'landing_variant': 'chat_first'});
+  mixpanel.register({'landing_variant': 'care_navigator'});
   mixpanel.track_pageview();
   </script>
   <style>
@@ -124,7 +124,6 @@
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      padding-bottom: 60px;
     }
 
     .hero-split {
@@ -245,12 +244,6 @@
       line-height: 1.15;
       letter-spacing: -0.025em;
       color: #ffffff;
-    }
-
-    .hero h1 em {
-      font-style: italic;
-      font-family: 'DM Serif Display', Georgia, serif;
-      font-weight: 400;
     }
 
     .hero-subtitle {
@@ -562,20 +555,13 @@
       flex: 1;
     }
 
-    .manifesto-eyebrow {
-      font-size: 1.05rem;
-      font-weight: 400;
-      color: #5a6a82;
-      margin-bottom: 8px;
-    }
-
     .manifesto h2 {
       font-size: clamp(1.8rem, 3.5vw, 2.5rem);
       font-weight: 300;
       letter-spacing: -0.025em;
       color: #0F1B3D;
       line-height: 1.2;
-      margin-bottom: 28px;
+      margin-bottom: 20px;
     }
 
     .manifesto p {
@@ -583,130 +569,6 @@
       font-weight: 300;
       color: #5a6a82;
       line-height: 1.7;
-    }
-
-    .manifesto-app-side {
-      flex-shrink: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .manifesto-app-icon {
-      width: 280px;
-      height: 280px;
-      border-radius: 56px;
-      box-shadow: 0 16px 48px rgba(0,0,0,0.12);
-      background: #0F1B3D;
-    }
-
-    .manifesto-app-label {
-      font-size: 0.65rem;
-      font-weight: 400;
-      color: #AEAEB2;
-      text-align: center;
-    }
-
-    .manifesto-app-btn {
-      display: inline-block;
-      padding: 14px 28px;
-      background: rgba(15, 27, 61, 0.06);
-      backdrop-filter: blur(40px);
-      -webkit-backdrop-filter: blur(40px);
-      border: 1px solid rgba(15, 27, 61, 0.12);
-      border-radius: 100px;
-      color: #0F1B3D;
-      font-size: 0.9rem;
-      font-weight: 500;
-      font-family: inherit;
-      text-decoration: none;
-      transition: all 0.2s;
-      box-shadow: 0 4px 16px rgba(15, 27, 61, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-    }
-
-    .manifesto-app-btn:hover {
-      background: rgba(15, 27, 61, 0.1);
-      border-color: rgba(15, 27, 61, 0.2);
-    }
-
-    .manifesto-col {
-      flex: 1;
-    }
-
-    .manifesto-label {
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: #2E6BB5;
-      margin-bottom: 12px;
-    }
-
-    .manifesto-col-title {
-      font-size: clamp(1.5rem, 2.5vw, 2rem);
-      font-weight: 300;
-      letter-spacing: -0.025em;
-      color: #0F1B3D;
-      line-height: 1.2;
-      margin-bottom: 14px;
-    }
-
-    .manifesto-col-body {
-      font-size: 1rem;
-      font-weight: 300;
-      color: #5a6a82;
-      line-height: 1.7;
-      margin-bottom: 24px;
-    }
-
-    .manifesto-divider {
-      width: 1px;
-      background: rgba(15, 27, 61, 0.1);
-      align-self: stretch;
-      flex-shrink: 0;
-    }
-
-    .manifesto-btn {
-      display: inline-block;
-      padding: 14px 28px;
-      border-radius: 100px;
-      font-size: 0.95rem;
-      font-weight: 500;
-      font-family: inherit;
-      text-decoration: none;
-      transition: all 0.2s;
-    }
-
-    .manifesto-btn-primary {
-      background: #0F1B3D;
-      color: #fff;
-    }
-
-    .manifesto-btn-primary:hover {
-      background: #1A3A6E;
-    }
-
-    .manifesto-btn-secondary {
-      background: transparent;
-      color: #0F1B3D;
-      border: 1.5px solid rgba(15, 27, 61, 0.2);
-    }
-
-    .manifesto-btn-secondary:hover {
-      border-color: rgba(15, 27, 61, 0.4);
-      background: rgba(15, 27, 61, 0.04);
-    }
-
-    @media (max-width: 768px) {
-      .manifesto-inner {
-        flex-direction: column;
-      }
-
-      .manifesto-divider {
-        width: 100%;
-        height: 1px;
-      }
     }
 
     .manifesto-phone {
@@ -1973,7 +1835,7 @@
     .trust-strip {
       position: relative;
       z-index: 10;
-      background: #FFFFFF;
+      background: #f5f7fb;
       padding: 40px 32px;
     }
 
@@ -2006,7 +1868,7 @@
       position: relative;
       z-index: 10;
       padding: 100px 0 80px;
-      background: #FFFFFF;
+      background: #f5f7fb;
       color: #0F1B3D;
       overflow: hidden;
     }
@@ -2040,42 +1902,26 @@
       overflow: hidden;
     }
 
-    /* Progressive blur edges */
-    .prog-blur {
+    .features-carousel-wrapper::before,
+    .features-carousel-wrapper::after {
+      content: '';
       position: absolute;
       top: 0;
       bottom: 0;
-      width: 100px;
+      width: 60px;
       z-index: 2;
       pointer-events: none;
-      overflow: hidden;
     }
 
-    .prog-blur-left { left: 0; }
-    .prog-blur-right { right: 0; }
-
-    .prog-blur-layer {
-      position: absolute;
-      inset: 0;
-      backdrop-filter: blur(var(--blur));
-      -webkit-backdrop-filter: blur(var(--blur));
+    .features-carousel-wrapper::before {
+      left: 0;
+      background: linear-gradient(to right, #f5f7fb, transparent);
     }
 
-    .prog-blur-left .prog-blur-layer {
-      mask: linear-gradient(to right, black var(--start), transparent var(--end));
-      -webkit-mask: linear-gradient(to right, black var(--start), transparent var(--end));
+    .features-carousel-wrapper::after {
+      right: 0;
+      background: linear-gradient(to left, #f5f7fb, transparent);
     }
-
-    .prog-blur-right .prog-blur-layer {
-      mask: linear-gradient(to left, black var(--start), transparent var(--end));
-      -webkit-mask: linear-gradient(to left, black var(--start), transparent var(--end));
-    }
-
-    .prog-blur-layer:nth-child(1) { --blur: 1px; --start: 0%; --end: 20%; }
-    .prog-blur-layer:nth-child(2) { --blur: 2px; --start: 0%; --end: 40%; }
-    .prog-blur-layer:nth-child(3) { --blur: 4px; --start: 0%; --end: 60%; }
-    .prog-blur-layer:nth-child(4) { --blur: 8px; --start: 0%; --end: 80%; }
-    .prog-blur-layer:nth-child(5) { --blur: 12px; --start: 0%; --end: 100%; }
 
     .features-grid {
       display: flex;
@@ -2238,12 +2084,7 @@
       position: relative;
       z-index: 10;
       padding: 80px 32px 40px;
-      background: linear-gradient(135deg,
-        #0F1B3D 0%,
-        #1A3A6E 30%,
-        #2E6BB5 60%,
-        #2E6BB5 100%
-      );
+      background: #0F1B3D;
       color: #fff;
       overflow: hidden;
     }
@@ -2251,31 +2092,17 @@
     footer::after {
       content: '';
       position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse at 85% 130%,
-        #F4B084 0%,
-        #E8956D 25%,
-        rgba(46, 107, 181, 0) 60%
-      );
-      pointer-events: none;
-    }
-
-    footer::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-      opacity: 0.2;
-      mix-blend-mode: overlay;
+      bottom: -40%;
+      right: -10%;
+      width: 50%;
+      height: 80%;
+      background: radial-gradient(ellipse, rgba(244,176,132,0.15) 0%, transparent 70%);
       pointer-events: none;
     }
 
     .footer-inner {
       max-width: 960px;
       margin: 0 auto;
-      position: relative;
-      z-index: 2;
     }
 
     .footer-brand {
@@ -2298,8 +2125,6 @@
       margin: 0 auto;
       display: flex;
       justify-content: space-between;
-      position: relative;
-      z-index: 2;
       align-items: center;
       font-size: 0.78rem;
       color: rgba(255, 255, 255, 0.35);
@@ -2311,8 +2136,6 @@
     .footer-fine-print {
       max-width: 960px;
       margin: 16px auto 0;
-      position: relative;
-      z-index: 2;
       font-size: 0.7rem;
       color: rgba(255, 255, 255, 0.25);
       font-weight: 300;
@@ -2423,377 +2246,6 @@
         padding: 16px 30px;
       }
     }
-    /* ========== CHAT HERO ========== */
-    .hero-center {
-      position: relative;
-      z-index: 2;
-      text-align: center;
-      max-width: 700px;
-      width: 100%;
-      padding: 0 24px;
-    }
-
-    .chat-input-bar {
-      display: flex;
-      flex-direction: column;
-      background: rgba(255,255,255,0.95);
-      border-radius: 20px;
-      border: 1px solid rgba(255,255,255,0.3);
-      max-width: 620px;
-      width: 100%;
-      margin: 32px auto 0;
-      padding: 0;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.1);
-      overflow: hidden;
-    }
-
-    .chat-input-top {
-      padding: 18px 20px 12px;
-    }
-
-    .chat-input-bar input {
-      width: 100%;
-      border: none;
-      outline: none;
-      background: transparent;
-      font-size: 16px;
-      font-family: inherit;
-      color: #1C1C1E;
-      min-width: 0;
-    }
-
-    .chat-input-bar input::placeholder {
-      color: #AEAEB2;
-    }
-
-    .chat-input-bottom {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 12px 12px 16px;
-    }
-
-    .chat-attach-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #AEAEB2;
-      transition: color 0.2s, background 0.2s;
-    }
-
-    .chat-attach-btn:hover {
-      color: #8E8E93;
-      background: rgba(0,0,0,0.04);
-    }
-
-    .chat-attach-btn svg {
-      width: 20px;
-      height: 20px;
-    }
-
-    .chat-send-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: #0F1B3D;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: background 0.2s;
-    }
-
-    .chat-send-btn:hover {
-      background: #1A3A6E;
-    }
-
-    .chat-send-btn svg {
-      width: 18px;
-      height: 18px;
-    }
-
-    .suggestion-label {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: rgba(255,255,255,0.4);
-      text-align: center;
-      margin-top: 28px;
-      margin-bottom: 14px;
-    }
-
-    .suggestion-chips {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      flex-wrap: nowrap;
-      padding: 0 12px;
-    }
-
-    .suggestion-chip {
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 22px;
-      padding: 10px 18px;
-      font-size: 14px;
-      font-weight: 600;
-      color: #fff;
-      cursor: pointer;
-      transition: background 0.2s, border-color 0.2s;
-      white-space: nowrap;
-    }
-
-    .suggestion-chip:hover {
-      background: rgba(255,255,255,0.18);
-      border-color: rgba(255,255,255,0.35);
-    }
-
-    .hero-social-proof {
-      font-size: 0.85rem;
-      font-weight: 400;
-      color: rgba(255,255,255,0.6);
-      margin-top: 20px;
-    }
-
-    @media (max-width: 768px) {
-      .suggestion-chips {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        justify-content: flex-start;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        padding-bottom: 4px;
-      }
-      .suggestion-chips::-webkit-scrollbar { display: none; }
-    }
-
-    /* ========== CHAT RESPONSE AREA ========== */
-    .chat-response-section {
-      position: relative;
-      z-index: 10;
-      background: #F7F6F2;
-      padding: 40px 24px;
-      display: none;
-    }
-
-    .chat-response-inner {
-      max-width: 640px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .chat-bubble-user {
-      align-self: flex-end;
-      max-width: 80%;
-      background: #FFFFFF;
-      padding: 12px 18px;
-      border-radius: 20px;
-      border-bottom-right-radius: 6px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-      font-size: 15px;
-      line-height: 22px;
-      font-weight: 600;
-      color: #0F1B3D;
-    }
-
-    .chat-bubble-elena {
-      align-self: flex-start;
-      max-width: 90%;
-      background: #FFFFFF;
-      border-radius: 20px;
-      border-top-left-radius: 6px;
-      padding: 14px 18px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-      font-size: 15px;
-      line-height: 22px;
-      font-weight: 400;
-      color: #0F1B3D;
-    }
-
-    .chat-thinking {
-      align-self: flex-start;
-      display: flex;
-      gap: 6px;
-      padding: 14px 18px;
-      background: #FFFFFF;
-      border-radius: 20px;
-      border-top-left-radius: 6px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    }
-
-    .chat-thinking span {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #8E8E93;
-      animation: thinking-bounce 1.4s ease-in-out infinite;
-    }
-
-    .chat-thinking span:nth-child(2) { animation-delay: 0.2s; }
-    .chat-thinking span:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes thinking-bounce {
-      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-      30% { transform: translateY(-6px); opacity: 1; }
-    }
-
-    .chat-gate-overlay {
-      position: relative;
-      margin-top: -40px;
-      padding: 60px 24px 40px;
-      background: rgba(255,255,255,0.8);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      border-radius: 16px;
-      text-align: center;
-      display: none;
-    }
-
-    .chat-gate-overlay h3 {
-      font-size: 18px;
-      font-weight: 600;
-      color: #0F1B3D;
-      margin-bottom: 20px;
-    }
-
-    .chat-gate-form {
-      display: flex;
-      gap: 10px;
-      max-width: 420px;
-      margin: 0 auto;
-    }
-
-    .chat-gate-form input[type="email"] {
-      flex: 1;
-      padding: 14px 20px;
-      background: rgba(15, 27, 61, 0.04);
-      border: 1px solid rgba(15, 27, 61, 0.12);
-      border-radius: 100px;
-      font-size: 0.95rem;
-      font-family: inherit;
-      font-weight: 300;
-      color: #0F1B3D;
-      outline: none;
-      min-width: 0;
-    }
-
-    .chat-gate-form input[type="email"]::placeholder {
-      color: rgba(15, 27, 61, 0.35);
-    }
-
-    .chat-gate-form button {
-      padding: 14px 28px;
-      background: #0F1B3D;
-      border: none;
-      border-radius: 100px;
-      color: #fff;
-      font-size: 0.95rem;
-      font-weight: 500;
-      font-family: inherit;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.2s;
-    }
-
-    .chat-gate-form button:hover {
-      background: #1A3A6E;
-    }
-
-    .chat-gate-success {
-      display: none;
-      padding: 14px 28px;
-      background: rgba(15, 27, 61, 0.06);
-      border: 1px solid rgba(15, 27, 61, 0.12);
-      color: #0F1B3D;
-      border-radius: 100px;
-      font-weight: 400;
-      font-size: 0.95rem;
-      margin-top: 12px;
-    }
-
-    @media (max-width: 768px) {
-      .chat-gate-form {
-        flex-direction: column;
-      }
-    }
-
-    /* ========== INSURER MARQUEE (inside hero) ========== */
-    /* ========== TRUSTED BY (in hero) ========== */
-    .trusted-strip-hero {
-      position: absolute;
-      bottom: 20px;
-      left: 0;
-      right: 0;
-      z-index: 2;
-      text-align: center;
-    }
-
-    .trusted-strip-label {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: rgba(255,255,255,0.3);
-      margin-bottom: 16px;
-    }
-
-    .trusted-strip-marquee {
-      overflow: hidden;
-      width: 100%;
-      position: relative;
-      mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
-      -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
-    }
-
-
-    .trusted-strip-track {
-      display: flex;
-      align-items: center;
-      animation: trusted-scroll 30s linear infinite;
-    }
-
-    .trusted-strip-set {
-      display: flex;
-      align-items: center;
-      gap: 40px;
-      padding-right: 40px;
-      flex-shrink: 0;
-    }
-
-    .trusted-strip-set span {
-      font-size: 14px;
-      font-weight: 700;
-      color: rgba(255,255,255,0.45);
-      white-space: nowrap;
-      flex-shrink: 0;
-      letter-spacing: 0.02em;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
-    }
-
-    .trusted-strip-set img {
-      height: 28px;
-      width: auto;
-      filter: brightness(0) invert(1);
-      opacity: 0.45;
-      flex-shrink: 0;
-    }
-
-    @keyframes trusted-scroll {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
-
   </style>
 </head>
 <body>
@@ -2808,7 +2260,7 @@
     <a href="/upload" class="nav-cta">Log in</a>
   </nav>
 
-  <!-- HERO: Chat-first -->
+  <!-- HERO: Dark clouds -->
   <section class="hero">
     <div class="hero-bg"></div>
     <div class="hero-blobs">
@@ -2817,84 +2269,71 @@
       <div class="hero-blob hero-blob-3"></div>
       <div class="hero-blob hero-blob-4"></div>
     </div>
-    <div class="hero-center">
-      <h1>What can I help<br>you with <em>today?</em></h1>
-      <p class="hero-subtitle">Elena is a personal health assistant. She can make calls, use a computer, and write emails, and she's an expert in navigating the healthcare system.</p>
-      <div class="chat-input-bar">
-        <div class="chat-input-top">
-          <input type="text" id="chat-hero-input" placeholder="How much should an MRI cost with my insurance?" onkeydown="if(event.key==='Enter'){event.preventDefault();showComingSoon();}">
-        </div>
-        <div class="chat-input-bottom">
-          <button class="chat-attach-btn" aria-label="Attach document">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-          </button>
-          <button class="chat-send-btn" id="chat-send-btn" aria-label="Send" onclick="showComingSoon()">
-            <svg viewBox="0 0 20 20" fill="none">
-              <path d="M10 16V4M4 10l6-6 6 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-      <div class="suggestion-label">Common problems Elena can solve</div>
-      <div class="suggestion-chips">
-        <span class="suggestion-chip" data-text="Compare MRI prices near me">Compare Prices</span>
-        <span class="suggestion-chip" data-text="I want to dispute a medical bill">Dispute a Bill</span>
-        <span class="suggestion-chip" data-text="Find an in-network doctor near me">Find a Doctor</span>
-        <span class="suggestion-chip" data-text="Schedule an appointment with my doctor">Schedule an Appointment</span>
-        <span class="suggestion-chip" data-text="Help me fight a prior authorization denial">Fight an Authorization</span>
-      </div>
-    </div>
-    <div class="trusted-strip-hero">
-      <div class="trusted-strip-label">Trusted by members insured with</div>
-      <div class="trusted-strip-marquee">
-        <div class="trusted-strip-track">
-          <div class="trusted-strip-set">
-            <img src="images/insurers/bcbs.svg" alt="Blue Cross Blue Shield"><img src="images/insurers/uhc.svg" alt="UnitedHealthcare"><img src="images/insurers/aetna.svg" alt="Aetna"><img src="images/insurers/cigna.svg" alt="Cigna"><img src="images/insurers/humana.svg" alt="Humana"><img src="images/insurers/kaiser.svg" alt="Kaiser Permanente"><img src="images/insurers/anthem.svg" alt="Anthem"><img src="images/insurers/medicare.svg" alt="Medicare"><img src="images/insurers/centene.svg" alt="Centene"><img src="images/insurers/oscar.svg" alt="Oscar Health"><img src="images/insurers/delta-dental.svg" alt="Delta Dental"><img src="images/insurers/vsp.svg" alt="VSP Vision">
-          </div>
-          <div class="trusted-strip-set">
-            <img src="images/insurers/bcbs.svg" alt="Blue Cross Blue Shield"><img src="images/insurers/uhc.svg" alt="UnitedHealthcare"><img src="images/insurers/aetna.svg" alt="Aetna"><img src="images/insurers/cigna.svg" alt="Cigna"><img src="images/insurers/humana.svg" alt="Humana"><img src="images/insurers/kaiser.svg" alt="Kaiser Permanente"><img src="images/insurers/anthem.svg" alt="Anthem"><img src="images/insurers/medicare.svg" alt="Medicare"><img src="images/insurers/centene.svg" alt="Centene"><img src="images/insurers/oscar.svg" alt="Oscar Health"><img src="images/insurers/delta-dental.svg" alt="Delta Dental"><img src="images/insurers/vsp.svg" alt="VSP Vision">
+    <div class="hero-split">
+      <div class="hero-left">
+        <div class="hero-content">
+          <h1>Your healthcare<br>home base.</h1>
+          <p class="hero-subtitle">An AI assistant that organizes your records, books appointments, follows up with doctors, and keeps your whole family on track.</p>
+          <div class="waitlist-flow" id="hero-waitlist-flow">
+            <form class="hero-email-form" id="hero-waitlist-form">
+              <input type="email" placeholder="Enter your email" required>
+              <button type="submit">Join the Community</button>
+            </form>
+            <div class="survey-step" id="hero-survey" style="display:none;">
+              <p class="survey-label">What are you most interested in? <span class="survey-hint">(pick all that apply)</span></p>
+              <div class="survey-options dark">
+                <label class="survey-chip"><input type="checkbox" value="health_data"><span>All my health data in one place</span></label>
+                <label class="survey-chip"><input type="checkbox" value="scheduling"><span>Scheduling &amp; follow-ups</span></label>
+                <label class="survey-chip"><input type="checkbox" value="family"><span>Family health management</span></label>
+                <label class="survey-chip"><input type="checkbox" value="price_transparency"><span>Price transparency</span></label>
           </div>
         </div>
       </div>
     </div>
+    <div class="scroll-indicator">
+      Scroll
+      <svg class="scroll-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M8 3v8.5M4 8l4 4.5L12 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="hero-pill"></div>
   </section>
 
-  <!-- CHAT RESPONSE AREA (hidden until user submits) -->
-  <section class="chat-response-section" id="chat-response-section">
-    <div class="chat-response-inner" id="chat-response-inner">
-      <!-- content injected by JS -->
-    </div>
-    <div class="chat-gate-overlay" id="chat-gate-overlay">
-      <h3>Join the community to see Elena's full answer</h3>
-      <form class="chat-gate-form" id="chat-gate-form">
-        <input type="email" placeholder="Enter your email" required>
-        <button type="submit">Join the Community</button>
-      </form>
-      <div class="chat-gate-success" id="chat-gate-success">Welcome to the community! Check your email for your WhatsApp invite.</div>
+  <!-- COMMUNITY PERKS -->
+  <section class="community-perks">
+    <div class="perks-inner fade-in">
+      <h2>Your membership starts now.</h2>
+      <p class="perks-subtitle">Founding members get immediate access to:</p>
+      <div class="perks-grid">
+        <div class="perk-card">
+          <h3>Private WhatsApp community</h3>
+          <p>People dealing with the same stuff you are. Ask questions, share what worked, get real answers.</p>
+        </div>
+        <div class="perk-card">
+          <h3>Weekly healthcare newsletter</h3>
+          <p>Short, useful tips on saving money, picking providers, and understanding your coverage.</p>
+        </div>
+        <div class="perk-card">
+          <h3>Monthly live Q&A sessions</h3>
+          <p>Bring your questions to real navigators and providers. No scripts, no runaround.</p>
+        </div>
+      </div>
     </div>
   </section>
-
-
 
   <!-- MANIFESTO -->
-  <section class="manifesto">
-    <div class="manifesto-inner fade-in" style="max-width: 960px;">
+  <section class="manifesto" id="how-it-works">
+    <div class="manifesto-inner fade-in" style="max-width: 720px; text-align: center;">
       <div class="manifesto-text">
-        <p class="manifesto-eyebrow">Healthcare today is built for providers and payers.</p>
-        <h2>We're building it for you.</h2>
-        <p>Today, the center of your healthcare is your doctor's office. But most people see dozens of providers across multiple health systems. Records get scattered. Follow-ups get lost. Bills pile up. Incentives are misaligned.</p>
-        <p style="margin-top: 12px;">We think patients should be at the center of their own care. Elena puts a teammate in your pocket that helps you use the system and fights for you.</p>
-      </div>
-      <div class="manifesto-app-side">
-        <img src="images/elena-icon.png" alt="Elena" class="manifesto-app-icon">
-        <p class="manifesto-app-label">The Elena app is coming soon.</p>
-        <a href="#waitlist" class="manifesto-app-btn">Apply for early access</a>
+        <h2>Your health shouldn't live in 10 different patient portals.</h2>
+        <p>The average American sees 7 doctors across 4 different health systems. Your records are scattered across portals you can't remember the password to. Important follow-ups get lost. Prescriptions lapse quietly.</p>
+        <p style="margin-top: 12px;">Elena pulls everything together: your documents, your appointments, your family's care. One AI-powered assistant that actually keeps track so you don't have to.</p>
       </div>
     </div>
   </section>
 
   <!-- APP SPOTLIGHTS -->
-  <section class="app-spotlights" id="how-it-works">
+  <section class="app-spotlights">
 
     <!-- Spotlight 1: Game Plan (Salmon Card).text LEFT, card RIGHT -->
     <div class="spotlight fade-in">
@@ -3039,29 +2478,73 @@
       <div id="visitModalContent"></div>
     </div>
 
-    <!-- Spotlight 4b: Phone Calling Agent.text LEFT, chat RIGHT -->
+    <!-- Spotlight 3: Chat with MRI Pricing.text LEFT, chat RIGHT -->
     <div class="spotlight fade-in">
       <div class="spotlight-text">
-        <h3>She actually calls for you</h3>
-        <p>No hold music. No phone tag. Elena calls the doctor's office, checks availability, confirms your insurance, and books it. You just get the confirmation.</p>
+        <h3>Elena finds the best price</h3>
+        <p>The same MRI can cost $180 or $2,400 depending on where you go. Elena checks your insurance and finds the best deal.</p>
       </div>
       <div class="spotlight-ui">
-        <div class="ch-wrapper">
-          <div class="ch-booking-row">
-            <span class="ch-booking-emoji ch-booking-emoji-wiggle">📞</span>
-            <span class="ch-booking-text">Calling Park Dermatology Associates...</span>
+        <div class="ch-container" id="mri-chat">
+          <div class="ch-anim ch-anim-right" style="--delay: 0">
+            <div class="ch-msg-user">How much would an MRI of my knee cost?</div>
           </div>
-          <div class="ch-confirmation">
-            <div class="ch-confirmation-header">
-              <div class="ch-confirmation-dot" style="border-color: #34C759;"></div>
-              <span class="ch-confirmation-title" style="color: #34C759;">Booked</span>
+          <div class="ch-anim" style="--delay: 1">
+            <div class="ch-msg-elena">I checked prices at 3 facilities near you. Here's what you'd pay with your insurance:</div>
+          </div>
+          <div class="ch-anim" style="--delay: 2">
+          <div class="ch-facility-card">
+            <div class="ch-facility-list">
+              <!-- Facility 1: Freestanding -->
+              <div class="ch-facility-item">
+                <div class="ch-facility-top">
+                  <div class="ch-facility-info">
+                    <div class="ch-facility-name">Sunrise Imaging Center</div>
+                    <div class="ch-facility-specialty">MRI - Knee without contrast</div>
+                  </div>
+                </div>
+                <div class="ch-facility-bottom">
+                  <div class="ch-badge-row">
+                    <span class="ch-badge-innetwork">&#10003; In-network</span>
+                    <span class="ch-badge-facility ch-badge-freestanding">Freestanding</span>
+                    <span class="ch-badge-distance">1.8 mi</span>
+                  </div>
+                  <div class="ch-price-block">
+                    <span class="ch-price-original">$1,200</span>
+                    <div class="ch-price-amount">~$180</div>
+                    <div class="ch-price-label">est. out-of-pocket</div>
+                  </div>
+                </div>
+              </div>
+              <!-- Facility 2: Hospital -->
+              <div class="ch-facility-item">
+                <div class="ch-facility-top">
+                  <div class="ch-facility-info">
+                    <div class="ch-facility-name">Mount Sinai Radiology</div>
+                    <div class="ch-facility-specialty">MRI - Knee without contrast</div>
+                  </div>
+                </div>
+                <div class="ch-facility-bottom">
+                  <div class="ch-badge-row">
+                    <span class="ch-badge-innetwork">&#10003; In-network</span>
+                    <span class="ch-badge-facility ch-badge-hospital">Hospital</span>
+                    <span class="ch-badge-distance">3.2 mi</span>
+                  </div>
+                  <div class="ch-price-block">
+                    <span class="ch-price-original">$2,400</span>
+                    <div class="ch-price-amount">~$450</div>
+                    <div class="ch-price-label">est. out-of-pocket</div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="ch-confirmation-body">
-              <div class="ch-confirmation-type">Dermatology</div>
-              <div class="ch-confirmation-doctor">Dr. James Park</div>
-              <div class="ch-confirmation-detail">Thursday, Apr 10, 2026 at 2:00 PM</div>
-              <div class="ch-confirmation-reason">Skin check follow-up</div>
-            </div>
+          </div>
+          </div>
+          <div class="ch-anim ch-anim-right" style="--delay: 3">
+            <div class="ch-msg-user">Book the imaging center</div>
+          </div>
+          <div class="ch-anim" style="--delay: 4">
+            <div class="ch-msg-elena">Done! Sunrise Imaging Center, Thursday at 10am.</div>
           </div>
         </div>
       </div>
@@ -3166,73 +2649,29 @@
       </div>
     </div>
 
-    <!-- Spotlight 3: Chat with MRI Pricing.text LEFT, chat RIGHT -->
+    <!-- Spotlight 4b: Phone Calling Agent.text LEFT, chat RIGHT -->
     <div class="spotlight fade-in">
       <div class="spotlight-text">
-        <h3>Elena finds the best price</h3>
-        <p>The same MRI can cost $180 or $2,400 depending on where you go. Elena checks your insurance and finds the best deal.</p>
+        <h3>She actually calls for you</h3>
+        <p>No hold music. No phone tag. Elena calls the doctor's office, checks availability, confirms your insurance, and books it. You just get the confirmation.</p>
       </div>
       <div class="spotlight-ui">
-        <div class="ch-container" id="mri-chat">
-          <div class="ch-anim ch-anim-right" style="--delay: 0">
-            <div class="ch-msg-user">How much would an MRI of my knee cost?</div>
+        <div class="ch-wrapper">
+          <div class="ch-booking-row">
+            <span class="ch-booking-emoji ch-booking-emoji-wiggle">📞</span>
+            <span class="ch-booking-text">Calling Park Dermatology Associates...</span>
           </div>
-          <div class="ch-anim" style="--delay: 1">
-            <div class="ch-msg-elena">I checked prices at 3 facilities near you. Here's what you'd pay with your insurance:</div>
-          </div>
-          <div class="ch-anim" style="--delay: 2">
-          <div class="ch-facility-card">
-            <div class="ch-facility-list">
-              <!-- Facility 1: Freestanding -->
-              <div class="ch-facility-item">
-                <div class="ch-facility-top">
-                  <div class="ch-facility-info">
-                    <div class="ch-facility-name">Sunrise Imaging Center</div>
-                    <div class="ch-facility-specialty">MRI - Knee without contrast</div>
-                  </div>
-                </div>
-                <div class="ch-facility-bottom">
-                  <div class="ch-badge-row">
-                    <span class="ch-badge-innetwork">&#10003; In-network</span>
-                    <span class="ch-badge-facility ch-badge-freestanding">Freestanding</span>
-                    <span class="ch-badge-distance">1.8 mi</span>
-                  </div>
-                  <div class="ch-price-block">
-                    <span class="ch-price-original">$1,200</span>
-                    <div class="ch-price-amount">~$180</div>
-                    <div class="ch-price-label">est. out-of-pocket</div>
-                  </div>
-                </div>
-              </div>
-              <!-- Facility 2: Hospital -->
-              <div class="ch-facility-item">
-                <div class="ch-facility-top">
-                  <div class="ch-facility-info">
-                    <div class="ch-facility-name">Mount Sinai Radiology</div>
-                    <div class="ch-facility-specialty">MRI - Knee without contrast</div>
-                  </div>
-                </div>
-                <div class="ch-facility-bottom">
-                  <div class="ch-badge-row">
-                    <span class="ch-badge-innetwork">&#10003; In-network</span>
-                    <span class="ch-badge-facility ch-badge-hospital">Hospital</span>
-                    <span class="ch-badge-distance">3.2 mi</span>
-                  </div>
-                  <div class="ch-price-block">
-                    <span class="ch-price-original">$2,400</span>
-                    <div class="ch-price-amount">~$450</div>
-                    <div class="ch-price-label">est. out-of-pocket</div>
-                  </div>
-                </div>
-              </div>
+          <div class="ch-confirmation">
+            <div class="ch-confirmation-header">
+              <div class="ch-confirmation-dot" style="border-color: #34C759;"></div>
+              <span class="ch-confirmation-title" style="color: #34C759;">Booked</span>
             </div>
-          </div>
-          </div>
-          <div class="ch-anim ch-anim-right" style="--delay: 3">
-            <div class="ch-msg-user">Book the imaging center</div>
-          </div>
-          <div class="ch-anim" style="--delay: 4">
-            <div class="ch-msg-elena">Done! Sunrise Imaging Center, Thursday at 10am.</div>
+            <div class="ch-confirmation-body">
+              <div class="ch-confirmation-type">Dermatology</div>
+              <div class="ch-confirmation-doctor">Dr. James Park</div>
+              <div class="ch-confirmation-detail">Thursday, Apr 10, 2026 at 2:00 PM</div>
+              <div class="ch-confirmation-reason">Skin check follow-up</div>
+            </div>
           </div>
         </div>
       </div>
@@ -3296,20 +2735,6 @@
   <!-- FEATURES + WAITLIST -->
   <section class="features" id="features" style="padding: 120px 0 100px;">
     <div class="features-carousel-wrapper">
-        <div class="prog-blur prog-blur-left">
-          <div class="prog-blur-layer"></div>
-          <div class="prog-blur-layer"></div>
-          <div class="prog-blur-layer"></div>
-          <div class="prog-blur-layer"></div>
-          <div class="prog-blur-layer"></div>
-        </div>
-        <div class="prog-blur prog-blur-right">
-          <div class="prog-blur-layer"></div>
-          <div class="prog-blur-layer"></div>
-          <div class="prog-blur-layer"></div>
-          <div class="prog-blur-layer"></div>
-          <div class="prog-blur-layer"></div>
-        </div>
         <div class="features-grid">
           <div class="feature-card img-hugging">
             <div class="feature-card-content">
@@ -3377,14 +2802,14 @@
 
       <div class="features-inner">
         <div class="features-header fade-in" style="margin-top: 80px;">
-          <h2>Apply for early access.</h2>
+          <h2>Join the community.</h2>
         </div>
 
         <div class="inline-waitlist fade-in" id="waitlist">
           <div class="waitlist-flow" id="bottom-waitlist-flow">
             <form class="email-form" id="waitlist-form">
               <input type="email" placeholder="Enter your email" required>
-              <button type="submit">Apply</button>
+              <button type="submit">Get Early Access</button>
             </form>
             <div class="survey-step" id="bottom-survey" style="display:none;">
               <p class="survey-label light">What are you most interested in? <span class="survey-hint">(pick all that apply)</span></p>
@@ -3397,7 +2822,7 @@
               <button class="survey-submit-btn light" id="bottom-survey-submit">Submit</button>
               <button class="survey-skip-btn light" id="bottom-survey-skip">Skip</button>
             </div>
-            <div class="success-message" id="waitlist-success">You're in! We'll reach out when a spot opens up.</div>
+            <div class="success-message" id="waitlist-success">You're in! We'll reach out when early access is ready.</div>
           </div>
         </div>
       </div>
@@ -3497,20 +2922,11 @@
       });
     }
 
+    // Hero form
+    setupWaitlistFlow('hero-waitlist-form', 'hero-survey', 'hero-survey-submit', 'hero-survey-skip', 'hero-waitlist-success', ['.hero-subtitle', '.waitlist-social-proof']);
+
     // Bottom form
     setupWaitlistFlow('waitlist-form', 'bottom-survey', 'bottom-survey-submit', 'bottom-survey-skip', 'waitlist-success');
-
-    // Chat gate form
-    (function() {
-      var gateForm = document.getElementById('chat-gate-form');
-      if (!gateForm) return;
-      gateForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        var email = gateForm.querySelector('input[type="email"]').value;
-        gateForm.style.display = 'none';
-        submitToSupabase(email, [], document.getElementById('chat-gate-success'));
-      });
-    })();
   </script>
 
 
@@ -3861,98 +3277,6 @@
         }, 150);
       }, 3000);
     })();
-  </script>
-
-  <script>
-    // Chat hero: rotating placeholder text
-    (function() {
-      var input = document.getElementById('chat-hero-input');
-      if (!input) return;
-      var placeholders = [
-        'How much should an MRI cost with my insurance?',
-        'Can you call my doctor and schedule a follow-up?',
-        'My ER bill seems too high. Can you check it?',
-        'What does my insurance actually cover?'
-      ];
-      var idx = 0;
-      setInterval(function() {
-        if (document.activeElement === input && input.value !== '') return;
-        idx = (idx + 1) % placeholders.length;
-        input.placeholder = placeholders[idx];
-      }, 3000);
-    })();
-
-    // Chat hero: suggestion chips fill input
-    (function() {
-      var chips = document.querySelectorAll('.suggestion-chip');
-      var input = document.getElementById('chat-hero-input');
-      chips.forEach(function(chip) {
-        chip.addEventListener('click', function() {
-          input.value = chip.getAttribute('data-text') || chip.textContent;
-          input.focus();
-        });
-      });
-    })();
-
-    // Chat hero: send button and Enter both open coming soon modal
-    // (handlers are inline on the HTML elements via onclick/onkeydown)
-  </script>
-
-  <!-- Coming Soon Modal -->
-  <div id="coming-soon-overlay" style="display:none; position:fixed; inset:0; background:linear-gradient(135deg, rgba(15,27,61,0.85) 0%, rgba(26,58,110,0.85) 30%, rgba(46,107,181,0.85) 60%, rgba(46,107,181,0.85) 100%); z-index:2000; align-items:center; justify-content:center; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);" onclick="closeComingSoon()">
-    <div style="background:rgba(255,255,255,0.1); backdrop-filter:blur(40px) saturate(1.8); -webkit-backdrop-filter:blur(40px) saturate(1.8); border:1px solid rgba(255,255,255,0.18); border-top-color:rgba(255,255,255,0.3); border-radius:24px; padding:48px 40px; max-width:420px; width:90%; text-align:center; box-shadow:0 16px 48px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15);" onclick="event.stopPropagation()">
-      <h3 style="font-size:24px; font-weight:300; color:#fff; margin-bottom:10px; letter-spacing:-0.02em;">Coming soon</h3>
-      <p style="font-size:15px; color:rgba(255,255,255,0.7); font-weight:300; line-height:1.6; margin-bottom:28px;">We'll notify you when Elena is ready to help you out.</p>
-      <form id="coming-soon-form" style="display:flex; gap:10px;">
-        <input type="email" placeholder="Enter your email" required style="flex:1; padding:16px 24px; background:rgba(255,255,255,0.12); backdrop-filter:blur(40px); -webkit-backdrop-filter:blur(40px); border:1px solid rgba(255,255,255,0.25); border-top-color:rgba(255,255,255,0.35); border-radius:100px; font-size:1rem; font-family:inherit; font-weight:400; color:#fff; outline:none; min-width:0; box-shadow:0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15);">
-        <button type="submit" style="padding:16px 28px; background:rgba(255,255,255,0.08); backdrop-filter:blur(40px); -webkit-backdrop-filter:blur(40px); border:1px solid rgba(255,255,255,0.18); border-top-color:rgba(255,255,255,0.3); border-radius:100px; color:#fff; font-size:1rem; font-weight:500; font-family:inherit; cursor:pointer; white-space:nowrap; box-shadow:0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15); transition:all 0.2s;">Notify Me</button>
-      </form>
-      <div id="coming-soon-success" style="display:none; padding:16px 28px; background:rgba(255,255,255,0.12); backdrop-filter:blur(40px); -webkit-backdrop-filter:blur(40px); border:1px solid rgba(255,255,255,0.25); border-radius:100px; font-size:1rem; color:#fff; font-weight:500; box-shadow:0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15);">You're on the list!</div>
-    </div>
-  </div>
-
-  <script>
-    function showComingSoon() {
-      var overlay = document.getElementById('coming-soon-overlay');
-      overlay.style.display = 'flex';
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeComingSoon() {
-      document.getElementById('coming-soon-overlay').style.display = 'none';
-      document.body.style.overflow = '';
-    }
-
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') closeComingSoon();
-    });
-
-    document.getElementById('coming-soon-form').addEventListener('submit', function(e) {
-      e.preventDefault();
-      var email = this.querySelector('input').value;
-      var form = this;
-      var btn = form.querySelector('button');
-      btn.textContent = 'Sending...';
-      btn.disabled = true;
-
-      var body = { email: email };
-      fetch(SUPABASE_URL + '/rest/v1/beta_signups', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify(body)
-      }).then(function(resp) {
-        form.style.display = 'none';
-        document.getElementById('coming-soon-success').style.display = 'inline-block';
-      }).catch(function() {
-        form.style.display = 'none';
-        document.getElementById('coming-soon-success').style.display = 'inline-block';
-      });
-    });
   </script>
 
   <script defer src="/_vercel/insights/script.js"></script>
