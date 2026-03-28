@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState, useCallback, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { AuthModal } from "@/components/auth-modal";
 import Spotlights from "@/components/landing/spotlights";
@@ -176,6 +176,26 @@ const INSURERS = [
   { src: "/images/insurers/vsp.svg", alt: "VSP Vision" },
 ];
 
+const HERO_COPY: Record<string, { headline: [string, string]; subtitle: string }> = {
+  bills: {
+    headline: ["Elena finds the", "errors in your bill."],
+    subtitle: "80% of hospital bills have errors. Elena reads every line, flags mistakes, and fights them for you.",
+  },
+  calls: {
+    headline: ["Elena calls your", "insurance for you."],
+    subtitle: "No more hold music. No more transfers. Elena sits on hold, talks to your insurer, and reports back.",
+  },
+  caregiver: {
+    headline: ["Manage their health", "from your phone."],
+    subtitle: "Insurance, doctors, meds, and bills for the people you care for — all in one place.",
+  },
+};
+
+const DEFAULT_HERO = {
+  headline: "What can I help you with <em>today?</em>",
+  subtitle: "Elena is a personal health assistant. She can make calls, use a computer, and write emails, and she's an expert in navigating the healthcare system.",
+};
+
 const BLOB_SPEEDS = [0.04, -0.03, 0.025, -0.02];
 
 const BLOBS = [
@@ -185,9 +205,20 @@ const BLOBS = [
   "w-[450px] h-[450px] bg-[radial-gradient(circle,rgba(232,149,109,0.25)_0%,transparent_70%)] bottom-[10%] left-[5%]",
 ];
 
-export default function LandingPage() {
+export default function LandingPageWrapper() {
+  return (
+    <Suspense fallback={<div className="flex h-dvh items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[#0F1B3D] border-t-transparent" /></div>}>
+      <LandingPage />
+    </Suspense>
+  );
+}
+
+function LandingPage() {
   const { session, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const ref = searchParams.get("ref");
+  const hero = (ref && HERO_COPY[ref]) || null;
   const [input, setInput] = useState("");
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -315,10 +346,14 @@ export default function LandingPage() {
         {/* Content */}
         <div className="relative z-[4] text-center max-w-[700px] w-full px-6">
           <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] font-light leading-[1.15] tracking-tight text-white">
-            What can I help<br />you with <em className="italic font-normal font-[family-name:var(--font-dm-serif)]">today?</em>
+            {hero ? (
+              <>{hero.headline[0]}<br />{hero.headline[1]}</>
+            ) : (
+              <>What can I help<br />you with <em className="italic font-normal font-[family-name:var(--font-dm-serif)]">today?</em></>
+            )}
           </h1>
           <p className="text-[1.15rem] font-light text-white/85 mt-4 tracking-wide">
-            Elena is a personal health assistant. She can make calls, use a computer, and write emails, and she&apos;s an expert in navigating the healthcare system.
+            {hero ? hero.subtitle : "Elena is a personal health assistant. She can make calls, use a computer, and write emails, and she\u0027s an expert in navigating the healthcare system."}
           </p>
 
           {/* Chat input bar */}
