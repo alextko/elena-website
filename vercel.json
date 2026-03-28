@@ -1,8 +1,7 @@
 {
   "cleanUrls": true,
   "redirects": [
-    { "source": "/navigator", "destination": "/", "permanent": false },
-    { "source": "/chat", "destination": "/", "permanent": false }
+    { "source": "/navigator", "destination": "/", "permanent": false }
   ],
   "rewrites": [
     { "source": "/lp/bills", "destination": "/?ref=bills" },
