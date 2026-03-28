@@ -24,9 +24,19 @@ export function BlogChrome({ slug, exitModal }: BlogChromeProps) {
       if (a.getAttribute("href") === "/") a.href = ctaDest;
     });
 
-    // Mixpanel registration
-    if (typeof window !== "undefined" && (window as any).mixpanel) {
-      (window as any).mixpanel.register({ landing_variant: "blog", blog_slug: slug });
+    // Mixpanel registration — wait for real library (not stub)
+    function tryMixpanelRegister() {
+      try {
+        const mp = (window as any).mixpanel;
+        if (!mp) return false;
+        mp.get_config('token'); // throws on stub
+        mp.register({ landing_variant: "blog", blog_slug: slug });
+        return true;
+      } catch { return false; }
+    }
+    if (!tryMixpanelRegister()) {
+      let a = 0;
+      const iv = setInterval(() => { if (tryMixpanelRegister() || ++a >= 25) clearInterval(iv); }, 200);
     }
 
     // Fade-in observer
@@ -113,18 +123,27 @@ export function BlogChrome({ slug, exitModal }: BlogChromeProps) {
     overlay?.addEventListener("click", dismissModal);
     closeBtn?.addEventListener("click", dismissModal);
 
+    // Safe Mixpanel track helper — only calls if real library is loaded
+    function mpTrack(event: string, props: Record<string, any>) {
+      try {
+        const mp = (window as any).mixpanel;
+        if (!mp) return;
+        mp.get_config('token'); // throws on stub
+        mp.track(event, props);
+      } catch { /* stub not ready yet, skip */ }
+    }
+
     // Scroll depth tracking
     const milestones = [25, 50, 75, 100];
     const fired = new Set<number>();
     function trackScroll() {
-      if (!(window as any).mixpanel) return;
       const scrollPct = Math.round(
         (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100
       );
       milestones.forEach((m) => {
         if (scrollPct >= m && !fired.has(m)) {
           fired.add(m);
-          (window as any).mixpanel.track("blog_scroll_depth", { depth: m, blog_slug: slug });
+          mpTrack("blog_scroll_depth", { depth: m, blog_slug: slug });
         }
       });
     }
@@ -132,24 +151,22 @@ export function BlogChrome({ slug, exitModal }: BlogChromeProps) {
 
     // CTA view tracking
     const ctaViewObservers: IntersectionObserver[] = [];
-    if ((window as any).mixpanel) {
-      document.querySelectorAll(".blog-cta-inline, .blog-cta-bottom").forEach((el) => {
-        const ctaType = el.classList.contains("blog-cta-inline") ? "inline" : "bottom";
-        const obs = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((entry) => {
-              if (entry.isIntersecting) {
-                (window as any).mixpanel.track("blog_cta_view", { cta_type: ctaType, blog_slug: slug });
-                obs.unobserve(entry.target);
-              }
-            });
-          },
-          { threshold: 0.5 }
-        );
-        obs.observe(el);
-        ctaViewObservers.push(obs);
-      });
-    }
+    document.querySelectorAll(".blog-cta-inline, .blog-cta-bottom").forEach((el) => {
+      const ctaType = el.classList.contains("blog-cta-inline") ? "inline" : "bottom";
+      const obs = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              mpTrack("blog_cta_view", { cta_type: ctaType, blog_slug: slug });
+              obs.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.5 }
+      );
+      obs.observe(el);
+      ctaViewObservers.push(obs);
+    });
 
     return () => {
       clearTimeout(stickyTimer);

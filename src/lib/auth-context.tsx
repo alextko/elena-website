@@ -269,6 +269,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === "SIGNED_IN") {
         // Fresh sign-in — fetch profile if not already done
         fetchProfile();
+
+        // Identify user in Mixpanel and track OAuth signups
+        if (s?.user) {
+          import('@/lib/tracking-events').then(({ identifyUser, trackSignup }) => {
+            identifyUser(s.user.id, s.user.email || undefined);
+
+            // Check if this is a brand-new OAuth signup (created within last 60 seconds)
+            const createdAt = new Date(s.user.created_at);
+            const now = new Date();
+            const isNewUser = (now.getTime() - createdAt.getTime()) < 60000;
+            if (isNewUser) {
+              const provider = s.user.app_metadata?.provider || 'unknown';
+              trackSignup(provider, s.user.id, s.user.email || undefined);
+            }
+          });
+        }
       } else if (event === "SIGNED_OUT") {
         setProfileId(null);
         setProfileData(null);
@@ -445,6 +461,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = useCallback(
     async (email: string, password: string) => {
       const { error } = await supabase.auth.signUp({ email, password });
+      if (!error) {
+        const { trackSignup } = await import('@/lib/tracking-events');
+        trackSignup('email', undefined, email);
+      }
       return { error: error?.message ?? null };
     },
     [],

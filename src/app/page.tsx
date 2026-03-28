@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { AuthModal } from "@/components/auth-modal";
 import Spotlights from "@/components/landing/spotlights";
@@ -217,7 +217,17 @@ function LandingPage() {
   const { session, loading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const ref = searchParams.get("ref");
+  const pathname = usePathname();
+
+  // Support both ?ref=bills (direct) and /lp/bills (rewrite).
+  // Rewrites keep the browser URL as /lp/bills but serve /?ref=bills internally.
+  // useSearchParams reads the browser URL, so we also extract ref from the path.
+  const LP_PATH_MAP: Record<string, string> = {
+    "/lp/bills": "bills",
+    "/lp/calls": "calls",
+    "/lp/caregiver": "caregiver",
+  };
+  const ref = searchParams.get("ref") || LP_PATH_MAP[pathname] || null;
   const hero = (ref && HERO_COPY[ref]) || null;
   const [input, setInput] = useState("");
   const [authModalOpen, setAuthModalOpen] = useState(false);

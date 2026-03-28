@@ -2,12 +2,12 @@
   "cleanUrls": true,
   "redirects": [
     { "source": "/navigator", "destination": "/", "permanent": false },
-    { "source": "/chat", "destination": "/", "permanent": false },
-    { "source": "/lp/bills", "destination": "/?ref=bills", "permanent": false },
-    { "source": "/lp/calls", "destination": "/?ref=calls", "permanent": false },
-    { "source": "/lp/caregiver", "destination": "/?ref=caregiver", "permanent": false }
+    { "source": "/chat", "destination": "/", "permanent": false }
   ],
   "rewrites": [
+    { "source": "/lp/bills", "destination": "/?ref=bills" },
+    { "source": "/lp/calls", "destination": "/?ref=calls" },
+    { "source": "/lp/caregiver", "destination": "/?ref=caregiver" },
     { "source": "/invite/:code", "destination": "/invite/index.html" }
   ],
   "crons": [
