@@ -12,6 +12,7 @@ import {
 import { Check, Phone, FileText, Zap, Users, Shield } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
+import { getStoredAttribution } from "@/lib/attribution";
 
 interface UpgradeModalProps {
   open: boolean;
@@ -97,9 +98,10 @@ export function UpgradeModal({
     try {
       const successUrl = `${window.location.origin}/chat?checkout=success`;
       const cancelUrl = `${window.location.origin}/chat`;
+      const attribution = getStoredAttribution();
       const res = await apiFetch("/web/checkout", {
         method: "POST",
-        body: JSON.stringify({ plan, success_url: successUrl, cancel_url: cancelUrl }),
+        body: JSON.stringify({ plan, success_url: successUrl, cancel_url: cancelUrl, ...(attribution ? { attribution } : {}) }),
       });
       if (!res.ok) throw new Error();
       const data = await res.json();

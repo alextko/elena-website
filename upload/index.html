@@ -518,11 +518,20 @@
     }
   }
 
+  function getStoredAttribution() {
+    try {
+      const raw = document.cookie.split('; ').find(r => r.startsWith('elena_attribution='));
+      if (!raw) return null;
+      return JSON.parse(decodeURIComponent(raw.split('=').slice(1).join('=')));
+    } catch { return null; }
+  }
+
   async function handleUpgrade() {
     const btn = document.getElementById('upgrade-btn');
     btn.disabled = true;
     btn.textContent = 'Loading...';
     try {
+      const attribution = getStoredAttribution();
       const res = await fetch(API_BASE + '/web/checkout', {
         method: 'POST',
         headers: {
@@ -532,6 +541,7 @@
         body: JSON.stringify({
           success_url: window.location.origin + '/upload/?billing=success',
           cancel_url: window.location.href,
+          ...(attribution ? { attribution } : {}),
         }),
       });
       if (!res.ok) {

@@ -1,6 +1,13 @@
 import { getStoredAttribution } from './attribution';
 
-function getMixpanel(): any | null {
+/** Returns the mixpanel object (stub or real). Safe for track() and identify(). */
+function getMixpanelAny(): any | null {
+  const mp = (window as any).mixpanel;
+  return mp || null;
+}
+
+/** Returns the REAL mixpanel library only (not the stub). Required for register()/people.*. */
+function getMixpanelReal(): any | null {
   try {
     const mp = (window as any).mixpanel;
     if (!mp) return null;
@@ -24,17 +31,19 @@ async function sha256(str: string): Promise<string> {
 export async function trackSignup(method: 'email' | 'google' | 'apple' | string, userId?: string, email?: string) {
   const attribution = getStoredAttribution();
 
-  // Mixpanel
+  // Mixpanel — track() and identify() are safe on the stub (it queues them)
   try {
-    const mp = getMixpanel();
+    const mp = getMixpanelAny();
     if (mp) {
-      if (userId) {
-        mp.identify(userId);
-      }
-      mp.track('sign_up', {
-        method,
-        ...(attribution || {}),
-      });
+      if (userId) mp.identify(userId);
+      mp.track('sign_up', { method, ...(attribution || {}) });
+    }
+  } catch { /* safe to ignore */ }
+
+  // people.set requires the real library (not the stub)
+  try {
+    const mp = getMixpanelReal();
+    if (mp) {
       if (email) {
         mp.people.set({
           $email: email,
@@ -55,7 +64,7 @@ export async function trackSignup(method: 'email' | 'google' | 'apple' | string,
         });
       }
     }
-  } catch { /* Mixpanel stub race condition — safe to ignore */ }
+  } catch { /* safe to ignore */ }
 
   // TikTok Pixel
   try {
@@ -88,7 +97,7 @@ export function trackSubscription(plan: string, value: number, currency: string 
   const attribution = getStoredAttribution();
 
   try {
-    const mp = getMixpanel();
+    const mp = getMixpanelAny();
     if (mp) {
       mp.track('subscription_started', {
         plan,
@@ -96,6 +105,12 @@ export function trackSubscription(plan: string, value: number, currency: string 
         currency,
         ...(attribution || {}),
       });
+    }
+  } catch { /* safe to ignore */ }
+
+  try {
+    const mp = getMixpanelReal();
+    if (mp) {
       mp.people.set({
         plan,
         subscription_date: new Date().toISOString(),
@@ -125,15 +140,17 @@ export function trackSubscription(plan: string, value: number, currency: string 
 
 export function identifyUser(userId: string, email?: string) {
   try {
-    const mp = getMixpanel();
+    const mp = getMixpanelAny();
+    if (mp) mp.identify(userId);
+  } catch { /* safe to ignore */ }
+
+  try {
+    const mp = getMixpanelReal();
     if (mp) {
-      mp.identify(userId);
       const props: Record<string, string> = {
         last_login: new Date().toISOString(),
       };
-      if (email) {
-        props['$email'] = email;
-      }
+      if (email) props['$email'] = email;
       mp.people.set(props);
     }
   } catch { /* safe to ignore */ }

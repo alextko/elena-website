@@ -8,6 +8,7 @@ import { Sidebar } from "@/components/sidebar";
 import { ChatArea } from "@/components/chat-area";
 import { ChatErrorBoundary } from "@/components/error-boundary";
 import type { ChatSessionItem } from "@/lib/types";
+import { trackSubscription } from "@/lib/tracking-events";
 
 export default function ChatPage() {
   return (
@@ -49,6 +50,8 @@ function ChatPageInner() {
     if (searchParams.get("checkout") === "success") {
       setCheckoutSuccess(true);
       refreshSubscription();
+      // Fire conversion events to Mixpanel, TikTok, Reddit
+      trackSubscription('pro', 0, 'USD'); // value filled by backend via Stripe webhook
       // Clean URL without reload
       window.history.replaceState({}, "", "/chat");
       // Auto-dismiss after 4 seconds
