@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/apiFetch";
 import { Sidebar } from "@/components/sidebar";
 import { ChatArea } from "@/components/chat-area";
+import { ChatErrorBoundary } from "@/components/error-boundary";
 import type { ChatSessionItem } from "@/lib/types";
 
 export default function ChatPage() {
@@ -68,12 +69,15 @@ function ChatPageInner() {
       const res = await apiFetch("/chat/sessions");
       if (!res.ok) {
         setLoadingSessions(false);
+        // Sessions failed but page is still usable — allow new chat
+        setIsNewChat(true);
         return;
       }
       const data: ChatSessionItem[] = await res.json();
       setSessions(data);
     } catch {
-      // network error
+      // Network error — still allow the user to start a new chat
+      setIsNewChat(true);
     }
     setLoadingSessions(false);
   }, []);
@@ -86,10 +90,16 @@ function ChatPageInner() {
     }
   }, [loading, session, fetchSessions]);
 
-  // Auto-open most recent session (unless there's a pending query from landing)
+  // Auto-open most recent session, or start a new chat if none exist
   useEffect(() => {
-    if (!loadingSessions && sessions.length > 0 && activeSessionId === null && !pendingQuery && !isNewChat) {
+    if (loadingSessions || activeSessionId !== null || pendingQuery || isNewChat) return;
+
+    if (sessions.length > 0) {
       setActiveSessionId(sessions[0].id);
+    } else {
+      // No sessions exist (new user, or all deleted) — start a new chat
+      // so the user sees the welcome screen instead of a blank page.
+      setIsNewChat(true);
     }
   }, [loadingSessions, sessions, activeSessionId, pendingQuery, isNewChat]);
 
@@ -146,16 +156,18 @@ function ChatPageInner() {
           loadingSessions={loadingSessions}
         />
       )}
-      <ChatArea
-        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        sidebarOpen={sidebarOpen}
-        activeSessionId={activeSessionId}
-        onSessionCreated={handleSessionCreated}
-        initialQuery={pendingQuery}
-        bookMessage={bookMessage}
-        onBookMessageConsumed={() => setBookMessage(null)}
-        isNewChat={isNewChat}
-      />
+      <ChatErrorBoundary>
+        <ChatArea
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          sidebarOpen={sidebarOpen}
+          activeSessionId={activeSessionId}
+          onSessionCreated={handleSessionCreated}
+          initialQuery={pendingQuery}
+          bookMessage={bookMessage}
+          onBookMessageConsumed={() => setBookMessage(null)}
+          isNewChat={isNewChat}
+        />
+      </ChatErrorBoundary>
     </div>
   );
 }

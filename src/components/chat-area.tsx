@@ -127,6 +127,8 @@ export function ChatArea({
   const [welcomeMessage, setWelcomeMessage] = useState<string | null>(null);
   const [streamingId, setStreamingId] = useState<string | null>(null);
   const [chatTitle, setChatTitle] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadingMessages, setLoadingMessages] = useState(false);
 
   const [pendingFiles, setPendingFiles] = useState<{ file: File; key: string }[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -173,6 +175,8 @@ export function ChatArea({
     setWelcomeMessage(null);
     setStreamingId(null);
     setChatTitle(null);
+    setLoadError(null);
+    setLoadingMessages(false);
     setPendingFiles([]);
     hasCreatedSessionRef.current = false;
 
@@ -194,11 +198,17 @@ export function ChatArea({
   }, [activeSessionId, isNewChat]);
 
   async function loadMessages(sessionId: string, requestId: number) {
+    setLoadingMessages(true);
+    setLoadError(null);
     try {
       const res = await apiFetch(`/chat/${sessionId}/messages`);
       // Ignore stale responses if the user switched sessions while this was in-flight
       if (loadRequestRef.current !== requestId) return;
-      if (!res.ok) return;
+      if (!res.ok) {
+        setLoadError("Couldn\u2019t load messages. Tap to retry.");
+        setLoadingMessages(false);
+        return;
+      }
       const data: ChatMessageItem[] = await res.json();
       if (loadRequestRef.current !== requestId) return;
       const mapped: Message[] = data
@@ -218,24 +228,34 @@ export function ChatArea({
       const firstUser = data.find((m) => m.role === "user");
       if (firstUser) setChatTitle(firstUser.text.slice(0, 60));
     } catch {
-      // Network error — show empty
+      if (loadRequestRef.current === requestId) {
+        setLoadError("Connection error. Tap to retry.");
+      }
     }
+    setLoadingMessages(false);
   }
 
   async function fetchWelcome() {
+    setLoadError(null);
     try {
       const res = await apiFetch("/chat/welcome", {
         method: "POST",
         body: JSON.stringify({}),
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        // Fallback — still usable, just no personalized welcome
+        setWelcomeHeading("What can I help you with?");
+        setSuggestions(["What can you help me with?", "Find a cheaper pharmacy", "Help with my insurance"]);
+        return;
+      }
       const data: WelcomeResponse = await res.json();
       setWelcomeHeading(data.heading);
       setWelcomeMessage(data.message);
       setSuggestions(data.suggestions);
       sessionIdRef.current = data.session_id;
     } catch {
-      // Fallback — show empty state
+      // Fallback — show generic welcome so the page is never blank
+      setWelcomeHeading("What can I help you with?");
       setSuggestions(["What can you help me with?", "Find a cheaper pharmacy", "Help with my insurance"]);
     }
   }
@@ -518,8 +538,33 @@ export function ChatArea({
       {/* Messages */}
       <div className="relative z-10 flex-1 min-h-0 overflow-y-auto">
         <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
+          {/* Loading spinner — shown while waiting for sessions to resolve or messages to load */}
+          {(loadingMessages || (!activeSessionId && !isNewChat)) && messages.length === 0 && !loadError && (
+            <div className="flex items-center justify-center py-20">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#0F1B3D] border-t-transparent" />
+            </div>
+          )}
+
+          {/* Error loading messages — retry button */}
+          {loadError && messages.length === 0 && !loadingMessages && (
+            <div className="flex flex-col items-center justify-center gap-3 py-20 animate-in fade-in duration-300">
+              <p className="text-sm text-[#0F1B3D]/50">{loadError}</p>
+              <button
+                onClick={() => {
+                  if (activeSessionId) {
+                    const requestId = ++loadRequestRef.current;
+                    loadMessages(activeSessionId, requestId);
+                  }
+                }}
+                className="rounded-full border border-[#0F1B3D]/10 bg-[#f5f7fb] px-5 py-2.5 text-sm font-semibold text-[#0F1B3D]/70 transition-all hover:bg-[#0F1B3D]/[0.08]"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
           {/* Welcome state */}
-          {messages.length === 0 && welcomeHeading && (
+          {messages.length === 0 && !loadingMessages && !loadError && welcomeHeading && (
             <div className="flex flex-col items-center text-center py-12 animate-in fade-in duration-500">
               <h2 className="text-2xl font-bold text-[#0F1B3D] mb-3">{welcomeHeading}</h2>
               {welcomeMessage && (
