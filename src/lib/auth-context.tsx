@@ -77,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [habitCompletions, setHabitCompletions] = useState<Record<string, Set<string>>>({});
   const [profileDetailsLoaded, setProfileDetailsLoaded] = useState(false);
+  const profileDetailsFetchingRef = useRef(false);
 
   const profileFetchedRef = useRef(false);
 
@@ -115,7 +116,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Fetch detailed profile data (doctors, appointments, credits) — called lazily
   const fetchProfileDetails = useCallback(async () => {
-    if (profileDetailsLoaded) return;
+    if (profileDetailsLoaded || profileDetailsFetchingRef.current) return;
+    profileDetailsFetchingRef.current = true;
 
     const promises: Promise<void>[] = [];
 

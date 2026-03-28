@@ -136,7 +136,7 @@ export function ChatArea({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const sessionIdRef = useRef<string | null>(activeSessionId);
+  const sessionIdRef = useRef<string | null>(null);
   const hasCreatedSessionRef = useRef(false);
   const initialQuerySentRef = useRef(false);
   const scrollEndRef = useRef<HTMLDivElement>(null);
@@ -155,6 +155,8 @@ export function ChatArea({
   }, [messages, toolLabel]);
 
   // Load session or welcome when activeSessionId changes
+  const loadRequestRef = useRef(0);
+
   useEffect(() => {
     // If ChatArea already created this session (first message just sent),
     // skip reloading — we already have the messages locally.
@@ -174,10 +176,13 @@ export function ChatArea({
     setPendingFiles([]);
     hasCreatedSessionRef.current = false;
 
+    // Increment request ID so stale fetches are ignored
+    const requestId = ++loadRequestRef.current;
+
     if (activeSessionId) {
       // Load existing session messages
       sessionIdRef.current = activeSessionId;
-      loadMessages(activeSessionId);
+      loadMessages(activeSessionId, requestId);
     } else if (isNewChat) {
       // User explicitly started a new chat — fetch welcome
       sessionIdRef.current = null;
@@ -188,11 +193,14 @@ export function ChatArea({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSessionId, isNewChat]);
 
-  async function loadMessages(sessionId: string) {
+  async function loadMessages(sessionId: string, requestId: number) {
     try {
       const res = await apiFetch(`/chat/${sessionId}/messages`);
+      // Ignore stale responses if the user switched sessions while this was in-flight
+      if (loadRequestRef.current !== requestId) return;
       if (!res.ok) return;
       const data: ChatMessageItem[] = await res.json();
+      if (loadRequestRef.current !== requestId) return;
       const mapped: Message[] = data
         .filter((m) => m.role === "user" || m.role === "assistant")
         .map((m) => ({

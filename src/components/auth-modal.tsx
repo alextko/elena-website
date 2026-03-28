@@ -51,7 +51,7 @@ export function AuthModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg p-0 border-0 overflow-hidden rounded-3xl shadow-[0_16px_48px_rgba(0,0,0,0.25)]">
+      <DialogContent className="sm:max-w-lg p-0 border-0 overflow-hidden rounded-3xl shadow-[0_16px_48px_rgba(0,0,0,0.25)] font-[family-name:var(--font-inter)]">
         {/* Gradient background matching hero */}
         <div
           className="relative px-10 py-10 max-sm:px-6 max-sm:py-8"

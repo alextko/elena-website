@@ -372,6 +372,54 @@ body {
   background: rgba(255, 255, 255, 0.25);
 }
 
+/* ========== CTA LINK (replaces old signup forms) ========== */
+.blog-cta-link {
+  display: inline-block;
+  padding: 14px 36px;
+  border-radius: 100px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  margin-top: 8px;
+}
+
+.blog-cta-inline .blog-cta-link {
+  background: #0F1B3D;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(15, 27, 61, 0.25);
+}
+
+.blog-cta-inline .blog-cta-link:hover {
+  background: #1a2a52;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(15, 27, 61, 0.35);
+}
+
+.blog-cta-bottom .blog-cta-link {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.blog-cta-bottom .blog-cta-link:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+}
+
+.blog-exit-card .blog-cta-link {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.blog-exit-card .blog-cta-link:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
 /* ========== SUCCESS STATES ========== */
 .blog-success-message {
   display: none;
