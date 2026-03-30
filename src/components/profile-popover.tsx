@@ -10,6 +10,7 @@ import {
   Calendar,
   LogOut,
   ChevronRight,
+  ChevronDown,
   Sparkles,
   Star,
   Pill,
@@ -28,9 +29,13 @@ import {
   CheckSquare,
   CircleDot,
   Trash2,
+  UserPlus,
+  Link2,
 } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
+import { AddFamilyModal } from "@/components/add-family-modal";
+import { AcceptInviteModal } from "@/components/accept-invite-modal";
 import type { CareTodo, CareTodoCreate, CareVisit, DoctorItem, Habit, ProfileSummary } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import type { InsuranceCard } from "@/lib/types";
@@ -145,9 +150,25 @@ export function ProfilePopover({
   const [editingTodo, setEditingTodo] = useState<{ mode: "create" } | { mode: "edit"; todo: typeof todos[number] } | null>(null);
   const [addingProvider, setAddingProvider] = useState(false);
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [addFamilyOpen, setAddFamilyOpen] = useState(false);
+  const [acceptInviteOpen, setAcceptInviteOpen] = useState(false);
+  const switcherRef = useRef<HTMLDivElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const todayRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Close switcher dropdown on outside click
+  useEffect(() => {
+    if (!switcherOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (switcherRef.current && !switcherRef.current.contains(e.target as Node)) {
+        setSwitcherOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [switcherOpen]);
 
   async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -339,9 +360,74 @@ export function ProfilePopover({
                   </span>
                 )}
               </button>
-              <div className="min-w-0 flex-1">
-                <p className="text-base font-extrabold text-[#0F1B3D]">{displayName}</p>
+              <div ref={switcherRef} className="min-w-0 flex-1 relative">
+                <button
+                  onClick={() => profiles.length > 1 && setSwitcherOpen(!switcherOpen)}
+                  className={`flex items-center gap-1 ${profiles.length > 1 ? "hover:opacity-70 transition-opacity cursor-pointer" : ""}`}
+                >
+                  <p className="text-base font-extrabold text-[#0F1B3D]">{displayName}</p>
+                  {profiles.length > 1 && (
+                    <ChevronDown className={`h-3.5 w-3.5 text-[#0F1B3D]/30 flex-shrink-0 transition-transform ${switcherOpen ? "rotate-180" : ""}`} />
+                  )}
+                </button>
                 <p className="truncate text-sm text-[#0F1B3D]/40">{email}</p>
+
+                {/* Profile switcher dropdown */}
+                {switcherOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-64 rounded-xl bg-white border border-[#0F1B3D]/[0.08] shadow-[0_8px_32px_rgba(15,27,61,0.15)] overflow-hidden z-50">
+                    <div className="py-1.5">
+                      {profiles.map((p) => {
+                        const isActive = p.id === profileId;
+                        const pName = `${p.first_name} ${p.last_name}`.trim() || p.label || "Profile";
+                        const pInitials = p.first_name ? `${p.first_name[0]}${p.last_name?.[0] || ""}`.toUpperCase() : "?";
+                        const badge = p.is_primary ? "Me" : p.is_linked ? "Linked" : "Managed";
+                        return (
+                          <button
+                            key={p.id}
+                            onClick={async () => {
+                              if (!isActive) {
+                                await switchProfile(p.id);
+                              }
+                              setSwitcherOpen(false);
+                            }}
+                            className={`flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-[#0F1B3D]/[0.04] ${isActive ? "bg-[#0F1B3D]/[0.06]" : ""}`}
+                          >
+                            {p.profile_picture_url ? (
+                              <img src={p.profile_picture_url} alt={pName} className="h-7 w-7 rounded-full object-cover flex-shrink-0" />
+                            ) : (
+                              <Avatar className="h-7 w-7">
+                                <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-[10px] font-semibold text-[#0F1B3D]/50">{pInitials}</AvatarFallback>
+                              </Avatar>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-[#0F1B3D] truncate">{pName}</p>
+                              <p className="text-[10px] text-[#0F1B3D]/30">{badge}</p>
+                            </div>
+                            {isActive && (
+                              <div className="h-1.5 w-1.5 rounded-full bg-[#2E6BB5] flex-shrink-0" />
+                            )}
+                          </button>
+                        );
+                      })}
+                      <div className="border-t border-[#0F1B3D]/[0.06] mt-1 pt-1">
+                        <button
+                          onClick={() => { setSwitcherOpen(false); setOpen(false); setAddFamilyOpen(true); }}
+                          className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[#0F1B3D]/50 hover:bg-[#0F1B3D]/[0.04] transition-colors"
+                        >
+                          <UserPlus className="h-4 w-4" />
+                          Add family member
+                        </button>
+                        <button
+                          onClick={() => { setSwitcherOpen(false); setOpen(false); setAcceptInviteOpen(true); }}
+                          className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[#0F1B3D]/50 hover:bg-[#0F1B3D]/[0.04] transition-colors"
+                        >
+                          <Link2 className="h-4 w-4" />
+                          Enter invite code
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -891,6 +977,20 @@ export function ProfilePopover({
         </div>
       </DialogContent>
     </Dialog>
+
+    <AddFamilyModal
+      open={addFamilyOpen}
+      onOpenChange={setAddFamilyOpen}
+      onProfileCreated={async (newId) => {
+        await switchProfile(newId);
+        window.location.reload();
+      }}
+    />
+    <AcceptInviteModal
+      open={acceptInviteOpen}
+      onOpenChange={setAcceptInviteOpen}
+      onAccepted={() => window.location.reload()}
+    />
     </>
   );
 }
