@@ -474,6 +474,13 @@ export function ChatArea({
           });
 
           // Show upgrade popup if a gated tool was blocked
+          console.log("[chat] response received", {
+            error_code: chatResult.error_code,
+            gated_feature: chatResult.gated_feature,
+            has_form: !!chatResult.form_request,
+            has_doctors: !!(chatResult.doctor_results?.length),
+            has_locations: !!(chatResult.location_results?.length),
+          });
           if (chatResult.error_code === "upgrade_required") {
             setUpgradeReason("upgrade_required");
             setUpgradeFeature(chatResult.gated_feature || undefined);
