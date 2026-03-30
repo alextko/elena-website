@@ -469,7 +469,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           first_name: data.first_name || "",
           last_name: data.last_name || "",
           date_of_birth: data.date_of_birth || "",
-          home_address: data.home_address || "",
+          zip_code: data.home_address || "",
           email: profileData?.email || "",
         }),
       });

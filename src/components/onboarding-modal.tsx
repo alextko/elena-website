@@ -9,8 +9,10 @@ export function OnboardingModal() {
   const [firstName, setFirstName] = useState(profileData?.firstName || "");
   const [lastName, setLastName] = useState(profileData?.lastName || "");
   const [dob, setDob] = useState("");
-  const [address, setAddress] = useState("");
+  const [zipCode, setZipCode] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const hasName = !!(profileData?.firstName);
 
   async function handleSubmit() {
     setSaving(true);
@@ -18,14 +20,18 @@ export function OnboardingModal() {
       first_name: firstName.trim(),
       last_name: lastName.trim(),
       date_of_birth: dob,
-      home_address: address.trim(),
+      home_address: zipCode.trim(),
     });
     setSaving(false);
   }
 
   async function handleSkip() {
     setSaving(true);
-    await completeOnboarding({});
+    // Still save the Google name if we have it
+    await completeOnboarding({
+      first_name: firstName.trim() || undefined,
+      last_name: lastName.trim() || undefined,
+    });
     setSaving(false);
   }
 
@@ -42,7 +48,7 @@ export function OnboardingModal() {
           <div className="text-center mb-6">
             <div className="text-3xl mb-3">👋</div>
             <h2 className="text-[22px] font-extrabold text-[#0F1B3D]">
-              Welcome to Elena
+              {hasName ? `Hey ${profileData.firstName}!` : "Welcome to Elena"}
             </h2>
             <p className="text-[14px] text-[#8E8E93] mt-1.5 leading-relaxed">
               Help us personalize your experience. All fields are optional.
@@ -51,32 +57,34 @@ export function OnboardingModal() {
 
           {/* Fields */}
           <div className="space-y-3">
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">
-                  First name
-                </label>
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Alex"
-                  className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors"
-                />
+            {!hasName && (
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">
+                    First name
+                  </label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Alex"
+                    className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">
+                    Last name
+                  </label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Smith"
+                    className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors"
+                  />
+                </div>
               </div>
-              <div className="flex-1">
-                <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">
-                  Last name
-                </label>
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Smith"
-                  className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors"
-                />
-              </div>
-            </div>
+            )}
 
             <div>
               <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">
@@ -92,13 +100,15 @@ export function OnboardingModal() {
 
             <div>
               <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">
-                Home address
+                Zip code
               </label>
               <input
                 type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="123 Main St, City, State"
+                inputMode="numeric"
+                maxLength={5}
+                value={zipCode}
+                onChange={(e) => setZipCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                placeholder="10001"
                 className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors"
               />
             </div>
