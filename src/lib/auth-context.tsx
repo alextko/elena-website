@@ -101,12 +101,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!data.has_profile && !localStorage.getItem("elena_onboarding_done")) {
         console.log("[auth] No profile found, showing onboarding");
         // Pull name from Google/Apple OAuth metadata if available
-        const meta = user?.user_metadata;
+        // Read directly from Supabase session (not React state, which may be stale)
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const meta = currentSession?.user?.user_metadata as Record<string, string> | undefined;
         const oauthName = meta?.full_name || meta?.name || "";
-        const parts = oauthName.split(" ");
+        const parts = oauthName ? oauthName.split(" ") : [];
         const oauthFirst = parts[0] || "";
         const oauthLast = parts.slice(1).join(" ") || "";
         const oauthAvatar = meta?.avatar_url || meta?.picture || null;
+        console.log("[auth] OAuth data:", { oauthFirst, oauthLast, hasAvatar: !!oauthAvatar, metaKeys: meta ? Object.keys(meta) : [] });
 
         setNeedsOnboarding(true);
         setProfileData({
