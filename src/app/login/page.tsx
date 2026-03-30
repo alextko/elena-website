@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import * as analytics from "@/lib/analytics";
 
 export default function LoginPage() {
   const { session, loading, signIn, signInWithGoogle } = useAuth();

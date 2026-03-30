@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { PanelLeft, Plus, ArrowUp, Paperclip, X } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
+import * as analytics from "@/lib/analytics";
 import { usePollChat } from "@/hooks/usePollChat";
 import { useBookingPoll } from "@/hooks/useBookingPoll";
 import { UpgradeModal } from "@/components/upgrade-modal";

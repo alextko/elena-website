@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
+import * as analytics from "@/lib/analytics";
 import {
   Dialog,
   DialogContent,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
@@ -12,6 +12,7 @@ import {
 import { Check, Phone, FileText, Zap, Users, Shield } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
+import * as analytics from "@/lib/analytics";
 
 interface UpgradeModalProps {
   open: boolean;

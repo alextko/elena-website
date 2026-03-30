@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth-context";
+import * as analytics from "@/lib/analytics";
 
 export function OnboardingModal() {
   const { needsOnboarding, completeOnboarding, profileData } = useAuth();

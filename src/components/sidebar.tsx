@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Plus, Search, X } from "lucide-react";
+import * as analytics from "@/lib/analytics";
 import { ProfilePopover } from "@/components/profile-popover";
 import { useAuth } from "@/lib/auth-context";
 import type { ChatSessionItem } from "@/lib/types";

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import * as analytics from "@/lib/analytics";
 import { AuthModal } from "@/components/auth-modal";
 import Spotlights from "@/components/landing/spotlights";
 import "./landing.css";
@@ -194,12 +195,22 @@ export default function LandingPage() {
   const heroRef = useRef<HTMLElement>(null);
   const blobRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  const hasTrackedPageView = useRef(false);
+
   // Authenticated → go to /chat
   useEffect(() => {
     if (!loading && session) {
       router.replace("/chat");
     }
   }, [loading, session, router]);
+
+  // Track landing page view
+  useEffect(() => {
+    if (!loading && !session && !hasTrackedPageView.current) {
+      hasTrackedPageView.current = true;
+      analytics.track("Landing Page Viewed");
+    }
+  }, [loading, session]);
 
   // Parallax blobs
   useEffect(() => {
@@ -244,6 +255,7 @@ export default function LandingPage() {
     // Persist the query so /chat can auto-send it after auth
     const query = input.trim();
     if (query) {
+      analytics.track("Hero Input Submitted", { query_length: query.length });
       localStorage.setItem("elena_pending_query", query);
     }
     setAuthModalOpen(true);

@@ -12,6 +12,7 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/apiFetch";
+import * as analytics from "@/lib/analytics";
 import type { MeResponse, DoctorItem, CareVisit, CareTodo, CareTodoCreate, Habit, SubscriptionResponse, InsuranceCard } from "@/lib/types";
 
 interface AuthContextValue {
@@ -97,8 +98,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       console.log("[auth] /auth/me response:", { has_profile: data.has_profile, profile_id: data.profile_id, email: data.email });
 
+      // Identify user in Mixpanel
+      const { data: { session: currentSessionForProvider } } = await supabase.auth.getSession();
+      const provider = currentSessionForProvider?.user?.app_metadata?.provider || "email";
+
       // New user with no profile - show onboarding popup (only once ever)
       if (!data.has_profile && !localStorage.getItem("elena_onboarding_done")) {
+        analytics.alias(currentSessionForProvider?.user?.id || "");
+        analytics.identify(currentSessionForProvider?.user?.id || "", {
+          $email: data.email,
+          has_profile: false,
+          plan_type: "free",
+        });
+        analytics.track("Signup Completed", { method: provider });
         console.log("[auth] No profile found, showing onboarding");
         // Pull name from Google/Apple OAuth metadata if available
         // Read directly from Supabase session (not React state, which may be stale)
@@ -148,6 +160,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const primary = data.profiles.find((p) => p.is_primary);
       if (primary) {
+        analytics.identify(currentSessionForProvider?.user?.id || "", {
+          $email: data.email,
+          $name: `${primary.first_name} ${primary.last_name}`.trim(),
+          has_profile: true,
+          plan_type: "free",
+        });
+        analytics.track("Login Completed", { method: provider });
+
         setProfileData({
           firstName: primary.first_name,
           lastName: primary.last_name,
@@ -298,6 +318,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!res.ok) return;
       const data: SubscriptionResponse = await res.json();
       setSubscription(data);
+      analytics.setSuperProperties({ plan_type: data.tier });
+      analytics.setPeopleProperties({ plan_type: data.tier });
     } catch {
       // Network error — ignore
     }
@@ -568,6 +590,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    analytics.reset();
     await supabase.auth.signOut();
     setSession(null);
     setUser(null);
