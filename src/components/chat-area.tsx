@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { PanelLeft, Plus, ArrowUp, Paperclip, X } from "lucide-react";
+import { PanelLeft, Plus, ArrowUp, Square, Paperclip, X } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
+import * as analytics from "@/lib/analytics";
 import { usePollChat } from "@/hooks/usePollChat";
 import { useBookingPoll } from "@/hooks/useBookingPoll";
 import { UpgradeModal } from "@/components/upgrade-modal";
@@ -17,6 +18,7 @@ import {
   AppointmentConfirmationCard,
   AddToCalendarCard,
   BookingQuestionCard,
+  FormRequestCard,
 } from "@/components/chat-cards";
 import type {
   ChatMessageItem,
@@ -28,6 +30,7 @@ import type {
   SourcePayload,
   NegotiationResult,
   BookingResultPayload,
+  FormRequest,
 } from "@/lib/types";
 
 type Attachment = {
@@ -47,6 +50,7 @@ type Message = {
   webSources?: SourcePayload[] | null;
   negotiationResult?: NegotiationResult | null;
   bookingResult?: BookingResultPayload | null;
+  formRequest?: FormRequest | null;
 };
 
 function renderMarkdown(text: string) {
@@ -112,7 +116,7 @@ export function ChatArea({
   onToggleSidebar: () => void;
   sidebarOpen: boolean;
   activeSessionId: string | null;
-  onSessionCreated: (id: string) => void;
+  onSessionCreated: (id: string, firstMessage?: string) => void;
   initialQuery?: string | null;
   bookMessage?: string | null;
   onBookMessageConsumed?: () => void;
@@ -179,6 +183,7 @@ export function ChatArea({
     setLoadingMessages(false);
     setPendingFiles([]);
     hasCreatedSessionRef.current = false;
+    setSessionReady(false);
 
     // Increment request ID so stale fetches are ignored
     const requestId = ++loadRequestRef.current;
@@ -188,9 +193,10 @@ export function ChatArea({
       sessionIdRef.current = activeSessionId;
       loadMessages(activeSessionId, requestId);
     } else if (isNewChat) {
-      // User explicitly started a new chat — fetch welcome
       sessionIdRef.current = null;
-      fetchWelcome();
+      // Check for pending query directly from localStorage (props may be stale)
+      const pending = initialQuery || localStorage.getItem("elena_pending_query");
+      fetchWelcome(!!pending);
     }
     // When activeSessionId is null and isNewChat is false, we're still loading
     // sessions — don't create a new welcome session yet.
@@ -222,6 +228,8 @@ export function ChatArea({
           reviewResults: m.review_results,
           negotiationResult: m.negotiation_result,
           bookingResult: m.booking_result ?? undefined,
+          webSources: m.web_sources,
+          formRequest: m.form_request,
         }));
       setMessages(mapped);
       // Set title from first user message
@@ -235,7 +243,9 @@ export function ChatArea({
     setLoadingMessages(false);
   }
 
-  async function fetchWelcome() {
+  const [sessionReady, setSessionReady] = useState(false);
+
+  async function fetchWelcome(silent = false) {
     setLoadError(null);
     try {
       const res = await apiFetch("/chat/welcome", {
@@ -249,32 +259,41 @@ export function ChatArea({
         return;
       }
       const data: WelcomeResponse = await res.json();
-      setWelcomeHeading(data.heading);
-      setWelcomeMessage(data.message);
-      setSuggestions(data.suggestions);
+      if (!silent) {
+        setWelcomeHeading(data.heading);
+        setWelcomeMessage(data.message);
+        setSuggestions(data.suggestions);
+        analytics.track("Welcome Screen Shown");
+      }
       sessionIdRef.current = data.session_id;
+      setSessionReady(true);
     } catch {
-      // Fallback — show generic welcome so the page is never blank
-      setWelcomeHeading("What can I help you with?");
-      setSuggestions(["What can you help me with?", "Find a cheaper pharmacy", "Help with my insurance"]);
+      // Fallback -- show generic welcome so the page is never blank
+      if (!silent) {
+        setWelcomeHeading("What can I help you with?");
+        setSuggestions(["What can you help me with?", "Find a cheaper pharmacy", "Help with my insurance"]);
+      }
     }
   }
 
-  // Auto-send initial query from landing page after welcome loads
+  // Auto-send initial query from landing page after session is ready
   const handleSendRef = useRef<(text?: string) => Promise<void>>(undefined);
+  const initialQuerySending = useRef(false);
 
   useEffect(() => {
     if (
       initialQuery &&
       !initialQuerySentRef.current &&
+      !initialQuerySending.current &&
       sessionIdRef.current &&
       handleSendRef.current
     ) {
+      initialQuerySending.current = true;
       initialQuerySentRef.current = true;
       localStorage.removeItem("elena_pending_query");
       handleSendRef.current(initialQuery);
     }
-  }, [initialQuery, welcomeMessage]);
+  }, [initialQuery, welcomeMessage, sessionReady]);
 
   // Auto-send book message from game plan
   useEffect(() => {
@@ -298,6 +317,12 @@ export function ChatArea({
       bookingCompletedRef.current !== id
     ) {
       bookingCompletedRef.current = id;
+
+      if (phase === "completed") {
+        analytics.track("Booking Completed", { booking_id: id });
+      } else {
+        analytics.track("Booking Failed", { booking_id: id, phase });
+      }
 
       // Add the summary + booking result as an assistant message
       const summaryId = nextId();
@@ -375,6 +400,9 @@ export function ChatArea({
       }
     }
 
+    if (uploaded.length > 0) {
+      analytics.track("File Attached", { count: uploaded.length });
+    }
     setPendingFiles((prev) => [...prev, ...uploaded]);
     setUploading(false);
   }
@@ -396,7 +424,7 @@ export function ChatArea({
   const handleSend = useCallback(
     async (text?: string) => {
       const message = (text || input).trim();
-      if (!message || isLoading) return;
+      if ((!message && pendingFiles.length === 0) || isLoading) return;
 
       setInput("");
       if (textareaRef.current) textareaRef.current.style.height = "auto";
@@ -419,7 +447,19 @@ export function ChatArea({
           attachments: sentFiles.length > 0 ? sentFiles : undefined,
         },
       ]);
-      setChatTitle((prev) => prev || message.slice(0, 60));
+      setChatTitle((prev) => prev || message.slice(0, 60) || (sentFiles.length > 0 ? sentFiles[0].name : ""));
+
+      // Notify parent about the session immediately so it shows in sidebar
+      if (!hasCreatedSessionRef.current && sessionIdRef.current) {
+        hasCreatedSessionRef.current = true;
+        onSessionCreated(sessionIdRef.current, message);
+      }
+
+      analytics.track("Message Sent", {
+        is_first_message: messages.length === 0,
+        has_attachment: sentFiles.length > 0,
+        message_length: message.length,
+      });
 
       setIsLoading(true);
 
@@ -447,6 +487,7 @@ export function ChatArea({
               reviewResults: chatResult.review_results,
               webSources: chatResult.web_sources,
               negotiationResult: undefined,
+              formRequest: chatResult.form_request,
             },
           ]);
           setStreamingId(assistantId);
@@ -454,7 +495,21 @@ export function ChatArea({
           setToolLabel(null);
           setIsLoading(false);
 
+          analytics.track("Response Received", {
+            has_doctor_results: !!(chatResult.doctor_results?.length),
+            has_location_results: !!(chatResult.location_results?.length),
+            has_sources: !!(chatResult.web_sources?.length),
+            has_booking: !!chatResult.booking_id,
+          });
+
           // Show upgrade popup if a gated tool was blocked
+          console.log("[chat] response received", {
+            error_code: chatResult.error_code,
+            gated_feature: chatResult.gated_feature,
+            has_form: !!chatResult.form_request,
+            has_doctors: !!(chatResult.doctor_results?.length),
+            has_locations: !!(chatResult.location_results?.length),
+          });
           if (chatResult.error_code === "upgrade_required") {
             setUpgradeReason("upgrade_required");
             setUpgradeFeature(chatResult.gated_feature || undefined);
@@ -478,6 +533,7 @@ export function ChatArea({
 
           // Start booking poll if a call was initiated
           if (chatResult.booking_id) {
+            analytics.track("Booking Initiated", { booking_id: chatResult.booking_id });
             booking.start(chatResult.booking_id);
           }
         },
@@ -536,16 +592,16 @@ export function ChatArea({
       </div>
 
       {/* Messages */}
-      <div className="relative z-10 flex-1 min-h-0 overflow-y-auto">
+      <div className="relative z-10 flex-1 min-h-0 overflow-y-auto chat-selectable">
         <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
-          {/* Loading spinner — shown while waiting for sessions to resolve or messages to load */}
+          {/* Loading spinner -- shown while waiting for sessions to resolve or messages to load */}
           {(loadingMessages || (!activeSessionId && !isNewChat)) && messages.length === 0 && !loadError && (
             <div className="flex items-center justify-center py-20">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#0F1B3D] border-t-transparent" />
             </div>
           )}
 
-          {/* Error loading messages — retry button */}
+          {/* Error loading messages -- retry button */}
           {loadError && messages.length === 0 && !loadingMessages && (
             <div className="flex flex-col items-center justify-center gap-3 py-20 animate-in fade-in duration-300">
               <p className="text-sm text-[#0F1B3D]/50">{loadError}</p>
@@ -563,8 +619,8 @@ export function ChatArea({
             </div>
           )}
 
-          {/* Welcome state */}
-          {messages.length === 0 && !loadingMessages && !loadError && welcomeHeading && (
+          {/* Welcome state -- hidden when there's a pending query */}
+          {messages.length === 0 && !loadingMessages && !loadError && welcomeHeading && !initialQuery && !localStorage.getItem("elena_pending_query") && (
             <div className="flex flex-col items-center text-center py-12 animate-in fade-in duration-500">
               <h2 className="text-2xl font-bold text-[#0F1B3D] mb-3">{welcomeHeading}</h2>
               {welcomeMessage && (
@@ -615,13 +671,13 @@ export function ChatArea({
                 {/* Structured result cards — hidden while streaming, fade in after */}
                 {msg.id !== streamingId && (
                   <div className={msg.isStreaming === false || !msg.isStreaming ? "elena-card-enter" : ""}>
-                    {/* Show location card if present (pharmacies, labs, etc.), otherwise doctor card */}
-                    {msg.locationResults && msg.locationResults.length > 0 ? (
+                    {/* Show location card if present (pharmacies, labs, etc.), otherwise doctor card — skip if form is shown */}
+                    {!msg.formRequest && msg.locationResults && msg.locationResults.length > 0 ? (
                       <LocationResultsCard
                         locations={msg.locationResults}
                         onCall={(loc) => handleSend(`Call ${loc.name} at ${loc.phone_number}`)}
                       />
-                    ) : msg.doctorResults && msg.doctorResults.length > 0 ? (
+                    ) : !msg.formRequest && msg.doctorResults && msg.doctorResults.length > 0 ? (
                       <DoctorResultsCard
                         doctors={msg.doctorResults}
                         onBookDoctor={(doc) => handleSend(`Book an appointment with ${doc.name}`)}
@@ -644,6 +700,20 @@ export function ChatArea({
                     )}
                     {msg.webSources && msg.webSources.length > 0 && (
                       <SourcesFooter sources={msg.webSources} />
+                    )}
+                    {msg.formRequest && (
+                      <FormRequestCard
+                        form={msg.formRequest}
+                        onSubmitted={(data) => {
+                          analytics.track("Form Submitted", { form_id: msg.formRequest?.form_id });
+                          // Send the submitted data as a user message so Elena can continue
+                          const summary = Object.entries(data)
+                            .filter(([, v]) => v)
+                            .map(([k, v]) => `${k}: ${v}`)
+                            .join(", ");
+                          if (summary) handleSend(`Here's my info: ${summary}`);
+                        }}
+                      />
                     )}
                   </div>
                 )}
@@ -688,7 +758,13 @@ export function ChatArea({
               {suggestions.map((s) => (
                 <button
                   key={s}
-                  onClick={() => handleSend(s)}
+                  onClick={() => {
+                    analytics.track(
+                      messages.length === 0 ? "Welcome Suggestion Clicked" : "Suggestion Chip Clicked",
+                      { suggestion_text: s },
+                    );
+                    handleSend(s);
+                  }}
                   className="rounded-full border border-[#0F1B3D]/10 bg-[#f5f7fb] px-4 py-2.5 text-sm font-semibold text-[#0F1B3D]/70 shadow-[0_2px_8px_rgba(15,27,61,0.04),inset_0_1px_0_rgba(255,255,255,0.5)] transition-all hover:bg-[#0F1B3D]/[0.08] hover:-translate-y-px"
                 >
                   {s}
@@ -768,10 +844,22 @@ export function ChatArea({
           <Button
             size="icon"
             className="h-[34px] w-[34px] mb-0.5 flex-shrink-0 rounded-full bg-[#0F1B3D] hover:bg-[#0F1B3D]/90 disabled:opacity-40"
-            onClick={() => handleSend()}
-            disabled={isLoading || (!input.trim() && pendingFiles.length === 0)}
+            onClick={() => {
+              if (isLoading) {
+                cancel();
+                setIsLoading(false);
+                setToolLabel(null);
+              } else {
+                handleSend();
+              }
+            }}
+            disabled={!isLoading && !input.trim() && pendingFiles.length === 0}
           >
-            <ArrowUp className="h-4 w-4 text-white" />
+            {isLoading ? (
+              <Square className="h-3.5 w-3.5 text-white fill-white" />
+            ) : (
+              <ArrowUp className="h-4 w-4 text-white" />
+            )}
           </Button>
         </div>
         <p className="mt-2 text-center text-[0.7rem] text-[#AEAEB2]">

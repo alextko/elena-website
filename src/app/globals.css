@@ -170,6 +170,15 @@
   animation: elena-card-reveal 0.4s ease-out forwards;
 }
 
+/* Hide scrollbar unless actively scrolling */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Thinking dot pulse animation */
 @keyframes thinking-pulse {
   0%, 100% { transform: scale(1); opacity: 0.4; }
@@ -196,6 +205,18 @@
   animation: booking-shake 1.2s ease-in-out infinite;
   display: inline-block;
   transform-origin: center;
+}
+
+/* Allow text selection in chat messages and input */
+.chat-selectable,
+.chat-selectable * {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+.chat-selectable button,
+.chat-selectable [role="button"] {
+  -webkit-user-select: none !important;
+  user-select: none !important;
 }
 
 /* Mapbox overrides */

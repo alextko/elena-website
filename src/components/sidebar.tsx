@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Plus, Search, X } from "lucide-react";
+import * as analytics from "@/lib/analytics";
 import { ProfilePopover } from "@/components/profile-popover";
 import { useAuth } from "@/lib/auth-context";
 import type { ChatSessionItem } from "@/lib/types";
@@ -117,7 +118,7 @@ export function Sidebar({
       {/* Actions */}
       <div className="flex-shrink-0 flex flex-col gap-2 px-4 pb-3">
         <button
-          onClick={onNewChat}
+          onClick={() => { analytics.track("New Chat Started"); onNewChat(); }}
           className="flex w-full items-center justify-center gap-2 rounded-full border border-[#0F1B3D]/10 bg-[#0F1B3D]/[0.04] py-2.5 text-sm font-medium text-[#0F1B3D]/70 shadow-[0_2px_8px_rgba(15,27,61,0.04),inset_0_1px_0_rgba(255,255,255,0.5)] transition-all hover:bg-[#0F1B3D]/[0.08]"
         >
           <Plus className="h-4 w-4" />
@@ -129,6 +130,7 @@ export function Sidebar({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onBlur={() => { if (searchQuery.trim()) analytics.track("Session Search Used", { query_length: searchQuery.length }); }}
             placeholder="Search chats..."
             className="w-full rounded-full border border-[#0F1B3D]/10 bg-[#0F1B3D]/[0.04] py-2.5 pl-8 pr-8 text-sm text-[#0F1B3D]/70 placeholder:text-[#0F1B3D]/30 outline-none focus:border-[#0F1B3D]/20 focus:bg-white transition-colors"
           />
@@ -165,7 +167,7 @@ export function Sidebar({
                 {items.map((session) => (
                   <button
                     key={session.id}
-                    onClick={() => onSelectSession(session.id)}
+                    onClick={() => { analytics.track("Session Switched", { session_id: session.id }); onSelectSession(session.id); }}
                     className={`flex w-full items-center rounded-xl px-3 py-2 text-left text-[0.8rem] transition-colors hover:bg-[#0F1B3D]/[0.06] ${
                       session.id === activeSessionId
                         ? "bg-[#0F1B3D]/[0.06] font-medium text-[#0F1B3D]"

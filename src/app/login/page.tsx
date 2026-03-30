@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import * as analytics from "@/lib/analytics";
 
 export default function LoginPage() {
   const { session, loading, signIn, signInWithGoogle } = useAuth();
@@ -26,15 +27,27 @@ export default function LoginPage() {
     );
   }
 
+  const hasTrackedPageView = useRef(false);
+  useEffect(() => {
+    if (!loading && !session && !hasTrackedPageView.current) {
+      hasTrackedPageView.current = true;
+      analytics.track("Login Page Viewed");
+    }
+  }, [loading, session]);
+
   if (session) return null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
+    analytics.track("Auth Method Selected", { method: "email", mode: "signin" });
     const result = await signIn(email, password);
     setSubmitting(false);
-    if (result.error) setError(result.error);
+    if (result.error) {
+      analytics.track("Auth Error", { method: "email", mode: "signin", error_type: result.error });
+      setError(result.error);
+    }
   }
 
   return (
@@ -74,7 +87,7 @@ export default function LoginPage() {
 
           {/* Google OAuth */}
           <button
-            onClick={() => signInWithGoogle()}
+            onClick={() => { analytics.track("Auth Method Selected", { method: "google" }); signInWithGoogle(); }}
             className="flex w-full items-center justify-center gap-3 rounded-full py-4 text-base font-medium text-white transition-all mb-3"
             style={{
               background: "rgba(66, 133, 244, 0.7)",

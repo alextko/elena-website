@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { trackViewContent } from "@/lib/tracking-events";
+import * as analytics from "@/lib/analytics";
 import { AuthModal } from "@/components/auth-modal";
 import Spotlights from "@/components/landing/spotlights";
 import "./landing.css";
@@ -236,6 +237,8 @@ function LandingPage() {
   const heroRef = useRef<HTMLElement>(null);
   const blobRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  const hasTrackedPageView = useRef(false);
+
   // Authenticated → go to /chat
   useEffect(() => {
     if (!loading && session) {
@@ -247,6 +250,14 @@ function LandingPage() {
   useEffect(() => {
     trackViewContent('landing_page', ref || 'homepage');
   }, [ref]);
+
+  // Track landing page view (Mixpanel)
+  useEffect(() => {
+    if (!loading && !session && !hasTrackedPageView.current) {
+      hasTrackedPageView.current = true;
+      analytics.track("Landing Page Viewed");
+    }
+  }, [loading, session]);
 
   // Parallax blobs
   useEffect(() => {
@@ -291,12 +302,14 @@ function LandingPage() {
     // Persist the query so /chat can auto-send it after auth
     const query = input.trim();
     if (query) {
+      analytics.track("Hero Input Submitted", { query_length: query.length });
       localStorage.setItem("elena_pending_query", query);
     }
     setAuthModalOpen(true);
   }, [input]);
 
   const handleChipClick = useCallback((text: string) => {
+    analytics.track("Suggested Prompt Clicked", { prompt_label: text });
     setInput(text);
     inputRef.current?.focus();
   }, []);
@@ -332,7 +345,7 @@ function LandingPage() {
           </a>
         </div>
         <button
-          onClick={() => setAuthModalOpen(true)}
+          onClick={() => { analytics.track("Login Button Clicked"); setAuthModalOpen(true); }}
           className="bg-white/[0.08] backdrop-blur-[40px] border border-white/[0.18] border-t-white/30 rounded-full px-7 py-3 text-white/90 text-[0.9rem] font-normal cursor-pointer transition-all shadow-[0_4px_16px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.15)] hover:bg-white/15 hover:text-white hover:border-white/25"
           style={{ WebkitBackdropFilter: "blur(40px) saturate(1.8)" }}
         >

@@ -30,6 +30,7 @@ export interface ChatResponse {
   error_code?: string | null;
   upgrade_url?: string | null;
   gated_feature?: string | null;
+  form_request?: FormRequest | null;
 }
 
 // --- Session History (api_chat.py:480-485) ---
@@ -54,6 +55,8 @@ export interface ChatMessageItem {
   location_results?: LocationResult[] | null;
   bill_analysis?: BillAnalysis | null;
   negotiation_result?: NegotiationResult | null;
+  web_sources?: SourcePayload[] | null;
+  form_request?: FormRequest | null;
 }
 
 // --- Welcome (api_chat.py:275-279) ---
@@ -300,6 +303,25 @@ export interface CareTodoCreate {
   due_time?: string | null;
   book_message?: string;
   category?: string;
+}
+
+// --- Inline Forms (request_user_info tool) ---
+
+export interface FormField {
+  key: string;
+  label: string;
+  type: "text" | "date" | "phone" | "address" | "select" | "textarea" | "image";
+  placeholder?: string;
+  required?: boolean;
+  options?: string[];
+}
+
+export interface FormRequest {
+  form_id: string;
+  title: string;
+  description?: string;
+  fields: FormField[];
+  save_to: "profile" | "insurance" | "none";
 }
 
 export interface CareVisit {

@@ -12,7 +12,11 @@ interface PollChatParams {
 
 const MAX_RETRIES = 10;
 const RETRY_DELAY_MS = 1500;
-const POLL_TIMEOUT_MS = 3000; // Abort long-poll after 3s to get tool label updates
+const POLL_INTERVAL_MS = 300; // Brief pause between polls
+
+function log(msg: string, ...args: unknown[]) {
+  console.log(`[poll] ${msg}`, ...args);
+}
 
 export function usePollChat() {
   const activeRequestRef = useRef<string | null>(null);
@@ -31,10 +35,12 @@ export function usePollChat() {
       let chatRequestId: string | null = null;
       let sessionId: string | null = params.session_id;
       let hitPaywall = false;
+      let pollCount = 0;
 
       // POST /chat/send to get a chat_request_id
       const sendRequest = async (): Promise<boolean> => {
         try {
+          log("POST /chat/send", { session_id: sessionId, message: params.message.slice(0, 50) });
           const sendRes = await apiFetch("/chat/send", {
             method: "POST",
             body: JSON.stringify({
@@ -51,6 +57,7 @@ export function usePollChat() {
           });
 
           if (!sendRes.ok) {
+            log("send failed", { status: sendRes.status });
             return false;
           }
 
@@ -58,8 +65,10 @@ export function usePollChat() {
           chatRequestId = data.chat_request_id;
           sessionId = data.session_id;
           activeRequestRef.current = chatRequestId;
+          log("send OK", { chatRequestId, sessionId });
           return true;
-        } catch {
+        } catch (err) {
+          log("send error", err);
           return false;
         }
       };
@@ -69,6 +78,7 @@ export function usePollChat() {
         if (hitPaywall) return { session_id: sessionId };
 
         consecutiveFailures++;
+        log("first send failed, retrying in", RETRY_DELAY_MS, "ms");
         await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
 
         if (!(await sendRequest())) {
@@ -79,37 +89,36 @@ export function usePollChat() {
         }
       }
 
-      // 2. Poll loop — use short timeouts so tool label updates appear quickly
+      // 2. Poll loop — backend returns within ~2s with current state or result
+      log("starting poll loop for", chatRequestId);
       while (true) {
+        if (cancelledRef.current) {
+          log("cancelled");
+          break;
+        }
+
         const controller = new AbortController();
         abortRef.current = controller;
-
-        // Auto-abort after POLL_TIMEOUT_MS to break out of the backend's
-        // long-poll hold and pick up intermediate tool_label changes.
-        const timeout = setTimeout(
-          () => controller.abort(),
-          POLL_TIMEOUT_MS,
-        );
+        pollCount++;
 
         try {
           const res = await apiFetch(`/chat/poll/${chatRequestId}`, {
             signal: controller.signal,
           });
-          clearTimeout(timeout);
 
           if (res.status === 404) {
-            // Server restarted — re-send to get new request ID
             consecutiveFailures++;
-            if (consecutiveFailures > MAX_RETRIES) {
-              onError("Connection lost after multiple retries. Please try again.");
+            log("poll 404", { chatRequestId, consecutiveFailures });
+            if (consecutiveFailures > 5) {
+              onError("Something went wrong. Please try again.");
               break;
             }
             await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
-            await sendRequest();
             continue;
           }
 
           if (!res.ok) {
+            log("poll error", { status: res.status });
             throw new Error(`Poll returned ${res.status}`);
           }
 
@@ -117,28 +126,38 @@ export function usePollChat() {
           consecutiveFailures = 0;
 
           if (data.phase === "completed" && data.result) {
+            log("completed", {
+              pollCount,
+              elapsed: data.elapsed_seconds,
+              hasResult: !!data.result,
+              errorCode: data.result.error_code,
+              gatedFeature: data.result.gated_feature,
+            });
             onDone(data.result);
             break;
           } else if (data.phase === "failed") {
+            log("failed", { error: data.error, pollCount, elapsed: data.elapsed_seconds });
             onError(data.error || "Something went wrong");
             break;
           } else {
-            // Still processing — update tool label
+            // Still processing — show tool label and re-poll
+            if (data.tool_label) {
+              log("tool_label:", data.tool_label, { step: data.tool_step, elapsed: data.elapsed_seconds });
+            }
             onToolProgress(data.tool_label);
+            await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
           }
         } catch (err: unknown) {
-          clearTimeout(timeout);
-
           if (err instanceof Error && err.name === "AbortError") {
-            if (cancelledRef.current) break; // User cancelled
-            continue; // Timeout — re-poll to get fresh tool_label
+            if (cancelledRef.current) break;
+            log("aborted, retrying");
+            continue;
           }
 
           consecutiveFailures++;
+          log("poll exception", { error: String(err), consecutiveFailures });
           if (consecutiveFailures > MAX_RETRIES) {
-            onError(
-              "Connection lost after multiple retries. Your message is still being processed — please wait a moment and try refreshing.",
-            );
+            onError("Connection lost. Please try again.");
             break;
           }
 
@@ -146,6 +165,7 @@ export function usePollChat() {
         }
       }
 
+      log("poll loop ended", { pollCount, chatRequestId });
       activeRequestRef.current = null;
       return { session_id: sessionId };
     },
@@ -153,6 +173,7 @@ export function usePollChat() {
   );
 
   const cancel = useCallback(() => {
+    log("cancel requested");
     cancelledRef.current = true;
     abortRef.current?.abort();
     activeRequestRef.current = null;

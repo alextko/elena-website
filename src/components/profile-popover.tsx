@@ -31,9 +31,11 @@ import {
 } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
-import type { CareTodo, CareTodoCreate, CareVisit, DoctorItem, Habit } from "@/lib/types";
+import type { CareTodo, CareTodoCreate, CareVisit, DoctorItem, Habit, ProfileSummary } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import type { InsuranceCard } from "@/lib/types";
+import { AddFamilyModal } from "@/components/add-family-modal";
+import { AcceptInviteModal } from "@/components/accept-invite-modal";
 
 type Tab = "health" | "visits" | "insurance";
 
@@ -128,10 +130,10 @@ export function ProfilePopover({
   onBookMessage?: (message: string) => void;
 }) {
   const {
-    user, profileId, profileData, doctors, careVisits,
+    user, profileId, profiles, switchProfile, profileData, doctors, careVisits,
     subscription, insuranceCards, todos, habits, habitCompletions,
     toggleHabit, toggleTodo, createTodo, updateTodo, deleteTodo,
-    refreshTodos, refreshDoctors, refreshVisits, refreshInsurance,
+    refreshTodos, refreshDoctors, refreshVisits, refreshInsurance, refreshHabits,
     profileDetailsLoaded, fetchProfileDetails, updateProfilePicture, signOut,
   } = useAuth();
   const router = useRouter();
@@ -144,6 +146,7 @@ export function ProfilePopover({
   const [selectedVisit, setSelectedVisit] = useState<typeof careVisits[number] | null>(null);
   const [editingTodo, setEditingTodo] = useState<{ mode: "create" } | { mode: "edit"; todo: typeof todos[number] } | null>(null);
   const [addingProvider, setAddingProvider] = useState(false);
+  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const todayRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -173,9 +176,18 @@ export function ProfilePopover({
 
   useEffect(() => {
     if (open && !profileDetailsLoaded) fetchProfileDetails();
-    // Refresh todos every time the popover opens (they change frequently between app/web)
-    if (open && profileDetailsLoaded) refreshTodos();
-  }, [open, profileDetailsLoaded, fetchProfileDetails, refreshTodos]);
+    // Refresh ALL data every time the popover opens (agent may have created visits, todos, etc.)
+    if (open && profileDetailsLoaded) {
+      refreshTodos();
+      refreshVisits();
+      refreshDoctors();
+      refreshInsurance();
+      refreshHabits();
+    }
+  }, [open, profileDetailsLoaded, fetchProfileDetails, refreshTodos, refreshVisits, refreshDoctors, refreshInsurance, refreshHabits]);
+
+  const [addFamilyOpen, setAddFamilyOpen] = useState(false);
+  const [acceptInviteOpen, setAcceptInviteOpen] = useState(false);
 
   const visitsScrollRef = useRef<HTMLDivElement>(null);
   const [showTodayBtn, setShowTodayBtn] = useState(false);
@@ -337,6 +349,62 @@ export function ProfilePopover({
                 <p className="truncate text-sm text-[#0F1B3D]/40">{email}</p>
               </div>
             </div>
+
+            {/* Profile switcher */}
+            {profiles.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-2 mb-1 scrollbar-hide">
+                {profiles.map((p) => {
+                  const isActive = p.id === profileId;
+                  const pName = `${p.first_name} ${p.last_name}`.trim() || p.label || "Profile";
+                  const pInitials = p.first_name ? `${p.first_name[0]}${p.last_name?.[0] || ""}`.toUpperCase() : "?";
+                  const badge = p.is_primary ? "Me" : p.is_linked ? "Linked" : "Managed";
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={async () => { if (!isActive) { await switchProfile(p.id); setOpen(false); } }}
+                      className={`flex flex-col items-center gap-1 min-w-[56px] rounded-xl px-2 py-1.5 transition-all ${isActive ? "bg-[#0F1B3D]/[0.07]" : "hover:bg-[#0F1B3D]/[0.03]"}`}
+                    >
+                      {p.profile_picture_url ? (
+                        <img src={p.profile_picture_url} alt={pName} className={`h-8 w-8 rounded-full object-cover ${isActive ? "ring-2 ring-[#2E6BB5]" : ""}`} />
+                      ) : (
+                        <Avatar className={`h-8 w-8 ${isActive ? "ring-2 ring-[#2E6BB5]" : ""}`}>
+                          <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-xs font-semibold text-[#0F1B3D]/50">{pInitials}</AvatarFallback>
+                        </Avatar>
+                      )}
+                      <span className="text-[10px] font-medium text-[#0F1B3D]/60 truncate max-w-[56px]">{p.first_name || badge}</span>
+                      <span className="text-[8px] text-[#0F1B3D]/30">{badge}</span>
+                    </button>
+                  );
+                })}
+                <button
+                  onClick={() => setAddFamilyOpen(true)}
+                  className="flex flex-col items-center gap-1 min-w-[56px] rounded-xl px-2 py-1.5 hover:bg-[#0F1B3D]/[0.03] transition-all"
+                >
+                  <div className="h-8 w-8 rounded-full bg-[#0F1B3D]/[0.04] flex items-center justify-center">
+                    <Plus className="h-4 w-4 text-[#0F1B3D]/30" />
+                  </div>
+                  <span className="text-[10px] font-medium text-[#0F1B3D]/40">Add</span>
+                </button>
+              </div>
+            )}
+
+            {/* Single profile: show add family + accept invite links */}
+            {profiles.length <= 1 && (
+              <div className="flex gap-2 mb-2">
+                <button
+                  onClick={() => setAddFamilyOpen(true)}
+                  className="flex items-center gap-1.5 rounded-full bg-[#0F1B3D]/[0.04] px-3 py-1.5 text-xs font-medium text-[#0F1B3D]/50 hover:bg-[#0F1B3D]/[0.08] transition-colors"
+                >
+                  <Plus className="h-3 w-3" /> Add family member
+                </button>
+                <button
+                  onClick={() => setAcceptInviteOpen(true)}
+                  className="flex items-center gap-1.5 rounded-full bg-[#0F1B3D]/[0.04] px-3 py-1.5 text-xs font-medium text-[#0F1B3D]/50 hover:bg-[#0F1B3D]/[0.08] transition-colors"
+                >
+                  Enter invite code
+                </button>
+              </div>
+            )}
 
             {/* Tab pills */}
             <div className="flex gap-1.5 mt-1 mb-2">
@@ -844,11 +912,63 @@ export function ProfilePopover({
               <LogOut className="h-4 w-4" />
               Sign out
             </button>
+
+            {/* Delete account */}
+            {!confirmDeleteAccount ? (
+              <button
+                onClick={() => setConfirmDeleteAccount(true)}
+                className="flex w-full items-center gap-2 pb-2 text-sm text-red-300 transition-colors hover:text-red-500"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete account
+              </button>
+            ) : (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-3 mb-2">
+                <p className="text-[13px] font-semibold text-red-600 mb-1">Delete your account?</p>
+                <p className="text-[12px] text-red-400 mb-3">This permanently deletes all your data. This cannot be undone.</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      await apiFetch("/account", { method: "DELETE" });
+                      localStorage.removeItem("elena_onboarding_done");
+                      await signOut();
+                      router.push("/");
+                    }}
+                    className="flex-1 rounded-lg bg-red-500 py-2 text-[13px] font-semibold text-white hover:bg-red-600 transition-colors"
+                  >
+                    Delete permanently
+                  </button>
+                  <button
+                    onClick={() => setConfirmDeleteAccount(false)}
+                    className="flex-1 rounded-lg border border-[#E5E5EA] py-2 text-[13px] font-semibold text-[#0F1B3D]/60 hover:bg-[#0F1B3D]/[0.04] transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           )}
         </div>
       </DialogContent>
     </Dialog>
+    <AddFamilyModal
+      open={addFamilyOpen}
+      onOpenChange={setAddFamilyOpen}
+      onProfileCreated={async (newId) => {
+        await switchProfile(newId);
+        // Re-fetch /auth/me to get updated profiles list
+        window.location.reload();
+      }}
+    />
+    <AcceptInviteModal
+      open={acceptInviteOpen}
+      onOpenChange={setAcceptInviteOpen}
+      onAccepted={() => {
+        // Re-fetch /auth/me to get updated profiles list
+        window.location.reload();
+      }}
+    />
     </>
   );
 }

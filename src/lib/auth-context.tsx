@@ -12,13 +12,16 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/apiFetch";
-import type { MeResponse, DoctorItem, CareVisit, CareTodo, CareTodoCreate, Habit, SubscriptionResponse, InsuranceCard } from "@/lib/types";
+import * as analytics from "@/lib/analytics";
+import type { MeResponse, DoctorItem, CareVisit, CareTodo, CareTodoCreate, Habit, SubscriptionResponse, InsuranceCard, ProfileSummary } from "@/lib/types";
 
 interface AuthContextValue {
   session: Session | null;
   user: User | null;
   loading: boolean;
   profileId: string | null;
+  profiles: ProfileSummary[];
+  switchProfile: (profileId: string) => Promise<void>;
   profileData: { firstName: string; lastName: string; email: string; profilePictureUrl?: string | null } | null;
   updateProfilePicture: (url: string | null) => void;
   // Cached profile popover data
@@ -38,6 +41,11 @@ interface AuthContextValue {
   refreshDoctors: () => Promise<void>;
   refreshVisits: () => Promise<void>;
   refreshInsurance: () => Promise<void>;
+  refreshHabits: () => Promise<void>;
+  needsOnboarding: boolean;
+  profileChecked: boolean;
+  onboardingJustCompleted: boolean;
+  completeOnboarding: (data: { first_name?: string; last_name?: string; date_of_birth?: string; home_address?: string }) => Promise<void>;
   profileDetailsLoaded: boolean;
   fetchProfileDetails: () => Promise<void>;
   refreshSubscription: () => Promise<void>;
@@ -60,7 +68,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profileId, setProfileId] = useState<string | null>(null);
+  const [profileId, setProfileIdState] = useState<string | null>(null);
+  const [profiles, setProfiles] = useState<ProfileSummary[]>([]);
   const [profileData, setProfileData] = useState<{
     firstName: string;
     lastName: string;
@@ -78,6 +87,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [habitCompletions, setHabitCompletions] = useState<Record<string, Set<string>>>({});
   const [profileDetailsLoaded, setProfileDetailsLoaded] = useState(false);
   const profileDetailsFetchingRef = useRef(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [profileChecked, setProfileChecked] = useState(false);
+  const [onboardingJustCompleted, setOnboardingJustCompleted] = useState(false);
+
+  const setProfileId = useCallback((id: string | null) => {
+    setProfileIdState(id);
+    if (id) {
+      localStorage.setItem("elena_active_profile_id", id);
+    } else {
+      localStorage.removeItem("elena_active_profile_id");
+    }
+  }, []);
 
   const profileFetchedRef = useRef(false);
 
@@ -90,10 +111,83 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiFetch("/auth/me");
       if (!res.ok) return;
       const data: MeResponse = await res.json();
+
+      console.log("[auth] /auth/me response:", { has_profile: data.has_profile, profile_id: data.profile_id, email: data.email });
+
+      // Identify user in Mixpanel
+      const { data: { session: currentSessionForProvider } } = await supabase.auth.getSession();
+      const provider = currentSessionForProvider?.user?.app_metadata?.provider || "email";
+
+      // New user with no profile - show onboarding popup (only once ever)
+      if (!data.has_profile && !localStorage.getItem("elena_onboarding_done")) {
+        analytics.alias(currentSessionForProvider?.user?.id || "");
+        analytics.identify(currentSessionForProvider?.user?.id || "", {
+          $email: data.email,
+          has_profile: false,
+          plan_type: "free",
+        });
+        analytics.track("Signup Completed", { method: provider });
+        console.log("[auth] No profile found, showing onboarding");
+        // Pull name from Google/Apple OAuth metadata if available
+        // Read directly from Supabase session (not React state, which may be stale)
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const meta = currentSession?.user?.user_metadata as Record<string, string> | undefined;
+        const oauthName = meta?.full_name || meta?.name || "";
+        const parts = oauthName ? oauthName.split(" ") : [];
+        const oauthFirst = parts[0] || "";
+        const oauthLast = parts.slice(1).join(" ") || "";
+        const oauthAvatar = meta?.avatar_url || meta?.picture || null;
+        console.log("[auth] OAuth data:", { oauthFirst, oauthLast, hasAvatar: !!oauthAvatar, metaKeys: meta ? Object.keys(meta) : [] });
+
+        setNeedsOnboarding(true);
+        setProfileChecked(true);
+        setProfileData({
+          firstName: oauthFirst,
+          lastName: oauthLast,
+          email: data.email || "",
+          profilePictureUrl: oauthAvatar,
+        });
+        return;
+      }
+
+      // Onboarding was done before but profile still missing (e.g. earlier CORS failure)
+      // Silently create a minimal profile
+      if (!data.has_profile) {
+        console.log("[auth] No profile but onboarding already done, creating silently");
+        try {
+          const createRes = await apiFetch("/profile", {
+            method: "POST",
+            body: JSON.stringify({ email: data.email || "" }),
+          });
+          if (createRes.ok) {
+            const created = await createRes.json();
+            setProfileId(created.profile_id || created.id);
+            setProfileData({
+              firstName: created.first_name || "",
+              lastName: created.last_name || "",
+              email: data.email || "",
+              profilePictureUrl: null,
+            });
+          }
+        } catch {}
+        setProfileChecked(true);
+        return;
+      }
+
+      setProfileChecked(true);
       setProfileId(data.profile_id);
+      setProfiles(data.profiles || []);
 
       const primary = data.profiles.find((p) => p.is_primary);
       if (primary) {
+        analytics.identify(currentSessionForProvider?.user?.id || "", {
+          $email: data.email,
+          $name: `${primary.first_name} ${primary.last_name}`.trim(),
+          has_profile: true,
+          plan_type: "free",
+        });
+        analytics.track("Login Completed", { method: provider });
+
         setProfileData({
           firstName: primary.first_name,
           lastName: primary.last_name,
@@ -245,6 +339,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!res.ok) return;
       const data: SubscriptionResponse = await res.json();
       setSubscription(data);
+      analytics.setSuperProperties({ plan_type: data.tier });
+      analytics.setPeopleProperties({ plan_type: data.tier });
     } catch {
       // Network error — ignore
     }
@@ -287,6 +383,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } else if (event === "SIGNED_OUT") {
         setProfileId(null);
+        setProfiles([]);
         setProfileData(null);
         setDoctors([]);
         setCareVisits([]);
@@ -447,6 +544,122 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, []);
 
+  const refreshHabits = useCallback(async () => {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    const startDate = monday.toISOString().slice(0, 10);
+    const endDate = sunday.toISOString().slice(0, 10);
+    try {
+      const [habitsRes, completionsRes] = await Promise.all([
+        apiFetch("/habits"),
+        apiFetch(`/habits/completions?start_date=${startDate}&end_date=${endDate}`),
+      ]);
+      if (habitsRes.ok) {
+        const data: Habit[] = await habitsRes.json();
+        setHabits(data);
+      }
+      if (completionsRes.ok) {
+        const data: Record<string, Record<string, boolean>> = await completionsRes.json();
+        const byDate: Record<string, Set<string>> = {};
+        for (const [habitId, dates] of Object.entries(data)) {
+          for (const [dateKey, done] of Object.entries(dates)) {
+            if (done) {
+              if (!byDate[dateKey]) byDate[dateKey] = new Set();
+              byDate[dateKey].add(habitId);
+            }
+          }
+        }
+        setHabitCompletions(byDate);
+      }
+    } catch {}
+  }, []);
+
+  const completeOnboarding = useCallback(async (data: {
+    first_name?: string;
+    last_name?: string;
+    date_of_birth?: string;
+    home_address?: string;
+  }) => {
+    try {
+      const createRes = await apiFetch("/profile", {
+        method: "POST",
+        body: JSON.stringify({
+          first_name: data.first_name || "",
+          last_name: data.last_name || "",
+          date_of_birth: data.date_of_birth || "",
+          zip_code: data.home_address || "",
+          email: profileData?.email || "",
+        }),
+      });
+      if (createRes.ok) {
+        const created = await createRes.json();
+        console.log("[onboarding] Profile created:", { id: created.profile_id || created.id, first_name: created.first_name, last_name: created.last_name, picture_url: created.profile_picture_url });
+        setProfileId(created.profile_id || created.id);
+        setProfileData((prev) => {
+          const pictureUrl = created.profile_picture_url || prev?.profilePictureUrl || null;
+          console.log("[onboarding] Setting profileData:", { firstName: created.first_name || data.first_name, pictureUrl, prevPicture: prev?.profilePictureUrl });
+          return {
+            firstName: created.first_name || data.first_name || "",
+            lastName: created.last_name || data.last_name || "",
+            email: prev?.email || "",
+            profilePictureUrl: pictureUrl,
+          };
+        });
+        setNeedsOnboarding(false);
+        setOnboardingJustCompleted(true);
+        localStorage.setItem("elena_onboarding_done", "1");
+        // Mark onboarding complete on backend
+        await apiFetch("/auth/complete-onboarding", { method: "POST" }).catch(() => {});
+      } else {
+        const errText = await createRes.text().catch(() => "");
+        console.error("[onboarding] POST /profile failed:", createRes.status, errText);
+        // Still dismiss the modal so the user isn't stuck
+        setNeedsOnboarding(false);
+        setOnboardingJustCompleted(true);
+        localStorage.setItem("elena_onboarding_done", "1");
+      }
+    } catch (err) {
+      console.error("[onboarding] Error:", err);
+      // Still dismiss so user isn't stuck
+      setNeedsOnboarding(false);
+      localStorage.setItem("elena_onboarding_done", "1");
+    }
+  }, [profileData?.email]);
+
+  const switchProfile = useCallback(async (newProfileId: string) => {
+    try {
+      const res = await apiFetch(`/profiles/${newProfileId}/switch`, { method: "PUT" });
+      if (!res.ok) return;
+      setProfileId(newProfileId);
+
+      // Update profileData from the profiles list
+      const profile = profiles.find((p) => p.id === newProfileId);
+      if (profile) {
+        setProfileData((prev) => ({
+          firstName: profile.first_name,
+          lastName: profile.last_name,
+          email: prev?.email || "",
+          profilePictureUrl: profile.profile_picture_url,
+        }));
+      }
+
+      // Force re-fetch of profile-scoped data
+      setProfileDetailsLoaded(false);
+      setDoctors([]);
+      setCareVisits([]);
+      setInsuranceCards([]);
+      setTodos([]);
+      setHabits([]);
+      setHabitCompletions({});
+    } catch {
+      console.error("[auth] Failed to switch profile");
+    }
+  }, [profiles, setProfileId]);
+
   const signIn = useCallback(
     async (email: string, password: string) => {
       const { error } = await supabase.auth.signInWithPassword({
@@ -487,10 +700,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    analytics.reset();
     await supabase.auth.signOut();
     setSession(null);
     setUser(null);
     setProfileId(null);
+    setProfiles([]);
     setProfileData(null);
     setDoctors([]);
     setCareVisits([]);
@@ -501,7 +716,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setHabitCompletions({});
     setProfileDetailsLoaded(false);
     profileFetchedRef.current = false;
-  }, []);
+  }, [setProfileId]);
 
   return (
     <AuthContext.Provider
@@ -510,6 +725,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         loading,
         profileId,
+        profiles,
+        switchProfile,
         profileData,
         doctors,
         careVisits,
@@ -527,6 +744,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshDoctors,
         refreshVisits,
         refreshInsurance,
+        refreshHabits,
+        needsOnboarding,
+        profileChecked,
+        onboardingJustCompleted,
+        completeOnboarding,
         profileDetailsLoaded,
         fetchProfileDetails,
         refreshSubscription,

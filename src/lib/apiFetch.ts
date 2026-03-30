@@ -36,6 +36,14 @@ async function buildHeaders(
 
   headers.set("X-Client-Type", "web");
 
+  // Inject active profile ID so the backend scopes data to the correct family member
+  const activeProfileId = typeof window !== "undefined"
+    ? localStorage.getItem("elena_active_profile_id")
+    : null;
+  if (activeProfileId) {
+    headers.set("X-Profile-Id", activeProfileId);
+  }
+
   return { headers, token };
 }
 
