@@ -15,8 +15,20 @@ export function OnboardingModal() {
 
   const hasName = !!(profileData?.firstName);
 
+  useEffect(() => {
+    if (needsOnboarding) analytics.track("Onboarding Modal Shown");
+  }, [needsOnboarding]);
+
   async function handleSubmit() {
     setSaving(true);
+    analytics.track("Onboarding Completed", {
+      fields_filled: [
+        firstName.trim() && "first_name",
+        lastName.trim() && "last_name",
+        dob && "dob",
+        zipCode.trim() && "zip_code",
+      ].filter(Boolean),
+    });
     await completeOnboarding({
       first_name: firstName.trim(),
       last_name: lastName.trim(),
@@ -28,6 +40,7 @@ export function OnboardingModal() {
 
   async function handleSkip() {
     setSaving(true);
+    analytics.track("Onboarding Skipped");
     // Still save the Google name if we have it
     await completeOnboarding({
       first_name: firstName.trim() || undefined,

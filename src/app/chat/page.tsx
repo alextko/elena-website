@@ -43,9 +43,22 @@ function ChatPageInner() {
     if (q) setPendingQuery(q);
   }, []);
 
+  // Track app load
+  const hasTrackedAppLoad = useRef(false);
+  useEffect(() => {
+    if (!loading && session && !hasTrackedAppLoad.current && !loadingSessions) {
+      hasTrackedAppLoad.current = true;
+      analytics.track("App Loaded", {
+        is_returning_user: !pendingQuery,
+        session_count: sessions.length,
+      });
+    }
+  }, [loading, session, loadingSessions, pendingQuery, sessions.length]);
+
   // Handle Stripe checkout redirect
   useEffect(() => {
     if (searchParams.get("checkout") === "success") {
+      analytics.track("Checkout Completed");
       setCheckoutSuccess(true);
       refreshSubscription();
       // Clean URL without reload

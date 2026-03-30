@@ -62,6 +62,10 @@ export function UpgradeModal({
   const [loading, setLoading] = useState(false);
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
 
+  useEffect(() => {
+    if (open) analytics.track("Upgrade Modal Shown", { reason, feature_name: featureName });
+  }, [open, reason, featureName]);
+
   const currentTier = subscription?.tier || "free";
   const isStandardLimitReached = currentTier === "standard" && reason === "limit_reached";
 
@@ -93,6 +97,7 @@ export function UpgradeModal({
     : "Unlock the full power of Elena.";
 
   async function handleUpgrade(tier: Tier) {
+    analytics.track("Upgrade Plan Selected", { plan_name: tier, billing_period: billing });
     setLoading(true);
     const plan = `${tier}_${billing}` as const;
     try {
@@ -241,7 +246,7 @@ export function UpgradeModal({
 
           <button
             className="w-full text-center text-sm text-[#0F1B3D]/30 transition-colors hover:text-[#0F1B3D]/50 pt-1"
-            onClick={() => onOpenChange(false)}
+            onClick={() => { analytics.track("Upgrade Dismissed", { reason }); onOpenChange(false); }}
           >
             Maybe later
           </button>

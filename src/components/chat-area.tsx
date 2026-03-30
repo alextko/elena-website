@@ -230,6 +230,7 @@ export function ChatArea({
       setWelcomeMessage(data.message);
       setSuggestions(data.suggestions);
       sessionIdRef.current = data.session_id;
+      analytics.track("Welcome Screen Shown");
     } catch {
       // Fallback — show empty state
       setSuggestions(["What can you help me with?", "Find a cheaper pharmacy", "Help with my insurance"]);
@@ -274,6 +275,12 @@ export function ChatArea({
       bookingCompletedRef.current !== id
     ) {
       bookingCompletedRef.current = id;
+
+      if (phase === "completed") {
+        analytics.track("Booking Completed", { booking_id: id });
+      } else {
+        analytics.track("Booking Failed", { booking_id: id, phase });
+      }
 
       // Add the summary + booking result as an assistant message
       const summaryId = nextId();
@@ -351,6 +358,9 @@ export function ChatArea({
       }
     }
 
+    if (uploaded.length > 0) {
+      analytics.track("File Attached", { count: uploaded.length });
+    }
     setPendingFiles((prev) => [...prev, ...uploaded]);
     setUploading(false);
   }
@@ -397,6 +407,12 @@ export function ChatArea({
       ]);
       setChatTitle((prev) => prev || message.slice(0, 60));
 
+      analytics.track("Message Sent", {
+        is_first_message: messages.length === 0,
+        has_attachment: sentFiles.length > 0,
+        message_length: message.length,
+      });
+
       setIsLoading(true);
 
       const result = await sendAndPoll(
@@ -431,6 +447,13 @@ export function ChatArea({
           setToolLabel(null);
           setIsLoading(false);
 
+          analytics.track("Response Received", {
+            has_doctor_results: !!(chatResult.doctor_results?.length),
+            has_location_results: !!(chatResult.location_results?.length),
+            has_sources: !!(chatResult.web_sources?.length),
+            has_booking: !!chatResult.booking_id,
+          });
+
           // Show upgrade popup if a gated tool was blocked
           if (chatResult.error_code === "upgrade_required") {
             setUpgradeReason("upgrade_required");
@@ -455,6 +478,7 @@ export function ChatArea({
 
           // Start booking poll if a call was initiated
           if (chatResult.booking_id) {
+            analytics.track("Booking Initiated", { booking_id: chatResult.booking_id });
             booking.start(chatResult.booking_id);
           }
         },
@@ -601,6 +625,7 @@ export function ChatArea({
                       <FormRequestCard
                         form={msg.formRequest}
                         onSubmitted={(data) => {
+                          analytics.track("Form Submitted", { form_id: msg.formRequest?.form_id });
                           // Send the submitted data as a user message so Elena can continue
                           const summary = Object.entries(data)
                             .filter(([, v]) => v)
@@ -653,7 +678,13 @@ export function ChatArea({
               {suggestions.map((s) => (
                 <button
                   key={s}
-                  onClick={() => handleSend(s)}
+                  onClick={() => {
+                    analytics.track(
+                      messages.length === 0 ? "Welcome Suggestion Clicked" : "Suggestion Chip Clicked",
+                      { suggestion_text: s },
+                    );
+                    handleSend(s);
+                  }}
                   className="rounded-full border border-[#0F1B3D]/10 bg-[#f5f7fb] px-4 py-2.5 text-sm font-semibold text-[#0F1B3D]/70 shadow-[0_2px_8px_rgba(15,27,61,0.04),inset_0_1px_0_rgba(255,255,255,0.5)] transition-all hover:bg-[#0F1B3D]/[0.08] hover:-translate-y-px"
                 >
                   {s}

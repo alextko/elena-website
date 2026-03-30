@@ -25,10 +25,15 @@ export function AuthModal({
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (open) analytics.track("Auth Modal Opened");
+  }, [open]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
+    analytics.track("Auth Method Selected", { method: "email", mode });
 
     const result =
       mode === "signin" ? await signIn(email, password) : await signUp(email, password);
@@ -36,6 +41,7 @@ export function AuthModal({
     setSubmitting(false);
 
     if (result.error) {
+      analytics.track("Auth Error", { method: "email", mode, error_type: result.error });
       setError(result.error);
     } else {
       onOpenChange(false);
@@ -44,8 +50,10 @@ export function AuthModal({
 
   async function handleGoogleSignIn() {
     setError(null);
+    analytics.track("Auth Method Selected", { method: "google" });
     const result = await signInWithGoogle();
     if (result.error) {
+      analytics.track("Auth Error", { method: "google", error_type: result.error });
       setError(result.error);
     }
   }
