@@ -617,13 +617,13 @@ export function ChatArea({
                 {/* Structured result cards — hidden while streaming, fade in after */}
                 {msg.id !== streamingId && (
                   <div className={msg.isStreaming === false || !msg.isStreaming ? "elena-card-enter" : ""}>
-                    {/* Show location card if present (pharmacies, labs, etc.), otherwise doctor card */}
-                    {msg.locationResults && msg.locationResults.length > 0 ? (
+                    {/* Show location card if present (pharmacies, labs, etc.), otherwise doctor card — skip if form is shown */}
+                    {!msg.formRequest && msg.locationResults && msg.locationResults.length > 0 ? (
                       <LocationResultsCard
                         locations={msg.locationResults}
                         onCall={(loc) => handleSend(`Call ${loc.name} at ${loc.phone_number}`)}
                       />
-                    ) : msg.doctorResults && msg.doctorResults.length > 0 ? (
+                    ) : !msg.formRequest && msg.doctorResults && msg.doctorResults.length > 0 ? (
                       <DoctorResultsCard
                         doctors={msg.doctorResults}
                         onBookDoctor={(doc) => handleSend(`Book an appointment with ${doc.name}`)}
