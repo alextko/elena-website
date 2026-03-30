@@ -114,13 +114,12 @@ function ChatPageInner() {
     }
   }, [loadingSessions, sessions, activeSessionId, pendingQuery, isNewChat, needsOnboarding]);
 
-  // After onboarding completes, start a new chat if one isn't already running
+  // After onboarding completes, start a new chat only if there isn't one already
   useEffect(() => {
-    if (onboardingJustCompleted && !isNewChat) {
-      setActiveSessionId(null);
+    if (onboardingJustCompleted && !isNewChat && !activeSessionId) {
       setIsNewChat(true);
     }
-  }, [onboardingJustCompleted, isNewChat]);
+  }, [onboardingJustCompleted, isNewChat, activeSessionId]);
 
   const handleSessionCreated = useCallback(
     (sessionId: string) => {
