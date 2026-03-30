@@ -23,7 +23,7 @@ export default function ChatPage() {
 }
 
 function ChatPageInner() {
-  const { session, loading, refreshSubscription, onboardingJustCompleted, needsOnboarding } = useAuth();
+  const { session, loading, refreshSubscription, onboardingJustCompleted, needsOnboarding, profileChecked } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -103,8 +103,9 @@ function ChatPageInner() {
   }, [loading, session, fetchSessions]);
 
   // Auto-open most recent session, or start a new chat if none exist
+  // Wait for profileChecked to avoid racing with onboarding detection
   useEffect(() => {
-    if (!loadingSessions && activeSessionId === null && !pendingQuery && !isNewChat && !needsOnboarding) {
+    if (!loadingSessions && profileChecked && activeSessionId === null && !pendingQuery && !isNewChat && !needsOnboarding) {
       if (sessions.length > 0) {
         setActiveSessionId(sessions[0].id);
       } else {
@@ -112,7 +113,7 @@ function ChatPageInner() {
         setIsNewChat(true);
       }
     }
-  }, [loadingSessions, sessions, activeSessionId, pendingQuery, isNewChat, needsOnboarding]);
+  }, [loadingSessions, sessions, activeSessionId, pendingQuery, isNewChat, needsOnboarding, profileChecked]);
 
   // After onboarding completes, start a new chat only if there isn't one already
   useEffect(() => {

@@ -40,6 +40,7 @@ interface AuthContextValue {
   refreshVisits: () => Promise<void>;
   refreshInsurance: () => Promise<void>;
   needsOnboarding: boolean;
+  profileChecked: boolean;
   onboardingJustCompleted: boolean;
   completeOnboarding: (data: { first_name?: string; last_name?: string; date_of_birth?: string; home_address?: string }) => Promise<void>;
   profileDetailsLoaded: boolean;
@@ -82,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [habitCompletions, setHabitCompletions] = useState<Record<string, Set<string>>>({});
   const [profileDetailsLoaded, setProfileDetailsLoaded] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [profileChecked, setProfileChecked] = useState(false);
   const [onboardingJustCompleted, setOnboardingJustCompleted] = useState(false);
 
   const profileFetchedRef = useRef(false);
@@ -124,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log("[auth] OAuth data:", { oauthFirst, oauthLast, hasAvatar: !!oauthAvatar, metaKeys: meta ? Object.keys(meta) : [] });
 
         setNeedsOnboarding(true);
+        setProfileChecked(true);
         setProfileData({
           firstName: oauthFirst,
           lastName: oauthLast,
@@ -153,9 +156,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
           }
         } catch {}
+        setProfileChecked(true);
         return;
       }
 
+      setProfileChecked(true);
       setProfileId(data.profile_id);
 
       const primary = data.profiles.find((p) => p.is_primary);
@@ -636,6 +641,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshVisits,
         refreshInsurance,
         needsOnboarding,
+        profileChecked,
         onboardingJustCompleted,
         completeOnboarding,
         profileDetailsLoaded,
