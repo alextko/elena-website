@@ -36,12 +36,10 @@ function ChatPageInner() {
   const sessionsFetchedRef = useRef(false);
 
   // Read pending query from landing page (set before auth redirect)
+  // Don't set isNewChat yet -- wait for profile to be ready
   useEffect(() => {
     const q = localStorage.getItem("elena_pending_query");
-    if (q) {
-      setPendingQuery(q);
-      setIsNewChat(true);
-    }
+    if (q) setPendingQuery(q);
   }, []);
 
   // Handle Stripe checkout redirect
@@ -94,13 +92,16 @@ function ChatPageInner() {
     }
   }, [loadingSessions, sessions, activeSessionId, pendingQuery, isNewChat]);
 
-  // After onboarding completes, start a new chat immediately
+  // After onboarding completes (or for returning users with a profile), start chat
   useEffect(() => {
-    if (onboardingJustCompleted) {
-      setActiveSessionId(null);
-      setIsNewChat(true);
+    if (onboardingJustCompleted || (pendingQuery && !isNewChat && !loadingSessions)) {
+      // Only trigger if we have a profile (onboarding done or existing user)
+      if (onboardingJustCompleted || sessions.length === 0) {
+        setActiveSessionId(null);
+        setIsNewChat(true);
+      }
     }
-  }, [onboardingJustCompleted]);
+  }, [onboardingJustCompleted, pendingQuery, isNewChat, loadingSessions, sessions.length]);
 
   const handleSessionCreated = useCallback(
     (sessionId: string) => {
