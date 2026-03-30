@@ -37,10 +37,13 @@ function ChatPageInner() {
   const sessionsFetchedRef = useRef(false);
 
   // Read pending query from landing page (set before auth redirect)
-  // Don't set isNewChat yet -- wait for profile to be ready
+  // Start the chat immediately so it processes in the background during onboarding
   useEffect(() => {
     const q = localStorage.getItem("elena_pending_query");
-    if (q) setPendingQuery(q);
+    if (q) {
+      setPendingQuery(q);
+      setIsNewChat(true);
+    }
   }, []);
 
   // Track app load
@@ -111,16 +114,13 @@ function ChatPageInner() {
     }
   }, [loadingSessions, sessions, activeSessionId, pendingQuery, isNewChat, needsOnboarding]);
 
-  // After onboarding completes (or for returning users with a profile), start chat
+  // After onboarding completes, start a new chat if one isn't already running
   useEffect(() => {
-    if (onboardingJustCompleted || (pendingQuery && !isNewChat && !loadingSessions)) {
-      // Only trigger if we have a profile (onboarding done or existing user)
-      if (onboardingJustCompleted || sessions.length === 0) {
-        setActiveSessionId(null);
-        setIsNewChat(true);
-      }
+    if (onboardingJustCompleted && !isNewChat) {
+      setActiveSessionId(null);
+      setIsNewChat(true);
     }
-  }, [onboardingJustCompleted, pendingQuery, isNewChat, loadingSessions, sessions.length]);
+  }, [onboardingJustCompleted, isNewChat]);
 
   const handleSessionCreated = useCallback(
     (sessionId: string) => {
