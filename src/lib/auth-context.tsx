@@ -39,6 +39,7 @@ interface AuthContextValue {
   refreshVisits: () => Promise<void>;
   refreshInsurance: () => Promise<void>;
   needsOnboarding: boolean;
+  onboardingJustCompleted: boolean;
   completeOnboarding: (data: { first_name?: string; last_name?: string; date_of_birth?: string; home_address?: string }) => Promise<void>;
   profileDetailsLoaded: boolean;
   fetchProfileDetails: () => Promise<void>;
@@ -80,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [habitCompletions, setHabitCompletions] = useState<Record<string, Set<string>>>({});
   const [profileDetailsLoaded, setProfileDetailsLoaded] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [onboardingJustCompleted, setOnboardingJustCompleted] = useState(false);
 
   const profileFetchedRef = useRef(false);
 
@@ -484,6 +486,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           profilePictureUrl: null,
         }));
         setNeedsOnboarding(false);
+        setOnboardingJustCompleted(true);
         // Mark onboarding complete
         await apiFetch("/auth/complete-onboarding", { method: "POST" }).catch(() => {});
       } else {
@@ -491,6 +494,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error("[onboarding] POST /profile failed:", createRes.status, errText);
         // Still dismiss the modal so the user isn't stuck
         setNeedsOnboarding(false);
+        setOnboardingJustCompleted(true);
       }
     } catch (err) {
       console.error("[onboarding] Error:", err);
@@ -576,6 +580,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshVisits,
         refreshInsurance,
         needsOnboarding,
+        onboardingJustCompleted,
         completeOnboarding,
         profileDetailsLoaded,
         fetchProfileDetails,

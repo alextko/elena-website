@@ -22,7 +22,7 @@ export default function ChatPage() {
 }
 
 function ChatPageInner() {
-  const { session, loading, refreshSubscription } = useAuth();
+  const { session, loading, refreshSubscription, onboardingJustCompleted } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -93,6 +93,14 @@ function ChatPageInner() {
       setActiveSessionId(sessions[0].id);
     }
   }, [loadingSessions, sessions, activeSessionId, pendingQuery, isNewChat]);
+
+  // After onboarding completes, start a new chat immediately
+  useEffect(() => {
+    if (onboardingJustCompleted) {
+      setActiveSessionId(null);
+      setIsNewChat(true);
+    }
+  }, [onboardingJustCompleted]);
 
   const handleSessionCreated = useCallback(
     (sessionId: string) => {
