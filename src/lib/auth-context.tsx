@@ -97,8 +97,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       console.log("[auth] /auth/me response:", { has_profile: data.has_profile, profile_id: data.profile_id, email: data.email });
 
-      // New user with no profile - show onboarding popup
-      if (!data.has_profile) {
+      // New user with no profile - show onboarding popup (only once ever)
+      if (!data.has_profile && !localStorage.getItem("elena_onboarding_done")) {
         console.log("[auth] No profile found, showing onboarding");
         // Pull name from Google/Apple OAuth metadata if available
         const meta = user?.user_metadata;
@@ -115,6 +115,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: data.email || "",
           profilePictureUrl: oauthAvatar,
         });
+        return;
+      }
+
+      // Onboarding was done before but profile still missing (e.g. earlier CORS failure)
+      // Silently create a minimal profile
+      if (!data.has_profile) {
+        console.log("[auth] No profile but onboarding already done, creating silently");
+        try {
+          const createRes = await apiFetch("/profile", {
+            method: "POST",
+            body: JSON.stringify({ email: data.email || "" }),
+          });
+          if (createRes.ok) {
+            const created = await createRes.json();
+            setProfileId(created.profile_id || created.id);
+            setProfileData({
+              firstName: created.first_name || "",
+              lastName: created.last_name || "",
+              email: data.email || "",
+              profilePictureUrl: null,
+            });
+          }
+        } catch {}
         return;
       }
 
@@ -487,7 +510,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }));
         setNeedsOnboarding(false);
         setOnboardingJustCompleted(true);
-        // Mark onboarding complete
+        localStorage.setItem("elena_onboarding_done", "1");
+        // Mark onboarding complete on backend
         await apiFetch("/auth/complete-onboarding", { method: "POST" }).catch(() => {});
       } else {
         const errText = await createRes.text().catch(() => "");
@@ -495,11 +519,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Still dismiss the modal so the user isn't stuck
         setNeedsOnboarding(false);
         setOnboardingJustCompleted(true);
+        localStorage.setItem("elena_onboarding_done", "1");
       }
     } catch (err) {
       console.error("[onboarding] Error:", err);
       // Still dismiss so user isn't stuck
       setNeedsOnboarding(false);
+      localStorage.setItem("elena_onboarding_done", "1");
     }
   }, [profileData?.email]);
 
