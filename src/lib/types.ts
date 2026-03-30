@@ -55,6 +55,7 @@ export interface ChatMessageItem {
   location_results?: LocationResult[] | null;
   bill_analysis?: BillAnalysis | null;
   negotiation_result?: NegotiationResult | null;
+  form_request?: FormRequest | null;
 }
 
 // --- Welcome (api_chat.py:275-279) ---

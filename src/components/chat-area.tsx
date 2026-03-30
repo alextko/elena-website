@@ -210,6 +210,7 @@ export function ChatArea({
           reviewResults: m.review_results,
           negotiationResult: m.negotiation_result,
           bookingResult: m.booking_result ?? undefined,
+          formRequest: m.form_request,
         }));
       setMessages(mapped);
       // Set title from first user message
