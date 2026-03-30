@@ -183,9 +183,9 @@ export function ChatArea({
       sessionIdRef.current = activeSessionId;
       loadMessages(activeSessionId);
     } else if (isNewChat) {
-      // User explicitly started a new chat — fetch welcome
       sessionIdRef.current = null;
-      fetchWelcome();
+      // If there's a pending query, skip the welcome UI — just get a session ID
+      fetchWelcome(!!initialQuery);
     }
     // When activeSessionId is null and isNewChat is false, we're still loading
     // sessions — don't create a new welcome session yet.
@@ -218,7 +218,7 @@ export function ChatArea({
     }
   }
 
-  async function fetchWelcome() {
+  async function fetchWelcome(silent = false) {
     try {
       const res = await apiFetch("/chat/welcome", {
         method: "POST",
@@ -226,14 +226,17 @@ export function ChatArea({
       });
       if (!res.ok) return;
       const data: WelcomeResponse = await res.json();
-      setWelcomeHeading(data.heading);
-      setWelcomeMessage(data.message);
-      setSuggestions(data.suggestions);
+      if (!silent) {
+        setWelcomeHeading(data.heading);
+        setWelcomeMessage(data.message);
+        setSuggestions(data.suggestions);
+        analytics.track("Welcome Screen Shown");
+      }
       sessionIdRef.current = data.session_id;
-      analytics.track("Welcome Screen Shown");
     } catch {
-      // Fallback — show empty state
-      setSuggestions(["What can you help me with?", "Find a cheaper pharmacy", "Help with my insurance"]);
+      if (!silent) {
+        setSuggestions(["What can you help me with?", "Find a cheaper pharmacy", "Help with my insurance"]);
+      }
     }
   }
 

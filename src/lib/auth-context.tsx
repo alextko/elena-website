@@ -528,10 +528,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log("[onboarding] Profile created:", created);
         setProfileId(created.profile_id || created.id);
         setProfileData((prev) => ({
-          firstName: data.first_name || "",
-          lastName: data.last_name || "",
+          firstName: created.first_name || data.first_name || "",
+          lastName: created.last_name || data.last_name || "",
           email: prev?.email || "",
-          profilePictureUrl: null,
+          profilePictureUrl: created.profile_picture_url || prev?.profilePictureUrl || null,
         }));
         setNeedsOnboarding(false);
         setOnboardingJustCompleted(true);
