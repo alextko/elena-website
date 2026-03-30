@@ -93,14 +93,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!res.ok) return;
       const data: MeResponse = await res.json();
 
+      console.log("[auth] /auth/me response:", { has_profile: data.has_profile, profile_id: data.profile_id, email: data.email });
+
       // New user with no profile - show onboarding popup
       if (!data.has_profile) {
+        console.log("[auth] No profile found, showing onboarding");
+        // Pull name from Google/Apple OAuth metadata if available
+        const meta = user?.user_metadata;
+        const oauthName = meta?.full_name || meta?.name || "";
+        const parts = oauthName.split(" ");
+        const oauthFirst = parts[0] || "";
+        const oauthLast = parts.slice(1).join(" ") || "";
+        const oauthAvatar = meta?.avatar_url || meta?.picture || null;
+
         setNeedsOnboarding(true);
         setProfileData({
-          firstName: "",
-          lastName: "",
+          firstName: oauthFirst,
+          lastName: oauthLast,
           email: data.email || "",
-          profilePictureUrl: null,
+          profilePictureUrl: oauthAvatar,
         });
         return;
       }

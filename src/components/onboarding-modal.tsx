@@ -5,9 +5,9 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth-context";
 
 export function OnboardingModal() {
-  const { needsOnboarding, completeOnboarding } = useAuth();
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const { needsOnboarding, completeOnboarding, profileData } = useAuth();
+  const [firstName, setFirstName] = useState(profileData?.firstName || "");
+  const [lastName, setLastName] = useState(profileData?.lastName || "");
   const [dob, setDob] = useState("");
   const [address, setAddress] = useState("");
   const [saving, setSaving] = useState(false);
