@@ -542,8 +542,8 @@ export function ChatArea({
       {/* Messages */}
       <div className="relative z-10 flex-1 min-h-0 overflow-y-auto">
         <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
-          {/* Welcome state */}
-          {messages.length === 0 && welcomeHeading && (
+          {/* Welcome state — hidden when there's a pending query */}
+          {messages.length === 0 && welcomeHeading && !initialQuery && (
             <div className="flex flex-col items-center text-center py-12 animate-in fade-in duration-500">
               <h2 className="text-2xl font-bold text-[#0F1B3D] mb-3">{welcomeHeading}</h2>
               {welcomeMessage && (
