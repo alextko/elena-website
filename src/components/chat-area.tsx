@@ -563,7 +563,7 @@ export function ChatArea({
       </div>
 
       {/* Messages */}
-      <div className="relative z-10 flex-1 min-h-0 overflow-y-auto select-text">
+      <div className="relative z-10 flex-1 min-h-0 overflow-y-auto chat-selectable">
         <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
           {/* Welcome state — hidden when there's a pending query */}
           {messages.length === 0 && welcomeHeading && !initialQuery && !localStorage.getItem("elena_pending_query") && (

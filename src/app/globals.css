@@ -198,6 +198,18 @@
   transform-origin: center;
 }
 
+/* Allow text selection in chat messages and input */
+.chat-selectable,
+.chat-selectable * {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+.chat-selectable button,
+.chat-selectable [role="button"] {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
 /* Mapbox overrides */
 .mapboxgl-canvas { border-radius: 12px 12px 0 0; }
 .mapboxgl-ctrl-attrib { display: none !important; }
