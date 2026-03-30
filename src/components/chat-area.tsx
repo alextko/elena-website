@@ -17,6 +17,7 @@ import {
   AppointmentConfirmationCard,
   AddToCalendarCard,
   BookingQuestionCard,
+  FormRequestCard,
 } from "@/components/chat-cards";
 import type {
   ChatMessageItem,
@@ -28,6 +29,7 @@ import type {
   SourcePayload,
   NegotiationResult,
   BookingResultPayload,
+  FormRequest,
 } from "@/lib/types";
 
 type Attachment = {
@@ -47,6 +49,7 @@ type Message = {
   webSources?: SourcePayload[] | null;
   negotiationResult?: NegotiationResult | null;
   bookingResult?: BookingResultPayload | null;
+  formRequest?: FormRequest | null;
 };
 
 function renderMarkdown(text: string) {
@@ -419,6 +422,7 @@ export function ChatArea({
               reviewResults: chatResult.review_results,
               webSources: chatResult.web_sources,
               negotiationResult: undefined,
+              formRequest: chatResult.form_request,
             },
           ]);
           setStreamingId(assistantId);
@@ -591,6 +595,19 @@ export function ChatArea({
                     )}
                     {msg.webSources && msg.webSources.length > 0 && (
                       <SourcesFooter sources={msg.webSources} />
+                    )}
+                    {msg.formRequest && (
+                      <FormRequestCard
+                        form={msg.formRequest}
+                        onSubmitted={(data) => {
+                          // Send the submitted data as a user message so Elena can continue
+                          const summary = Object.entries(data)
+                            .filter(([, v]) => v)
+                            .map(([k, v]) => `${k}: ${v}`)
+                            .join(", ");
+                          if (summary) handleSend(`Here's my info: ${summary}`);
+                        }}
+                      />
                     )}
                   </div>
                 )}

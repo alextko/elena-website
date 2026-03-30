@@ -19,7 +19,9 @@ import type {
   NegotiationResult,
   BookingStatusResponse,
   BookingResultPayload,
+  FormRequest,
 } from "@/lib/types";
+import { apiFetch } from "@/lib/apiFetch";
 
 // ────────────────────────────────────────────────────────────────
 //  Shared helpers
@@ -1108,6 +1110,174 @@ export function SourcesFooter({ sources }: { sources: SourcePayload[] }) {
           <span className="truncate max-w-[120px]">{source.title}</span>
         </a>
       ))}
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────
+//  Inline Form Card (from request_user_info tool)
+// ────────────────────────────────────────────────────────────────
+
+export function FormRequestCard({
+  form,
+  onSubmitted,
+}: {
+  form: FormRequest;
+  onSubmitted?: (data: Record<string, string>) => void;
+}) {
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeImageField, setActiveImageField] = useState<string | null>(null);
+
+  function setValue(key: string, val: string) {
+    setValues((prev) => ({ ...prev, [key]: val }));
+  }
+
+  async function handleSubmit() {
+    // Check required fields
+    const missing = form.fields.filter(
+      (f) => f.required && !values[f.key]?.trim(),
+    );
+    if (missing.length > 0) return;
+
+    setSubmitting(true);
+    try {
+      await apiFetch("/chat/form-submit", {
+        method: "POST",
+        body: JSON.stringify({
+          form_id: form.form_id,
+          save_to: form.save_to,
+          data: values,
+        }),
+      });
+      setSubmitted(true);
+      onSubmitted?.(values);
+    } catch {}
+    setSubmitting(false);
+  }
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>, fieldKey: string) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+
+    // For insurance images, use OCR endpoint
+    if (form.save_to === "insurance") {
+      const formData = new FormData();
+      formData.append("image", file);
+      formData.append("card_type", values.card_type || "medical");
+      formData.append("side", fieldKey.includes("back") ? "back" : "front");
+      try {
+        const res = await apiFetch("/insurance/ocr", { method: "POST", body: formData });
+        if (res.ok) {
+          setValue(fieldKey, "Uploaded");
+        }
+      } catch {}
+    } else {
+      // Generic file upload via presigned URL
+      try {
+        const urlRes = await apiFetch("/documents/upload-url", {
+          method: "POST",
+          body: JSON.stringify({ session_id: "form", filename: file.name }),
+        });
+        if (urlRes.ok) {
+          const { upload_url, key, content_type, required_headers } = await urlRes.json();
+          await fetch(upload_url, {
+            method: "PUT",
+            body: file,
+            headers: { "Content-Type": content_type, ...required_headers },
+          });
+          setValue(fieldKey, key);
+        }
+      } catch {}
+    }
+  }
+
+  if (submitted) {
+    return (
+      <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 animate-in fade-in duration-300">
+        <div className="flex items-center gap-2">
+          <Check className="h-5 w-5 text-emerald-500" />
+          <p className="text-[14px] font-semibold text-emerald-700">Information submitted</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 rounded-2xl border border-[#0F1B3D]/[0.06] bg-white p-5 shadow-[0_2px_8px_rgba(15,27,61,0.06)] animate-in fade-in duration-300">
+      <h4 className="text-[16px] font-bold text-[#0F1B3D] mb-1">{form.title}</h4>
+      {form.description && (
+        <p className="text-[13px] text-[#8E8E93] mb-4">{form.description}</p>
+      )}
+
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+        onChange={(e) => activeImageField && handleImageUpload(e, activeImageField)} />
+
+      <div className="space-y-3">
+        {form.fields.map((field) => (
+          <div key={field.key}>
+            <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">
+              {field.label}
+              {field.required && <span className="text-red-400 ml-0.5">*</span>}
+            </label>
+
+            {field.type === "textarea" ? (
+              <textarea
+                value={values[field.key] || ""}
+                onChange={(e) => setValue(field.key, e.target.value)}
+                placeholder={field.placeholder}
+                rows={3}
+                className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 resize-none"
+              />
+            ) : field.type === "select" ? (
+              <select
+                value={values[field.key] || ""}
+                onChange={(e) => setValue(field.key, e.target.value)}
+                className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+              >
+                <option value="">{field.placeholder || "Select..."}</option>
+                {field.options?.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            ) : field.type === "image" ? (
+              <button
+                onClick={() => { setActiveImageField(field.key); fileInputRef.current?.click(); }}
+                className="mt-1 w-full rounded-xl border-2 border-dashed border-[#E5E5EA] bg-[#FAFAFA] px-3.5 py-4 text-[14px] text-[#AEAEB2] hover:border-[#0F1B3D]/20 hover:text-[#0F1B3D]/50 transition-colors text-center"
+              >
+                {values[field.key] ? "Uploaded" : field.placeholder || "Tap to upload"}
+              </button>
+            ) : (
+              <input
+                type={field.type === "date" ? "date" : field.type === "phone" ? "tel" : "text"}
+                value={values[field.key] || ""}
+                onChange={(e) => setValue(field.key, e.target.value)}
+                placeholder={field.placeholder}
+                className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30"
+              />
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="flex gap-2 mt-4">
+        <button
+          onClick={handleSubmit}
+          disabled={submitting}
+          className="flex-1 rounded-xl bg-[#0F1B3D] px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-[#0F1B3D]/90 disabled:opacity-40 transition-colors"
+        >
+          {submitting ? "Submitting..." : "Submit"}
+        </button>
+        <button
+          onClick={() => { setSubmitted(true); onSubmitted?.({}); }}
+          className="rounded-xl px-4 py-2.5 text-[14px] font-medium text-[#8E8E93] hover:text-[#0F1B3D] transition-colors"
+        >
+          Skip
+        </button>
+      </div>
     </div>
   );
 }

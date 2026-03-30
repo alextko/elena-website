@@ -38,6 +38,8 @@ interface AuthContextValue {
   refreshDoctors: () => Promise<void>;
   refreshVisits: () => Promise<void>;
   refreshInsurance: () => Promise<void>;
+  needsOnboarding: boolean;
+  completeOnboarding: (data: { first_name?: string; last_name?: string; date_of_birth?: string; home_address?: string }) => Promise<void>;
   profileDetailsLoaded: boolean;
   fetchProfileDetails: () => Promise<void>;
   refreshSubscription: () => Promise<void>;
@@ -77,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [habitCompletions, setHabitCompletions] = useState<Record<string, Set<string>>>({});
   const [profileDetailsLoaded, setProfileDetailsLoaded] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   const profileFetchedRef = useRef(false);
 
@@ -89,6 +92,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiFetch("/auth/me");
       if (!res.ok) return;
       const data: MeResponse = await res.json();
+
+      // New user with no profile - show onboarding popup
+      if (!data.has_profile) {
+        setNeedsOnboarding(true);
+        setProfileData({
+          firstName: "",
+          lastName: "",
+          email: data.email || "",
+          profilePictureUrl: null,
+        });
+        return;
+      }
+
       setProfileId(data.profile_id);
 
       const primary = data.profiles.find((p) => p.is_primary);
@@ -429,6 +445,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, []);
 
+  const completeOnboarding = useCallback(async (data: {
+    first_name?: string;
+    last_name?: string;
+    date_of_birth?: string;
+    home_address?: string;
+  }) => {
+    try {
+      const createRes = await apiFetch("/profile", {
+        method: "POST",
+        body: JSON.stringify({
+          first_name: data.first_name || "",
+          last_name: data.last_name || "",
+          date_of_birth: data.date_of_birth || "",
+          home_address: data.home_address || "",
+          email: profileData?.email || "",
+        }),
+      });
+      if (createRes.ok) {
+        const created = await createRes.json();
+        setProfileId(created.profile_id || created.id);
+        setProfileData((prev) => ({
+          firstName: data.first_name || "",
+          lastName: data.last_name || "",
+          email: prev?.email || "",
+          profilePictureUrl: null,
+        }));
+        setNeedsOnboarding(false);
+        // Mark onboarding complete
+        await apiFetch("/auth/complete-onboarding", { method: "POST" }).catch(() => {});
+      }
+    } catch {}
+  }, [profileData?.email]);
+
   const signIn = useCallback(
     async (email: string, password: string) => {
       const { error } = await supabase.auth.signInWithPassword({
@@ -505,6 +554,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshDoctors,
         refreshVisits,
         refreshInsurance,
+        needsOnboarding,
+        completeOnboarding,
         profileDetailsLoaded,
         fetchProfileDetails,
         refreshSubscription,

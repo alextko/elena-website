@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/apiFetch";
 import { Sidebar } from "@/components/sidebar";
 import { ChatArea } from "@/components/chat-area";
+import { OnboardingModal } from "@/components/onboarding-modal";
 import type { ChatSessionItem } from "@/lib/types";
 
 export default function ChatPage() {
@@ -124,6 +125,7 @@ function ChatPageInner() {
 
   return (
     <div className="flex h-dvh overflow-hidden relative">
+      <OnboardingModal />
       {/* Checkout success banner */}
       {checkoutSuccess && (
         <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-center bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white animate-in slide-in-from-top duration-300">
