@@ -79,13 +79,16 @@ export function usePollChat() {
         }
       }
 
-      // 2. Poll loop — use short timeouts so tool label updates appear quickly
+      // 2. Poll loop — short interval polling for tool label updates
       while (true) {
+        if (cancelledRef.current) break;
+
         const controller = new AbortController();
         abortRef.current = controller;
 
-        // Auto-abort after POLL_TIMEOUT_MS to break out of the backend's
-        // long-poll hold and pick up intermediate tool_label changes.
+        // Abort after POLL_TIMEOUT_MS so we don't hang on the backend's
+        // 30-second long-poll. We want to re-poll frequently to pick up
+        // tool_label changes.
         const timeout = setTimeout(
           () => controller.abort(),
           POLL_TIMEOUT_MS,
@@ -98,7 +101,6 @@ export function usePollChat() {
           clearTimeout(timeout);
 
           if (res.status === 404) {
-            // Server restarted — re-send to get new request ID
             consecutiveFailures++;
             if (consecutiveFailures > MAX_RETRIES) {
               onError("Connection lost after multiple retries. Please try again.");
@@ -123,21 +125,43 @@ export function usePollChat() {
             onError(data.error || "Something went wrong");
             break;
           } else {
-            // Still processing — update tool label
+            // Still processing -- show tool label
             onToolProgress(data.tool_label);
+            // Brief pause before re-polling to avoid hammering
+            await new Promise((r) => setTimeout(r, 500));
           }
         } catch (err: unknown) {
           clearTimeout(timeout);
 
           if (err instanceof Error && err.name === "AbortError") {
-            if (cancelledRef.current) break; // User cancelled
-            continue; // Timeout — re-poll to get fresh tool_label
+            if (cancelledRef.current) break;
+            // Timeout abort -- do a quick non-blocking status check
+            try {
+              const quickRes = await apiFetch(
+                `/chat/poll/${chatRequestId}`,
+                { signal: AbortSignal.timeout(2000) },
+              );
+              if (quickRes.ok) {
+                const quickData: PollResponse = await quickRes.json();
+                if (quickData.phase === "completed" && quickData.result) {
+                  onDone(quickData.result);
+                  break;
+                } else if (quickData.phase === "failed") {
+                  onError(quickData.error || "Something went wrong");
+                  break;
+                }
+                onToolProgress(quickData.tool_label);
+              }
+            } catch {
+              // Quick check failed, just re-poll
+            }
+            continue;
           }
 
           consecutiveFailures++;
           if (consecutiveFailures > MAX_RETRIES) {
             onError(
-              "Connection lost after multiple retries. Your message is still being processed — please wait a moment and try refreshing.",
+              "Connection lost after multiple retries. Your message is still being processed -- please wait a moment and try refreshing.",
             );
             break;
           }
