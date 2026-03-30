@@ -128,6 +128,13 @@ export const BLOG_POSTS: BlogPost[] = [
 
 <p>Priya told me: \u201cI almost just paid the $380. It\u2019s not worth my time.\u201d And she\u2019s someone who knew the denial was wrong and had the knowledge to explain why. Most people would have just paid.</p>
 
+<div class="blog-cta-inline fade-in">
+  <p class="blog-cta-context">What if you didn\u2019t have to make that call?</p>
+  <h3>Elena sits on hold so you don\u2019t have to.</h3>
+  <p class="blog-cta-context">Describe the problem. Elena calls your insurance, your doctor, your billing department. You get a summary when she\u2019s done.</p>
+  <a href="/" class="blog-cta-link">Try Elena Free &rarr;</a>
+</div>
+
 <h2>This is the problem we\u2019re building Elena to solve</h2>
 
 <p>Priya\u2019s situation is fixable. The claim was coded wrong \u2014 preventive lab submitted as diagnostic (a CPT modifier mismatch). Fixing it requires two phone calls: one to the provider to resubmit the claim with the correct code, one to the insurer to flag it for reprocessing. That\u2019s it. But those two calls would cost Priya another 60-90 minutes of hold time she doesn\u2019t have.</p>
@@ -985,6 +992,13 @@ export const BLOG_POSTS: BlogPost[] = [
 </div>
 
 <p>The core problem: Lisa was using 5 different tools and still spending 4-6 hours per week managing her mom\u2019s healthcare. None of the tools talked to each other. Every provider change required manually updating everywhere else.</p>
+
+<div class="blog-cta-inline fade-in">
+  <p class="blog-cta-context">Lisa needed one place for everything. That\u2019s what we built.</p>
+  <h3>One app for your whole family\u2019s healthcare.</h3>
+  <p class="blog-cta-context">Insurance, appointments, meds, and bills \u2014 for you and the people you care for. Elena makes the calls and tracks everything.</p>
+  <a href="/" class="blog-cta-link">Try Elena Free &rarr;</a>
+</div>
 
 <h2>What we\u2019re building Elena to do for caregivers like Lisa</h2>
 
