@@ -414,6 +414,12 @@ export function ChatArea({
       ]);
       setChatTitle((prev) => prev || message.slice(0, 60));
 
+      // Notify parent about the session immediately so it shows in sidebar
+      if (!hasCreatedSessionRef.current && sessionIdRef.current) {
+        hasCreatedSessionRef.current = true;
+        onSessionCreated(sessionIdRef.current);
+      }
+
       analytics.track("Message Sent", {
         is_first_message: messages.length === 0,
         has_attachment: sentFiles.length > 0,
