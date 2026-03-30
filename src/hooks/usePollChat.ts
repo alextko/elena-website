@@ -12,7 +12,7 @@ interface PollChatParams {
 
 const MAX_RETRIES = 10;
 const RETRY_DELAY_MS = 1500;
-const POLL_TIMEOUT_MS = 3000; // Abort long-poll after 3s to get tool label updates
+const POLL_TIMEOUT_MS = 3000; // Abort long-poll after 3s to pick up tool label updates
 
 export function usePollChat() {
   const activeRequestRef = useRef<string | null>(null);
@@ -107,8 +107,7 @@ export function usePollChat() {
             // Never re-send -- it creates duplicate messages.
             consecutiveFailures++;
             if (consecutiveFailures > 3) {
-              // The response was lost. Stop polling silently -- the message
-              // is already saved and the response will appear on reload.
+              onError("Elena is still working on your request. Please refresh to see the response.");
               break;
             }
             await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
