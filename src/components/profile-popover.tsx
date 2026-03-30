@@ -34,8 +34,6 @@ import { useAuth } from "@/lib/auth-context";
 import type { CareTodo, CareTodoCreate, CareVisit, DoctorItem, Habit, ProfileSummary } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import type { InsuranceCard } from "@/lib/types";
-import { AddFamilyModal } from "@/components/add-family-modal";
-import { AcceptInviteModal } from "@/components/accept-invite-modal";
 
 type Tab = "health" | "visits" | "insurance";
 
@@ -185,9 +183,6 @@ export function ProfilePopover({
       refreshHabits();
     }
   }, [open, profileDetailsLoaded, fetchProfileDetails, refreshTodos, refreshVisits, refreshDoctors, refreshInsurance, refreshHabits]);
-
-  const [addFamilyOpen, setAddFamilyOpen] = useState(false);
-  const [acceptInviteOpen, setAcceptInviteOpen] = useState(false);
 
   const visitsScrollRef = useRef<HTMLDivElement>(null);
   const [showTodayBtn, setShowTodayBtn] = useState(false);
@@ -349,62 +344,6 @@ export function ProfilePopover({
                 <p className="truncate text-sm text-[#0F1B3D]/40">{email}</p>
               </div>
             </div>
-
-            {/* Profile switcher */}
-            {profiles.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-2 mb-1 scrollbar-hide">
-                {profiles.map((p) => {
-                  const isActive = p.id === profileId;
-                  const pName = `${p.first_name} ${p.last_name}`.trim() || p.label || "Profile";
-                  const pInitials = p.first_name ? `${p.first_name[0]}${p.last_name?.[0] || ""}`.toUpperCase() : "?";
-                  const badge = p.is_primary ? "Me" : p.is_linked ? "Linked" : "Managed";
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={async () => { if (!isActive) { await switchProfile(p.id); setOpen(false); } }}
-                      className={`flex flex-col items-center gap-1 min-w-[56px] rounded-xl px-2 py-1.5 transition-all ${isActive ? "bg-[#0F1B3D]/[0.07]" : "hover:bg-[#0F1B3D]/[0.03]"}`}
-                    >
-                      {p.profile_picture_url ? (
-                        <img src={p.profile_picture_url} alt={pName} className={`h-8 w-8 rounded-full object-cover ${isActive ? "ring-2 ring-[#2E6BB5]" : ""}`} />
-                      ) : (
-                        <Avatar className={`h-8 w-8 ${isActive ? "ring-2 ring-[#2E6BB5]" : ""}`}>
-                          <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-xs font-semibold text-[#0F1B3D]/50">{pInitials}</AvatarFallback>
-                        </Avatar>
-                      )}
-                      <span className="text-[10px] font-medium text-[#0F1B3D]/60 truncate max-w-[56px]">{p.first_name || badge}</span>
-                      <span className="text-[8px] text-[#0F1B3D]/30">{badge}</span>
-                    </button>
-                  );
-                })}
-                <button
-                  onClick={() => setAddFamilyOpen(true)}
-                  className="flex flex-col items-center gap-1 min-w-[56px] rounded-xl px-2 py-1.5 hover:bg-[#0F1B3D]/[0.03] transition-all"
-                >
-                  <div className="h-8 w-8 rounded-full bg-[#0F1B3D]/[0.04] flex items-center justify-center">
-                    <Plus className="h-4 w-4 text-[#0F1B3D]/30" />
-                  </div>
-                  <span className="text-[10px] font-medium text-[#0F1B3D]/40">Add</span>
-                </button>
-              </div>
-            )}
-
-            {/* Single profile: show add family + accept invite links */}
-            {profiles.length <= 1 && (
-              <div className="flex gap-2 mb-2">
-                <button
-                  onClick={() => setAddFamilyOpen(true)}
-                  className="flex items-center gap-1.5 rounded-full bg-[#0F1B3D]/[0.04] px-3 py-1.5 text-xs font-medium text-[#0F1B3D]/50 hover:bg-[#0F1B3D]/[0.08] transition-colors"
-                >
-                  <Plus className="h-3 w-3" /> Add family member
-                </button>
-                <button
-                  onClick={() => setAcceptInviteOpen(true)}
-                  className="flex items-center gap-1.5 rounded-full bg-[#0F1B3D]/[0.04] px-3 py-1.5 text-xs font-medium text-[#0F1B3D]/50 hover:bg-[#0F1B3D]/[0.08] transition-colors"
-                >
-                  Enter invite code
-                </button>
-              </div>
-            )}
 
             {/* Tab pills */}
             <div className="flex gap-1.5 mt-1 mb-2">
@@ -952,23 +891,6 @@ export function ProfilePopover({
         </div>
       </DialogContent>
     </Dialog>
-    <AddFamilyModal
-      open={addFamilyOpen}
-      onOpenChange={setAddFamilyOpen}
-      onProfileCreated={async (newId) => {
-        await switchProfile(newId);
-        // Re-fetch /auth/me to get updated profiles list
-        window.location.reload();
-      }}
-    />
-    <AcceptInviteModal
-      open={acceptInviteOpen}
-      onOpenChange={setAcceptInviteOpen}
-      onAccepted={() => {
-        // Re-fetch /auth/me to get updated profiles list
-        window.location.reload();
-      }}
-    />
     </>
   );
 }

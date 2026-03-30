@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Search, X } from "lucide-react";
+import { Plus, Search, X, ChevronDown, UserPlus, Link2 } from "lucide-react";
 import * as analytics from "@/lib/analytics";
 import { ProfilePopover } from "@/components/profile-popover";
 import { useAuth } from "@/lib/auth-context";
+import { AddFamilyModal } from "@/components/add-family-modal";
+import { AcceptInviteModal } from "@/components/accept-invite-modal";
 import type { ChatSessionItem } from "@/lib/types";
 
 function groupByDate(sessions: ChatSessionItem[]): Record<string, ChatSessionItem[]> {
@@ -32,7 +34,11 @@ function groupByDate(sessions: ChatSessionItem[]): Record<string, ChatSessionIte
 }
 
 function SidebarProfile({ onBookMessage }: { onBookMessage?: (msg: string) => void }) {
-  const { user, profileData } = useAuth();
+  const { user, profileId, profiles, switchProfile, profileData } = useAuth();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [addFamilyOpen, setAddFamilyOpen] = useState(false);
+  const [acceptInviteOpen, setAcceptInviteOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const displayName =
     profileData?.firstName && profileData?.lastName
@@ -43,30 +49,122 @@ function SidebarProfile({ onBookMessage }: { onBookMessage?: (msg: string) => vo
     : (user?.email?.[0] || "U").toUpperCase();
   const email = user?.email || "";
 
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [dropdownOpen]);
+
   return (
-    <ProfilePopover onBookMessage={onBookMessage}>
-      <button className="flex w-full items-center gap-2.5 border-t border-[#0F1B3D]/[0.06] px-5 py-4 text-left transition-colors hover:bg-[#0F1B3D]/[0.03]">
-        {profileData?.profilePictureUrl ? (
-          <img
-            src={profileData.profilePictureUrl}
-            alt={displayName}
-            className="h-8 w-8 rounded-full object-cover flex-shrink-0"
-          />
-        ) : (
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-xs font-semibold text-[#0F1B3D]/50">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-        )}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-bold text-[#0F1B3D]">{displayName}</p>
+    <>
+      <div ref={dropdownRef} className="relative">
+        {/* Profile dropdown menu (opens upward) */}
+        {dropdownOpen && (
+          <div className="absolute bottom-full left-0 right-0 mb-1 mx-2 rounded-xl bg-white border border-[#0F1B3D]/[0.08] shadow-[0_8px_32px_rgba(15,27,61,0.15)] overflow-hidden z-50">
+            <div className="py-1.5">
+              {profiles.map((p) => {
+                const isActive = p.id === profileId;
+                const pName = `${p.first_name} ${p.last_name}`.trim() || p.label || "Profile";
+                const pInitials = p.first_name ? `${p.first_name[0]}${p.last_name?.[0] || ""}`.toUpperCase() : "?";
+                const badge = p.is_primary ? "Me" : p.is_linked ? "Linked" : "Managed";
+                return (
+                  <button
+                    key={p.id}
+                    onClick={async () => {
+                      if (!isActive) await switchProfile(p.id);
+                      setDropdownOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-[#0F1B3D]/[0.04] ${isActive ? "bg-[#0F1B3D]/[0.06]" : ""}`}
+                  >
+                    {p.profile_picture_url ? (
+                      <img src={p.profile_picture_url} alt={pName} className="h-7 w-7 rounded-full object-cover flex-shrink-0" />
+                    ) : (
+                      <Avatar className="h-7 w-7">
+                        <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-[10px] font-semibold text-[#0F1B3D]/50">{pInitials}</AvatarFallback>
+                      </Avatar>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-[#0F1B3D] truncate">{pName}</p>
+                      <p className="text-[10px] text-[#0F1B3D]/30">{badge}</p>
+                    </div>
+                    {isActive && (
+                      <div className="h-1.5 w-1.5 rounded-full bg-[#2E6BB5] flex-shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
+              <div className="border-t border-[#0F1B3D]/[0.06] mt-1 pt-1">
+                <button
+                  onClick={() => { setDropdownOpen(false); setAddFamilyOpen(true); }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[#0F1B3D]/50 hover:bg-[#0F1B3D]/[0.04] transition-colors"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Add family member
+                </button>
+                <button
+                  onClick={() => { setDropdownOpen(false); setAcceptInviteOpen(true); }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[#0F1B3D]/50 hover:bg-[#0F1B3D]/[0.04] transition-colors"
+                >
+                  <Link2 className="h-4 w-4" />
+                  Enter invite code
+                </button>
+              </div>
+            </div>
           </div>
-          <p className="truncate text-xs text-[#0F1B3D]/40">{email}</p>
+        )}
+
+        {/* Profile row: click name area for dropdown, click avatar for settings */}
+        <div className="flex w-full items-center gap-2.5 border-t border-[#0F1B3D]/[0.06] px-5 py-4">
+          <ProfilePopover onBookMessage={onBookMessage}>
+            <button className="flex-shrink-0 transition-opacity hover:opacity-80">
+              {profileData?.profilePictureUrl ? (
+                <img
+                  src={profileData.profilePictureUrl}
+                  alt={displayName}
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+              ) : (
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-xs font-semibold text-[#0F1B3D]/50">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+              )}
+            </button>
+          </ProfilePopover>
+          <button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="min-w-0 flex-1 text-left hover:opacity-80 transition-opacity"
+          >
+            <div className="flex items-center gap-1">
+              <p className="text-sm font-bold text-[#0F1B3D] truncate">{displayName}</p>
+              <ChevronDown className={`h-3 w-3 text-[#0F1B3D]/30 flex-shrink-0 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
+            </div>
+            <p className="truncate text-xs text-[#0F1B3D]/40">{email}</p>
+          </button>
         </div>
-      </button>
-    </ProfilePopover>
+      </div>
+
+      <AddFamilyModal
+        open={addFamilyOpen}
+        onOpenChange={setAddFamilyOpen}
+        onProfileCreated={async (newId) => {
+          await switchProfile(newId);
+          window.location.reload();
+        }}
+      />
+      <AcceptInviteModal
+        open={acceptInviteOpen}
+        onOpenChange={setAcceptInviteOpen}
+        onAccepted={() => window.location.reload()}
+      />
+    </>
   );
 }
 
