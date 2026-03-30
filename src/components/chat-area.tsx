@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { PanelLeft, Plus, ArrowUp, Paperclip, X } from "lucide-react";
+import { PanelLeft, Plus, ArrowUp, Square, Paperclip, X } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
 import * as analytics from "@/lib/analytics";
 import { usePollChat } from "@/hooks/usePollChat";
@@ -781,10 +781,22 @@ export function ChatArea({
           <Button
             size="icon"
             className="h-[34px] w-[34px] mb-0.5 flex-shrink-0 rounded-full bg-[#0F1B3D] hover:bg-[#0F1B3D]/90 disabled:opacity-40"
-            onClick={() => handleSend()}
-            disabled={isLoading || (!input.trim() && pendingFiles.length === 0)}
+            onClick={() => {
+              if (isLoading) {
+                cancel();
+                setIsLoading(false);
+                setToolLabel(null);
+              } else {
+                handleSend();
+              }
+            }}
+            disabled={!isLoading && !input.trim() && pendingFiles.length === 0}
           >
-            <ArrowUp className="h-4 w-4 text-white" />
+            {isLoading ? (
+              <Square className="h-3.5 w-3.5 text-white fill-white" />
+            ) : (
+              <ArrowUp className="h-4 w-4 text-white" />
+            )}
           </Button>
         </div>
         <p className="mt-2 text-center text-[0.7rem] text-[#AEAEB2]">
