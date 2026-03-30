@@ -87,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [habitCompletions, setHabitCompletions] = useState<Record<string, Set<string>>>({});
   const [profileDetailsLoaded, setProfileDetailsLoaded] = useState(false);
   const profileDetailsFetchingRef = useRef(false);
+  const profileFetchVersionRef = useRef(0); // guards against stale fetches after profile switch
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [profileChecked, setProfileChecked] = useState(false);
   const [onboardingJustCompleted, setOnboardingJustCompleted] = useState(false);
@@ -212,6 +213,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfileDetails = useCallback(async () => {
     if (profileDetailsLoaded || profileDetailsFetchingRef.current) return;
     profileDetailsFetchingRef.current = true;
+    const fetchVersion = profileFetchVersionRef.current;
+
+    // Collect all results first, then apply atomically (prevents stale data on profile switch)
+    let doctorsResult: DoctorItem[] | null = null;
+    let visitsResult: CareVisit[] | null = null;
+    let todosResult: CareTodo[] | null = null;
+    let habitsResult: Habit[] | null = null;
+    let completionsResult: Record<string, Set<string>> | null = null;
+    let insuranceResult: InsuranceCard[] | null = null;
+    let subscriptionResult: SubscriptionResponse | null = null;
 
     const promises: Promise<void>[] = [];
 
@@ -221,7 +232,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .then(async (res) => {
             if (!res.ok) return;
             const data = await res.json();
-            setDoctors(data.doctors || []);
+            doctorsResult = data.doctors || [];
           })
           .catch(() => {}),
       );
@@ -230,8 +241,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         apiFetch("/care-visits")
           .then(async (res) => {
             if (!res.ok) return;
-            const data: CareVisit[] = await res.json();
-            setCareVisits(data);
+            visitsResult = await res.json();
           })
           .catch(() => {}),
       );
@@ -240,8 +250,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         apiFetch("/todos")
           .then(async (res) => {
             if (!res.ok) return;
-            const data: CareTodo[] = await res.json();
-            setTodos(data);
+            todosResult = await res.json();
           })
           .catch(() => {}),
       );
@@ -260,8 +269,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         apiFetch("/habits")
           .then(async (res) => {
             if (!res.ok) return;
-            const data: Habit[] = await res.json();
-            setHabits(data);
+            habitsResult = await res.json();
           })
           .catch(() => {}),
       );
@@ -270,8 +278,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .then(async (res) => {
             if (!res.ok) return;
             const data: Record<string, Record<string, boolean>> = await res.json();
-            // data shape: { "habit_id": { "YYYY-MM-DD": true }, ... }
-            // Convert to: { "YYYY-MM-DD": Set<habit_id> }
             const byDate: Record<string, Set<string>> = {};
             for (const [habitId, dates] of Object.entries(data)) {
               for (const [dateKey, done] of Object.entries(dates)) {
@@ -281,7 +287,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }
               }
             }
-            setHabitCompletions(byDate);
+            completionsResult = byDate;
           })
           .catch(() => {}),
       );
@@ -291,12 +297,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .then(async (res) => {
             if (!res.ok) return;
             const data = await res.json();
-            // API returns { medical: {id, provider, plan_name, ...flat fields}, dental: {...}, ... }
             const cards: InsuranceCard[] = [];
             for (const [cardType, record] of Object.entries(data)) {
               if (record && typeof record === "object") {
                 const r = record as Record<string, unknown>;
-                // Fields are flat on the record — treat the whole record as structured_data
                 const structured: Record<string, string | null> = {};
                 for (const [k, v] of Object.entries(r)) {
                   if (k === "id" || k === "profile_id" || k === "created_at" || k === "updated_at"
@@ -312,7 +316,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 });
               }
             }
-            setInsuranceCards(cards);
+            insuranceResult = cards;
           })
           .catch(() => {}),
       );
@@ -322,13 +326,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       apiFetch("/web/subscription")
         .then(async (res) => {
           if (!res.ok) return;
-          const data: SubscriptionResponse = await res.json();
-          setSubscription(data);
+          subscriptionResult = await res.json();
         })
         .catch(() => {}),
     );
 
     await Promise.all(promises);
+
+    // Bail if the profile was switched while we were fetching — prevents stale data
+    if (profileFetchVersionRef.current !== fetchVersion) {
+      profileDetailsFetchingRef.current = false;
+      return;
+    }
+
+    // Apply all results atomically
+    if (doctorsResult !== null) setDoctors(doctorsResult);
+    if (visitsResult !== null) setCareVisits(visitsResult);
+    if (todosResult !== null) setTodos(todosResult);
+    if (habitsResult !== null) setHabits(habitsResult);
+    if (completionsResult !== null) setHabitCompletions(completionsResult);
+    if (insuranceResult !== null) setInsuranceCards(insuranceResult);
+    if (subscriptionResult !== null) setSubscription(subscriptionResult);
     setProfileDetailsLoaded(true);
   }, [profileId, profileDetailsLoaded]);
 
@@ -400,6 +418,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, [fetchProfile]);
+
+  // Eagerly re-fetch all profile data when profileId changes (after a profile switch)
+  const prevProfileIdForFetch = useRef<string | null>(null);
+  useEffect(() => {
+    if (profileId && prevProfileIdForFetch.current !== null && profileId !== prevProfileIdForFetch.current) {
+      // profileDetailsLoaded was set to false in switchProfile, so fetchProfileDetails will run
+      fetchProfileDetails();
+    }
+    prevProfileIdForFetch.current = profileId;
+  }, [profileId, fetchProfileDetails]);
+
+  // Preload profile photos so they display instantly in the switcher dropdown
+  useEffect(() => {
+    for (const p of profiles) {
+      if (p.profile_picture_url) {
+        const img = new Image();
+        img.src = p.profile_picture_url;
+      }
+    }
+  }, [profiles]);
 
   const updateProfilePicture = useCallback((url: string | null) => {
     setProfileData((prev) =>
@@ -646,6 +684,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           profilePictureUrl: profile.profile_picture_url,
         }));
       }
+
+      // Invalidate any in-flight fetch so stale data isn't applied
+      profileFetchVersionRef.current += 1;
 
       // Clear all cached data and allow re-fetch
       setProfileDetailsLoaded(false);
