@@ -629,8 +629,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }));
       }
 
-      // Force re-fetch of profile-scoped data
+      // Clear all cached data and allow re-fetch
       setProfileDetailsLoaded(false);
+      profileDetailsFetchingRef.current = false;
       setDoctors([]);
       setCareVisits([]);
       setInsuranceCards([]);
