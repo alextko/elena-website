@@ -55,6 +55,7 @@ export interface ChatMessageItem {
   location_results?: LocationResult[] | null;
   bill_analysis?: BillAnalysis | null;
   negotiation_result?: NegotiationResult | null;
+  web_sources?: SourcePayload[] | null;
   form_request?: FormRequest | null;
 }
 

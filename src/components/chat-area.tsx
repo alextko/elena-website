@@ -210,6 +210,7 @@ export function ChatArea({
           reviewResults: m.review_results,
           negotiationResult: m.negotiation_result,
           bookingResult: m.booking_result ?? undefined,
+          webSources: m.web_sources,
           formRequest: m.form_request,
         }));
       setMessages(mapped);
@@ -555,7 +556,7 @@ export function ChatArea({
       </div>
 
       {/* Messages */}
-      <div className="relative z-10 flex-1 min-h-0 overflow-y-auto">
+      <div className="relative z-10 flex-1 min-h-0 overflow-y-auto select-text">
         <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
           {/* Welcome state — hidden when there's a pending query */}
           {messages.length === 0 && welcomeHeading && !initialQuery && !localStorage.getItem("elena_pending_query") && (
