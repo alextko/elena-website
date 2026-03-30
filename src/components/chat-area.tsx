@@ -116,7 +116,7 @@ export function ChatArea({
   onToggleSidebar: () => void;
   sidebarOpen: boolean;
   activeSessionId: string | null;
-  onSessionCreated: (id: string) => void;
+  onSessionCreated: (id: string, firstMessage?: string) => void;
   initialQuery?: string | null;
   bookMessage?: string | null;
   onBookMessageConsumed?: () => void;
@@ -421,7 +421,7 @@ export function ChatArea({
       // Notify parent about the session immediately so it shows in sidebar
       if (!hasCreatedSessionRef.current && sessionIdRef.current) {
         hasCreatedSessionRef.current = true;
-        onSessionCreated(sessionIdRef.current);
+        onSessionCreated(sessionIdRef.current, message);
       }
 
       analytics.track("Message Sent", {

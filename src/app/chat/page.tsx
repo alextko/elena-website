@@ -123,10 +123,22 @@ function ChatPageInner() {
   }, [onboardingJustCompleted, isNewChat, activeSessionId]);
 
   const handleSessionCreated = useCallback(
-    (sessionId: string) => {
+    (sessionId: string, firstMessage?: string) => {
       setActiveSessionId(sessionId);
       setIsNewChat(false);
-      fetchSessions();
+      // Add optimistic session immediately so sidebar isn't empty
+      setSessions((prev) => {
+        if (prev.some((s) => s.id === sessionId)) return prev;
+        return [{
+          id: sessionId,
+          title: null,
+          preview: firstMessage || "New conversation",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }, ...prev];
+      });
+      // Then fetch real data (may take a moment for DB to persist)
+      setTimeout(() => fetchSessions(), 2000);
     },
     [fetchSessions],
   );
