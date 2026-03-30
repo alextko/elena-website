@@ -39,6 +39,7 @@ interface AuthContextValue {
   refreshDoctors: () => Promise<void>;
   refreshVisits: () => Promise<void>;
   refreshInsurance: () => Promise<void>;
+  refreshHabits: () => Promise<void>;
   needsOnboarding: boolean;
   profileChecked: boolean;
   onboardingJustCompleted: boolean;
@@ -511,6 +512,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, []);
 
+  const refreshHabits = useCallback(async () => {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    const startDate = monday.toISOString().slice(0, 10);
+    const endDate = sunday.toISOString().slice(0, 10);
+    try {
+      const [habitsRes, completionsRes] = await Promise.all([
+        apiFetch("/habits"),
+        apiFetch(`/habits/completions?start_date=${startDate}&end_date=${endDate}`),
+      ]);
+      if (habitsRes.ok) {
+        const data: Habit[] = await habitsRes.json();
+        setHabits(data);
+      }
+      if (completionsRes.ok) {
+        const data: Record<string, Record<string, boolean>> = await completionsRes.json();
+        const byDate: Record<string, Set<string>> = {};
+        for (const [habitId, dates] of Object.entries(data)) {
+          for (const [dateKey, done] of Object.entries(dates)) {
+            if (done) {
+              if (!byDate[dateKey]) byDate[dateKey] = new Set();
+              byDate[dateKey].add(habitId);
+            }
+          }
+        }
+        setHabitCompletions(byDate);
+      }
+    } catch {}
+  }, []);
+
   const completeOnboarding = useCallback(async (data: {
     first_name?: string;
     last_name?: string;
@@ -640,6 +675,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshDoctors,
         refreshVisits,
         refreshInsurance,
+        refreshHabits,
         needsOnboarding,
         profileChecked,
         onboardingJustCompleted,

@@ -131,7 +131,7 @@ export function ProfilePopover({
     user, profileId, profileData, doctors, careVisits,
     subscription, insuranceCards, todos, habits, habitCompletions,
     toggleHabit, toggleTodo, createTodo, updateTodo, deleteTodo,
-    refreshTodos, refreshDoctors, refreshVisits, refreshInsurance,
+    refreshTodos, refreshDoctors, refreshVisits, refreshInsurance, refreshHabits,
     profileDetailsLoaded, fetchProfileDetails, updateProfilePicture, signOut,
   } = useAuth();
   const router = useRouter();
@@ -174,13 +174,15 @@ export function ProfilePopover({
 
   useEffect(() => {
     if (open && !profileDetailsLoaded) fetchProfileDetails();
-    // Refresh data every time the popover opens (agent may have created visits, todos, etc.)
+    // Refresh ALL data every time the popover opens (agent may have created visits, todos, etc.)
     if (open && profileDetailsLoaded) {
       refreshTodos();
       refreshVisits();
       refreshDoctors();
+      refreshInsurance();
+      refreshHabits();
     }
-  }, [open, profileDetailsLoaded, fetchProfileDetails, refreshTodos, refreshVisits, refreshDoctors]);
+  }, [open, profileDetailsLoaded, fetchProfileDetails, refreshTodos, refreshVisits, refreshDoctors, refreshInsurance, refreshHabits]);
 
   const visitsScrollRef = useRef<HTMLDivElement>(null);
   const [showTodayBtn, setShowTodayBtn] = useState(false);
