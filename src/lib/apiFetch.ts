@@ -32,6 +32,14 @@ export async function apiFetch(
 
   headers.set("X-Client-Type", "web");
 
+  // Inject active profile ID so the backend scopes data to the correct family member
+  const activeProfileId = typeof window !== "undefined"
+    ? localStorage.getItem("elena_active_profile_id")
+    : null;
+  if (activeProfileId) {
+    headers.set("X-Profile-Id", activeProfileId);
+  }
+
   const url = path.startsWith("http") ? path : `${API_BASE}${path}`;
 
   return fetch(url, { ...options, headers });

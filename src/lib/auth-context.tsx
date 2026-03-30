@@ -13,13 +13,15 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/apiFetch";
 import * as analytics from "@/lib/analytics";
-import type { MeResponse, DoctorItem, CareVisit, CareTodo, CareTodoCreate, Habit, SubscriptionResponse, InsuranceCard } from "@/lib/types";
+import type { MeResponse, DoctorItem, CareVisit, CareTodo, CareTodoCreate, Habit, SubscriptionResponse, InsuranceCard, ProfileSummary } from "@/lib/types";
 
 interface AuthContextValue {
   session: Session | null;
   user: User | null;
   loading: boolean;
   profileId: string | null;
+  profiles: ProfileSummary[];
+  switchProfile: (profileId: string) => Promise<void>;
   profileData: { firstName: string; lastName: string; email: string; profilePictureUrl?: string | null } | null;
   updateProfilePicture: (url: string | null) => void;
   // Cached profile popover data
@@ -66,7 +68,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profileId, setProfileId] = useState<string | null>(null);
+  const [profileId, setProfileIdState] = useState<string | null>(null);
+  const [profiles, setProfiles] = useState<ProfileSummary[]>([]);
   const [profileData, setProfileData] = useState<{
     firstName: string;
     lastName: string;
@@ -86,6 +89,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [profileChecked, setProfileChecked] = useState(false);
   const [onboardingJustCompleted, setOnboardingJustCompleted] = useState(false);
+
+  const setProfileId = useCallback((id: string | null) => {
+    setProfileIdState(id);
+    if (id) {
+      localStorage.setItem("elena_active_profile_id", id);
+    } else {
+      localStorage.removeItem("elena_active_profile_id");
+    }
+  }, []);
 
   const profileFetchedRef = useRef(false);
 
@@ -163,6 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setProfileChecked(true);
       setProfileId(data.profile_id);
+      setProfiles(data.profiles || []);
 
       const primary = data.profiles.find((p) => p.is_primary);
       if (primary) {
@@ -352,6 +365,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         fetchProfile();
       } else if (event === "SIGNED_OUT") {
         setProfileId(null);
+        setProfiles([]);
         setProfileData(null);
         setDoctors([]);
         setCareVisits([]);
@@ -598,6 +612,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [profileData?.email]);
 
+  const switchProfile = useCallback(async (newProfileId: string) => {
+    try {
+      const res = await apiFetch(`/profiles/${newProfileId}/switch`, { method: "PUT" });
+      if (!res.ok) return;
+      setProfileId(newProfileId);
+
+      // Update profileData from the profiles list
+      const profile = profiles.find((p) => p.id === newProfileId);
+      if (profile) {
+        setProfileData((prev) => ({
+          firstName: profile.first_name,
+          lastName: profile.last_name,
+          email: prev?.email || "",
+          profilePictureUrl: profile.profile_picture_url,
+        }));
+      }
+
+      // Force re-fetch of profile-scoped data
+      setProfileDetailsLoaded(false);
+      setDoctors([]);
+      setCareVisits([]);
+      setInsuranceCards([]);
+      setTodos([]);
+      setHabits([]);
+      setHabitCompletions({});
+    } catch {
+      console.error("[auth] Failed to switch profile");
+    }
+  }, [profiles, setProfileId]);
+
   const signIn = useCallback(
     async (email: string, password: string) => {
       const { error } = await supabase.auth.signInWithPassword({
@@ -639,6 +683,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setUser(null);
     setProfileId(null);
+    setProfiles([]);
     setProfileData(null);
     setDoctors([]);
     setCareVisits([]);
@@ -649,7 +694,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setHabitCompletions({});
     setProfileDetailsLoaded(false);
     profileFetchedRef.current = false;
-  }, []);
+  }, [setProfileId]);
 
   return (
     <AuthContext.Provider
@@ -658,6 +703,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         loading,
         profileId,
+        profiles,
+        switchProfile,
         profileData,
         doctors,
         careVisits,

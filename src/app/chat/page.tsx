@@ -23,7 +23,7 @@ export default function ChatPage() {
 }
 
 function ChatPageInner() {
-  const { session, loading, refreshSubscription, onboardingJustCompleted, needsOnboarding, profileChecked } = useAuth();
+  const { session, loading, profileId, refreshSubscription, onboardingJustCompleted, needsOnboarding, profileChecked } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -101,6 +101,17 @@ function ChatPageInner() {
       fetchSessions().then(() => {});
     }
   }, [loading, session, fetchSessions]);
+
+  // Re-fetch sessions when profile switches (sessions are profile-scoped)
+  const prevProfileId = useRef(profileId);
+  useEffect(() => {
+    if (profileId && prevProfileId.current && profileId !== prevProfileId.current) {
+      setActiveSessionId(null);
+      setIsNewChat(true);
+      fetchSessions();
+    }
+    prevProfileId.current = profileId;
+  }, [profileId, fetchSessions]);
 
   // Auto-open most recent session, or start a new chat if none exist
   // Wait for profileChecked to avoid racing with onboarding detection
