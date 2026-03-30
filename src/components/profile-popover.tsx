@@ -144,6 +144,7 @@ export function ProfilePopover({
   const [selectedVisit, setSelectedVisit] = useState<typeof careVisits[number] | null>(null);
   const [editingTodo, setEditingTodo] = useState<{ mode: "create" } | { mode: "edit"; todo: typeof todos[number] } | null>(null);
   const [addingProvider, setAddingProvider] = useState(false);
+  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const todayRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -844,6 +845,41 @@ export function ProfilePopover({
               <LogOut className="h-4 w-4" />
               Sign out
             </button>
+
+            {/* Delete account */}
+            {!confirmDeleteAccount ? (
+              <button
+                onClick={() => setConfirmDeleteAccount(true)}
+                className="flex w-full items-center gap-2 pb-2 text-sm text-red-300 transition-colors hover:text-red-500"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete account
+              </button>
+            ) : (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-3 mb-2">
+                <p className="text-[13px] font-semibold text-red-600 mb-1">Delete your account?</p>
+                <p className="text-[12px] text-red-400 mb-3">This permanently deletes all your data. This cannot be undone.</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      await apiFetch("/account", { method: "DELETE" });
+                      localStorage.removeItem("elena_onboarding_done");
+                      await signOut();
+                      router.push("/");
+                    }}
+                    className="flex-1 rounded-lg bg-red-500 py-2 text-[13px] font-semibold text-white hover:bg-red-600 transition-colors"
+                  >
+                    Delete permanently
+                  </button>
+                  <button
+                    onClick={() => setConfirmDeleteAccount(false)}
+                    className="flex-1 rounded-lg border border-[#E5E5EA] py-2 text-[13px] font-semibold text-[#0F1B3D]/60 hover:bg-[#0F1B3D]/[0.04] transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           )}
         </div>
