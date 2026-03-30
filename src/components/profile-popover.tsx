@@ -174,9 +174,13 @@ export function ProfilePopover({
 
   useEffect(() => {
     if (open && !profileDetailsLoaded) fetchProfileDetails();
-    // Refresh todos every time the popover opens (they change frequently between app/web)
-    if (open && profileDetailsLoaded) refreshTodos();
-  }, [open, profileDetailsLoaded, fetchProfileDetails, refreshTodos]);
+    // Refresh data every time the popover opens (agent may have created visits, todos, etc.)
+    if (open && profileDetailsLoaded) {
+      refreshTodos();
+      refreshVisits();
+      refreshDoctors();
+    }
+  }, [open, profileDetailsLoaded, fetchProfileDetails, refreshTodos, refreshVisits, refreshDoctors]);
 
   const visitsScrollRef = useRef<HTMLDivElement>(null);
   const [showTodayBtn, setShowTodayBtn] = useState(false);
