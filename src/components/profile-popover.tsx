@@ -329,7 +329,7 @@ export function ProfilePopover({
                     </AvatarFallback>
                   </Avatar>
                 )}
-                {hasProfile && (
+                {hasProfile && !profileData?.profilePictureUrl && (
                   <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-[0_1px_4px_rgba(0,0,0,0.15)] border border-[#0F1B3D]/[0.08] text-[#0F1B3D]/50 group-hover:text-[#0F1B3D] transition-colors">
                     {uploadingPhoto ? (
                       <div className="h-2.5 w-2.5 animate-spin rounded-full border border-[#0F1B3D]/30 border-t-transparent" />
