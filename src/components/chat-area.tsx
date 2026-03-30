@@ -393,7 +393,7 @@ export function ChatArea({
   const handleSend = useCallback(
     async (text?: string) => {
       const message = (text || input).trim();
-      if (!message || isLoading) return;
+      if ((!message && pendingFiles.length === 0) || isLoading) return;
 
       setInput("");
       if (textareaRef.current) textareaRef.current.style.height = "auto";
@@ -416,7 +416,7 @@ export function ChatArea({
           attachments: sentFiles.length > 0 ? sentFiles : undefined,
         },
       ]);
-      setChatTitle((prev) => prev || message.slice(0, 60));
+      setChatTitle((prev) => prev || message.slice(0, 60) || (sentFiles.length > 0 ? sentFiles[0].name : ""));
 
       // Notify parent about the session immediately so it shows in sidebar
       if (!hasCreatedSessionRef.current && sessionIdRef.current) {
