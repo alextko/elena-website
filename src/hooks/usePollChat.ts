@@ -12,7 +12,7 @@ interface PollChatParams {
 
 const MAX_RETRIES = 10;
 const RETRY_DELAY_MS = 1500;
-const POLL_TIMEOUT_MS = 3000; // Abort long-poll after 3s to pick up tool label updates
+const POLL_INTERVAL_MS = 300; // Brief pause between polls
 
 export function usePollChat() {
   const activeRequestRef = useRef<string | null>(null);
@@ -31,7 +31,6 @@ export function usePollChat() {
       let chatRequestId: string | null = null;
       let sessionId: string | null = params.session_id;
       let hitPaywall = false;
-      let messageSentSuccessfully = false;
 
       // POST /chat/send to get a chat_request_id
       const sendRequest = async (): Promise<boolean> => {
@@ -59,7 +58,6 @@ export function usePollChat() {
           chatRequestId = data.chat_request_id;
           sessionId = data.session_id;
           activeRequestRef.current = chatRequestId;
-          messageSentSuccessfully = true;
           return true;
         } catch {
           return false;
@@ -81,33 +79,22 @@ export function usePollChat() {
         }
       }
 
-      // 2. Poll loop — short interval polling for tool label updates
+      // 2. Poll loop — backend returns within ~2s with current state or result
       while (true) {
         if (cancelledRef.current) break;
 
         const controller = new AbortController();
         abortRef.current = controller;
 
-        // Abort after POLL_TIMEOUT_MS so we don't hang on the backend's
-        // 30-second long-poll. We want to re-poll frequently to pick up
-        // tool_label changes.
-        const timeout = setTimeout(
-          () => controller.abort(),
-          POLL_TIMEOUT_MS,
-        );
-
         try {
           const res = await apiFetch(`/chat/poll/${chatRequestId}`, {
             signal: controller.signal,
           });
-          clearTimeout(timeout);
 
           if (res.status === 404) {
-            // The chat_request_id doesn't exist on the server (expired or server restarted).
-            // Never re-send -- it creates duplicate messages.
             consecutiveFailures++;
-            if (consecutiveFailures > 3) {
-              onError("Elena is still working on your request. Please refresh to see the response.");
+            if (consecutiveFailures > 5) {
+              onError("Something went wrong. Please try again.");
               break;
             }
             await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
@@ -128,44 +115,19 @@ export function usePollChat() {
             onError(data.error || "Something went wrong");
             break;
           } else {
-            // Still processing -- show tool label
+            // Still processing — show tool label and re-poll
             onToolProgress(data.tool_label);
-            // Brief pause before re-polling to avoid hammering
-            await new Promise((r) => setTimeout(r, 500));
+            await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
           }
         } catch (err: unknown) {
-          clearTimeout(timeout);
-
           if (err instanceof Error && err.name === "AbortError") {
             if (cancelledRef.current) break;
-            // Timeout abort -- do a quick non-blocking status check
-            try {
-              const quickRes = await apiFetch(
-                `/chat/poll/${chatRequestId}`,
-                { signal: AbortSignal.timeout(2000) },
-              );
-              if (quickRes.ok) {
-                const quickData: PollResponse = await quickRes.json();
-                if (quickData.phase === "completed" && quickData.result) {
-                  onDone(quickData.result);
-                  break;
-                } else if (quickData.phase === "failed") {
-                  onError(quickData.error || "Something went wrong");
-                  break;
-                }
-                onToolProgress(quickData.tool_label);
-              }
-            } catch {
-              // Quick check failed, just re-poll
-            }
             continue;
           }
 
           consecutiveFailures++;
           if (consecutiveFailures > MAX_RETRIES) {
-            onError(
-              "Connection lost after multiple retries. Your message is still being processed -- please wait a moment and try refreshing.",
-            );
+            onError("Connection lost. Please try again.");
             break;
           }
 
