@@ -240,16 +240,19 @@ export function ChatArea({
     }
   }
 
-  // Auto-send initial query from landing page after welcome loads
+  // Auto-send initial query from landing page after session is ready
   const handleSendRef = useRef<(text?: string) => Promise<void>>(undefined);
+  const initialQuerySending = useRef(false);
 
   useEffect(() => {
     if (
       initialQuery &&
       !initialQuerySentRef.current &&
+      !initialQuerySending.current &&
       sessionIdRef.current &&
       handleSendRef.current
     ) {
+      initialQuerySending.current = true;
       initialQuerySentRef.current = true;
       localStorage.removeItem("elena_pending_query");
       handleSendRef.current(initialQuery);

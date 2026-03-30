@@ -31,6 +31,7 @@ export function usePollChat() {
       let chatRequestId: string | null = null;
       let sessionId: string | null = params.session_id;
       let hitPaywall = false;
+      let messageSentSuccessfully = false;
 
       // POST /chat/send to get a chat_request_id
       const sendRequest = async (): Promise<boolean> => {
@@ -58,6 +59,7 @@ export function usePollChat() {
           chatRequestId = data.chat_request_id;
           sessionId = data.session_id;
           activeRequestRef.current = chatRequestId;
+          messageSentSuccessfully = true;
           return true;
         } catch {
           return false;
@@ -101,6 +103,19 @@ export function usePollChat() {
           clearTimeout(timeout);
 
           if (res.status === 404) {
+            // The chat_request_id doesn't exist on the server (expired or server restarted).
+            // If we already sent the message successfully, do NOT re-send -- it would
+            // create duplicate messages in the session. Just give up gracefully.
+            if (messageSentSuccessfully) {
+              consecutiveFailures++;
+              if (consecutiveFailures > 2) {
+                // The message is in the DB but the response was lost. Don't re-send.
+                break;
+              }
+              await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+              await sendRequest(); // Re-send to get new poll ID (backend double-send guard catches it)
+              continue;
+            }
             consecutiveFailures++;
             if (consecutiveFailures > MAX_RETRIES) {
               onError("Connection lost after multiple retries. Please try again.");
