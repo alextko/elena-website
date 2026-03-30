@@ -475,6 +475,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       if (createRes.ok) {
         const created = await createRes.json();
+        console.log("[onboarding] Profile created:", created);
         setProfileId(created.profile_id || created.id);
         setProfileData((prev) => ({
           firstName: data.first_name || "",
@@ -485,8 +486,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setNeedsOnboarding(false);
         // Mark onboarding complete
         await apiFetch("/auth/complete-onboarding", { method: "POST" }).catch(() => {});
+      } else {
+        const errText = await createRes.text().catch(() => "");
+        console.error("[onboarding] POST /profile failed:", createRes.status, errText);
+        // Still dismiss the modal so the user isn't stuck
+        setNeedsOnboarding(false);
       }
-    } catch {}
+    } catch (err) {
+      console.error("[onboarding] Error:", err);
+      // Still dismiss so user isn't stuck
+      setNeedsOnboarding(false);
+    }
   }, [profileData?.email]);
 
   const signIn = useCallback(
