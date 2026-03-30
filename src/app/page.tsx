@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { trackViewContent } from "@/lib/tracking-events";
 import { AuthModal } from "@/components/auth-modal";
 import Spotlights from "@/components/landing/spotlights";
 import "./landing.css";
@@ -241,6 +242,11 @@ function LandingPage() {
       router.replace("/chat");
     }
   }, [loading, session, router]);
+
+  // ViewContent pixel event for landing pages
+  useEffect(() => {
+    trackViewContent('landing_page', ref || 'homepage');
+  }, [ref]);
 
   // Parallax blobs
   useEffect(() => {

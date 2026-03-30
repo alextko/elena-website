@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { trackViewContent } from "@/lib/tracking-events";
 
 interface BlogChromeProps {
   slug: string;
@@ -10,6 +11,10 @@ interface BlogChromeProps {
 export function BlogChrome({ slug, exitModal }: BlogChromeProps) {
   const stickyRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    trackViewContent('blog', slug);
+  }, [slug]);
 
   useEffect(() => {
     // Build UTM-aware destination URL for all CTA links

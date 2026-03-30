@@ -138,6 +138,32 @@ export function trackSubscription(plan: string, value: number, currency: string 
   } catch { /* safe to ignore */ }
 }
 
+export function trackViewContent(contentType: 'blog' | 'landing_page', contentName: string) {
+  try {
+    const mp = getMixpanelAny();
+    if (mp) {
+      mp.track('view_content', { content_type: contentType, content_name: contentName });
+    }
+  } catch { /* safe to ignore */ }
+
+  try {
+    const ttq = (window as any).ttq;
+    if (ttq) {
+      ttq.track('ViewContent', {
+        content_type: contentType,
+        content_name: contentName,
+      });
+    }
+  } catch { /* TikTok pixel error — safe to ignore */ }
+
+  try {
+    const rdt = (window as any).rdt;
+    if (rdt) {
+      rdt('track', 'ViewContent', { content_name: contentName });
+    }
+  } catch { /* Reddit pixel error — safe to ignore */ }
+}
+
 export function identifyUser(userId: string, email?: string) {
   try {
     const mp = getMixpanelAny();
