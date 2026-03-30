@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Check, Phone, FileText, Zap, Users, Shield } from "lucide-react";
+import { Check } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
 import * as analytics from "@/lib/analytics";
@@ -31,10 +31,10 @@ const PLANS = {
     annual: 179.99,
     annualMonthly: 15.0,
     features: [
-      { icon: Phone, text: "10 calls per month" },
-      { icon: FileText, text: "Unlimited document uploads" },
-      { icon: Zap, text: "Unlimited bill analysis & searches" },
-      { icon: Shield, text: "Appeal letters & negotiation scripts" },
+      "10 calls per month",
+      "Unlimited document uploads",
+      "Unlimited bill analysis & searches",
+      "Appeal letters & negotiation scripts",
     ],
   },
   premium: {
@@ -44,10 +44,10 @@ const PLANS = {
     annualMonthly: 25.0,
     popular: true,
     features: [
-      { icon: Phone, text: "Unlimited calls" },
-      { icon: FileText, text: "Everything in Standard" },
-      { icon: Users, text: "Up to 4 family profiles" },
-      { icon: Shield, text: "Lower negotiation fees (10%)" },
+      "Unlimited calls",
+      "Everything in Standard",
+      "Up to 4 family profiles",
+      "Lower negotiation fees (10%)",
     ],
   },
 };
@@ -186,7 +186,7 @@ export function UpgradeModal({
                 )}
 
                 <div className="flex items-baseline justify-between mb-3">
-                  <p className="text-[15px] font-bold text-[#0F1B3D]">{plan.name}</p>
+                  <p className="text-[17px] font-extrabold tracking-tight text-[#0F1B3D]">{plan.name}</p>
                   <div className="flex items-baseline gap-1">
                     <span className="relative text-2xl font-bold text-[#0F1B3D] w-[85px] text-right inline-block">
                       <AnimatePresence mode="wait">
@@ -224,19 +224,15 @@ export function UpgradeModal({
 
                 <ul className="space-y-1.5 mb-3">
                   {plan.features.map((f) => (
-                    <li key={f.text} className="flex items-center gap-2 text-[13px] text-[#0F1B3D]/60">
+                    <li key={f} className="flex items-center gap-2 text-[13px] text-[#0F1B3D]/60">
                       <Check className={`h-3.5 w-3.5 flex-shrink-0 ${isPopular ? "text-[#E8956D]" : "text-[#2E6BB5]"}`} />
-                      {f.text}
+                      {f}
                     </li>
                   ))}
                 </ul>
 
                 <div
-                  className={`w-full rounded-full py-2.5 text-center text-sm font-semibold transition-all ${
-                    isPopular
-                      ? "bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)] text-white shadow-[0_4px_16px_rgba(46,107,181,0.25)] group-hover:shadow-[0_6px_24px_rgba(46,107,181,0.35)] group-hover:brightness-110"
-                      : "bg-[#0F1B3D]/[0.06] text-[#0F1B3D] group-hover:bg-[#0F1B3D]/[0.1]"
-                  }`}
+                  className="w-full rounded-full py-2.5 text-center text-sm font-bold tracking-tight text-white transition-all bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)] shadow-[0_4px_16px_rgba(46,107,181,0.25)] group-hover:shadow-[0_6px_24px_rgba(46,107,181,0.35)] group-hover:brightness-110"
                 >
                   {loading ? "Redirecting..." : `Get ${plan.name}`}
                 </div>
