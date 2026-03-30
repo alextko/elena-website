@@ -525,14 +525,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       if (createRes.ok) {
         const created = await createRes.json();
-        console.log("[onboarding] Profile created:", created);
+        console.log("[onboarding] Profile created:", { id: created.profile_id || created.id, first_name: created.first_name, last_name: created.last_name, picture_url: created.profile_picture_url });
         setProfileId(created.profile_id || created.id);
-        setProfileData((prev) => ({
-          firstName: created.first_name || data.first_name || "",
-          lastName: created.last_name || data.last_name || "",
-          email: prev?.email || "",
-          profilePictureUrl: created.profile_picture_url || prev?.profilePictureUrl || null,
-        }));
+        setProfileData((prev) => {
+          const pictureUrl = created.profile_picture_url || prev?.profilePictureUrl || null;
+          console.log("[onboarding] Setting profileData:", { firstName: created.first_name || data.first_name, pictureUrl, prevPicture: prev?.profilePictureUrl });
+          return {
+            firstName: created.first_name || data.first_name || "",
+            lastName: created.last_name || data.last_name || "",
+            email: prev?.email || "",
+            profilePictureUrl: pictureUrl,
+          };
+        });
         setNeedsOnboarding(false);
         setOnboardingJustCompleted(true);
         localStorage.setItem("elena_onboarding_done", "1");

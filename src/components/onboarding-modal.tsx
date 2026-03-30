@@ -7,11 +7,17 @@ import * as analytics from "@/lib/analytics";
 
 export function OnboardingModal() {
   const { needsOnboarding, completeOnboarding, profileData } = useAuth();
-  const [firstName, setFirstName] = useState(profileData?.firstName || "");
-  const [lastName, setLastName] = useState(profileData?.lastName || "");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [dob, setDob] = useState("");
   const [zipCode, setZipCode] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Sync from profileData when it arrives (Google OAuth name)
+  useEffect(() => {
+    if (profileData?.firstName && !firstName) setFirstName(profileData.firstName);
+    if (profileData?.lastName && !lastName) setLastName(profileData.lastName);
+  }, [profileData?.firstName, profileData?.lastName]);
 
   const hasName = !!(profileData?.firstName);
 

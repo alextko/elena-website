@@ -184,8 +184,9 @@ export function ChatArea({
       loadMessages(activeSessionId);
     } else if (isNewChat) {
       sessionIdRef.current = null;
-      // If there's a pending query, skip the welcome UI — just get a session ID
-      fetchWelcome(!!initialQuery);
+      // Check for pending query directly from localStorage (props may be stale)
+      const pending = initialQuery || localStorage.getItem("elena_pending_query");
+      fetchWelcome(!!pending);
     }
     // When activeSessionId is null and isNewChat is false, we're still loading
     // sessions — don't create a new welcome session yet.
@@ -546,7 +547,7 @@ export function ChatArea({
       <div className="relative z-10 flex-1 min-h-0 overflow-y-auto">
         <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
           {/* Welcome state — hidden when there's a pending query */}
-          {messages.length === 0 && welcomeHeading && !initialQuery && (
+          {messages.length === 0 && welcomeHeading && !initialQuery && !localStorage.getItem("elena_pending_query") && (
             <div className="flex flex-col items-center text-center py-12 animate-in fade-in duration-500">
               <h2 className="text-2xl font-bold text-[#0F1B3D] mb-3">{welcomeHeading}</h2>
               {welcomeMessage && (
