@@ -177,6 +177,7 @@ export function ChatArea({
     setChatTitle(null);
     setPendingFiles([]);
     hasCreatedSessionRef.current = false;
+    setSessionReady(false);
 
     if (activeSessionId) {
       // Load existing session messages
@@ -219,6 +220,8 @@ export function ChatArea({
     }
   }
 
+  const [sessionReady, setSessionReady] = useState(false);
+
   async function fetchWelcome(silent = false) {
     try {
       const res = await apiFetch("/chat/welcome", {
@@ -234,6 +237,7 @@ export function ChatArea({
         analytics.track("Welcome Screen Shown");
       }
       sessionIdRef.current = data.session_id;
+      setSessionReady(true);
     } catch {
       if (!silent) {
         setSuggestions(["What can you help me with?", "Find a cheaper pharmacy", "Help with my insurance"]);
@@ -258,7 +262,7 @@ export function ChatArea({
       localStorage.removeItem("elena_pending_query");
       handleSendRef.current(initialQuery);
     }
-  }, [initialQuery, welcomeMessage]);
+  }, [initialQuery, welcomeMessage, sessionReady]);
 
   // Auto-send book message from game plan
   useEffect(() => {
