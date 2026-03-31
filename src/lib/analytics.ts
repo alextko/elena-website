@@ -61,6 +61,7 @@ function init() {
   mixpanel.init(token, {
     track_pageview: false,
     persistence: "localStorage",
+    record_sessions_percent: 100,
   });
 
   mixpanel.register({ platform: "web" });
