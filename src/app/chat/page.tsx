@@ -157,6 +157,8 @@ function ChatPageInner() {
       });
       // Then fetch real data (may take a moment for DB to persist)
       setTimeout(() => fetchSessions(), 2000);
+      // Fetch again after title generation completes (Haiku call takes a few seconds)
+      setTimeout(() => fetchSessions(), 6000);
     },
     [fetchSessions],
   );
