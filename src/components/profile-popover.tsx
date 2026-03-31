@@ -510,7 +510,43 @@ export function ProfilePopover({
             </div>
 
             {/* ═══════════ HEALTH TAB ═══════════ */}
-            {activeTab === "health" && (
+            {activeTab === "health" && !profileDetailsLoaded && (
+              <div className="space-y-5 animate-pulse">
+                {/* Game Plan shimmer */}
+                <div className="rounded-[22px] p-6 pb-4" style={{ background: "#F4B084" }}>
+                  <div className="h-7 w-32 rounded bg-[#5C1A2A]/20 mb-4" />
+                  <div className="flex justify-center gap-[10px] mb-4">
+                    {Array.from({ length: 7 }).map((_, i) => (
+                      <div key={i} className="flex flex-col items-center gap-1 w-11">
+                        <div className="h-3 w-5 rounded bg-[#5C1A2A]/10" />
+                        <div className="w-9 h-9 rounded-full bg-[#5C1A2A]/10" />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="rounded-[14px] p-4 space-y-3" style={{ background: "rgba(255,255,255,0.3)" }}>
+                    <div className="h-4 w-3/4 rounded bg-[#5C1A2A]/10" />
+                    <div className="h-4 w-1/2 rounded bg-[#5C1A2A]/10" />
+                    <div className="h-4 w-2/3 rounded bg-[#5C1A2A]/10" />
+                  </div>
+                </div>
+                {/* Providers shimmer */}
+                <div>
+                  <div className="h-4 w-20 rounded bg-[#0F1B3D]/[0.08] mb-2" />
+                  <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] p-3.5 space-y-3">
+                    {[1, 2].map((i) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-full bg-[#0F1B3D]/[0.06]" />
+                        <div className="flex-1 space-y-1.5">
+                          <div className="h-4 w-32 rounded bg-[#0F1B3D]/[0.06]" />
+                          <div className="h-3 w-24 rounded bg-[#0F1B3D]/[0.04]" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+            {activeTab === "health" && profileDetailsLoaded && (
               <div className="space-y-5">
                 {/* ── Game Plan (salmon card) ── */}
                 <div
@@ -924,7 +960,28 @@ export function ProfilePopover({
             )}
 
             {/* ═══════════ VISITS TAB ═══════════ */}
-            {activeTab === "visits" && (
+            {activeTab === "visits" && !profileDetailsLoaded && (
+              <div className="rounded-3xl bg-[#DBEAFE] p-4 animate-pulse">
+                <div className="h-6 w-24 rounded bg-[#0F1B3D]/[0.08] mb-4" />
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex gap-3">
+                      <div className="flex flex-col items-center w-6 shrink-0">
+                        <div className="w-0.5 flex-1 bg-[#93B5E1]/30" />
+                        <div className="w-3 h-3 rounded-full bg-[#93B5E1]/30 shrink-0" />
+                        <div className="w-0.5 flex-1 bg-[#93B5E1]/30" />
+                      </div>
+                      <div className="flex-1 bg-white/50 rounded-[14px] p-3.5 mb-2 space-y-2">
+                        <div className="h-3 w-24 rounded bg-[#0F1B3D]/[0.06]" />
+                        <div className="h-4 w-40 rounded bg-[#0F1B3D]/[0.08]" />
+                        <div className="h-3 w-28 rounded bg-[#0F1B3D]/[0.04]" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {activeTab === "visits" && profileDetailsLoaded && (
               <div>
                 {sortedVisits.length === 0 && profileDetailsLoaded && (
                   <div className="rounded-3xl bg-[#DBEAFE] p-6 text-center">
@@ -1136,7 +1193,28 @@ export function ProfilePopover({
             )}
 
             {/* ═══════════ INSURANCE TAB ═══════════ */}
-            {activeTab === "insurance" && (
+            {activeTab === "insurance" && !profileDetailsLoaded && (
+              <div className="animate-pulse">
+                <div className="flex gap-3 pb-6 -mx-2 px-2 pt-1">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="shrink-0 rounded-3xl bg-[#0F1B3D]/[0.06]"
+                      style={{ width: "min(280px, 75vw)", aspectRatio: "1.6" }}
+                    />
+                  ))}
+                </div>
+                <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] p-3.5 space-y-4 mt-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-full bg-[#0F1B3D]/[0.06]" />
+                      <div className="h-4 w-20 rounded bg-[#0F1B3D]/[0.06]" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {activeTab === "insurance" && profileDetailsLoaded && (
               <div className="space-y-0 pb-2">
                 {/* Insurance cards carousel-style display */}
                 <div className="flex gap-3 overflow-x-auto pb-6 -mx-2 px-2 pt-1 snap-x snap-mandatory scrollbar-hide">
