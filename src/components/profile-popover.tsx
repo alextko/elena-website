@@ -550,7 +550,7 @@ export function ProfilePopover({
               <div className="space-y-5">
                 {/* ── Game Plan (salmon card) ── */}
                 <div
-                  className="rounded-[22px] pt-[18px] pb-2 overflow-hidden"
+                  className="rounded-[22px] pt-5 pb-3 overflow-hidden"
                   style={{ background: "#F4B084", boxShadow: "0 12px 40px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.05)" }}
                 >
                   {/* Title */}
@@ -995,7 +995,7 @@ export function ProfilePopover({
                 {sortedVisits.length > 0 && (
                   <div className="rounded-3xl bg-[#DBEAFE] overflow-hidden">
                     {/* Fixed header above the scroll area */}
-                    <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                    <div className="flex items-center justify-between px-5 pt-5 pb-2">
                       <h3 className="text-[24px] font-extrabold text-[#0F1B3D]">Timeline</h3>
                       {showTodayBtn && (
                         <button
@@ -1010,7 +1010,7 @@ export function ProfilePopover({
                     {/* Scrollable timeline — fixed height, today scrolled to top */}
                     <div
                       ref={visitsScrollRef}
-                      className="overflow-y-auto px-2 pb-64"
+                      className="overflow-y-auto px-3 pb-64"
                       style={{ height: "320px" }}
                       onScroll={handleVisitsScroll}
                     >
@@ -2403,14 +2403,28 @@ function InsuranceCardDisplay({
           </div>
         </div>
       ) : (
-        /* Placeholder */
+        /* Placeholder — shimmery card style */
         <button
           onClick={onTapEmpty}
-          className="h-full w-full flex flex-col items-center justify-center cursor-pointer hover:bg-[#0F1B3D]/[0.03] transition-colors"
+          className="h-full w-full flex flex-col justify-between p-5 cursor-pointer transition-opacity hover:opacity-80"
+          style={{ background: dark ? "rgba(15,27,61,0.04)" : "rgba(0,0,0,0.02)" }}
         >
-          <PlusCircle className="h-8 w-8 text-[#D1D1D6]" />
-          <p className="text-[16px] font-semibold text-[#AEAEB2] mt-2">{label}</p>
-          <p className="text-[12px] text-[#D1D1D6] mt-0.5">Tap to add</p>
+          <p style={{ fontSize: 20, fontWeight: 800, letterSpacing: 0.5, color: "#AEAEB2" }}>
+            {label}
+          </p>
+          <div>
+            <p className="text-[13px] font-semibold text-[#D1D1D6]">Tap to add</p>
+            <div className="flex gap-7 mt-2">
+              <div>
+                <div className="h-2 w-12 rounded bg-[#E5E5EA]/60 mb-1.5" />
+                <div className="h-3 w-16 rounded bg-[#E5E5EA]/40" />
+              </div>
+              <div>
+                <div className="h-2 w-10 rounded bg-[#E5E5EA]/60 mb-1.5" />
+                <div className="h-3 w-14 rounded bg-[#E5E5EA]/40" />
+              </div>
+            </div>
+          </div>
         </button>
       )}
     </div>
