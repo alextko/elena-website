@@ -160,7 +160,7 @@ const SUGGESTIONS = [
   { label: "Dispute a Bill", text: "I want to dispute a medical bill" },
   { label: "Find a Doctor", text: "Find an in-network doctor near me" },
   { label: "Schedule an Appointment", text: "Schedule an appointment with my doctor" },
-  { label: "Fight an Authorization", text: "Help me fight a prior authorization denial" },
+  { label: "Manage Family Care", text: "Help me manage my parents' healthcare from my phone" },
 ];
 
 const INSURERS = [
