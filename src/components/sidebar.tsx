@@ -32,13 +32,26 @@ function groupByDate(sessions: ChatSessionItem[]): Record<string, ChatSessionIte
 }
 
 function SidebarProfile({ onBookMessage }: { onBookMessage?: (msg: string) => void }) {
-  const { user, profileData } = useAuth();
+  const { user, profileData, profileChecked } = useAuth();
+
+  // Show skeleton while profile is loading
+  if (!profileChecked || !profileData) {
+    return (
+      <div className="flex w-full items-center gap-2.5 border-t border-[#0F1B3D]/[0.06] px-5 py-4">
+        <div className="h-8 w-8 rounded-full bg-[#0F1B3D]/[0.06] animate-pulse flex-shrink-0" />
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <div className="h-3.5 w-24 rounded bg-[#0F1B3D]/[0.06] animate-pulse" />
+          <div className="h-2.5 w-32 rounded bg-[#0F1B3D]/[0.04] animate-pulse" />
+        </div>
+      </div>
+    );
+  }
 
   const displayName =
-    profileData?.firstName && profileData?.lastName
+    profileData.firstName && profileData.lastName
       ? `${profileData.firstName} ${profileData.lastName}`
       : user?.email?.split("@")[0] || "User";
-  const initials = profileData?.firstName
+  const initials = profileData.firstName
     ? `${profileData.firstName[0]}${profileData.lastName?.[0] || ""}`.toUpperCase()
     : (user?.email?.[0] || "U").toUpperCase();
   const email = user?.email || "";
@@ -47,7 +60,7 @@ function SidebarProfile({ onBookMessage }: { onBookMessage?: (msg: string) => vo
     <ProfilePopover onBookMessage={onBookMessage}>
       <button className="flex w-full items-center gap-2.5 border-t border-[#0F1B3D]/[0.06] px-5 py-4 text-left hover:opacity-80 transition-opacity">
         <div className="flex-shrink-0">
-          {profileData?.profilePictureUrl ? (
+          {profileData.profilePictureUrl ? (
             <img
               src={profileData.profilePictureUrl}
               alt={displayName}
