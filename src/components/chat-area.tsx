@@ -104,6 +104,45 @@ function StreamingText({ content, onComplete }: { content: string; onComplete?: 
   );
 }
 
+const THINKING_MESSAGES = [
+  "Thinking...",
+  "Looking into it...",
+  "Let me check...",
+  "Working on it...",
+  "On it...",
+  "One moment...",
+  "Pulling that up...",
+  "Reviewing your info...",
+];
+
+function ThinkingIndicator({ toolLabel }: { toolLabel: string | null }) {
+  const [idx, setIdx] = useState(() => Math.floor(Math.random() * THINKING_MESSAGES.length));
+
+  useEffect(() => {
+    if (toolLabel) return;
+    const interval = setInterval(() => {
+      setIdx((prev) => (prev + 1) % THINKING_MESSAGES.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [toolLabel]);
+
+  // Reset to random message when indicator first appears
+  useEffect(() => {
+    setIdx(Math.floor(Math.random() * THINKING_MESSAGES.length));
+  }, []);
+
+  const label = toolLabel || THINKING_MESSAGES[idx];
+
+  return (
+    <div className="flex items-center gap-2.5 animate-in fade-in duration-300">
+      <span className="h-2 w-2 rounded-full bg-[#0F1B3D]/30 animate-thinking-pulse flex-shrink-0" />
+      <span className="text-[15px] font-semibold text-[#0F1B3D]/40 animate-in fade-in duration-200">
+        {label}
+      </span>
+    </div>
+  );
+}
+
 export function ChatArea({
   onToggleSidebar,
   activeSessionId,
@@ -669,14 +708,7 @@ export function ChatArea({
 
           {/* Thinking / tool progress indicator */}
           {isLoading && (
-            <div className="flex items-center gap-2.5 animate-in fade-in duration-300">
-              <span className="h-2 w-2 rounded-full bg-[#0F1B3D]/30 animate-thinking-pulse flex-shrink-0" />
-              {toolLabel && (
-                <span className="text-[15px] font-semibold text-[#0F1B3D]/40 animate-in fade-in duration-200">
-                  {toolLabel}
-                </span>
-              )}
-            </div>
+            <ThinkingIndicator toolLabel={toolLabel} />
           )}
 
           {/* Active booking call status */}
