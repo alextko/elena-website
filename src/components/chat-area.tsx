@@ -123,7 +123,7 @@ export function ChatArea({
   onBookMessageConsumed?: () => void;
   isNewChat?: boolean;
 }) {
-  const { profileId } = useAuth();
+  const { profileId, profileData, profiles } = useAuth();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -582,8 +582,8 @@ export function ChatArea({
         }}
       />
 
-      {/* Sidebar toggle */}
-      <div className="flex-shrink-0 relative z-10 flex items-center px-4 py-3">
+      {/* Sidebar toggle + viewing-as indicator */}
+      <div className="flex-shrink-0 relative z-10 flex items-center gap-2.5 px-4 py-3">
         <Button
           variant="ghost"
           size="icon"
@@ -592,6 +592,18 @@ export function ChatArea({
         >
           <PanelLeft className="h-4 w-4" />
         </Button>
+        {(() => {
+          const activeProfile = profiles.find((p) => p.id === profileId);
+          if (!activeProfile || activeProfile.is_primary) return null;
+          const name = profileData?.firstName && profileData?.lastName
+            ? `${profileData.firstName} ${profileData.lastName}`
+            : activeProfile.first_name + " " + activeProfile.last_name;
+          return (
+            <span className="text-sm font-extrabold text-[#0F1B3D]">
+              {name.trim()}
+            </span>
+          );
+        })()}
       </div>
 
       {/* Messages */}
