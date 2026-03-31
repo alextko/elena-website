@@ -550,12 +550,12 @@ export function ProfilePopover({
               <div className="space-y-5">
                 {/* ── Game Plan (salmon card) ── */}
                 <div
-                  className="rounded-[22px] pt-6 pb-4 overflow-hidden"
-                  style={{ background: "#F4B084", boxShadow: "0 12px 40px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.05)" }}
+                  className="rounded-[20px] pt-4 pb-3 overflow-hidden"
+                  style={{ background: "#F4B084", boxShadow: "0 8px 30px rgba(0,0,0,0.1), 0 3px 10px rgba(0,0,0,0.05)" }}
                 >
                   {/* Title */}
-                  <div className="px-7 mb-4">
-                    <div className="text-[28px] font-extrabold" style={{ color: "#5C1A2A" }}>
+                  <div className="px-5 mb-3">
+                    <div className="text-[22px] font-extrabold" style={{ color: "#5C1A2A" }}>
                       Game Plan
                     </div>
                   </div>
@@ -607,13 +607,13 @@ export function ProfilePopover({
                       return { label: d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2), num: d.getDate(), isToday, isFuture, allDone, dots, dateKey };
                     });
                     return (
-                      <div className="flex justify-center gap-[10px] px-7 pb-5">
+                      <div className="flex justify-center gap-[8px] px-5 pb-4">
                         {days.map((day) => {
                           const isSelected = day.dateKey === selectedDay;
                           return (
                             <button
                               key={day.label + day.num}
-                              className="flex flex-col items-center gap-1 w-11 transition-opacity"
+                              className="flex flex-col items-center gap-0.5 w-10 transition-opacity"
                               onClick={() => setSelectedDay(day.dateKey)}
                             >
                               <span
@@ -623,7 +623,7 @@ export function ProfilePopover({
                                 {day.label}
                               </span>
                               <span
-                                className="w-9 h-9 rounded-full flex items-center justify-center text-base font-bold"
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-[14px] font-bold"
                                 style={{
                                   color: isSelected ? "#FFFFFF" : day.isFuture ? "#7A3040" : "#5C1A2A",
                                   background: isSelected ? "#5C1A2A" : day.isToday ? "#FFFFFF" : "transparent",
@@ -660,7 +660,7 @@ export function ProfilePopover({
                   })()}
 
                   {/* To Do section */}
-                  <div className="px-7 pb-5">
+                  <div className="px-5 pb-4">
                     {(() => {
                       const todayKey = new Date().toISOString().slice(0, 10);
                       const isViewingToday = selectedDay === todayKey;
@@ -847,7 +847,7 @@ export function ProfilePopover({
                                     onClick={!isHabit ? () => setEditingTodo({ mode: "edit", todo: item.todo }) : undefined}
                                   >
                                     <div
-                                      className="text-[17px] font-semibold transition-all duration-200 truncate"
+                                      className="text-[15px] font-semibold transition-all duration-200 truncate"
                                       style={{
                                         color: completed ? "#7A3040" : "#5C1A2A",
                                         textDecoration: completed ? "line-through" : "none",
