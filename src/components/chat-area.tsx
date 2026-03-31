@@ -582,22 +582,6 @@ export function ChatArea({
         }}
       />
 
-      {/* Top bar */}
-      <div className="flex-shrink-0 relative z-10 flex items-center border-b border-[#E5E5EA]/60 bg-white/80 backdrop-blur-sm px-4 py-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="mr-2 h-8 w-8"
-          onClick={onToggleSidebar}
-        >
-          <PanelLeft className="h-4 w-4" />
-        </Button>
-        <span className="flex-1 text-center text-sm font-extrabold text-[#0F1B3D] truncate">
-          {chatTitle || ""}
-        </span>
-        <div className="w-8" />
-      </div>
-
       {/* Messages */}
       <div className="relative z-10 flex-1 min-h-0 overflow-y-auto chat-selectable">
         <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
