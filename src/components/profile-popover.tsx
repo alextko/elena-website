@@ -402,28 +402,28 @@ export function ProfilePopover({
 
                 {/* Profile switcher dropdown */}
                 {switcherOpen && (
-                  <div className="absolute top-full left-0 mt-1 w-64 rounded-xl bg-white border border-[#0F1B3D]/[0.08] shadow-[0_8px_32px_rgba(15,27,61,0.15)] overflow-hidden z-50">
-                    <div className="py-1.5">
+                  <div className="absolute top-full left-0 mt-2 w-72 rounded-2xl bg-[#F7F6F2] border border-[#E5E5EA] shadow-[0_12px_40px_rgba(15,27,61,0.15)] overflow-hidden z-50">
+                    <div className="p-2">
                       {/* Unlink confirmation */}
                       {confirmUnlink && (
                         <div className="px-3 py-3">
-                          <p className="text-[13px] font-semibold text-[#0F1B3D] mb-1">
+                          <p className="text-[14px] font-bold text-[#0F1B3D] mb-1">
                             Unlink {confirmUnlink.first_name}?
                           </p>
-                          <p className="text-[12px] text-[#0F1B3D]/40 mb-3">
+                          <p className="text-[13px] text-[#8E8E93] mb-3">
                             You will no longer be able to see {confirmUnlink.first_name}&apos;s data.
                           </p>
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleUnlink(confirmUnlink)}
                               disabled={unlinking}
-                              className="flex-1 rounded-lg bg-red-500 py-1.5 text-[13px] font-semibold text-white hover:bg-red-600 transition-colors disabled:opacity-50"
+                              className="flex-1 rounded-xl bg-red-500 py-2 text-[13px] font-semibold text-white hover:bg-red-600 transition-colors disabled:opacity-50"
                             >
                               {unlinking ? "Removing..." : "Unlink"}
                             </button>
                             <button
                               onClick={() => setConfirmUnlink(null)}
-                              className="flex-1 rounded-lg border border-[#E5E5EA] py-1.5 text-[13px] font-semibold text-[#0F1B3D]/60 hover:bg-[#0F1B3D]/[0.04] transition-colors"
+                              className="flex-1 rounded-xl border border-[#E5E5EA] py-2 text-[13px] font-semibold text-[#0F1B3D]/60 hover:bg-white transition-colors"
                             >
                               Cancel
                             </button>
@@ -442,34 +442,34 @@ export function ProfilePopover({
                             return (
                               <div
                                 key={p.id}
-                                className={`flex w-full items-center gap-2.5 px-3 py-2 transition-colors hover:bg-[#0F1B3D]/[0.04] ${isActive ? "bg-[#0F1B3D]/[0.06]" : ""}`}
+                                className={`flex w-full items-center gap-3 px-3 py-2.5 rounded-xl transition-colors hover:bg-white ${isActive ? "bg-white shadow-[0_1px_4px_rgba(0,0,0,0.06)]" : ""}`}
                               >
                                 <button
                                   onClick={async () => {
                                     if (!isActive) await switchProfile(p.id);
                                     setSwitcherOpen(false);
                                   }}
-                                  className="flex items-center gap-2.5 min-w-0 flex-1 text-left"
+                                  className="flex items-center gap-3 min-w-0 flex-1 text-left"
                                 >
                                   {p.profile_picture_url ? (
-                                    <img src={p.profile_picture_url} alt={pName} className="h-7 w-7 rounded-full object-cover flex-shrink-0" />
+                                    <img src={p.profile_picture_url} alt={pName} className="h-8 w-8 rounded-full object-cover flex-shrink-0" />
                                   ) : (
-                                    <Avatar className="h-7 w-7">
-                                      <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-[10px] font-semibold text-[#0F1B3D]/50">{pInitials}</AvatarFallback>
+                                    <Avatar className="h-8 w-8">
+                                      <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-[11px] font-bold text-[#0F1B3D]/40">{pInitials}</AvatarFallback>
                                     </Avatar>
                                   )}
                                   <div className="min-w-0 flex-1">
-                                    <p className="text-sm font-medium text-[#0F1B3D] truncate">{pName}</p>
-                                    <p className="text-[10px] text-[#0F1B3D]/30">{badge}</p>
+                                    <p className="text-[15px] font-semibold text-[#0F1B3D] truncate">{pName}</p>
+                                    <p className="text-[12px] text-[#8E8E93]">{badge}</p>
                                   </div>
                                   {isActive && (
-                                    <div className="h-1.5 w-1.5 rounded-full bg-[#2E6BB5] flex-shrink-0" />
+                                    <div className="h-2 w-2 rounded-full bg-[#2E6BB5] flex-shrink-0" />
                                   )}
                                 </button>
                                 {canUnlink && (
                                   <button
                                     onClick={(e) => { e.stopPropagation(); setConfirmUnlink(p); }}
-                                    className="flex-shrink-0 p-1 rounded-md text-[#0F1B3D]/20 hover:text-red-400 hover:bg-red-50 transition-colors"
+                                    className="flex-shrink-0 p-1.5 rounded-lg text-[#0F1B3D]/20 hover:text-red-400 hover:bg-red-50 transition-colors"
                                     title={`Unlink ${pName}`}
                                   >
                                     <X className="h-3.5 w-3.5" />
@@ -478,17 +478,17 @@ export function ProfilePopover({
                               </div>
                             );
                           })}
-                          <div className="border-t border-[#0F1B3D]/[0.06] mt-1 pt-1">
+                          <div className="border-t border-[#E5E5EA] mt-1.5 pt-1.5 mx-1">
                             <button
                               onClick={() => { setSwitcherOpen(false); setOpen(false); setAddFamilyOpen(true); }}
-                              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[#0F1B3D]/50 hover:bg-[#0F1B3D]/[0.04] transition-colors"
+                              className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-left text-[14px] font-medium text-[#8E8E93] hover:bg-white transition-colors"
                             >
                               <UserPlus className="h-4 w-4" />
                               Add family member
                             </button>
                             <button
                               onClick={() => { setSwitcherOpen(false); setOpen(false); setAcceptInviteOpen(true); }}
-                              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[#0F1B3D]/50 hover:bg-[#0F1B3D]/[0.04] transition-colors"
+                              className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-left text-[14px] font-medium text-[#8E8E93] hover:bg-white transition-colors"
                             >
                               <Link2 className="h-4 w-4" />
                               Enter invite code
