@@ -143,6 +143,7 @@ export function ProfilePopover({
   const [open, setOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("health");
+  const [selectedDay, setSelectedDay] = useState<string>(new Date().toISOString().slice(0, 10));
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<typeof doctors[number] | null>(null);
@@ -153,6 +154,8 @@ export function ProfilePopover({
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [addFamilyOpen, setAddFamilyOpen] = useState(false);
   const [acceptInviteOpen, setAcceptInviteOpen] = useState(false);
+  const [confirmUnlink, setConfirmUnlink] = useState<ProfileSummary | null>(null);
+  const [unlinking, setUnlinking] = useState(false);
   const switcherRef = useRef<HTMLDivElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const todayRef = useRef<HTMLDivElement>(null);
@@ -169,6 +172,33 @@ export function ProfilePopover({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [switcherOpen]);
+
+  async function handleUnlink(profile: ProfileSummary) {
+    setUnlinking(true);
+    try {
+      // Fetch family links to find the link_id for this profile
+      const linksRes = await apiFetch("/family/links");
+      if (!linksRes.ok) { setUnlinking(false); return; }
+      const data = await linksRes.json();
+      const link = data.links?.find((l: { profile_id: string }) => l.profile_id === profile.id);
+      if (!link) { setUnlinking(false); return; }
+
+      await apiFetch(`/family/links/${link.link_id}`, { method: "DELETE" });
+
+      // If we were viewing the unlinked profile, switch back to primary
+      if (profileId === profile.id) {
+        const primary = profiles.find((p) => p.is_primary);
+        if (primary) await switchProfile(primary.id);
+      }
+
+      // Reload to refresh the profiles list
+      window.location.reload();
+    } catch {
+      // silent
+    }
+    setUnlinking(false);
+    setConfirmUnlink(null);
+  }
 
   async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -273,9 +303,9 @@ export function ProfilePopover({
       <DialogTrigger render={children as React.ReactElement}></DialogTrigger>
       <DialogContent
         showCloseButton
-        className="w-[90vw] max-w-lg rounded-2xl border-[#0F1B3D]/[0.08] bg-[#F7F6F2] p-0 shadow-xl"
+        className="w-[90vw] max-w-[36rem] rounded-2xl border-[#0F1B3D]/[0.08] bg-[#F7F6F2] p-0 shadow-xl"
       >
-        <div ref={scrollRef} className="max-h-[60vh] overflow-y-auto">
+        <div ref={scrollRef} className="max-h-[65vh] overflow-y-auto">
           {/* ═══════════ PROVIDER DETAIL VIEW ═══════════ */}
           {selectedProvider && (
             <ProviderDetailPanel
@@ -322,7 +352,7 @@ export function ProfilePopover({
 
           {/* ═══════════ MAIN PROFILE CONTENT ═══════════ */}
           {!selectedProvider && !selectedVisit && !editingTodo && !addingProvider && (
-          <div className="p-6 pb-8">
+          <div className="p-8 pb-10">
             {/* User header */}
             <div className="flex items-center gap-4 pb-4">
               <input
@@ -376,55 +406,98 @@ export function ProfilePopover({
                 {switcherOpen && (
                   <div className="absolute top-full left-0 mt-1 w-64 rounded-xl bg-white border border-[#0F1B3D]/[0.08] shadow-[0_8px_32px_rgba(15,27,61,0.15)] overflow-hidden z-50">
                     <div className="py-1.5">
-                      {profiles.map((p) => {
-                        const isActive = p.id === profileId;
-                        const pName = `${p.first_name} ${p.last_name}`.trim() || p.label || "Profile";
-                        const pInitials = p.first_name ? `${p.first_name[0]}${p.last_name?.[0] || ""}`.toUpperCase() : "?";
-                        const badge = p.is_primary ? "Me" : p.is_linked ? "Linked" : "Managed";
-                        return (
-                          <button
-                            key={p.id}
-                            onClick={async () => {
-                              if (!isActive) {
-                                await switchProfile(p.id);
-                              }
-                              setSwitcherOpen(false);
-                            }}
-                            className={`flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-[#0F1B3D]/[0.04] ${isActive ? "bg-[#0F1B3D]/[0.06]" : ""}`}
-                          >
-                            {p.profile_picture_url ? (
-                              <img src={p.profile_picture_url} alt={pName} className="h-7 w-7 rounded-full object-cover flex-shrink-0" />
-                            ) : (
-                              <Avatar className="h-7 w-7">
-                                <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-[10px] font-semibold text-[#0F1B3D]/50">{pInitials}</AvatarFallback>
-                              </Avatar>
-                            )}
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-[#0F1B3D] truncate">{pName}</p>
-                              <p className="text-[10px] text-[#0F1B3D]/30">{badge}</p>
-                            </div>
-                            {isActive && (
-                              <div className="h-1.5 w-1.5 rounded-full bg-[#2E6BB5] flex-shrink-0" />
-                            )}
-                          </button>
-                        );
-                      })}
-                      <div className="border-t border-[#0F1B3D]/[0.06] mt-1 pt-1">
-                        <button
-                          onClick={() => { setSwitcherOpen(false); setOpen(false); setAddFamilyOpen(true); }}
-                          className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[#0F1B3D]/50 hover:bg-[#0F1B3D]/[0.04] transition-colors"
-                        >
-                          <UserPlus className="h-4 w-4" />
-                          Add family member
-                        </button>
-                        <button
-                          onClick={() => { setSwitcherOpen(false); setOpen(false); setAcceptInviteOpen(true); }}
-                          className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[#0F1B3D]/50 hover:bg-[#0F1B3D]/[0.04] transition-colors"
-                        >
-                          <Link2 className="h-4 w-4" />
-                          Enter invite code
-                        </button>
-                      </div>
+                      {/* Unlink confirmation */}
+                      {confirmUnlink && (
+                        <div className="px-3 py-3">
+                          <p className="text-[13px] font-semibold text-[#0F1B3D] mb-1">
+                            Unlink {confirmUnlink.first_name}?
+                          </p>
+                          <p className="text-[12px] text-[#0F1B3D]/40 mb-3">
+                            You will no longer be able to see {confirmUnlink.first_name}&apos;s data.
+                          </p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleUnlink(confirmUnlink)}
+                              disabled={unlinking}
+                              className="flex-1 rounded-lg bg-red-500 py-1.5 text-[13px] font-semibold text-white hover:bg-red-600 transition-colors disabled:opacity-50"
+                            >
+                              {unlinking ? "Removing..." : "Unlink"}
+                            </button>
+                            <button
+                              onClick={() => setConfirmUnlink(null)}
+                              className="flex-1 rounded-lg border border-[#E5E5EA] py-1.5 text-[13px] font-semibold text-[#0F1B3D]/60 hover:bg-[#0F1B3D]/[0.04] transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {!confirmUnlink && (
+                        <>
+                          {profiles.map((p) => {
+                            const isActive = p.id === profileId;
+                            const pName = `${p.first_name} ${p.last_name}`.trim() || p.label || "Profile";
+                            const pInitials = p.first_name ? `${p.first_name[0]}${p.last_name?.[0] || ""}`.toUpperCase() : "?";
+                            const badge = p.is_primary ? "Me" : p.is_linked ? "Linked" : "Managed";
+                            const canUnlink = !p.is_primary;
+                            return (
+                              <div
+                                key={p.id}
+                                className={`flex w-full items-center gap-2.5 px-3 py-2 transition-colors hover:bg-[#0F1B3D]/[0.04] ${isActive ? "bg-[#0F1B3D]/[0.06]" : ""}`}
+                              >
+                                <button
+                                  onClick={async () => {
+                                    if (!isActive) await switchProfile(p.id);
+                                    setSwitcherOpen(false);
+                                  }}
+                                  className="flex items-center gap-2.5 min-w-0 flex-1 text-left"
+                                >
+                                  {p.profile_picture_url ? (
+                                    <img src={p.profile_picture_url} alt={pName} className="h-7 w-7 rounded-full object-cover flex-shrink-0" />
+                                  ) : (
+                                    <Avatar className="h-7 w-7">
+                                      <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-[10px] font-semibold text-[#0F1B3D]/50">{pInitials}</AvatarFallback>
+                                    </Avatar>
+                                  )}
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-medium text-[#0F1B3D] truncate">{pName}</p>
+                                    <p className="text-[10px] text-[#0F1B3D]/30">{badge}</p>
+                                  </div>
+                                  {isActive && (
+                                    <div className="h-1.5 w-1.5 rounded-full bg-[#2E6BB5] flex-shrink-0" />
+                                  )}
+                                </button>
+                                {canUnlink && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setConfirmUnlink(p); }}
+                                    className="flex-shrink-0 p-1 rounded-md text-[#0F1B3D]/20 hover:text-red-400 hover:bg-red-50 transition-colors"
+                                    title={`Unlink ${pName}`}
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                          <div className="border-t border-[#0F1B3D]/[0.06] mt-1 pt-1">
+                            <button
+                              onClick={() => { setSwitcherOpen(false); setOpen(false); setAddFamilyOpen(true); }}
+                              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[#0F1B3D]/50 hover:bg-[#0F1B3D]/[0.04] transition-colors"
+                            >
+                              <UserPlus className="h-4 w-4" />
+                              Add family member
+                            </button>
+                            <button
+                              onClick={() => { setSwitcherOpen(false); setOpen(false); setAcceptInviteOpen(true); }}
+                              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[#0F1B3D]/50 hover:bg-[#0F1B3D]/[0.04] transition-colors"
+                            >
+                              <Link2 className="h-4 w-4" />
+                              Enter invite code
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
@@ -432,17 +505,15 @@ export function ProfilePopover({
             </div>
 
             {/* Tab pills */}
-            <div className="flex gap-1.5 mt-1 mb-2">
+            <div className="flex gap-1.5 mt-1 mb-4">
               <TabPill label="Health" active={activeTab === "health"} onClick={() => setActiveTab("health")} />
               <TabPill label="Visits" active={activeTab === "visits"} onClick={() => setActiveTab("visits")} />
               <TabPill label="Insurance" active={activeTab === "insurance"} onClick={() => setActiveTab("insurance")} />
             </div>
 
-            <div className="h-px bg-[#E5E5EA] mb-3" />
-
             {/* ═══════════ HEALTH TAB ═══════════ */}
             {activeTab === "health" && (
-              <div className="space-y-3">
+              <div className="space-y-5">
                 {/* ── Game Plan (salmon card) ── */}
                 <div
                   className="rounded-[22px] pt-[18px] pb-2 overflow-hidden"
@@ -461,6 +532,7 @@ export function ProfilePopover({
                     const dayOfWeek = now.getDay();
                     const monday = new Date(now);
                     monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
+                    const todayKey = now.toISOString().slice(0, 10);
                     const days = Array.from({ length: 7 }, (_, i) => {
                       const d = new Date(monday);
                       d.setDate(monday.getDate() + i);
@@ -472,81 +544,150 @@ export function ProfilePopover({
                       const allDone = !isFuture && habits.length > 0 && dayCompletions
                         ? habits.every((h) => dayCompletions.has(h.id))
                         : false;
-                      return { label: d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2), num: d.getDate(), isToday, isFuture, allDone };
+                      // Event dots: visits on this day + todos with due_date on this day
+                      const visitDots = careVisits
+                        .filter((v) => v.visit_date === dateKey)
+                        .map(() => "#5C1A2A");
+                      const todoDots = todos
+                        .filter((t) => t.due_date === dateKey && t.status !== "dismissed")
+                        .map((t) => t.color || "#5C1A2A");
+                      const dots = [...visitDots, ...todoDots].slice(0, 3);
+                      return { label: d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2), num: d.getDate(), isToday, isFuture, allDone, dots, dateKey };
                     });
                     return (
                       <div className="flex justify-center gap-[10px] px-6 pb-4">
-                        {days.map((day) => (
-                          <div key={day.label + day.num} className="flex flex-col items-center gap-1 w-11">
-                            <span
-                              className="text-[11px] font-semibold uppercase"
-                              style={{ color: day.isToday ? "#5C1A2A" : "#7A3040" }}
+                        {days.map((day) => {
+                          const isSelected = day.dateKey === selectedDay;
+                          return (
+                            <button
+                              key={day.label + day.num}
+                              className="flex flex-col items-center gap-1 w-11 transition-opacity"
+                              onClick={() => setSelectedDay(day.dateKey)}
                             >
-                              {day.label}
-                            </span>
-                            <span
-                              className="w-9 h-9 rounded-full flex items-center justify-center text-base font-bold"
-                              style={{
-                                color: day.isToday ? "#5C1A2A" : day.isFuture ? "#7A3040" : "#5C1A2A",
-                                background: day.isToday ? "#FFFFFF" : "transparent",
-                                opacity: day.isFuture ? 0.5 : 1,
-                              }}
-                            >
-                              {!day.isFuture && day.allDone ? (
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={day.isToday ? "#5C1A2A" : "#5C1A2A"} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                  <polyline points="20 6 9 17 4 12" />
-                                </svg>
-                              ) : (
-                                day.num
-                              )}
-                            </span>
-                          </div>
-                        ))}
+                              <span
+                                className="text-[11px] font-semibold uppercase"
+                                style={{ color: day.isToday ? "#5C1A2A" : "#7A3040" }}
+                              >
+                                {day.label}
+                              </span>
+                              <span
+                                className="w-9 h-9 rounded-full flex items-center justify-center text-base font-bold"
+                                style={{
+                                  color: isSelected ? "#FFFFFF" : day.isFuture ? "#7A3040" : "#5C1A2A",
+                                  background: isSelected ? "#5C1A2A" : day.isToday ? "#FFFFFF" : "transparent",
+                                  opacity: day.isFuture && !isSelected ? 0.5 : 1,
+                                }}
+                              >
+                                {!day.isFuture && !isSelected && day.allDone ? (
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5C1A2A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="20 6 9 17 4 12" />
+                                  </svg>
+                                ) : (
+                                  day.num
+                                )}
+                              </span>
+                              {/* Event dots */}
+                              <div className="flex gap-[3px] h-[6px]">
+                                {day.dots.map((color, di) => (
+                                  <div
+                                    key={di}
+                                    className="w-[5px] h-[5px] rounded-full"
+                                    style={{
+                                      background: day.isFuture ? "transparent" : color,
+                                      border: day.isFuture ? `1.5px solid ${color}` : "none",
+                                      opacity: day.isFuture ? 0.5 : 1,
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
                     );
                   })()}
 
                   {/* To Do section */}
                   <div className="px-6 pb-4">
-                    <div className="flex items-center justify-between px-2 mb-[10px]">
-                      <span className="text-[15px] font-bold" style={{ color: "#5C1A2A" }}>To Do</span>
-                      <button
-                        onClick={() => setEditingTodo({ mode: "create" })}
-                        className="transition-opacity hover:opacity-70"
-                      >
-                        <Plus className="h-[22px] w-[22px]" style={{ color: "#5C1A2A" }} />
-                      </button>
-                    </div>
+                    {(() => {
+                      const todayKey = new Date().toISOString().slice(0, 10);
+                      const isViewingToday = selectedDay === todayKey;
+                      const dayLabel = isViewingToday
+                        ? "To Do"
+                        : new Date(selectedDay + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+
+                      return (
+                        <div className="flex items-center justify-between px-2 mb-[10px]">
+                          <span className="text-[15px] font-bold" style={{ color: "#5C1A2A" }}>{dayLabel}</span>
+                          <div className="flex items-center gap-2">
+                            {!isViewingToday && (
+                              <button
+                                onClick={() => setSelectedDay(todayKey)}
+                                className="text-[13px] font-semibold transition-opacity hover:opacity-70"
+                                style={{ color: "#5C1A2A" }}
+                              >
+                                Back to today
+                              </button>
+                            )}
+                            <button
+                              onClick={() => setEditingTodo({ mode: "create" })}
+                              className="transition-opacity hover:opacity-70"
+                            >
+                              <Plus className="h-[22px] w-[22px]" style={{ color: "#5C1A2A" }} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {(() => {
-                      // Merge habits and care todos into one list
+                      const todayKey = new Date().toISOString().slice(0, 10);
+                      const isViewingToday = selectedDay === todayKey;
+
+                      // Merge visits, habits, and care todos into one list (matches mobile app)
                       type GamePlanItem =
+                        | { type: "visit"; visit: CareVisit; sortOrder: number }
                         | { type: "habit"; id: string; title: string; subtitle: string; color: string; completed: boolean; sortOrder: number }
                         | { type: "todo"; todo: CareTodo; sortOrder: number };
 
-                      const items: GamePlanItem[] = [
-                        ...habits.map((h, i) => ({
-                          type: "habit" as const,
-                          id: h.id,
-                          title: h.title,
-                          subtitle: h.subtitle,
-                          color: h.color,
-                          completed: !!(habitCompletions[new Date().toISOString().slice(0, 10)]?.has(h.id)),
-                          sortOrder: h.sort_order,
-                        })),
-                        ...todos
-                          .filter((t) => t.status !== "dismissed")
-                          .map((t) => ({
-                            type: "todo" as const,
-                            todo: t,
-                            sortOrder: t.sort_order + 1000, // habits first
-                          })),
-                      ];
+                      // Visits for the selected day
+                      const dayVisits: GamePlanItem[] = careVisits
+                        .filter((v) => v.visit_date === selectedDay)
+                        .map((v, i) => ({
+                          type: "visit" as const,
+                          visit: v,
+                          sortOrder: -1000 + i, // visits first
+                        }));
 
-                      // Sort: uncompleted first, then by sort order
+                      // Habits show every day (they're daily), completions are day-specific
+                      const dayHabits: GamePlanItem[] = habits.map((h) => ({
+                        type: "habit" as const,
+                        id: h.id,
+                        title: h.title,
+                        subtitle: h.subtitle,
+                        color: h.color,
+                        completed: !!(habitCompletions[selectedDay]?.has(h.id)),
+                        sortOrder: h.sort_order,
+                      }));
+
+                      // Care todos: show todos that match the selected day (by due_date) or have no due_date (always visible)
+                      const dayTodos: GamePlanItem[] = todos
+                        .filter((t) => t.status !== "dismissed" && (!t.due_date || t.due_date === selectedDay))
+                        .map((t) => ({
+                          type: "todo" as const,
+                          todo: t,
+                          sortOrder: t.sort_order + 1000, // after habits
+                        }));
+
+                      const items: GamePlanItem[] = [...dayVisits, ...dayHabits, ...dayTodos];
+
+                      // Sort: visits first, then uncompleted before completed, then by sort order
                       items.sort((a, b) => {
-                        const aCompleted = a.type === "habit" ? a.completed : a.todo.status === "completed";
-                        const bCompleted = b.type === "habit" ? b.completed : b.todo.status === "completed";
+                        // Visits always first
+                        if (a.type === "visit" && b.type !== "visit") return -1;
+                        if (a.type !== "visit" && b.type === "visit") return 1;
+                        const aCompleted = a.type === "habit" ? a.completed : a.type === "todo" ? a.todo.status === "completed" : false;
+                        const bCompleted = b.type === "habit" ? b.completed : b.type === "todo" ? b.todo.status === "completed" : false;
                         if (aCompleted !== bCompleted) return aCompleted ? 1 : -1;
                         return a.sortOrder - b.sortOrder;
                       });
@@ -565,6 +706,40 @@ export function ProfilePopover({
                       return (
                         <div className="rounded-[14px] px-[14px] py-[10px]" style={{ background: "rgba(255,255,255,0.3)" }}>
                           {items.map((item, i) => {
+                            if (item.type === "visit") {
+                              const v = item.visit;
+                              const visitTime = v.visit_date; // TODO: parse time if available
+                              return (
+                                <React.Fragment key={`visit-${v.id}`}>
+                                  {i > 0 && (
+                                    <div className="h-px mx-[14px]" style={{ background: "rgba(92,26,42,0.2)" }} />
+                                  )}
+                                  <button
+                                    className="flex items-center gap-3 py-[10px] w-full text-left"
+                                    onClick={() => setSelectedVisit(v)}
+                                  >
+                                    <div
+                                      className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center"
+                                      style={{ background: "rgba(92,26,42,0.15)" }}
+                                    >
+                                      <Calendar className="h-4 w-4" style={{ color: "#5C1A2A" }} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="text-[17px] font-semibold truncate" style={{ color: "#5C1A2A" }}>
+                                        {v.visit_type}{v.doctor_name ? ` \u2014 ${v.doctor_name}` : ""}
+                                      </div>
+                                      {v.location && (
+                                        <div className="text-[13px] mt-[1px] truncate" style={{ color: "#7A3040" }}>
+                                          {v.location}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <ChevronRight className="h-4 w-4 flex-shrink-0" style={{ color: "#7A3040" }} />
+                                  </button>
+                                </React.Fragment>
+                              );
+                            }
+
                             const isHabit = item.type === "habit";
                             const completed = isHabit ? item.completed : item.todo.status === "completed";
                             const title = isHabit ? item.title : item.todo.title;
@@ -869,19 +1044,36 @@ export function ProfilePopover({
                       );
                     })}
 
-                    {/* Today marker at end if all visits are in the past */}
+                    {/* Today marker at end + no upcoming visits placeholder */}
+                    {/* Today marker at end if all visits are in the past (none today) */}
                     {sortedVisits.length > 0 &&
                       sortedVisits.every((v) => v.visit_date < today) && (
                         <div ref={todayRef} className="flex items-center gap-0 ml-1 my-2">
                           <div className="flex flex-col items-center w-6 shrink-0">
                             <div className="w-0.5 h-3 bg-[#93B5E1]" />
                             <div className="w-3 h-3 rounded-full bg-[#4A7AB5] shrink-0" />
+                            <div className="w-0.5 h-3 bg-[#93B5E1]" />
                           </div>
                           <div className="flex items-center gap-1.5 ml-2.5">
                             <span className="text-[16px] font-bold text-[#4A7AB5]">Today</span>
                             <span className="text-[13px] font-medium text-[#6B9BD2]">
                               {formatVisitDate(today)}
                             </span>
+                          </div>
+                        </div>
+                      )}
+
+                    {/* No upcoming visits placeholder — shown when no visits are after today */}
+                    {sortedVisits.length > 0 &&
+                      !sortedVisits.some((v) => v.visit_date > today) && (
+                        <div className="flex gap-0 ml-1">
+                          <div className="flex flex-col items-center w-6 shrink-0">
+                            <div className="w-0.5 h-2 bg-[#93B5E1]" />
+                            <div className="w-3 h-3 rounded-full shrink-0 my-0.5 border-2 border-dashed border-[#93B5E1]" />
+                          </div>
+                          <div className="flex-1 min-w-0 bg-white/60 rounded-[14px] border border-dashed border-[#93B5E1]/40 px-3.5 py-3 mb-3 ml-2.5">
+                            <p className="text-[15px] font-semibold text-[#6B9BD2]">No upcoming visits</p>
+                            <p className="text-[13px] text-[#93B5E1] mt-0.5">Chat with Elena to find and book your next visit</p>
                           </div>
                         </div>
                       )}
@@ -895,7 +1087,7 @@ export function ProfilePopover({
             {activeTab === "insurance" && (
               <div className="space-y-0 pb-2">
                 {/* Insurance cards carousel-style display */}
-                <div className="flex gap-3 overflow-x-auto pb-4 -mx-2 px-2 snap-x snap-mandatory scrollbar-hide">
+                <div className="flex gap-3 overflow-x-auto pb-6 -mx-2 px-2 pt-1 snap-x snap-mandatory scrollbar-hide">
                   <InsuranceCardDisplay card={medicalCard} label="Medical" dark />
                   <InsuranceCardDisplay card={dentalCard} label="Dental" dark={false} />
                   <InsuranceCardDisplay card={visionCard} label="Vision" dark />
@@ -927,12 +1119,10 @@ export function ProfilePopover({
               </div>
             )}
 
-            <div className="h-px bg-[#E5E5EA] mt-4" />
-
             {/* Sign out */}
             <button
               onClick={handleSignOut}
-              className="flex w-full items-center gap-2 py-4 text-sm text-[#0F1B3D]/40 transition-colors hover:text-[#0F1B3D]/60"
+              className="flex w-full items-center gap-2 pt-6 pb-4 text-sm text-[#0F1B3D]/40 transition-colors hover:text-[#0F1B3D]/60"
             >
               <LogOut className="h-4 w-4" />
               Sign out

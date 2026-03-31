@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { PanelLeft, Plus, ArrowUp, Square, Paperclip, X } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
+import { useAuth } from "@/lib/auth-context";
 import * as analytics from "@/lib/analytics";
 import { usePollChat } from "@/hooks/usePollChat";
 import { useBookingPoll } from "@/hooks/useBookingPoll";
@@ -122,6 +123,7 @@ export function ChatArea({
   onBookMessageConsumed?: () => void;
   isNewChat?: boolean;
 }) {
+  const { profileId } = useAuth();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -160,13 +162,18 @@ export function ChatArea({
     scrollEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, toolLabel]);
 
-  // Load session or welcome when activeSessionId changes
+  // Load session or welcome when activeSessionId, isNewChat, or profileId changes.
+  // profileId is included so switching profiles forces a full session reload.
   const loadRequestRef = useRef(0);
+  const prevProfileIdRef = useRef(profileId);
 
   useEffect(() => {
+    const profileChanged = profileId !== prevProfileIdRef.current;
+    prevProfileIdRef.current = profileId;
+
     // If ChatArea already created this session (first message just sent),
-    // skip reloading — we already have the messages locally.
-    if (activeSessionId && sessionIdRef.current === activeSessionId) {
+    // skip reloading — UNLESS the profile changed, which requires a full reset.
+    if (!profileChanged && activeSessionId && sessionIdRef.current === activeSessionId) {
       return;
     }
 
@@ -184,6 +191,7 @@ export function ChatArea({
     setPendingFiles([]);
     hasCreatedSessionRef.current = false;
     setSessionReady(false);
+    sessionIdRef.current = null;
 
     // Increment request ID so stale fetches are ignored
     const requestId = ++loadRequestRef.current;
@@ -192,16 +200,15 @@ export function ChatArea({
       // Load existing session messages
       sessionIdRef.current = activeSessionId;
       loadMessages(activeSessionId, requestId);
-    } else if (isNewChat) {
-      sessionIdRef.current = null;
-      // Check for pending query directly from localStorage (props may be stale)
+    } else if (isNewChat || profileChanged) {
+      // Start a fresh welcome session for the active profile
       const pending = initialQuery || localStorage.getItem("elena_pending_query");
       fetchWelcome(!!pending);
     }
     // When activeSessionId is null and isNewChat is false, we're still loading
     // sessions — don't create a new welcome session yet.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSessionId, isNewChat]);
+  }, [activeSessionId, isNewChat, profileId]);
 
   async function loadMessages(sessionId: string, requestId: number) {
     setLoadingMessages(true);

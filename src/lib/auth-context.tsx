@@ -176,10 +176,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setProfileChecked(true);
-      setProfileId(data.profile_id);
       setProfiles(data.profiles || []);
 
-      const primary = data.profiles.find((p) => p.is_primary);
+      // Restore the previously-selected profile from localStorage (survives refresh)
+      const savedProfileId = localStorage.getItem("elena_active_profile_id");
+      const savedProfile = savedProfileId
+        ? (data.profiles || []).find((p) => p.id === savedProfileId)
+        : null;
+      const activeProfile = savedProfile
+        || (data.profiles || []).find((p) => p.is_primary)
+        || null;
+
+      setProfileId(activeProfile?.id || data.profile_id);
+
+      const primary = (data.profiles || []).find((p) => p.is_primary);
       if (primary) {
         analytics.identify(currentSessionForProvider?.user?.id || "", {
           $email: data.email,
@@ -188,12 +198,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           plan_type: "free",
         });
         analytics.track("Login Completed", { method: provider });
+      }
 
+      if (activeProfile) {
         setProfileData({
-          firstName: primary.first_name,
-          lastName: primary.last_name,
+          firstName: activeProfile.first_name,
+          lastName: activeProfile.last_name,
           email: data.email || "",
-          profilePictureUrl: primary.profile_picture_url || null,
+          profilePictureUrl: activeProfile.profile_picture_url || null,
         });
       } else {
         setProfileData({
