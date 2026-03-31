@@ -681,37 +681,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [profileData?.email]);
 
   const switchProfile = useCallback(async (newProfileId: string) => {
-    try {
-      const res = await apiFetch(`/profiles/${newProfileId}/switch`, { method: "PUT" });
-      if (!res.ok) return;
-      setProfileId(newProfileId);
+    // Update UI immediately (optimistic) — don't wait for the network call
+    setProfileId(newProfileId);
 
-      // Update profileData from the profiles list
-      const profile = profiles.find((p) => p.id === newProfileId);
-      if (profile) {
-        setProfileData((prev) => ({
-          firstName: profile.first_name,
-          lastName: profile.last_name,
-          email: prev?.email || "",
-          profilePictureUrl: profile.profile_picture_url,
-        }));
-      }
-
-      // Invalidate any in-flight fetch so stale data isn't applied
-      profileFetchVersionRef.current += 1;
-
-      // Clear all cached data and allow re-fetch
-      setProfileDetailsLoaded(false);
-      profileDetailsFetchingRef.current = false;
-      setDoctors([]);
-      setCareVisits([]);
-      setInsuranceCards([]);
-      setTodos([]);
-      setHabits([]);
-      setHabitCompletions({});
-    } catch {
-      console.error("[auth] Failed to switch profile");
+    const profile = profiles.find((p) => p.id === newProfileId);
+    if (profile) {
+      setProfileData((prev) => ({
+        firstName: profile.first_name,
+        lastName: profile.last_name,
+        email: prev?.email || "",
+        profilePictureUrl: profile.profile_picture_url,
+      }));
     }
+
+    // Invalidate any in-flight fetch so stale data isn't applied
+    profileFetchVersionRef.current += 1;
+
+    // Clear all cached data and allow re-fetch
+    setProfileDetailsLoaded(false);
+    profileDetailsFetchingRef.current = false;
+    setDoctors([]);
+    setCareVisits([]);
+    setInsuranceCards([]);
+    setTodos([]);
+    setHabits([]);
+    setHabitCompletions({});
+
+    // Persist the switch to the backend in the background (non-blocking)
+    apiFetch(`/profiles/${newProfileId}/switch`, { method: "PUT" }).catch(() => {
+      console.error("[auth] Failed to persist profile switch");
+    });
   }, [profiles, setProfileId]);
 
   const signIn = useCallback(
