@@ -2247,18 +2247,20 @@ function InsuranceCardDisplay({
       style={{
         width: "min(280px, 75vw)",
         aspectRatio: "1.6",
-        background: bg,
-        border: `1px solid ${borderColor}`,
-        boxShadow: "0 8px 16px rgba(0,0,0,0.18)",
+        background: hasData ? bg : "transparent",
+        border: hasData ? `1px solid ${borderColor}` : "1.5px dashed #D1D1D6",
+        boxShadow: hasData ? "0 8px 16px rgba(0,0,0,0.18)" : "none",
       }}
     >
-      {/* Gloss overlay */}
-      <div
-        className="absolute inset-0 rounded-3xl pointer-events-none"
-        style={{
-          background: "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 40%, rgba(255,255,255,0.02) 100%)",
-        }}
-      />
+      {/* Gloss overlay — only on filled cards */}
+      {hasData && (
+        <div
+          className="absolute inset-0 rounded-3xl pointer-events-none"
+          style={{
+            background: "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 40%, rgba(255,255,255,0.02) 100%)",
+          }}
+        />
+      )}
 
       {hasData ? (
         <div className="relative h-full flex flex-col justify-between p-5">
@@ -2311,14 +2313,11 @@ function InsuranceCardDisplay({
         /* Placeholder */
         <button
           onClick={onTapEmpty}
-          className="h-full w-full flex flex-col items-center justify-center cursor-pointer hover:bg-[#ECECED] transition-colors"
-          style={{ background: "#F4F4F5" }}
+          className="h-full w-full flex flex-col items-center justify-center cursor-pointer hover:bg-[#0F1B3D]/[0.03] transition-colors"
         >
-          <PlusCircle className="h-10 w-10 text-[#AEAEB2]" />
-          <p className="text-[18px] font-bold text-[#0F1B3D] mt-3">Add {label} Insurance</p>
-          <p className="text-[13px] text-[#AEAEB2] mt-1 text-center px-6">
-            Upload your card or type in your info
-          </p>
+          <PlusCircle className="h-8 w-8 text-[#D1D1D6]" />
+          <p className="text-[16px] font-semibold text-[#AEAEB2] mt-2">{label}</p>
+          <p className="text-[12px] text-[#D1D1D6] mt-0.5">Tap to add</p>
         </button>
       )}
     </div>
