@@ -575,9 +575,18 @@ export function ProfilePopover({
                       const isFuture = d > now && !isToday;
                       // Day is complete if all habits are done for that date
                       const dayCompletions = habitCompletions[dateKey];
-                      const allDone = !isFuture && habits.length > 0 && dayCompletions
+                      const habitsAllDone = habits.length > 0 && dayCompletions
                         ? habits.every((h) => dayCompletions.has(h.id))
-                        : false;
+                        : habits.length === 0;
+                      // Also check care todos for this day
+                      const dayTodosForCheck = todos.filter((t) =>
+                        t.status !== "dismissed" && t.frequency !== "daily" &&
+                        (!t.due_date || t.due_date === dateKey)
+                      );
+                      const todosAllDone = dayTodosForCheck.length === 0 ||
+                        dayTodosForCheck.every((t) => t.status === "completed");
+                      const hasAnything = habits.length > 0 || dayTodosForCheck.length > 0;
+                      const allDone = !isFuture && hasAnything && habitsAllDone && todosAllDone;
                       // Event dots: visits + non-daily todos (including recurring occurrences)
                       const visitDots = careVisits
                         .filter((v) => v.visit_date === dateKey)
@@ -630,8 +639,8 @@ export function ProfilePopover({
                                   opacity: day.isFuture && !isSelected ? 0.5 : 1,
                                 }}
                               >
-                                {!day.isFuture && !isSelected && day.allDone ? (
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5C1A2A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                {!day.isFuture && day.allDone ? (
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isSelected ? "#FFFFFF" : "#5C1A2A"} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                     <polyline points="20 6 9 17 4 12" />
                                   </svg>
                                 ) : (
