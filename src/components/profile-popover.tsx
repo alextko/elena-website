@@ -984,9 +984,9 @@ export function ProfilePopover({
                           {showTodayBefore && (
                             <div ref={todayRef} className="flex items-center gap-0 ml-1 my-2">
                               <div className="flex flex-col items-center w-6 shrink-0">
-                                {!isFirst && <div className="w-0.5 h-3 bg-[#93B5E1]" />}
+                                <div className="w-0.5 flex-1 bg-[#93B5E1]" />
                                 <div className="w-3 h-3 rounded-full bg-[#4A7AB5] shrink-0" />
-                                <div className="w-0.5 h-3 bg-[#93B5E1]" />
+                                <div className="w-0.5 flex-1 bg-[#93B5E1]" />
                               </div>
                               <div className="flex items-center gap-1.5 ml-2.5">
                                 <span className="text-[16px] font-bold text-[#4A7AB5]">Today</span>
@@ -1001,9 +1001,9 @@ export function ProfilePopover({
                           {showMonth && (
                             <div className="flex items-center gap-0 ml-1 my-2">
                               <div className="flex flex-col items-center w-6 shrink-0">
-                                <div className="w-0.5 h-2 bg-[#93B5E1]" />
+                                <div className="w-0.5 flex-1 bg-[#93B5E1]" />
                                 <div className="w-2.5 h-0.5 rounded-sm bg-[#6B9BD2]" />
-                                <div className="w-0.5 h-2 bg-[#93B5E1]" />
+                                <div className="w-0.5 flex-1 bg-[#93B5E1]" />
                               </div>
                               <div className="ml-2.5">
                                 {showYear && (
@@ -1022,12 +1022,7 @@ export function ProfilePopover({
                           <div className="flex gap-0 ml-1">
                             {/* Rail */}
                             <div className="flex flex-col items-center w-6 shrink-0">
-                              {!isFirst && !showMonth && !showTodayBefore && (
-                                <div className="w-0.5 flex-1 bg-[#93B5E1]" />
-                              )}
-                              {(isFirst || showMonth || showTodayBefore) && (
-                                <div className="w-0.5 h-2 bg-[#93B5E1]" />
-                              )}
+                              <div className="w-0.5 flex-1 bg-[#93B5E1]" />
                               <div
                                 ref={isToday ? todayRef : undefined}
                                 className="w-3 h-3 rounded-full shrink-0 my-0.5"
@@ -1036,7 +1031,7 @@ export function ProfilePopover({
                                   border: isFuture && !isToday ? "2px solid #2563EB" : "none",
                                 }}
                               />
-                              {!isLast && <div className="w-0.5 flex-1 bg-[#93B5E1]" />}
+                              <div className="w-0.5 flex-1 bg-[#93B5E1]" />
                             </div>
 
                             {/* Card */}
@@ -1085,9 +1080,9 @@ export function ProfilePopover({
                       sortedVisits.every((v) => v.visit_date < today) && (
                         <div ref={todayRef} className="flex items-center gap-0 ml-1 my-2">
                           <div className="flex flex-col items-center w-6 shrink-0">
-                            <div className="w-0.5 h-3 bg-[#93B5E1]" />
+                            <div className="w-0.5 flex-1 bg-[#93B5E1]" />
                             <div className="w-3 h-3 rounded-full bg-[#4A7AB5] shrink-0" />
-                            <div className="w-0.5 h-3 bg-[#93B5E1]" />
+                            <div className="w-0.5 flex-1 bg-[#93B5E1]" />
                           </div>
                           <div className="flex items-center gap-1.5 ml-2.5">
                             <span className="text-[16px] font-bold text-[#4A7AB5]">Today</span>
@@ -1103,12 +1098,23 @@ export function ProfilePopover({
                       !sortedVisits.some((v) => v.visit_date > today) && (
                         <div className="flex gap-0 ml-1">
                           <div className="flex flex-col items-center w-6 shrink-0">
-                            <div className="w-0.5 h-2 bg-[#93B5E1]" />
+                            <div className="w-0.5 flex-1 bg-[#93B5E1]" />
                             <div className="w-3 h-3 rounded-full shrink-0 my-0.5 border-2 border-dashed border-[#93B5E1]" />
+                            <div className="w-0.5 h-16" style={{ background: "linear-gradient(to bottom, #93B5E1, transparent)" }} />
                           </div>
                           <div className="flex-1 min-w-0 bg-white/60 rounded-[14px] border border-dashed border-[#93B5E1]/40 px-3.5 py-3 mb-3 ml-2.5">
                             <p className="text-[15px] font-semibold text-[#6B9BD2]">No upcoming visits</p>
                             <p className="text-[13px] text-[#93B5E1] mt-0.5">Chat with Elena to find and book your next visit</p>
+                          </div>
+                        </div>
+                      )}
+
+                    {/* Fading tail when timeline has future visits */}
+                    {sortedVisits.length > 0 &&
+                      sortedVisits.some((v) => v.visit_date > today) && (
+                        <div className="flex gap-0 ml-1">
+                          <div className="flex flex-col items-center w-6 shrink-0">
+                            <div className="w-0.5 h-16" style={{ background: "linear-gradient(to bottom, #93B5E1, transparent)" }} />
                           </div>
                         </div>
                       )}
