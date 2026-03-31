@@ -6,8 +6,9 @@ import {
   DoctorResultsCard,
 
   BookingStatusBubble,
+  AppointmentConfirmationCard,
 } from "@/components/chat-cards";
-import type { DoctorResult, NegotiationResult, BookingStatusResponse } from "@/lib/types";
+import type { DoctorResult, NegotiationResult, BookingStatusResponse, BookingResultPayload } from "@/lib/types";
 
 /*
  * /screenshots — Screenshot Generator for Marketing Assets
@@ -327,6 +328,55 @@ const MOCK_NEGOTIATION_AD5: NegotiationResult = {
   ],
 };
 
+// ── Mock data for enhanced screenshots (voice calling + booking) ──
+
+const MOCK_BOOKING_STATUS_SIMONMED: BookingStatusResponse = {
+  booking_id: "bk_mock_003",
+  phase: "connected",
+  message: "Elena is on the phone with SimonMed Imaging. Scheduling your MRI now.",
+  elapsed_seconds: 185,
+  provider_name: "SimonMed Imaging — Midtown",
+  provider_specialty: "Diagnostic Radiology",
+  provider_phone: "(212) 555-0192",
+  reason_for_visit: "Brain MRI without contrast",
+};
+
+const MOCK_BOOKING_RESULT_SIMONMED: BookingResultPayload = {
+  booking_id: "bk_mock_003",
+  status: "confirmed",
+  provider_name: "SimonMed Imaging — Midtown",
+  provider_specialty: "Brain MRI without contrast",
+  provider_phone: "(212) 555-0192",
+  confirmed_date: "2026-04-04",
+  confirmed_time: "2:30 PM",
+  reason_for_visit: "Brain MRI without contrast (CPT 70551)",
+  notes: "No metal implants. Arrive 15 min early. Insurance pre-auth confirmed.",
+};
+
+const MOCK_BOOKING_STATUS_ANTHEM_APPEAL: BookingStatusResponse = {
+  booking_id: "bk_mock_004",
+  phase: "on_hold",
+  message: "Elena is on hold with Anthem Blue Cross about your denied claim. Hold time so far: 23 min.",
+  elapsed_seconds: 1395,
+  provider_name: "Anthem Blue Cross",
+  provider_phone: "(800) 331-1476",
+  reason_for_visit: "Appeal denied preventive lab claim",
+};
+
+const MOCK_BOOKING_RESULT_PATEL: BookingResultPayload = {
+  booking_id: "bk_mock_005",
+  status: "confirmed",
+  provider_name: "Dr. Rajesh Patel",
+  provider_specialty: "Endocrinology",
+  provider_phone: "(212) 555-0147",
+  confirmed_date: "2026-04-08",
+  confirmed_time: "10:00 AM",
+  reason_for_visit: "Follow-up (rescheduled)",
+  is_reschedule: true,
+  original_date: "2026-04-02",
+  original_time: "3:00 PM",
+};
+
 // ── The 5 Bill Fighter conversations ─────────────────────
 
 function Ad1BillErrors() {
@@ -357,6 +407,8 @@ function Ad2MRICompare() {
       <Elena>
         <p className="mb-1">Same scan, same insurance, same city. SimonMed is <B>$2,135 less</B> than NYU Langone.</p>
       </Elena>
+      <BookingStatusBubble status={MOCK_BOOKING_STATUS_SIMONMED} />
+      <AppointmentConfirmationCard result={MOCK_BOOKING_RESULT_SIMONMED} />
       <SuggestionChips suggestions={["Book SimonMed", "Check my deductible", "Find cheaper options"]} />
     </div>
   );
@@ -371,13 +423,15 @@ function Ad3DeniedClaim() {
         <p className="mb-1">Your labs were coded as <B>diagnostic</B> instead of <B>preventive</B>. Your plan covers preventive labs at 100%, so this should be $0.</p>
         <p className="mb-1">I can <B>call your provider</B> to resubmit with the correct code, then <B>call Anthem</B> to flag it for reprocessing.</p>
       </Elena>
+      <UserBubble text="Yes please, I don't want to sit on hold for this" />
+      <BookingStatusBubble status={MOCK_BOOKING_STATUS_ANTHEM_APPEAL} />
       <AppealStatusCard
         claimType="Preventive Labs — Coding Error"
         provider="Anthem Blue Cross"
         stages={[
           { label: "Denial received", status: "done" },
           { label: "Error identified (CPT modifier)", status: "done" },
-          { label: "Provider resubmission requested", status: "active" },
+          { label: "Calling Anthem — on hold 23 min", status: "active" },
           { label: "Claim reprocessed", status: "pending" },
           { label: "Refund issued", status: "pending" },
         ]}
@@ -477,6 +531,47 @@ function FamilyProfileCard() {
   );
 }
 
+// ── Family Member Switcher (matches real Elena UI — profile dropdown) ──
+
+function FamilySwitcherCard({ activeProfile }: { activeProfile: string }) {
+  const profiles = [
+    { name: "Sarah", label: "Me", initials: "S", active: activeProfile === "Sarah", hasPhoto: false },
+    { name: "Mom — Margaret", label: "Linked", initials: "M", active: activeProfile === "Mom — Margaret", hasPhoto: false },
+    { name: "Dad — Robert", label: "Linked", initials: "R", active: activeProfile === "Dad — Robert", hasPhoto: false },
+    { name: "Lucas (son)", label: "Linked", initials: "L", active: activeProfile === "Lucas (son)", hasPhoto: false },
+  ];
+
+  return (
+    <div className="mt-3 rounded-2xl border border-[var(--elena-border-light)] bg-white elena-card-shadow overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-[var(--elena-border-light)]">
+        <p className="text-sm font-bold text-[var(--elena-text-primary)]">Switch Profile</p>
+      </div>
+      <div className="divide-y divide-[var(--elena-border-light)]">
+        {profiles.map((p, i) => (
+          <div key={i} className={`flex items-center gap-3 px-4 py-2.5 ${p.active ? "bg-[#0F1B3D]/[0.03]" : ""}`}>
+            <div className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold ${
+              p.active ? "bg-[#0F1B3D] text-white" : "bg-[#F4B084]/30 text-[#0F1B3D]"
+            }`}>
+              {p.initials}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-[var(--elena-text-primary)]">{p.name}</p>
+              <p className="text-xs text-[var(--elena-text-muted)]">{p.label}</p>
+            </div>
+            {p.active && <div className="h-2 w-2 rounded-full bg-[#3b82f6]" />}
+          </div>
+        ))}
+        <div className="flex items-center gap-3 px-4 py-2.5">
+          <div className="h-9 w-9 rounded-full flex items-center justify-center bg-[#f3f4f6]">
+            <span className="text-[var(--elena-text-muted)] text-lg">+</span>
+          </div>
+          <p className="text-sm text-[var(--elena-text-muted)]">Add family member</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Caregiver Ad 1: managing-mom-v1 ──────────────────────
 
 function CG1ManagingMom() {
@@ -538,6 +633,246 @@ function CG2FulltimeJob() {
       </Elena>
       <MedsRefillCard />
       <SuggestionChips suggestions={["Yes, call CVS", "Refill all three", "Her appointment schedule"]} />
+    </div>
+  );
+}
+
+// ── Caregiver Ad 3: weekly-list-v3 ──────────────────────
+//
+// HEADLINE: "4 doctors, 3 claims, 2 refills, 1 denied bill. That's my week."
+// URL: /blog/managing-parents-healthcare?utm_campaign=reddit_caregiver&utm_content=weekly_list_v3
+//
+// BUILD: A "Care Dashboard" card for Mom showing exactly:
+//   - 4 upcoming appointments (doctor name + date, right-aligned)
+//   - 3 insurance claims with colored status dots (● Processing green, ● Denied red)
+//   - 2 prescription refills with urgency (⚠ 3 days, 10 days)
+//   - 1 denied bill with [Appeal ready] in orange
+//
+// CONVERSATION:
+//   Elena: "Here's what's on Mom's plate this week."
+//   [Care Dashboard Card — white, sectioned, this card IS the ad]
+//   Elena: "The PT claim denial is the urgent one — 82% of these get
+//           overturned on appeal. I'm calling Anthem now to start it."
+//
+// CROP: Elena intro → dashboard card → follow-up. Mobile 430px.
+// The dashboard makes invisible labor visible in one glance.
+
+function CG3WeeklyList() {
+  return (
+    <div className="space-y-6">
+      <UserBubble text="What's on my mom's plate this week?" />
+      <Elena>
+        <p className="mb-1">Here's what's on Mom's plate this week:</p>
+      </Elena>
+      <div className="mt-3 rounded-2xl border border-[var(--elena-border-light)] bg-white elena-card-shadow overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-[var(--elena-border-light)]">
+          <p className="text-sm font-bold text-[var(--elena-text-primary)]">Mom's Week — Mar 31 – Apr 6</p>
+        </div>
+        <div className="px-4 py-3 space-y-3">
+          {/* Appointments */}
+          <div>
+            <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--elena-text-muted)] mb-1.5">Appointments (4)</p>
+            <div className="space-y-1">
+              {[
+                ["Dr. Patel, Endocrinology", "Apr 1, 10:00a"],
+                ["Dr. Chen, Cardiology", "Apr 3, 2:30p"],
+                ["Quest Diagnostics, Labs", "Apr 4, 8:00a"],
+                ["Dr. Rivera, Primary Care", "Apr 5, 11:15a"],
+              ].map(([name, date], i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <span className="text-xs text-[var(--elena-text-primary)]">{name}</span>
+                  <span className="text-xs text-[var(--elena-text-muted)]">{date}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Claims */}
+          <div className="border-t border-[var(--elena-border-light)] pt-2">
+            <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--elena-text-muted)] mb-1.5">Insurance Claims (3)</p>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[var(--elena-text-primary)]">ER visit 3/15</span>
+                <span className="inline-flex items-center gap-1 text-xs text-emerald-600"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Processing</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[var(--elena-text-primary)]">Labs 3/18</span>
+                <span className="inline-flex items-center gap-1 text-xs text-emerald-600"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Processing</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[var(--elena-text-primary)]">PT sessions 3/1–3/22</span>
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-red-500"><span className="h-1.5 w-1.5 rounded-full bg-red-500" />Denied</span>
+              </div>
+            </div>
+          </div>
+          {/* Refills */}
+          <div className="border-t border-[var(--elena-border-light)] pt-2">
+            <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--elena-text-muted)] mb-1.5">Refills Due (2)</p>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[var(--elena-text-primary)]">Metformin 500mg</span>
+                <span className="text-xs font-medium text-amber-600">⚠ 3 days</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[var(--elena-text-primary)]">Lisinopril 10mg</span>
+                <span className="text-xs text-[var(--elena-text-muted)]">10 days</span>
+              </div>
+            </div>
+          </div>
+          {/* Denied */}
+          <div className="border-t border-[var(--elena-border-light)] pt-2">
+            <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--elena-text-muted)] mb-1.5">Denied Bills (1)</p>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-[var(--elena-text-primary)]">Anthem — PT claim $2,840</span>
+              <span className="inline-block rounded-full bg-amber-50 px-2 py-0.5 text-[0.65rem] font-semibold text-amber-600">Appeal ready</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <Elena>
+        <p className="mb-1">The PT claim denial is the urgent one — <B>82% of these get overturned</B> on appeal. I'm calling Anthem now to start it.</p>
+      </Elena>
+      <BookingStatusBubble status={{
+        booking_id: "bk_mock_008",
+        phase: "on_hold",
+        message: "Elena is on hold with Anthem Blue Cross about Margaret's denied PT claim.",
+        elapsed_seconds: 720,
+        provider_name: "Anthem Blue Cross",
+        provider_phone: "(800) 331-1476",
+        reason_for_visit: "Appeal denied PT claim ($2,840)",
+      }} />
+    </div>
+  );
+}
+
+// ── Caregiver Ad 4: parent-denied-v4 ────────────────────
+//
+// HEADLINE: "My mom's insurance denied her claim. I had to fight it alone."
+// URL: /blog/medical-bill-errors?utm_campaign=reddit_caregiver&utm_content=parent_denied_v4
+//
+// BUILD: Shows Elena calling insurance on behalf of caregiver, then
+// a Call Summary card proving she resolved it.
+//
+// CONVERSATION:
+//   User: "My mom's insurance denied her claim for physical therapy."
+//   Elena: "You shouldn't have to fight this alone. Let me call Anthem."
+//   [BookingStatusBubble — on hold with Anthem, 18 min]
+//   Elena: "Connected with rep David R. Coding error confirmed..."
+//   [CallDetailCard — white card showing provider, rep, outcome, ref#]
+//
+// CROP: User message → call bubble → summary card. Mobile 430px.
+
+function CallDetailCard({
+  provider, phone, repName, regarding, outcome, expected, reference, duration,
+}: {
+  provider: string; phone: string; repName: string; regarding: string;
+  outcome: string; expected: string; reference: string; duration: string;
+}) {
+  return (
+    <div className="mt-3 rounded-2xl border border-[var(--elena-border-light)] bg-white elena-card-shadow overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-[var(--elena-border-light)] bg-[var(--elena-card-bg)]">
+        <p className="text-sm font-bold text-[var(--elena-text-primary)]">Call Summary</p>
+      </div>
+      <div className="px-4 py-3 space-y-2">
+        {[
+          ["Called", `${provider} — ${phone}`],
+          ["Spoke with", repName],
+          ["Re", regarding],
+          ["Outcome", outcome],
+          ["Expected", expected],
+          ["Reference #", reference],
+          ["Duration", duration],
+        ].map(([label, value], i) => (
+          <div key={i} className="flex gap-3">
+            <span className="text-xs text-[var(--elena-text-muted)] w-20 shrink-0">{label}</span>
+            <span className={`text-xs ${label === "Outcome" ? "text-[var(--elena-green-dark)] font-medium" : "text-[var(--elena-text-primary)]"}`}>{value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const MOCK_BOOKING_STATUS_ANTHEM_PT: BookingStatusResponse = {
+  booking_id: "bk_mock_006",
+  phase: "on_hold",
+  message: "Elena is on hold with Anthem Blue Cross about Margaret's PT claim denial. Hold time: 18 min.",
+  elapsed_seconds: 1080,
+  provider_name: "Anthem Blue Cross",
+  provider_phone: "(800) 331-1476",
+  reason_for_visit: "Appeal denied physical therapy claim ($2,840)",
+};
+
+function CG4ParentDenied() {
+  return (
+    <div className="space-y-6">
+      <UserBubble text="My mom's insurance denied her claim for physical therapy. Can you help?" />
+      <Elena>
+        <p className="mb-1">You shouldn't have to fight this alone. Let me call Anthem right now.</p>
+      </Elena>
+      <BookingStatusBubble status={MOCK_BOOKING_STATUS_ANTHEM_PT} />
+      <Elena>
+        <p className="mb-1">Connected with rep David R. He confirmed the denial was a coding error — the PT sessions were submitted under the wrong authorization number. Claim is being reprocessed.</p>
+      </Elena>
+      <CallDetailCard
+        provider="Anthem Blue Cross"
+        phone="(800) 331-1476"
+        repName="Rep David R."
+        regarding="Margaret's PT claim denial ($2,840)"
+        outcome="Coding error confirmed. Wrong auth number. Claim reprocessed."
+        expected="Reimbursement in 10-14 business days"
+        reference="CLM-991847"
+        duration="26 min (18 min hold, 8 min with rep)"
+      />
+    </div>
+  );
+}
+
+// ── Caregiver Ad 5: kids-care-v5 ────────────────────────
+//
+// HEADLINE: "I manage 2 kids' doctors, prescriptions, and insurance. Alone."
+// URL: /blog/47-minutes-on-hold?utm_campaign=reddit_caregiver&utm_content=kids_care_v5
+//
+// BUILD: Shows Elena calling insurance for a kid's denied referral,
+// then a Call Summary card proving approval.
+//
+// CONVERSATION:
+//   User: "Can you call insurance about my son's denied referral to the allergist?"
+//   Elena: "Done — here's what happened."
+//   [CallDetailCard — approved on the spot, auth submitted during call]
+//   Elena: "The hold was 31 minutes. I'm calling Dr. Patel's office at 8am tomorrow to book."
+//
+// CROP: User message → summary card → Elena follow-up. Mobile 430px.
+
+const MOCK_BOOKING_STATUS_KIDS_INSURANCE: BookingStatusResponse = {
+  booking_id: "bk_mock_007",
+  phase: "connected",
+  message: "Elena is speaking with Anthem Blue Cross about Lucas's allergist referral.",
+  elapsed_seconds: 1860,
+  provider_name: "Anthem Blue Cross",
+  provider_phone: "(800) 331-1476",
+  reason_for_visit: "Appeal denied allergist referral for Lucas",
+};
+
+function CG5KidsCare() {
+  return (
+    <div className="space-y-6">
+      <UserBubble text="Can you call insurance about my son's denied referral to the allergist?" />
+      <Elena>
+        <p className="mb-1">Done — here's what happened.</p>
+      </Elena>
+      <CallDetailCard
+        provider="Anthem Blue Cross"
+        phone="(800) 331-1476"
+        repName="Rep Maria H."
+        regarding="Lucas's allergist referral (Dr. Patel, denied 3/22)"
+        outcome="Referral approved. Missing prior auth submitted during call."
+        expected="Dr. Patel's office will have auth on file within 24 hrs"
+        reference="AUTH-884710"
+        duration="34 min (31 min hold, 3 min with rep)"
+      />
+      <Elena>
+        <p className="mb-1">The hold was 31 minutes — you would've been stuck on the phone through half of naptime. I'm calling Dr. Patel's office at 8am tomorrow to book the appointment.</p>
+      </Elena>
     </div>
   );
 }
@@ -710,6 +1045,9 @@ const TABS = [
   { id: "ad8", label: "Call Summary", component: Ad8CallSummary },
   { id: "cg1", label: "CG: Managing Mom", component: CG1ManagingMom },
   { id: "cg2", label: "CG: Call Doctor", component: CG2FulltimeJob },
+  { id: "cg3", label: "CG: Weekly List", component: CG3WeeklyList },
+  { id: "cg4", label: "CG: Mom Denied", component: CG4ParentDenied },
+  { id: "cg5", label: "CG: Kids Care", component: CG5KidsCare },
 ];
 
 export default function ScreenshotsPage() {
