@@ -883,9 +883,9 @@ export function BookingStatusBubble({
   const emoji = getBookingEmoji(status.phase);
 
   return (
-    <div className="flex items-start gap-3 animate-in fade-in duration-300">
+    <div className="flex items-center gap-3 animate-in fade-in duration-300">
       <span
-        className={`text-2xl select-none ${isActive ? "animate-booking-shake" : ""}`}
+        className={`text-xl leading-none select-none ${isActive ? "animate-booking-shake" : ""}`}
       >
         {emoji}
       </span>

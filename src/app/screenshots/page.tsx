@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Paperclip, FileText, AlertTriangle, Check } from "lucide-react";
+import { Paperclip, FileText, AlertTriangle, Check, Stethoscope, Plus } from "lucide-react";
 import {
   DoctorResultsCard,
-  NegotiationCard,
+
   BookingStatusBubble,
 } from "@/components/chat-cards";
 import type { DoctorResult, NegotiationResult, BookingStatusResponse } from "@/lib/types";
@@ -72,7 +72,7 @@ import type { DoctorResult, NegotiationResult, BookingStatusResponse } from "@/l
 
 function UserBubble({ text, attachment }: { text: string; attachment?: string }) {
   return (
-    <div className="flex justify-end">
+    <div className="flex justify-end mb-6">
       <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-[#e8ecf4] px-5 py-3">
         {attachment && (
           <div className="flex flex-wrap gap-1.5 mb-2">
@@ -104,7 +104,22 @@ function Flag({ children }: { children: React.ReactNode }) {
   return <span className="text-red-500 font-semibold">{children}</span>;
 }
 
-// ── Custom cards (only for what the existing components don't cover) ──
+function SuggestionChips({ suggestions }: { suggestions: string[] }) {
+  return (
+    <div className="flex flex-wrap gap-2 pt-1 pb-8">
+      {suggestions.map((s) => (
+        <button
+          key={s}
+          className="rounded-full border border-[#0F1B3D]/10 bg-[#f5f7fb] px-4 py-2.5 text-sm font-semibold text-[#0F1B3D]/70 shadow-[0_2px_8px_rgba(15,27,61,0.04),inset_0_1px_0_rgba(255,255,255,0.5)] transition-all hover:bg-[#0F1B3D]/[0.08] hover:-translate-y-px"
+        >
+          {s}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Custom cards (Elena design language) ─────────────────
 
 function AppealStatusCard({
   claimType, provider, stages,
@@ -114,33 +129,37 @@ function AppealStatusCard({
   stages: { label: string; status: "done" | "active" | "pending" }[];
 }) {
   return (
-    <div className="mt-3 rounded-2xl border border-[var(--elena-border-light)] bg-white elena-card-shadow overflow-hidden">
-      <div className="px-4 py-2.5 border-b border-[var(--elena-border-light)]">
-        <p className="text-sm font-bold text-[var(--elena-text-primary)]">Appeal Status</p>
-        <p className="text-xs text-[var(--elena-text-muted)]">{claimType} · {provider}</p>
-      </div>
+    <div className="mt-3 rounded-2xl border border-[#E5E5EA] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
       <div className="px-4 py-3">
+        <p className="text-[20px] font-extrabold text-[#0F1B3D]">Appeal Status</p>
+        <p className="text-[13px] text-[#8E8E93]">{claimType}</p>
+      </div>
+      <div className="h-px bg-[#E5E5EA] mx-3.5" />
+      <div className="px-4 py-3.5">
         {stages.map((stage, i) => (
           <div key={i} className="flex items-start gap-3 mb-3 last:mb-0">
             <div className="flex flex-col items-center">
-              <div className={`h-6 w-6 rounded-full flex items-center justify-center ${
-                stage.status === "done" ? "bg-[var(--elena-green)]" :
-                stage.status === "active" ? "bg-[#3b82f6] animate-pulse" : "bg-[#e5e7eb]"
+              <div className={`h-7 w-7 rounded-full flex items-center justify-center ${
+                stage.status === "done" ? "bg-[#0F1B3D]" :
+                stage.status === "active" ? "bg-[#4A6CF7]" : "bg-[#F2F2F7]"
               }`}>
                 {stage.status === "done" ? <Check className="h-3.5 w-3.5 text-white" /> :
                  stage.status === "active" ? <div className="h-2 w-2 rounded-full bg-white" /> :
-                 <div className="h-2 w-2 rounded-full bg-[#9ca3af]" />}
+                 <div className="h-2 w-2 rounded-full bg-[#AEAEB2]" />}
               </div>
               {i < stages.length - 1 && (
-                <div className={`w-0.5 h-5 mt-1 ${stage.status === "done" ? "bg-[var(--elena-green)]" : "bg-[#e5e7eb]"}`} />
+                <div className={`w-0.5 h-4 mt-1 ${stage.status === "done" ? "bg-[#0F1B3D]" : "bg-[#E5E5EA]"}`} />
               )}
             </div>
-            <p className={`text-sm pt-0.5 ${
-              stage.status === "done" ? "text-[var(--elena-green-dark)] font-medium" :
-              stage.status === "active" ? "text-[#3b82f6] font-semibold" : "text-[var(--elena-text-muted)]"
+            <p className={`text-[14px] pt-1 ${
+              stage.status === "done" ? "text-[#1C1C1E] font-medium" :
+              stage.status === "active" ? "text-[#0F1B3D] font-semibold" : "text-[#AEAEB2]"
             }`}>{stage.label}</p>
           </div>
         ))}
+      </div>
+      <div className="px-4 py-2.5 bg-[#F7F6F2]">
+        <p className="text-[12px] text-[#8E8E93]">{provider}</p>
       </div>
     </div>
   );
@@ -148,30 +167,76 @@ function AppealStatusCard({
 
 function EOBCard() {
   return (
-    <div className="mt-3 rounded-2xl border border-[var(--elena-border-light)] bg-white elena-card-shadow overflow-hidden">
-      <div className="px-4 py-2.5 border-b border-[var(--elena-border-light)] bg-[var(--elena-card-bg)]">
-        <p className="text-sm font-bold text-[var(--elena-text-primary)]">Know the difference</p>
+    <div className="mt-3 rounded-2xl border border-[#E5E5EA] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
+      <div className="px-4 py-3">
+        <p className="text-[20px] font-extrabold text-[#0F1B3D]">EOB vs. Actual Bill</p>
       </div>
-      <div className="grid grid-cols-2 divide-x divide-[var(--elena-border-light)]">
-        <div className="p-4 text-center">
-          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50">
-            <FileText className="h-5 w-5 text-amber-500" />
+      <div className="h-px bg-[#E5E5EA] mx-3.5" />
+      <div className="divide-y divide-[#F2F2F7]">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div>
+            <p className="text-[16px] font-bold text-[#1C1C1E]">Explanation of Benefits</p>
+            <p className="text-[13px] text-[#8E8E93]">Summary from your insurer</p>
           </div>
-          <p className="text-sm font-semibold text-[var(--elena-text-primary)] mb-1">EOB</p>
-          <p className="text-xs text-[var(--elena-text-muted)] mb-2">Explanation of Benefits</p>
-          <span className="inline-block rounded-full bg-amber-50 px-2.5 py-0.5 text-[0.65rem] font-semibold text-amber-600">Not a bill</span>
+          <span className="shrink-0 rounded-full bg-[#FFF8E1] px-2.5 py-1 text-[11px] font-semibold text-[#F5A623]">Not a bill</span>
         </div>
-        <div className="p-4 text-center">
-          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-red-50">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
+        <div className="flex items-center justify-between px-4 py-3">
+          <div>
+            <p className="text-[16px] font-bold text-[#1C1C1E]">Actual Bill</p>
+            <p className="text-[13px] text-[#8E8E93]">From your provider directly</p>
           </div>
-          <p className="text-sm font-semibold text-[var(--elena-text-primary)] mb-1">Actual Bill</p>
-          <p className="text-xs text-[var(--elena-text-muted)] mb-2">From your provider</p>
-          <span className="inline-block rounded-full bg-red-50 px-2.5 py-0.5 text-[0.65rem] font-semibold text-red-600">This is what you owe</span>
+          <span className="shrink-0 rounded-full bg-[#FEE2E2] px-2.5 py-1 text-[11px] font-semibold text-[#EF4444]">You owe this</span>
         </div>
       </div>
-      <div className="px-4 py-2 bg-[#fffbeb] border-t border-amber-100">
-        <p className="text-xs text-amber-700 text-center">Always wait for the actual bill before paying.</p>
+      <div className="px-4 py-2.5 bg-[#F7F6F2]">
+        <p className="text-[12px] text-[#8E8E93]">Always wait for the actual bill before paying.</p>
+      </div>
+    </div>
+  );
+}
+
+function BillResultCard({ data }: { data: NegotiationResult }) {
+  const saved = data.original_amount - data.negotiated_amount;
+  const pct = data.original_amount > 0 ? Math.round((saved / data.original_amount) * 100) : 0;
+  return (
+    <div
+      className="mt-3 rounded-[22px] overflow-hidden"
+      style={{ background: "#C8E6C9", boxShadow: "0 12px 40px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.05)" }}
+    >
+      <div className="px-5 pt-4 pb-1">
+        <p className="text-[20px] font-extrabold" style={{ color: "#1B7A3D" }}>Bill Resolved</p>
+        <p className="text-[13px] font-medium" style={{ color: "#2D8A4E" }}>{data.provider_name}</p>
+      </div>
+      <div className="px-5 py-3">
+        <div className="rounded-[14px] px-4 py-3.5" style={{ background: "rgba(255,255,255,0.5)" }}>
+          <div className="flex items-baseline gap-3 mb-3">
+            <span className="text-[13px] font-medium line-through" style={{ color: "#2D8A4E" }}>
+              ${data.original_amount.toLocaleString()}
+            </span>
+            <span className="text-[24px] font-extrabold" style={{ color: "#1B7A3D" }}>
+              ${data.negotiated_amount.toLocaleString()}
+            </span>
+            {pct > 0 && (
+              <span
+                className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                style={{ background: "rgba(27,122,61,0.15)", color: "#1B7A3D" }}
+              >
+                {pct}% saved
+              </span>
+            )}
+          </div>
+          {data.next_steps.length > 0 && (
+            <div>
+              <p className="text-[12px] font-semibold mb-1.5" style={{ color: "#2D8A4E" }}>What changed</p>
+              {data.next_steps.map((step, i) => (
+                <div key={i} className="flex items-start gap-2 mb-1.5 last:mb-0">
+                  <div className="w-1.5 h-1.5 rounded-full mt-[6px] shrink-0" style={{ background: "#1B7A3D" }} />
+                  <p className="text-[13px] font-medium" style={{ color: "#1B7A3D" }}>{step}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -243,10 +308,9 @@ const MOCK_NEGOTIATION_AD1: NegotiationResult = {
   original_amount: 14837,
   negotiated_amount: 6055,
   next_steps: [
-    "Duplicate Comprehensive Metabolic Panel charge removed ($2,981)",
+    "Duplicate Metabolic Panel charge removed ($2,981)",
     "TSH re-rated to negotiated price ($45 vs $3,336)",
-    "Drug Screen re-rated to negotiated price ($85 vs $2,502)",
-    "Revised bill will arrive in 7-10 business days",
+    "Drug Screen re-rated ($85 vs $2,502)",
   ],
 };
 
@@ -267,54 +331,45 @@ const MOCK_NEGOTIATION_AD5: NegotiationResult = {
 
 function Ad1BillErrors() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <UserBubble text="Can you check my bill for errors?" attachment="bill.jpg" />
       <Elena>
-        <p className="mb-1">Oof, this is a big one — let me take a look 👀</p>
-        <p className="mb-1">A few things jump out immediately:</p>
-        <p className="mb-1"><Flag>► Duplicate charge</Flag></p>
-        <p className="mb-1">- Comprehensive Metabolic Panel billed <B>twice</B> (10/09 AND 10/10) at $2,981.08 each = <B>$5,962.16 total</B>. Unless they genuinely ran it two separate days for a clinical reason, one of those is likely a billing error.</p>
-        <p className="mb-1"><Flag>► Inflated lab prices</Flag></p>
-        <p className="mb-1">These hospital charges are *wildly* above normal negotiated rates:</p>
-        <p className="mb-1">- TSH at <B>$3,335.81</B> — typical negotiated rate is $20–80</p>
-        <p className="mb-1">- Drug Screen at <B>$2,501.90</B> — usually $50–200</p>
-        <p className="mb-1">- T4 Free at <B>$154.08</B> — reasonable, but the others are not</p>
-        <p className="mb-1"><Flag>► Rocuronium at $883.45</Flag></p>
-        <p className="mb-1">That's a standard surgical paralytic. $883 for one vial is very high — typical cost is $10–50.</p>
+        <p className="mb-1">I found three issues on your bill:</p>
+        <p className="mb-1"><Flag>Duplicate charge</Flag> — Comprehensive Metabolic Panel billed <B>twice</B> at $2,981 each. One is likely a billing error.</p>
+        <p className="mb-1"><Flag>Inflated lab prices</Flag> — TSH at <B>$3,336</B> (typical rate $20-80), Drug Screen at <B>$2,502</B> (typical $50-200).</p>
+        <p className="mb-1"><Flag>Rocuronium at $883</Flag> — Standard paralytic, typical cost is $10-50.</p>
+        <p className="mb-1">I called the billing department and got this resolved:</p>
       </Elena>
-      <NegotiationCard data={MOCK_NEGOTIATION_AD1} />
+      <BillResultCard data={MOCK_NEGOTIATION_AD1} />
+      <SuggestionChips suggestions={["Set up a payment plan", "Scan my other bills", "Send the breakdown"]} />
     </div>
   );
 }
 
 function Ad2MRICompare() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <UserBubble text="Compare MRI prices near me" />
       <Elena>
-        <p className="mb-1">I pulled the negotiated rates from your Anthem plan for a brain MRI without contrast (CPT 70551). The price difference is wild:</p>
+        <p className="mb-1">Here are the negotiated rates from your Anthem plan for a brain MRI (CPT 70551):</p>
       </Elena>
-      <DoctorResultsCard doctors={MOCK_MRI_DOCTORS} />
+      <DoctorResultsCard doctors={MOCK_MRI_DOCTORS.slice(0, 2)} onBookDoctor={() => {}} />
       <Elena>
-        <p className="mb-1">Same scan, same insurance, same city. SimonMed is <B>$2,135 less</B> than NYU Langone. If you haven't hit your deductible, that difference comes straight from your pocket.</p>
-        <p className="mb-1">Want me to call SimonMed and check availability?</p>
+        <p className="mb-1">Same scan, same insurance, same city. SimonMed is <B>$2,135 less</B> than NYU Langone.</p>
       </Elena>
+      <SuggestionChips suggestions={["Book SimonMed", "Check my deductible", "Find cheaper options"]} />
     </div>
   );
 }
 
 function Ad3DeniedClaim() {
   return (
-    <div className="space-y-6">
-      <UserBubble text="My insurance denied my claim for blood work. Can you help me appeal?" />
+    <div className="space-y-4">
+      <UserBubble text="My insurance denied my blood work claim. Can you help?" />
       <Elena>
-        <p className="mb-1">Yes — and you should. Most people give up after the first denial, but <B>82% of appeals succeed</B> when actually filed. Only 0.2% of people bother.</p>
-        <p className="mb-1">Here's what I found on your claim:</p>
-        <p className="mb-1">Your preventive labs were coded as <B>diagnostic</B> instead of <B>preventive</B> — that's a CPT modifier error. Your plan covers preventive labs at 100%, so this should be $0 out of pocket.</p>
-        <p className="mb-1">I can handle this two ways:</p>
-        <p className="mb-1">1. <B>Call your provider's billing office</B> and ask them to resubmit with the correct preventive modifier</p>
-        <p className="mb-1">2. <B>Call Anthem</B> and flag the claim for reprocessing once the code is corrected</p>
-        <p className="mb-1">Want me to make both calls?</p>
+        <p className="mb-1"><B>82% of appeals succeed</B> when actually filed. Only 0.2% of people bother.</p>
+        <p className="mb-1">Your labs were coded as <B>diagnostic</B> instead of <B>preventive</B>. Your plan covers preventive labs at 100%, so this should be $0.</p>
+        <p className="mb-1">I can <B>call your provider</B> to resubmit with the correct code, then <B>call Anthem</B> to flag it for reprocessing.</p>
       </Elena>
       <AppealStatusCard
         claimType="Preventive Labs — Coding Error"
@@ -327,41 +382,39 @@ function Ad3DeniedClaim() {
           { label: "Refund issued", status: "pending" },
         ]}
       />
+      <SuggestionChips suggestions={["Make both calls", "Draft the appeal letter", "Show claim details"]} />
     </div>
   );
 }
 
 function Ad4EOB() {
   return (
-    <div className="space-y-6">
-      <UserBubble text="I got this confusing paper from my insurance. Do I owe $4,200?" />
+    <div className="space-y-4">
+      <UserBubble text="I got this paper from my insurance. Do I owe $4,200?" attachment="anthem-eob.pdf" />
       <Elena>
-        <p className="mb-1">Don't pay that yet. What you're looking at is an <B>Explanation of Benefits</B> — it's not a bill.</p>
-        <p className="mb-1">I know it looks like one. It has your name, dollar amounts, and "amount you may owe" in bold. But an EOB is just your insurance company telling you what they processed and what they think your share might be.</p>
-        <p className="mb-1">Your actual bill comes separately from the provider. Sometimes it's less than the EOB says, sometimes the provider never sends one at all.</p>
+        <p className="mb-1">Don't pay that yet. That's an <B>Explanation of Benefits</B>, not a bill. Your actual bill comes separately from the provider.</p>
       </Elena>
       <EOBCard />
       <Elena>
-        <p className="mb-1">About <B>60% of people</B> pay the EOB amount without waiting for the real bill. That's how hospitals make money on billing confusion.</p>
-        <p className="mb-1">Wait for the actual bill from your provider, then send it to me and I'll compare the two line by line.</p>
+        <p className="mb-1"><B>60% of people</B> pay the EOB amount without waiting for the real bill. Send me the actual bill when it arrives and I'll compare them line by line.</p>
       </Elena>
+      <SuggestionChips suggestions={["Upload my actual bill", "Call the provider", "Check if I paid already"]} />
     </div>
   );
 }
 
 function Ad5DuplicateCharges() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <UserBubble text="I think I got double-charged on my ER visit" attachment="hospital-bill.pdf" />
       <Elena>
-        <p className="mb-1">You're right — I found two problems:</p>
-        <p className="mb-1"><Flag>► Duplicate charge</Flag></p>
-        <p className="mb-1">The <B>Comprehensive Metabolic Panel</B> appears on two separate dates (10/09 and 10/10) for $2,981.08 each. That's $5,962 for a test that typically costs $20-50. Unless they ran it twice for a medical reason — and for an ER visit that's unlikely — one charge needs to come off.</p>
-        <p className="mb-1"><Flag>► Incorrect facility fee</Flag></p>
-        <p className="mb-1">You were charged a <B>Level 5 ER facility fee</B> ($4,122). Level 5 is for critical/life-threatening situations. A cut requiring stitches is typically Level 2 or 3 ($800-$1,500). That's a potential overcharge of <B>$2,600+</B>.</p>
-        <p className="mb-1">Want me to call the hospital billing department about both of these?</p>
+        <p className="mb-1">You're right. I found two problems:</p>
+        <p className="mb-1"><Flag>Duplicate charge</Flag> — Metabolic Panel billed twice at $2,981 each. One needs to come off.</p>
+        <p className="mb-1"><Flag>Incorrect facility fee</Flag> — You were charged Level 5 ($4,122) for stitches. That should be Level 2-3 ($800-$1,500).</p>
+        <p className="mb-1">I called billing and got both resolved:</p>
       </Elena>
-      <NegotiationCard data={MOCK_NEGOTIATION_AD5} />
+      <BillResultCard data={MOCK_NEGOTIATION_AD5} />
+      <SuggestionChips suggestions={["Set up a payment plan", "Scan my other bills", "Email the breakdown"]} />
     </div>
   );
 }
@@ -390,36 +443,35 @@ const MOCK_BOOKING_STATUS_INSURANCE: BookingStatusResponse = {
 };
 
 function FamilyProfileCard() {
+  const rows: { label: string; value: string; alert?: boolean; warning?: boolean }[] = [
+    { label: "Next appointment", value: "Dr. Patel, Apr 8" },
+    { label: "Medications", value: "5 active" },
+    { label: "Pending claims", value: "2 processing" },
+    { label: "Denied claims", value: "1 appeal ready", warning: true },
+    { label: "Refills due", value: "Metformin, 3 days", alert: true },
+  ];
   return (
-    <div className="mt-3 rounded-2xl border border-[var(--elena-border-light)] bg-white elena-card-shadow overflow-hidden">
-      <div className="px-4 py-2.5 border-b border-[var(--elena-border-light)] flex items-center gap-3">
-        <div className="h-9 w-9 rounded-full bg-[#F4B084]/30 flex items-center justify-center text-sm font-bold text-[#0F1B3D]">M</div>
+    <div className="mt-3 rounded-2xl border border-[#E5E5EA] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
+      <div className="px-4 py-3 flex items-center gap-3">
+        <div className="h-9 w-9 rounded-full bg-[#F4B084]/20 flex items-center justify-center text-[14px] font-bold text-[#0F1B3D]">M</div>
         <div>
-          <p className="text-sm font-bold text-[var(--elena-text-primary)]">Mom — Margaret</p>
-          <p className="text-xs text-[var(--elena-text-muted)]">Medicare Advantage · Anthem</p>
+          <p className="text-[20px] font-extrabold text-[#0F1B3D]">Margaret</p>
+          <p className="text-[13px] text-[#8E8E93]">Medicare Advantage via Anthem</p>
         </div>
       </div>
-      <div className="px-4 py-3 space-y-2.5">
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-[var(--elena-text-muted)]">Next appointment</span>
-          <span className="text-xs font-medium text-[var(--elena-text-primary)]">Dr. Patel · Apr 8</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-[var(--elena-text-muted)]">Medications</span>
-          <span className="text-xs font-medium text-[var(--elena-text-primary)]">5 active</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-[var(--elena-text-muted)]">Pending claims</span>
-          <span className="text-xs font-medium text-[var(--elena-text-primary)]">2 processing</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-[var(--elena-text-muted)]">Denied bills</span>
-          <span className="text-xs font-medium text-amber-600">1 — appeal ready</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-[var(--elena-text-muted)]">Refills due</span>
-          <span className="text-xs font-medium text-red-500">Metformin — 3 days</span>
-        </div>
+      <div className="h-px bg-[#E5E5EA] ml-[62px] mr-3.5" />
+      <div className="px-4 py-1">
+        {rows.map((row, i) => (
+          <div key={row.label}>
+            <div className="flex items-center justify-between py-2.5">
+              <span className="text-[13px] text-[#8E8E93]">{row.label}</span>
+              <span className={`text-[13px] font-medium ${
+                row.alert ? "text-[#EF4444]" : row.warning ? "text-[#F5A623]" : "text-[#1C1C1E]"
+              }`}>{row.value}</span>
+            </div>
+            {i < rows.length - 1 && <div className="h-px bg-[#F2F2F7]" />}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -429,38 +481,218 @@ function FamilyProfileCard() {
 
 function CG1ManagingMom() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <UserBubble text="I need help managing my mom's healthcare" />
       <Elena>
-        <p className="mb-1">I can help with that. Let me set up a profile for your mom so I can track everything in one place — her doctors, insurance, medications, appointments, and bills.</p>
-        <p className="mb-1">Once it's set up, you can switch between your profile and hers anytime. I'll keep track of what's coming up and flag anything that needs your attention.</p>
-        <p className="mb-1">Here's what I pulled together based on what you've told me so far:</p>
+        <p className="mb-1">I set up a profile for your mom. You can switch between yours and hers anytime. Here's what I have so far:</p>
       </Elena>
       <FamilyProfileCard />
       <Elena>
-        <p className="mb-1">A couple things that need attention right now:</p>
-        <p className="mb-1">- Her <B>Metformin refill</B> is due in 3 days. Want me to call the pharmacy and make sure it's ready?</p>
-        <p className="mb-1">- She has a <B>denied PT claim</B> with Anthem. I can call them and start the appeal — 82% of these get overturned.</p>
-        <p className="mb-1">What should I tackle first?</p>
+        <p className="mb-1">Two things need attention: her <B>Metformin refill</B> is due in 3 days, and she has a <B>denied PT claim</B> with Anthem I can appeal.</p>
       </Elena>
+      <SuggestionChips suggestions={["Call the pharmacy", "Start the appeal", "Reschedule Dr. Patel"]} />
     </div>
   );
 }
 
 // ── Caregiver Ad 2: fulltime-job-v2 ──────────────────────
 
+function MedsRefillCard() {
+  const meds = [
+    { name: "Metformin 500mg", status: "Refill in 3 days", alert: true },
+    { name: "Lisinopril 10mg", status: "Refill in 12 days", alert: false },
+    { name: "Atorvastatin 20mg", status: "OK until May", alert: false },
+  ];
+  return (
+    <div className="mt-2 rounded-2xl border border-[#E5E5EA] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
+      <div className="px-4 py-2.5">
+        <p className="text-[16px] font-bold text-[#0F1B3D]">Margaret's Medications</p>
+      </div>
+      <div className="h-px bg-[#E5E5EA] mx-3.5" />
+      <div className="divide-y divide-[#F2F2F7]">
+        {meds.map((m) => (
+          <div key={m.name} className="flex items-center justify-between px-4 py-2.5">
+            <p className="text-[14px] font-medium text-[#1C1C1E]">{m.name}</p>
+            <span className={`text-[12px] font-semibold ${m.alert ? "text-[#EF4444]" : "text-[#8E8E93]"}`}>{m.status}</span>
+          </div>
+        ))}
+      </div>
+      <div className="px-4 py-2.5 bg-[#F7F6F2] flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full bg-[#34C759]" />
+        <p className="text-[12px] text-[#8E8E93]">Pharmacy on file: <span className="font-medium text-[#1C1C1E]">CVS, 340 E 23rd St</span></p>
+      </div>
+    </div>
+  );
+}
+
 function CG2FulltimeJob() {
   return (
-    <div className="space-y-6">
-      <UserBubble text="Can you call my mom's doctor to reschedule her appointment?" />
+    <div className="space-y-4">
+      <UserBubble text="Can you call my mom's doctor to reschedule?" />
       <Elena>
-        <p className="mb-1">On it. I'm calling Dr. Patel's office now to reschedule Margaret's endocrinology follow-up.</p>
-        <p className="mb-1">I'll let you know as soon as it's done — you don't need to stay on the line.</p>
+        <p className="mb-1">On it. Calling Dr. Patel's office now to reschedule Margaret's follow-up.</p>
       </Elena>
       <BookingStatusBubble status={MOCK_BOOKING_STATUS_CALLING} />
       <Elena>
-        <p className="mb-1">While I'm on hold with Dr. Patel's office — is there anything else on your mom's list I can help with? I also noticed her Anthem claim for physical therapy is still denied. I can call them next if you want.</p>
+        <p className="mb-1">While I'm on hold, I checked Margaret's medications. Her Metformin refill is due in 3 days. Want me to call CVS and get it refilled?</p>
       </Elena>
+      <MedsRefillCard />
+      <SuggestionChips suggestions={["Yes, call CVS", "Refill all three", "Her appointment schedule"]} />
+    </div>
+  );
+}
+
+// ── Custom card: Your Options (plan comparison) ─────────
+
+function YourOptionsCard() {
+  const options = [
+    { name: "ACA Marketplace", estimate: "$0-$350/mo", note: "Bronze to Platinum, subsidies based on income" },
+    { name: "Employer plan", estimate: "Varies", note: "Often cheapest, check with HR this week" },
+    { name: "Short-term plan", estimate: "$95/mo", note: "Gap coverage only, no pre-existing conditions" },
+  ];
+  return (
+    <div className="mt-3 rounded-2xl border border-[#E5E5EA] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
+      <div className="px-4 py-3">
+        <p className="text-[20px] font-extrabold text-[#0F1B3D]">Coverage Options</p>
+        <p className="text-[13px] text-[#8E8E93]">60-day Special Enrollment Period</p>
+      </div>
+      <div className="h-px bg-[#E5E5EA] mx-3.5" />
+      <div className="divide-y divide-[#F2F2F7]">
+        {options.map((opt) => (
+          <div key={opt.name} className="flex items-center gap-3.5 px-4 py-3.5">
+            <div className="flex-1 min-w-0">
+              <p className="text-[16px] font-bold text-[#1C1C1E]">{opt.name}</p>
+              <p className="text-[13px] text-[#8E8E93] mt-px">{opt.note}</p>
+            </div>
+            <div className="flex items-center gap-2.5 shrink-0">
+              <span className="text-[14px] font-bold text-[#0F1B3D]">{opt.estimate}</span>
+              <button className="shrink-0 rounded-lg bg-[#4A6CF7] px-3 py-1.5 text-[12px] font-semibold text-white hover:opacity-90 transition-opacity">
+                Compare
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Turned 26 / Lost Insurance ──────────────────────────
+
+function Ad6Turned26() {
+  return (
+    <div className="space-y-4">
+      <UserBubble text="I just turned 26 and lost my parents' insurance. What do I do?" />
+      <Elena>
+        <p className="mb-1">You have a <B>60-day Special Enrollment Period</B> from the date you aged off. A few things I need to narrow down the best option:</p>
+        <p className="mb-1"><B>1.</B> Does your employer offer insurance? Losing your parents' plan lets you enroll immediately.</p>
+        <p className="mb-1"><B>2.</B> What's your income? Under $20K may qualify for <B>Medicaid</B>. $20K-$60K gets Marketplace subsidies.</p>
+        <p className="mb-1"><B>3.</B> Any prescriptions or doctors to keep? That affects which plan tier makes sense.</p>
+      </Elena>
+      <YourOptionsCard />
+      <Elena>
+        <p className="mb-1">The <B>60-day window</B> is what matters most. Miss it and you're uninsured until January.</p>
+      </Elena>
+      <SuggestionChips suggestions={["Check my subsidies", "Browse Marketplace plans", "Call my employer's HR"]} />
+    </div>
+  );
+}
+
+// ── Turned 26 — Deductibles & Copays Explainer ─────────
+
+function TermsCard() {
+  const terms = [
+    { term: "Deductible", amount: "$1,500", desc: "What you pay before insurance kicks in" },
+    { term: "Copay", amount: "$25", desc: "Flat fee per visit, regardless of deductible" },
+    { term: "Coinsurance", amount: "20%", desc: "Your share after deductible is met" },
+    { term: "Out-of-pocket max", amount: "$8,700", desc: "The most you'll pay in a year, then insurance covers 100%" },
+  ];
+  return (
+    <div className="mt-3 rounded-2xl border border-[#E5E5EA] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
+      <div className="px-4 py-3">
+        <p className="text-[20px] font-extrabold text-[#0F1B3D]">How health insurance works</p>
+        <p className="text-[13px] text-[#8E8E93]">Silver plan example</p>
+      </div>
+      <div className="h-px bg-[#E5E5EA] mx-3.5" />
+      <div className="divide-y divide-[#F2F2F7]">
+        {terms.map((t) => (
+          <div key={t.term} className="flex items-center gap-3.5 px-4 py-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-[16px] font-bold text-[#1C1C1E]">{t.term}</p>
+              <p className="text-[13px] text-[#8E8E93]">{t.desc}</p>
+            </div>
+            <span className="text-[14px] font-bold text-[#0F1B3D] shrink-0">{t.amount}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Ad7Deductibles() {
+  return (
+    <div className="space-y-4">
+      <UserBubble text="What's the difference between a deductible and a copay?" />
+      <Elena>
+        <p className="mb-1">Think of it this way. Your <B>deductible</B> is the amount you pay out of pocket before your insurance starts covering things. Your <B>copay</B> is a fixed fee you pay per visit, like $25 to see your doctor.</p>
+        <p className="mb-1">Here's how it works on a typical Silver plan:</p>
+      </Elena>
+      <TermsCard />
+      <Elena>
+        <p className="mb-1">So if you go to the doctor and the visit costs $200, you pay <B>$25 copay</B> upfront. The remaining $175 goes toward your deductible. Once you've paid $1,500 total, insurance starts covering 80% and you pay 20%.</p>
+      </Elena>
+      <SuggestionChips suggestions={["Show me a real example", "Compare Silver vs Bronze", "What plan fits my budget?"]} />
+    </div>
+  );
+}
+
+// ── Call Summary ─────────────────────────────────────────
+
+function CallSummaryCard() {
+  return (
+    <div
+      className="mt-3 rounded-[22px] overflow-hidden"
+      style={{ background: "#C8E6C9", boxShadow: "0 12px 40px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.05)" }}
+    >
+      <div className="px-5 pt-4 pb-1">
+        <p className="text-[20px] font-extrabold" style={{ color: "#1B7A3D" }}>Referral Approved</p>
+        <p className="text-[13px] font-medium" style={{ color: "#2D8A4E" }}>Anthem Blue Cross, Rep Maria H., 34 min call</p>
+      </div>
+      <div className="px-5 py-3">
+        <div className="rounded-[14px] px-4 py-3.5" style={{ background: "rgba(255,255,255,0.5)" }}>
+          <p className="text-[14px] font-semibold" style={{ color: "#1B7A3D" }}>Lucas's allergist referral to Dr. Patel</p>
+          <p className="text-[13px] mt-1" style={{ color: "#1C1C1E" }}>Prior auth was missing. Maria submitted it during the call. Approved on the spot.</p>
+          <div className="h-px my-3" style={{ background: "rgba(27,122,61,0.15)" }} />
+          <p className="text-[13px] font-semibold" style={{ color: "#1B7A3D" }}>Next step</p>
+          <p className="text-[13px] mt-0.5" style={{ color: "#1C1C1E" }}>Call Dr. Patel's office to schedule. Auth on file within 24 hours.</p>
+        </div>
+      </div>
+      <div className="px-5 pb-3 flex items-center justify-between">
+        <p className="text-[12px] font-medium" style={{ color: "#2D8A4E" }}>Ref # AUTH-884710</p>
+        <p className="text-[12px] font-medium" style={{ color: "#2D8A4E" }}>31 min on hold</p>
+      </div>
+    </div>
+  );
+}
+
+function Ad8CallSummary() {
+  return (
+    <div className="space-y-4">
+      <UserBubble text="Can you call insurance about my son's denied referral to the allergist?" />
+      <BookingStatusBubble status={{
+        booking_id: "bk_mock_done",
+        phase: "completed",
+        message: "Call complete. Elena spoke with Rep Maria H. at Anthem Blue Cross.",
+        elapsed_seconds: 2040,
+        provider_name: "Anthem Blue Cross",
+        provider_phone: "(800) 331-1476",
+        reason_for_visit: "Lucas's allergist referral denial",
+      }} />
+      <CallSummaryCard />
+      <Elena>
+        <p className="mb-1">The hold was 31 minutes. You would've been stuck on the phone through half of naptime. Dr. Patel's office opens at 8am. Want me to call and book tomorrow?</p>
+      </Elena>
+      <SuggestionChips suggestions={["Book Dr. Patel tomorrow", "Save the reference number", "Check Lucas's other claims"]} />
     </div>
   );
 }
@@ -473,6 +705,9 @@ const TABS = [
   { id: "ad3", label: "Denied Claim", component: Ad3DeniedClaim },
   { id: "ad4", label: "EOB", component: Ad4EOB },
   { id: "ad5", label: "Duplicates", component: Ad5DuplicateCharges },
+  { id: "ad6", label: "Turned 26", component: Ad6Turned26 },
+  { id: "ad7", label: "Deductibles", component: Ad7Deductibles },
+  { id: "ad8", label: "Call Summary", component: Ad8CallSummary },
   { id: "cg1", label: "CG: Managing Mom", component: CG1ManagingMom },
   { id: "cg2", label: "CG: Call Doctor", component: CG2FulltimeJob },
 ];
@@ -511,20 +746,25 @@ export default function ScreenshotsPage() {
             backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
           }}
         />
-        <div className="mx-auto max-w-2xl px-4 py-8 space-y-6 relative z-10">
+        <div className="mx-auto max-w-2xl px-4 py-6 space-y-4 relative z-10">
           <ActiveComponent />
         </div>
 
-        {/* Fake input bar */}
-        <div className="sticky bottom-0 z-20 bg-white/80 backdrop-blur-sm border-t border-[#e5e5ea]/60">
+        {/* Fake input bar — matches real ChatArea input */}
+        <div className="sticky bottom-0 z-20 bg-white/80 backdrop-blur-sm">
           <div className="mx-auto max-w-2xl px-4 py-3">
-            <div className="flex items-center gap-2 rounded-2xl border border-[#e5e5ea] bg-white px-4 py-3">
-              <span className="text-[#0F1B3D]/20 text-sm">+</span>
-              <span className="flex-1 text-sm text-[#0F1B3D]/30">Ask Elena anything...</span>
-              <div className="h-8 w-8 rounded-full bg-[#0F1B3D] flex items-center justify-center">
+            <div className="flex items-end gap-2 rounded-[28px] border border-[#E5E5EA] bg-white px-2 py-1.5 shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+              <div className="flex h-8 w-8 mb-0.5 flex-shrink-0 items-center justify-center rounded-full text-[#AEAEB2]">
+                <Plus className="h-4 w-4" />
+              </div>
+              <div className="flex-1 py-2 text-sm text-[#AEAEB2]">Ask Elena anything...</div>
+              <div className="h-[34px] w-[34px] mb-0.5 flex-shrink-0 rounded-full bg-[#0F1B3D] flex items-center justify-center opacity-40">
                 <svg className="h-4 w-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
               </div>
             </div>
+            <p className="mt-2 text-center text-[0.7rem] text-[#AEAEB2]">
+              Elena can make mistakes. Always verify important health information.
+            </p>
           </div>
         </div>
       </div>
