@@ -438,8 +438,6 @@ export function ProfilePopover({
               <TabPill label="Insurance" active={activeTab === "insurance"} onClick={() => setActiveTab("insurance")} />
             </div>
 
-            <div className="h-px bg-[#E5E5EA] mb-3" />
-
             {/* ═══════════ HEALTH TAB ═══════════ */}
             {activeTab === "health" && (
               <div className="space-y-3">
@@ -912,7 +910,7 @@ export function ProfilePopover({
             {activeTab === "insurance" && (
               <div className="space-y-0 pb-2">
                 {/* Insurance cards carousel-style display */}
-                <div className="flex gap-3 overflow-x-auto pb-4 -mx-2 px-2 snap-x snap-mandatory scrollbar-hide">
+                <div className="flex gap-3 overflow-x-auto pb-6 -mx-2 px-2 pt-1 snap-x snap-mandatory scrollbar-hide">
                   <InsuranceCardDisplay card={medicalCard} label="Medical" dark />
                   <InsuranceCardDisplay card={dentalCard} label="Dental" dark={false} />
                   <InsuranceCardDisplay card={visionCard} label="Vision" dark />
