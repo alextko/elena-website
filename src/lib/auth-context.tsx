@@ -259,7 +259,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
 
       promises.push(
-        apiFetch("/todos")
+        apiFetch("/todos?include_future=true")
           .then(async (res) => {
             if (!res.ok) return;
             todosResult = await res.json();
@@ -267,15 +267,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .catch(() => {}),
       );
 
-      // Habits + week completions (for calendar strip checkmarks)
+      // Habits + completions (8 weeks back for calendar strip checkmarks)
       const now = new Date();
-      const dayOfWeek = now.getDay();
-      const monday = new Date(now);
-      monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
-      const sunday = new Date(monday);
-      sunday.setDate(monday.getDate() + 6);
-      const startDate = monday.toISOString().slice(0, 10);
-      const endDate = sunday.toISOString().slice(0, 10);
+      const startDate = new Date(now);
+      startDate.setDate(now.getDate() - 8 * 7);
+      const endDate = new Date(now);
+      endDate.setDate(now.getDate() + 7);
+      const startStr = startDate.toISOString().slice(0, 10);
+      const endStr = endDate.toISOString().slice(0, 10);
 
       promises.push(
         apiFetch("/habits")
@@ -286,7 +285,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .catch(() => {}),
       );
       promises.push(
-        apiFetch(`/habits/completions?start_date=${startDate}&end_date=${endDate}`)
+        apiFetch(`/habits/completions?start_date=${startStr}&end_date=${endStr}`)
           .then(async (res) => {
             if (!res.ok) return;
             const data: Record<string, Record<string, boolean>> = await res.json();
@@ -540,7 +539,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshTodos = useCallback(async () => {
     try {
-      const res = await apiFetch("/todos");
+      const res = await apiFetch("/todos?include_future=true");
       if (!res.ok) return;
       const data: CareTodo[] = await res.json();
       setTodos(data);
@@ -596,17 +595,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshHabits = useCallback(async () => {
     const now = new Date();
-    const dayOfWeek = now.getDay();
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    const startDate = monday.toISOString().slice(0, 10);
-    const endDate = sunday.toISOString().slice(0, 10);
+    const startDate = new Date(now);
+    startDate.setDate(now.getDate() - 8 * 7);
+    const endDate = new Date(now);
+    endDate.setDate(now.getDate() + 7);
+    const startStr = startDate.toISOString().slice(0, 10);
+    const endStr = endDate.toISOString().slice(0, 10);
     try {
       const [habitsRes, completionsRes] = await Promise.all([
         apiFetch("/habits"),
-        apiFetch(`/habits/completions?start_date=${startDate}&end_date=${endDate}`),
+        apiFetch(`/habits/completions?start_date=${startStr}&end_date=${endStr}`),
       ]);
       if (habitsRes.ok) {
         const data: Habit[] = await habitsRes.json();
