@@ -352,7 +352,7 @@ export function ProfilePopover({
 
             {/* Profile switcher */}
             {profiles.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-2 mb-1 scrollbar-hide">
+              <div className="flex gap-3 overflow-x-auto py-3 mb-2 scrollbar-hide">
                 {profiles.map((p) => {
                   const isActive = p.id === profileId;
                   const pName = `${p.first_name} ${p.last_name}`.trim() || p.label || "Profile";
@@ -362,28 +362,28 @@ export function ProfilePopover({
                     <button
                       key={p.id}
                       onClick={async () => { if (!isActive) { await switchProfile(p.id); setOpen(false); } }}
-                      className={`flex flex-col items-center gap-1 min-w-[56px] rounded-xl px-2 py-1.5 transition-all ${isActive ? "bg-[#0F1B3D]/[0.07]" : "hover:bg-[#0F1B3D]/[0.03]"}`}
+                      className={`flex flex-col items-center gap-1.5 min-w-[72px] rounded-2xl px-3 py-2.5 transition-all ${isActive ? "bg-[#0F1B3D]/[0.07]" : "hover:bg-[#0F1B3D]/[0.03]"}`}
                     >
                       {p.profile_picture_url ? (
-                        <img src={p.profile_picture_url} alt={pName} className={`h-8 w-8 rounded-full object-cover ${isActive ? "ring-2 ring-[#2E6BB5]" : ""}`} />
+                        <img src={p.profile_picture_url} alt={pName} className={`h-10 w-10 rounded-full object-cover ${isActive ? "ring-2 ring-[#2E6BB5]" : ""}`} />
                       ) : (
-                        <Avatar className={`h-8 w-8 ${isActive ? "ring-2 ring-[#2E6BB5]" : ""}`}>
-                          <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-xs font-semibold text-[#0F1B3D]/50">{pInitials}</AvatarFallback>
+                        <Avatar className={`h-10 w-10 ${isActive ? "ring-2 ring-[#2E6BB5]" : ""}`}>
+                          <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-sm font-semibold text-[#0F1B3D]/50">{pInitials}</AvatarFallback>
                         </Avatar>
                       )}
-                      <span className="text-[10px] font-medium text-[#0F1B3D]/60 truncate max-w-[56px]">{p.first_name || badge}</span>
-                      <span className="text-[8px] text-[#0F1B3D]/30">{badge}</span>
+                      <span className="text-xs font-semibold text-[#0F1B3D]/70 truncate max-w-[72px]">{p.first_name || badge}</span>
+                      <span className="text-[10px] font-medium text-[#0F1B3D]/40">{badge}</span>
                     </button>
                   );
                 })}
                 <button
                   onClick={() => setAddFamilyOpen(true)}
-                  className="flex flex-col items-center gap-1 min-w-[56px] rounded-xl px-2 py-1.5 hover:bg-[#0F1B3D]/[0.03] transition-all"
+                  className="flex flex-col items-center gap-1.5 min-w-[72px] rounded-2xl px-3 py-2.5 hover:bg-[#0F1B3D]/[0.03] transition-all"
                 >
-                  <div className="h-8 w-8 rounded-full bg-[#0F1B3D]/[0.04] flex items-center justify-center">
-                    <Plus className="h-4 w-4 text-[#0F1B3D]/30" />
+                  <div className="h-10 w-10 rounded-full bg-[#0F1B3D]/[0.04] flex items-center justify-center">
+                    <Plus className="h-4.5 w-4.5 text-[#0F1B3D]/30" />
                   </div>
-                  <span className="text-[10px] font-medium text-[#0F1B3D]/40">Add</span>
+                  <span className="text-xs font-semibold text-[#0F1B3D]/40">Add</span>
                 </button>
               </div>
             )}
