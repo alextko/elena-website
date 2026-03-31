@@ -550,11 +550,11 @@ export function ProfilePopover({
               <div className="space-y-5">
                 {/* ── Game Plan (salmon card) ── */}
                 <div
-                  className="rounded-[22px] pt-5 pb-3 overflow-hidden"
+                  className="rounded-[22px] pt-6 pb-4 overflow-hidden"
                   style={{ background: "#F4B084", boxShadow: "0 12px 40px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.05)" }}
                 >
                   {/* Title */}
-                  <div className="px-6 mb-4">
+                  <div className="px-7 mb-4">
                     <div className="text-[28px] font-extrabold" style={{ color: "#5C1A2A" }}>
                       Game Plan
                     </div>
@@ -607,7 +607,7 @@ export function ProfilePopover({
                       return { label: d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2), num: d.getDate(), isToday, isFuture, allDone, dots, dateKey };
                     });
                     return (
-                      <div className="flex justify-center gap-[10px] px-6 pb-4">
+                      <div className="flex justify-center gap-[10px] px-7 pb-5">
                         {days.map((day) => {
                           const isSelected = day.dateKey === selectedDay;
                           return (
@@ -660,7 +660,7 @@ export function ProfilePopover({
                   })()}
 
                   {/* To Do section */}
-                  <div className="px-6 pb-4">
+                  <div className="px-7 pb-5">
                     {(() => {
                       const todayKey = new Date().toISOString().slice(0, 10);
                       const isViewingToday = selectedDay === todayKey;
@@ -868,7 +868,7 @@ export function ProfilePopover({
                                     <button
                                       onClick={() => { onBookMessage(bookMsg); setOpen(false); }}
                                       className="shrink-0 rounded-full px-4 py-[7px] text-[13px] font-semibold text-white transition-colors"
-                                      style={{ background: "#0F1B3D" }}
+                                      style={{ background: "#5C1A2A" }}
                                     >
                                       Book
                                     </button>
