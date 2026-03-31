@@ -980,49 +980,33 @@ export function ProfilePopover({
 
                       return (
                         <React.Fragment key={visit.id}>
-                          {/* Today marker between entries */}
-                          {showTodayBefore && (
-                            <div ref={todayRef} className="flex items-center gap-0 ml-1 my-2">
-                              <div className="flex flex-col items-center w-6 shrink-0">
-                                <div className="w-0.5 flex-1 bg-[#93B5E1]" />
-                                <div className="w-3 h-3 rounded-full bg-[#4A7AB5] shrink-0" />
-                                <div className="w-0.5 flex-1 bg-[#93B5E1]" />
-                              </div>
-                              <div className="flex items-center gap-1.5 ml-2.5">
-                                <span className="text-[16px] font-bold text-[#4A7AB5]">Today</span>
-                                <span className="text-[13px] font-medium text-[#6B9BD2]">
-                                  {formatVisitDate(today)}
-                                </span>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Month/year header */}
-                          {showMonth && (
-                            <div className="flex items-center gap-0 ml-1 my-2">
-                              <div className="flex flex-col items-center w-6 shrink-0">
-                                <div className="w-0.5 flex-1 bg-[#93B5E1]" />
-                                <div className="w-2.5 h-0.5 rounded-sm bg-[#6B9BD2]" />
-                                <div className="w-0.5 flex-1 bg-[#93B5E1]" />
-                              </div>
-                              <div className="ml-2.5">
-                                {showYear && (
-                                  <span className="text-[18px] font-extrabold text-[#4A7AB5] tracking-wide mr-2">
-                                    {curYear}
-                                  </span>
-                                )}
-                                <span className="text-[15px] font-bold text-[#4A7AB5]">
-                                  {new Date(visit.visit_date + "T00:00:00").toLocaleDateString("en-US", { month: "long" })}
-                                </span>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Visit entry */}
+                          {/* Visit entry with integrated rail, today marker, and month header */}
                           <div className="flex gap-0 ml-1">
-                            {/* Rail */}
+                            {/* Continuous rail column */}
                             <div className="flex flex-col items-center w-6 shrink-0">
-                              <div className="w-0.5 flex-1 bg-[#93B5E1]" />
+                              {/* Top connector */}
+                              {isFirst && !showTodayBefore && !showMonth
+                                ? <div className="w-0.5 h-3 bg-transparent" />
+                                : <div className="w-0.5 flex-1 bg-[#93B5E1]" />
+                              }
+
+                              {/* Today marker dot */}
+                              {showTodayBefore && (
+                                <>
+                                  <div ref={todayRef} className="w-3 h-3 rounded-full bg-[#4A7AB5] shrink-0 my-1" />
+                                  <div className="w-0.5 flex-1 bg-[#93B5E1]" />
+                                </>
+                              )}
+
+                              {/* Month tick */}
+                              {showMonth && (
+                                <>
+                                  <div className="w-2.5 h-0.5 rounded-sm bg-[#6B9BD2] shrink-0 my-1" />
+                                  <div className="w-0.5 flex-1 bg-[#93B5E1]" />
+                                </>
+                              )}
+
+                              {/* Visit dot */}
                               <div
                                 ref={isToday ? todayRef : undefined}
                                 className="w-3 h-3 rounded-full shrink-0 my-0.5"
@@ -1031,12 +1015,39 @@ export function ProfilePopover({
                                   border: isFuture && !isToday ? "2px solid #2563EB" : "none",
                                 }}
                               />
-                              <div className="w-0.5 flex-1 bg-[#93B5E1]" />
+
+                              {/* Bottom connector */}
+                              {isLast
+                                ? <div className="w-0.5 h-3 bg-transparent" />
+                                : <div className="w-0.5 flex-1 bg-[#93B5E1]" />
+                              }
                             </div>
 
-                            {/* Card */}
-                            <button
-                              className="flex-1 min-w-0 bg-white rounded-[14px] shadow-[0_1px_4px_rgba(0,0,0,0.05)] px-3.5 py-3 mb-3 ml-2.5 text-left hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-shadow cursor-pointer"
+                            {/* Labels + Card */}
+                            <div className="flex-1 min-w-0 ml-2.5">
+                              {/* Today label */}
+                              {showTodayBefore && (
+                                <div className="flex items-center gap-1.5 py-1.5">
+                                  <span className="text-[16px] font-bold text-[#4A7AB5]">Today</span>
+                                  <span className="text-[13px] font-medium text-[#6B9BD2]">{formatVisitDate(today)}</span>
+                                </div>
+                              )}
+
+                              {/* Month label */}
+                              {showMonth && (
+                                <div className="py-1.5">
+                                  {showYear && (
+                                    <span className="text-[18px] font-extrabold text-[#4A7AB5] tracking-wide mr-2">{curYear}</span>
+                                  )}
+                                  <span className="text-[15px] font-bold text-[#4A7AB5]">
+                                    {new Date(visit.visit_date + "T00:00:00").toLocaleDateString("en-US", { month: "long" })}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Visit card */}
+                              <button
+                                className="w-full bg-white rounded-[14px] shadow-[0_1px_4px_rgba(0,0,0,0.05)] px-3.5 py-3 mb-3 text-left hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-shadow cursor-pointer"
                               onClick={() => setSelectedVisit(visit)}
                             >
                               {/* Date + file icon */}
@@ -1068,56 +1079,56 @@ export function ProfilePopover({
                                     {visit.summary}
                                   </p>
                                 )}
-                            </button>
+                              </button>
+                            </div>
                           </div>
                         </React.Fragment>
                       );
                     })}
 
-                    {/* Today marker at end + no upcoming visits placeholder */}
-                    {/* Today marker at end if all visits are in the past (none today) */}
-                    {sortedVisits.length > 0 &&
-                      sortedVisits.every((v) => v.visit_date < today) && (
-                        <div ref={todayRef} className="flex items-center gap-0 ml-1 my-2">
-                          <div className="flex flex-col items-center w-6 shrink-0">
-                            <div className="w-0.5 flex-1 bg-[#93B5E1]" />
-                            <div className="w-3 h-3 rounded-full bg-[#4A7AB5] shrink-0" />
-                            <div className="w-0.5 flex-1 bg-[#93B5E1]" />
-                          </div>
-                          <div className="flex items-center gap-1.5 ml-2.5">
-                            <span className="text-[16px] font-bold text-[#4A7AB5]">Today</span>
-                            <span className="text-[13px] font-medium text-[#6B9BD2]">
-                              {formatVisitDate(today)}
-                            </span>
-                          </div>
-                        </div>
-                      )}
+                    {/* End section: today marker + no upcoming + fading tail */}
+                    {sortedVisits.length > 0 && (
+                      <div className="flex gap-0 ml-1">
+                        <div className="flex flex-col items-center w-6 shrink-0">
+                          {/* Connect to last visit */}
+                          <div className="w-0.5 flex-1 bg-[#93B5E1]" />
 
-                    {/* No upcoming visits placeholder — shown when no visits are after today */}
-                    {sortedVisits.length > 0 &&
-                      !sortedVisits.some((v) => v.visit_date > today) && (
-                        <div className="flex gap-0 ml-1">
-                          <div className="flex flex-col items-center w-6 shrink-0">
-                            <div className="w-0.5 flex-1 bg-[#93B5E1]" />
-                            <div className="w-3 h-3 rounded-full shrink-0 my-0.5 border-2 border-dashed border-[#93B5E1]" />
-                            <div className="w-0.5 h-16" style={{ background: "linear-gradient(to bottom, #93B5E1, transparent)" }} />
-                          </div>
-                          <div className="flex-1 min-w-0 bg-white/60 rounded-[14px] border border-dashed border-[#93B5E1]/40 px-3.5 py-3 mb-3 ml-2.5">
-                            <p className="text-[15px] font-semibold text-[#6B9BD2]">No upcoming visits</p>
-                            <p className="text-[13px] text-[#93B5E1] mt-0.5">Chat with Elena to find and book your next visit</p>
-                          </div>
-                        </div>
-                      )}
+                          {/* Today dot (only if all visits are past) */}
+                          {sortedVisits.every((v) => v.visit_date < today) && (
+                            <>
+                              <div ref={todayRef} className="w-3 h-3 rounded-full bg-[#4A7AB5] shrink-0 my-0.5" />
+                              <div className="w-0.5 flex-1 bg-[#93B5E1]" />
+                            </>
+                          )}
 
-                    {/* Fading tail when timeline has future visits */}
-                    {sortedVisits.length > 0 &&
-                      sortedVisits.some((v) => v.visit_date > today) && (
-                        <div className="flex gap-0 ml-1">
-                          <div className="flex flex-col items-center w-6 shrink-0">
-                            <div className="w-0.5 h-16" style={{ background: "linear-gradient(to bottom, #93B5E1, transparent)" }} />
-                          </div>
+                          {/* No upcoming dot */}
+                          {!sortedVisits.some((v) => v.visit_date > today) && (
+                            <>
+                              <div className="w-3 h-3 rounded-full shrink-0 my-0.5 border-2 border-dashed border-[#93B5E1]" />
+                            </>
+                          )}
+
+                          {/* Fading tail */}
+                          <div className="w-0.5 h-16" style={{ background: "linear-gradient(to bottom, #93B5E1, transparent)" }} />
                         </div>
-                      )}
+
+                        {/* Labels */}
+                        <div className="flex-1 min-w-0 ml-2.5">
+                          {sortedVisits.every((v) => v.visit_date < today) && (
+                            <div className="flex items-center gap-1.5 py-1.5">
+                              <span className="text-[16px] font-bold text-[#4A7AB5]">Today</span>
+                              <span className="text-[13px] font-medium text-[#6B9BD2]">{formatVisitDate(today)}</span>
+                            </div>
+                          )}
+                          {!sortedVisits.some((v) => v.visit_date > today) && (
+                            <div className="bg-white/60 rounded-[14px] border border-dashed border-[#93B5E1]/40 px-3.5 py-3 mb-3">
+                              <p className="text-[15px] font-semibold text-[#6B9BD2]">No upcoming visits</p>
+                              <p className="text-[13px] text-[#93B5E1] mt-0.5">Chat with Elena to find and book your next visit</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     </div>
                   </div>
                 )}
