@@ -531,6 +531,7 @@ export function ProfilePopover({
                     const dayOfWeek = now.getDay();
                     const monday = new Date(now);
                     monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
+                    const todayKey = now.toISOString().slice(0, 10);
                     const days = Array.from({ length: 7 }, (_, i) => {
                       const d = new Date(monday);
                       d.setDate(monday.getDate() + i);
@@ -542,7 +543,15 @@ export function ProfilePopover({
                       const allDone = !isFuture && habits.length > 0 && dayCompletions
                         ? habits.every((h) => dayCompletions.has(h.id))
                         : false;
-                      return { label: d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2), num: d.getDate(), isToday, isFuture, allDone };
+                      // Event dots: visits on this day + todos with due_date on this day
+                      const visitDots = careVisits
+                        .filter((v) => v.visit_date === dateKey)
+                        .map(() => "#5C1A2A");
+                      const todoDots = todos
+                        .filter((t) => t.due_date === dateKey && t.status !== "dismissed")
+                        .map((t) => t.color || "#5C1A2A");
+                      const dots = [...visitDots, ...todoDots].slice(0, 3);
+                      return { label: d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2), num: d.getDate(), isToday, isFuture, allDone, dots, dateKey };
                     });
                     return (
                       <div className="flex justify-center gap-[10px] px-6 pb-4">
@@ -563,13 +572,27 @@ export function ProfilePopover({
                               }}
                             >
                               {!day.isFuture && day.allDone ? (
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={day.isToday ? "#5C1A2A" : "#5C1A2A"} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5C1A2A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                   <polyline points="20 6 9 17 4 12" />
                                 </svg>
                               ) : (
                                 day.num
                               )}
                             </span>
+                            {/* Event dots */}
+                            <div className="flex gap-[3px] h-[6px]">
+                              {day.dots.map((color, di) => (
+                                <div
+                                  key={di}
+                                  className="w-[5px] h-[5px] rounded-full"
+                                  style={{
+                                    background: day.isFuture ? "transparent" : color,
+                                    border: day.isFuture ? `1.5px solid ${color}` : "none",
+                                    opacity: day.isFuture ? 0.5 : 1,
+                                  }}
+                                />
+                              ))}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -589,19 +612,32 @@ export function ProfilePopover({
                     </div>
 
                     {(() => {
-                      // Merge habits and care todos into one list
+                      const todayKey = new Date().toISOString().slice(0, 10);
+
+                      // Merge visits, habits, and care todos into one list (matches mobile app)
                       type GamePlanItem =
+                        | { type: "visit"; visit: CareVisit; sortOrder: number }
                         | { type: "habit"; id: string; title: string; subtitle: string; color: string; completed: boolean; sortOrder: number }
                         | { type: "todo"; todo: CareTodo; sortOrder: number };
 
+                      // Today's visits
+                      const todayVisits: GamePlanItem[] = careVisits
+                        .filter((v) => v.visit_date === todayKey)
+                        .map((v, i) => ({
+                          type: "visit" as const,
+                          visit: v,
+                          sortOrder: -1000 + i, // visits first
+                        }));
+
                       const items: GamePlanItem[] = [
-                        ...habits.map((h, i) => ({
+                        ...todayVisits,
+                        ...habits.map((h) => ({
                           type: "habit" as const,
                           id: h.id,
                           title: h.title,
                           subtitle: h.subtitle,
                           color: h.color,
-                          completed: !!(habitCompletions[new Date().toISOString().slice(0, 10)]?.has(h.id)),
+                          completed: !!(habitCompletions[todayKey]?.has(h.id)),
                           sortOrder: h.sort_order,
                         })),
                         ...todos
@@ -609,14 +645,17 @@ export function ProfilePopover({
                           .map((t) => ({
                             type: "todo" as const,
                             todo: t,
-                            sortOrder: t.sort_order + 1000, // habits first
+                            sortOrder: t.sort_order + 1000, // after habits
                           })),
                       ];
 
-                      // Sort: uncompleted first, then by sort order
+                      // Sort: visits first, then uncompleted before completed, then by sort order
                       items.sort((a, b) => {
-                        const aCompleted = a.type === "habit" ? a.completed : a.todo.status === "completed";
-                        const bCompleted = b.type === "habit" ? b.completed : b.todo.status === "completed";
+                        // Visits always first
+                        if (a.type === "visit" && b.type !== "visit") return -1;
+                        if (a.type !== "visit" && b.type === "visit") return 1;
+                        const aCompleted = a.type === "habit" ? a.completed : a.type === "todo" ? a.todo.status === "completed" : false;
+                        const bCompleted = b.type === "habit" ? b.completed : b.type === "todo" ? b.todo.status === "completed" : false;
                         if (aCompleted !== bCompleted) return aCompleted ? 1 : -1;
                         return a.sortOrder - b.sortOrder;
                       });
@@ -635,6 +674,40 @@ export function ProfilePopover({
                       return (
                         <div className="rounded-[14px] px-[14px] py-[10px]" style={{ background: "rgba(255,255,255,0.3)" }}>
                           {items.map((item, i) => {
+                            if (item.type === "visit") {
+                              const v = item.visit;
+                              const visitTime = v.visit_date; // TODO: parse time if available
+                              return (
+                                <React.Fragment key={`visit-${v.id}`}>
+                                  {i > 0 && (
+                                    <div className="h-px mx-[14px]" style={{ background: "rgba(92,26,42,0.2)" }} />
+                                  )}
+                                  <button
+                                    className="flex items-center gap-3 py-[10px] w-full text-left"
+                                    onClick={() => setSelectedVisit(v)}
+                                  >
+                                    <div
+                                      className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center"
+                                      style={{ background: "rgba(92,26,42,0.15)" }}
+                                    >
+                                      <Calendar className="h-4 w-4" style={{ color: "#5C1A2A" }} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="text-[17px] font-semibold truncate" style={{ color: "#5C1A2A" }}>
+                                        {v.visit_type}{v.doctor_name ? ` \u2014 ${v.doctor_name}` : ""}
+                                      </div>
+                                      {v.location && (
+                                        <div className="text-[13px] mt-[1px] truncate" style={{ color: "#7A3040" }}>
+                                          {v.location}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <ChevronRight className="h-4 w-4 flex-shrink-0" style={{ color: "#7A3040" }} />
+                                  </button>
+                                </React.Fragment>
+                              );
+                            }
+
                             const isHabit = item.type === "habit";
                             const completed = isHabit ? item.completed : item.todo.status === "completed";
                             const title = isHabit ? item.title : item.todo.title;
