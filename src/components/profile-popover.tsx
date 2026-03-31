@@ -869,19 +869,36 @@ export function ProfilePopover({
                       );
                     })}
 
-                    {/* Today marker at end if all visits are in the past */}
+                    {/* Today marker at end + no upcoming visits placeholder */}
+                    {/* Today marker at end if all visits are in the past (none today) */}
                     {sortedVisits.length > 0 &&
                       sortedVisits.every((v) => v.visit_date < today) && (
                         <div ref={todayRef} className="flex items-center gap-0 ml-1 my-2">
                           <div className="flex flex-col items-center w-6 shrink-0">
                             <div className="w-0.5 h-3 bg-[#93B5E1]" />
                             <div className="w-3 h-3 rounded-full bg-[#4A7AB5] shrink-0" />
+                            <div className="w-0.5 h-3 bg-[#93B5E1]" />
                           </div>
                           <div className="flex items-center gap-1.5 ml-2.5">
                             <span className="text-[16px] font-bold text-[#4A7AB5]">Today</span>
                             <span className="text-[13px] font-medium text-[#6B9BD2]">
                               {formatVisitDate(today)}
                             </span>
+                          </div>
+                        </div>
+                      )}
+
+                    {/* No upcoming visits placeholder — shown when no visits are after today */}
+                    {sortedVisits.length > 0 &&
+                      !sortedVisits.some((v) => v.visit_date > today) && (
+                        <div className="flex gap-0 ml-1">
+                          <div className="flex flex-col items-center w-6 shrink-0">
+                            <div className="w-0.5 h-2 bg-[#93B5E1]" />
+                            <div className="w-3 h-3 rounded-full shrink-0 my-0.5 border-2 border-dashed border-[#93B5E1]" />
+                          </div>
+                          <div className="flex-1 min-w-0 bg-white/60 rounded-[14px] border border-dashed border-[#93B5E1]/40 px-3.5 py-3 mb-3 ml-2.5">
+                            <p className="text-[15px] font-semibold text-[#6B9BD2]">No upcoming visits</p>
+                            <p className="text-[13px] text-[#93B5E1] mt-0.5">Chat with Elena to find and book your next visit</p>
                           </div>
                         </div>
                       )}
