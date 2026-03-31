@@ -273,9 +273,9 @@ export function ProfilePopover({
       <DialogTrigger render={children as React.ReactElement}></DialogTrigger>
       <DialogContent
         showCloseButton
-        className="w-[90vw] max-w-lg rounded-2xl border-[#0F1B3D]/[0.08] bg-[#F7F6F2] p-0 shadow-xl"
+        className="w-[90vw] max-w-[36rem] rounded-2xl border-[#0F1B3D]/[0.08] bg-[#F7F6F2] p-0 shadow-xl"
       >
-        <div ref={scrollRef} className="max-h-[60vh] overflow-y-auto">
+        <div ref={scrollRef} className="max-h-[65vh] overflow-y-auto">
           {/* ═══════════ PROVIDER DETAIL VIEW ═══════════ */}
           {selectedProvider && (
             <ProviderDetailPanel
@@ -322,7 +322,7 @@ export function ProfilePopover({
 
           {/* ═══════════ MAIN PROFILE CONTENT ═══════════ */}
           {!selectedProvider && !selectedVisit && !editingTodo && !addingProvider && (
-          <div className="p-6 pb-8">
+          <div className="p-8 pb-10">
             {/* User header */}
             <div className="flex items-center gap-4 pb-4">
               <input
