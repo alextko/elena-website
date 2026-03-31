@@ -582,6 +582,18 @@ export function ChatArea({
         }}
       />
 
+      {/* Sidebar toggle */}
+      <div className="flex-shrink-0 relative z-10 flex items-center px-4 py-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={onToggleSidebar}
+        >
+          <PanelLeft className="h-4 w-4" />
+        </Button>
+      </div>
+
       {/* Messages */}
       <div className="relative z-10 flex-1 min-h-0 overflow-y-auto chat-selectable">
         <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
