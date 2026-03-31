@@ -513,7 +513,7 @@ export function ProfilePopover({
 
             {/* ═══════════ HEALTH TAB ═══════════ */}
             {activeTab === "health" && (
-              <div className="space-y-3">
+              <div className="space-y-5">
                 {/* ── Game Plan (salmon card) ── */}
                 <div
                   className="rounded-[22px] pt-[18px] pb-2 overflow-hidden"
@@ -1119,12 +1119,10 @@ export function ProfilePopover({
               </div>
             )}
 
-            <div className="h-px bg-[#E5E5EA] mt-4" />
-
             {/* Sign out */}
             <button
               onClick={handleSignOut}
-              className="flex w-full items-center gap-2 py-4 text-sm text-[#0F1B3D]/40 transition-colors hover:text-[#0F1B3D]/60"
+              className="flex w-full items-center gap-2 pt-6 pb-4 text-sm text-[#0F1B3D]/40 transition-colors hover:text-[#0F1B3D]/60"
             >
               <LogOut className="h-4 w-4" />
               Sign out
