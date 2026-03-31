@@ -89,8 +89,6 @@ function StatsBar() {
             Our data shows
           </p>
           <h2 className="text-[clamp(2rem,4.5vw,3.2rem)] leading-[1.15] tracking-tight text-white">
-            <span className="font-light">The state of the</span>
-            <br />
             <span className="font-extrabold">U.S. Healthcare System</span>
             {" "}
             <em className="font-normal italic font-[family-name:var(--font-dm-serif)] text-[#F4B084]">is broken.</em>
