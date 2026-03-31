@@ -143,6 +143,7 @@ export function ProfilePopover({
   const [open, setOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("health");
+  const [selectedDay, setSelectedDay] = useState<string>(new Date().toISOString().slice(0, 10));
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<typeof doctors[number] | null>(null);
@@ -504,7 +505,7 @@ export function ProfilePopover({
             </div>
 
             {/* Tab pills */}
-            <div className="flex gap-1.5 mt-1 mb-2">
+            <div className="flex gap-1.5 mt-1 mb-4">
               <TabPill label="Health" active={activeTab === "health"} onClick={() => setActiveTab("health")} />
               <TabPill label="Visits" active={activeTab === "visits"} onClick={() => setActiveTab("visits")} />
               <TabPill label="Insurance" active={activeTab === "insurance"} onClick={() => setActiveTab("insurance")} />
@@ -555,64 +556,93 @@ export function ProfilePopover({
                     });
                     return (
                       <div className="flex justify-center gap-[10px] px-6 pb-4">
-                        {days.map((day) => (
-                          <div key={day.label + day.num} className="flex flex-col items-center gap-1 w-11">
-                            <span
-                              className="text-[11px] font-semibold uppercase"
-                              style={{ color: day.isToday ? "#5C1A2A" : "#7A3040" }}
+                        {days.map((day) => {
+                          const isSelected = day.dateKey === selectedDay;
+                          return (
+                            <button
+                              key={day.label + day.num}
+                              className="flex flex-col items-center gap-1 w-11 transition-opacity"
+                              onClick={() => setSelectedDay(day.dateKey)}
                             >
-                              {day.label}
-                            </span>
-                            <span
-                              className="w-9 h-9 rounded-full flex items-center justify-center text-base font-bold"
-                              style={{
-                                color: day.isToday ? "#5C1A2A" : day.isFuture ? "#7A3040" : "#5C1A2A",
-                                background: day.isToday ? "#FFFFFF" : "transparent",
-                                opacity: day.isFuture ? 0.5 : 1,
-                              }}
-                            >
-                              {!day.isFuture && day.allDone ? (
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5C1A2A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                  <polyline points="20 6 9 17 4 12" />
-                                </svg>
-                              ) : (
-                                day.num
-                              )}
-                            </span>
-                            {/* Event dots */}
-                            <div className="flex gap-[3px] h-[6px]">
-                              {day.dots.map((color, di) => (
-                                <div
-                                  key={di}
-                                  className="w-[5px] h-[5px] rounded-full"
-                                  style={{
-                                    background: day.isFuture ? "transparent" : color,
-                                    border: day.isFuture ? `1.5px solid ${color}` : "none",
-                                    opacity: day.isFuture ? 0.5 : 1,
-                                  }}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        ))}
+                              <span
+                                className="text-[11px] font-semibold uppercase"
+                                style={{ color: day.isToday ? "#5C1A2A" : "#7A3040" }}
+                              >
+                                {day.label}
+                              </span>
+                              <span
+                                className="w-9 h-9 rounded-full flex items-center justify-center text-base font-bold"
+                                style={{
+                                  color: isSelected ? "#FFFFFF" : day.isFuture ? "#7A3040" : "#5C1A2A",
+                                  background: isSelected ? "#5C1A2A" : day.isToday ? "#FFFFFF" : "transparent",
+                                  opacity: day.isFuture && !isSelected ? 0.5 : 1,
+                                }}
+                              >
+                                {!day.isFuture && !isSelected && day.allDone ? (
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5C1A2A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="20 6 9 17 4 12" />
+                                  </svg>
+                                ) : (
+                                  day.num
+                                )}
+                              </span>
+                              {/* Event dots */}
+                              <div className="flex gap-[3px] h-[6px]">
+                                {day.dots.map((color, di) => (
+                                  <div
+                                    key={di}
+                                    className="w-[5px] h-[5px] rounded-full"
+                                    style={{
+                                      background: day.isFuture ? "transparent" : color,
+                                      border: day.isFuture ? `1.5px solid ${color}` : "none",
+                                      opacity: day.isFuture ? 0.5 : 1,
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
                     );
                   })()}
 
                   {/* To Do section */}
                   <div className="px-6 pb-4">
-                    <div className="flex items-center justify-between px-2 mb-[10px]">
-                      <span className="text-[15px] font-bold" style={{ color: "#5C1A2A" }}>To Do</span>
-                      <button
-                        onClick={() => setEditingTodo({ mode: "create" })}
-                        className="transition-opacity hover:opacity-70"
-                      >
-                        <Plus className="h-[22px] w-[22px]" style={{ color: "#5C1A2A" }} />
-                      </button>
-                    </div>
+                    {(() => {
+                      const todayKey = new Date().toISOString().slice(0, 10);
+                      const isViewingToday = selectedDay === todayKey;
+                      const dayLabel = isViewingToday
+                        ? "To Do"
+                        : new Date(selectedDay + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+
+                      return (
+                        <div className="flex items-center justify-between px-2 mb-[10px]">
+                          <span className="text-[15px] font-bold" style={{ color: "#5C1A2A" }}>{dayLabel}</span>
+                          <div className="flex items-center gap-2">
+                            {!isViewingToday && (
+                              <button
+                                onClick={() => setSelectedDay(todayKey)}
+                                className="text-[13px] font-semibold transition-opacity hover:opacity-70"
+                                style={{ color: "#5C1A2A" }}
+                              >
+                                Back to today
+                              </button>
+                            )}
+                            <button
+                              onClick={() => setEditingTodo({ mode: "create" })}
+                              className="transition-opacity hover:opacity-70"
+                            >
+                              <Plus className="h-[22px] w-[22px]" style={{ color: "#5C1A2A" }} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {(() => {
                       const todayKey = new Date().toISOString().slice(0, 10);
+                      const isViewingToday = selectedDay === todayKey;
 
                       // Merge visits, habits, and care todos into one list (matches mobile app)
                       type GamePlanItem =
@@ -620,34 +650,36 @@ export function ProfilePopover({
                         | { type: "habit"; id: string; title: string; subtitle: string; color: string; completed: boolean; sortOrder: number }
                         | { type: "todo"; todo: CareTodo; sortOrder: number };
 
-                      // Today's visits
-                      const todayVisits: GamePlanItem[] = careVisits
-                        .filter((v) => v.visit_date === todayKey)
+                      // Visits for the selected day
+                      const dayVisits: GamePlanItem[] = careVisits
+                        .filter((v) => v.visit_date === selectedDay)
                         .map((v, i) => ({
                           type: "visit" as const,
                           visit: v,
                           sortOrder: -1000 + i, // visits first
                         }));
 
-                      const items: GamePlanItem[] = [
-                        ...todayVisits,
-                        ...habits.map((h) => ({
-                          type: "habit" as const,
-                          id: h.id,
-                          title: h.title,
-                          subtitle: h.subtitle,
-                          color: h.color,
-                          completed: !!(habitCompletions[todayKey]?.has(h.id)),
-                          sortOrder: h.sort_order,
-                        })),
-                        ...todos
-                          .filter((t) => t.status !== "dismissed")
-                          .map((t) => ({
-                            type: "todo" as const,
-                            todo: t,
-                            sortOrder: t.sort_order + 1000, // after habits
-                          })),
-                      ];
+                      // Habits show every day (they're daily), completions are day-specific
+                      const dayHabits: GamePlanItem[] = habits.map((h) => ({
+                        type: "habit" as const,
+                        id: h.id,
+                        title: h.title,
+                        subtitle: h.subtitle,
+                        color: h.color,
+                        completed: !!(habitCompletions[selectedDay]?.has(h.id)),
+                        sortOrder: h.sort_order,
+                      }));
+
+                      // Care todos: show todos that match the selected day (by due_date) or have no due_date (always visible)
+                      const dayTodos: GamePlanItem[] = todos
+                        .filter((t) => t.status !== "dismissed" && (!t.due_date || t.due_date === selectedDay))
+                        .map((t) => ({
+                          type: "todo" as const,
+                          todo: t,
+                          sortOrder: t.sort_order + 1000, // after habits
+                        }));
+
+                      const items: GamePlanItem[] = [...dayVisits, ...dayHabits, ...dayTodos];
 
                       // Sort: visits first, then uncompleted before completed, then by sort order
                       items.sort((a, b) => {
