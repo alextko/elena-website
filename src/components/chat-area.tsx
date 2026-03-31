@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { PanelLeft, Plus, ArrowUp, Square, Paperclip, X } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
+import { useAuth } from "@/lib/auth-context";
 import * as analytics from "@/lib/analytics";
 import { usePollChat } from "@/hooks/usePollChat";
 import { useBookingPoll } from "@/hooks/useBookingPoll";
@@ -122,6 +123,7 @@ export function ChatArea({
   onBookMessageConsumed?: () => void;
   isNewChat?: boolean;
 }) {
+  const { profileId } = useAuth();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -201,7 +203,7 @@ export function ChatArea({
     // When activeSessionId is null and isNewChat is false, we're still loading
     // sessions — don't create a new welcome session yet.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSessionId, isNewChat]);
+  }, [activeSessionId, isNewChat, profileId]);
 
   async function loadMessages(sessionId: string, requestId: number) {
     setLoadingMessages(true);
