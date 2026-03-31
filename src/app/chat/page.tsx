@@ -15,8 +15,12 @@ import { trackSubscription } from "@/lib/tracking-events";
 export default function ChatPage() {
   return (
     <Suspense fallback={
-      <div className="flex h-dvh items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#0F1B3D] border-t-transparent" />
+      <div className="flex h-dvh">
+        <div className="w-64 bg-[#f5f7fb] flex-shrink-0 animate-pulse">
+          <div className="px-5 pt-5 pb-4"><div className="h-12 w-12 rounded-xl bg-[#0F1B3D]/[0.06]" /></div>
+          <div className="px-4 space-y-2"><div className="h-10 rounded-full bg-[#0F1B3D]/[0.04]" /><div className="h-10 rounded-full bg-[#0F1B3D]/[0.04]" /></div>
+        </div>
+        <div className="flex-1" />
       </div>
     }>
       <ChatPageInner />
@@ -175,8 +179,12 @@ function ChatPageInner() {
 
   if (loading) {
     return (
-      <div className="flex h-dvh items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#0F1B3D] border-t-transparent" />
+      <div className="flex h-dvh">
+        <div className="w-64 bg-[#f5f7fb] flex-shrink-0 animate-pulse">
+          <div className="px-5 pt-5 pb-4"><div className="h-12 w-12 rounded-xl bg-[#0F1B3D]/[0.06]" /></div>
+          <div className="px-4 space-y-2"><div className="h-10 rounded-full bg-[#0F1B3D]/[0.04]" /><div className="h-10 rounded-full bg-[#0F1B3D]/[0.04]" /></div>
+        </div>
+        <div className="flex-1" />
       </div>
     );
   }

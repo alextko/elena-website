@@ -597,10 +597,18 @@ export function ChatArea({
       {/* Messages */}
       <div className="relative z-10 flex-1 min-h-0 overflow-y-auto chat-selectable">
         <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
-          {/* Loading spinner -- shown while waiting for sessions to resolve or messages to load */}
+          {/* Shimmer loading -- shown while waiting for sessions to resolve or messages to load */}
           {(loadingMessages || (!activeSessionId && !isNewChat)) && messages.length === 0 && !loadError && (
-            <div className="flex items-center justify-center py-20">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#0F1B3D] border-t-transparent" />
+            <div className="space-y-6 py-8 animate-pulse">
+              <div className="flex justify-end">
+                <div className="h-10 w-48 rounded-2xl bg-[#0F1B3D]/[0.06]" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-3/4 rounded bg-[#0F1B3D]/[0.06]" />
+                <div className="h-4 w-full rounded bg-[#0F1B3D]/[0.04]" />
+                <div className="h-4 w-2/3 rounded bg-[#0F1B3D]/[0.04]" />
+              </div>
+              <div className="h-32 w-full rounded-2xl bg-[#0F1B3D]/[0.04]" />
             </div>
           )}
 

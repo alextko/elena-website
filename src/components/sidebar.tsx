@@ -161,8 +161,10 @@ export function Sidebar({
       {/* History — scrollable, min-h-0 is the key flexbox scroll fix */}
       <div className="flex-1 min-h-0 overflow-y-auto px-3">
         {loadingSessions ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#0F1B3D]/20 border-t-[#0F1B3D]/60" />
+          <div className="space-y-2 px-3 py-4 animate-pulse">
+            <div className="h-8 w-full rounded-xl bg-[#0F1B3D]/[0.06]" />
+            <div className="h-8 w-3/4 rounded-xl bg-[#0F1B3D]/[0.04]" />
+            <div className="h-8 w-5/6 rounded-xl bg-[#0F1B3D]/[0.04]" />
           </div>
         ) : filteredSessions.length === 0 ? (
           <p className="px-3 py-8 text-center text-xs text-[#0F1B3D]/30">
