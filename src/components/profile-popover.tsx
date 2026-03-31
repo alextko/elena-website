@@ -392,13 +392,11 @@ export function ProfilePopover({
               </button>
               <div ref={switcherRef} className="min-w-0 flex-1 relative">
                 <button
-                  onClick={() => profiles.length > 1 && setSwitcherOpen(!switcherOpen)}
-                  className={`flex items-center gap-1 ${profiles.length > 1 ? "hover:opacity-70 transition-opacity cursor-pointer" : ""}`}
+                  onClick={() => setSwitcherOpen(!switcherOpen)}
+                  className="flex items-center gap-1 hover:opacity-70 transition-opacity cursor-pointer"
                 >
                   <p className="text-base font-extrabold text-[#0F1B3D]">{displayName}</p>
-                  {profiles.length > 1 && (
-                    <ChevronDown className={`h-3.5 w-3.5 text-[#0F1B3D]/30 flex-shrink-0 transition-transform ${switcherOpen ? "rotate-180" : ""}`} />
-                  )}
+                  <ChevronDown className={`h-3.5 w-3.5 text-[#0F1B3D]/30 flex-shrink-0 transition-transform ${switcherOpen ? "rotate-180" : ""}`} />
                 </button>
                 <p className="truncate text-sm text-[#0F1B3D]/40">{email}</p>
 
