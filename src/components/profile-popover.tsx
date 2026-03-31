@@ -1125,9 +1125,9 @@ export function ProfilePopover({
               <div className="space-y-0 pb-2">
                 {/* Insurance cards carousel-style display */}
                 <div className="flex gap-3 overflow-x-auto pb-6 -mx-2 px-2 pt-1 snap-x snap-mandatory scrollbar-hide">
-                  <InsuranceCardDisplay card={medicalCard} label="Medical" dark />
-                  <InsuranceCardDisplay card={dentalCard} label="Dental" dark={false} />
-                  <InsuranceCardDisplay card={visionCard} label="Vision" dark />
+                  <InsuranceCardDisplay card={medicalCard} label="Medical" dark onTapEmpty={() => setExpandedCard("medical")} />
+                  <InsuranceCardDisplay card={dentalCard} label="Dental" dark={false} onTapEmpty={() => setExpandedCard("dental")} />
+                  <InsuranceCardDisplay card={visionCard} label="Vision" dark onTapEmpty={() => setExpandedCard("vision")} />
                 </div>
 
                 {/* Expandable detail sections */}
@@ -2225,10 +2225,12 @@ function InsuranceCardDisplay({
   card,
   label,
   dark,
+  onTapEmpty,
 }: {
   card: InsuranceCard | undefined;
   label: string;
   dark: boolean;
+  onTapEmpty?: () => void;
 }) {
   const hasData = card && Object.values(card.structured_data).some((v) => v);
   const d = card?.structured_data;
@@ -2307,13 +2309,17 @@ function InsuranceCardDisplay({
         </div>
       ) : (
         /* Placeholder */
-        <div className="h-full flex flex-col items-center justify-center" style={{ background: "#F4F4F5" }}>
+        <button
+          onClick={onTapEmpty}
+          className="h-full w-full flex flex-col items-center justify-center cursor-pointer hover:bg-[#ECECED] transition-colors"
+          style={{ background: "#F4F4F5" }}
+        >
           <PlusCircle className="h-10 w-10 text-[#AEAEB2]" />
           <p className="text-[18px] font-bold text-[#0F1B3D] mt-3">Add {label} Insurance</p>
           <p className="text-[13px] text-[#AEAEB2] mt-1 text-center px-6">
-            Upload your card to see plan details here
+            Upload your card or type in your info
           </p>
-        </div>
+        </button>
       )}
     </div>
   );
