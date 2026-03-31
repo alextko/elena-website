@@ -544,13 +544,31 @@ export function ProfilePopover({
                       const allDone = !isFuture && habits.length > 0 && dayCompletions
                         ? habits.every((h) => dayCompletions.has(h.id))
                         : false;
-                      // Event dots: visits on this day + todos with due_date on this day
+                      // Event dots: visits + non-daily todos (including recurring occurrences)
                       const visitDots = careVisits
                         .filter((v) => v.visit_date === dateKey)
-                        .map(() => "#5C1A2A");
+                        .map(() => "#FFFFFF");
                       const todoDots = todos
-                        .filter((t) => t.due_date === dateKey && t.status !== "dismissed")
-                        .map((t) => t.color || "#5C1A2A");
+                        .filter((t) => {
+                          if (t.status === "dismissed" || t.frequency === "daily") return false;
+                          if (!t.due_date) return false;
+                          if (t.due_date === dateKey) return true;
+                          if (t.frequency === "once") return false;
+                          const start = new Date(t.due_date + "T00:00:00");
+                          const cur = new Date(dateKey + "T00:00:00");
+                          if (cur < start) return false;
+                          const interval = t.recurrence_interval || 1;
+                          if (t.frequency === "weekly") {
+                            const daysDiff = Math.round((cur.getTime() - start.getTime()) / 86400000);
+                            return daysDiff % (7 * interval) === 0;
+                          }
+                          if (t.frequency === "monthly") {
+                            const monthsDiff = (cur.getFullYear() - start.getFullYear()) * 12 + (cur.getMonth() - start.getMonth());
+                            return monthsDiff % interval === 0 && cur.getDate() === start.getDate();
+                          }
+                          return false;
+                        })
+                        .map((t) => t.color || "#FFFFFF");
                       const dots = [...visitDots, ...todoDots].slice(0, 3);
                       return { label: d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2), num: d.getDate(), isToday, isFuture, allDone, dots, dateKey };
                     });
@@ -587,15 +605,15 @@ export function ProfilePopover({
                                 )}
                               </span>
                               {/* Event dots */}
-                              <div className="flex gap-[3px] h-[6px]">
+                              <div className="flex gap-[3px] h-[7px]">
                                 {day.dots.map((color, di) => (
                                   <div
                                     key={di}
-                                    className="w-[5px] h-[5px] rounded-full"
+                                    className="w-[6px] h-[6px] rounded-full"
                                     style={{
                                       background: day.isFuture ? "transparent" : color,
                                       border: day.isFuture ? `1.5px solid ${color}` : "none",
-                                      opacity: day.isFuture ? 0.5 : 1,
+                                      opacity: day.isFuture ? 0.6 : 0.9,
                                     }}
                                   />
                                 ))}
@@ -670,9 +688,28 @@ export function ProfilePopover({
                         sortOrder: h.sort_order,
                       }));
 
-                      // Care todos: show todos that match the selected day (by due_date) or have no due_date (always visible)
+                      // Care todos: match by due_date, no due_date (always visible), or recurring schedule
                       const dayTodos: GamePlanItem[] = todos
-                        .filter((t) => t.status !== "dismissed" && (!t.due_date || t.due_date === selectedDay))
+                        .filter((t) => {
+                          if (t.status === "dismissed") return false;
+                          if (!t.due_date) return true; // no due date = always visible
+                          if (t.due_date === selectedDay) return true;
+                          if (t.frequency === "once") return false;
+                          // Recurring: check if selectedDay falls on a recurrence
+                          const start = new Date(t.due_date + "T00:00:00");
+                          const sel = new Date(selectedDay + "T00:00:00");
+                          if (sel < start) return false;
+                          const interval = t.recurrence_interval || 1;
+                          if (t.frequency === "weekly") {
+                            const daysDiff = Math.round((sel.getTime() - start.getTime()) / 86400000);
+                            return daysDiff % (7 * interval) === 0;
+                          }
+                          if (t.frequency === "monthly") {
+                            const monthsDiff = (sel.getFullYear() - start.getFullYear()) * 12 + (sel.getMonth() - start.getMonth());
+                            return monthsDiff % interval === 0 && sel.getDate() === start.getDate();
+                          }
+                          return false;
+                        })
                         .map((t) => ({
                           type: "todo" as const,
                           todo: t,
