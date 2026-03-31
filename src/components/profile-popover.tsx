@@ -848,8 +848,8 @@ export function ProfilePopover({
                 </div>
 
                 {/* Providers */}
-                <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
-                  <div className="flex items-center justify-between px-3.5 pt-3.5 pb-1">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
                     <h3 className="text-[15px] font-extrabold text-[#0F1B3D]">Providers</h3>
                     <button
                       onClick={() => setAddingProvider(true)}
@@ -858,42 +858,42 @@ export function ProfilePopover({
                       <Plus className="h-[18px] w-[18px] text-[#0F1B3D]" />
                     </button>
                   </div>
-                  {uniqueDoctors.length === 0 && profileDetailsLoaded && (
-                    <div className="px-3.5 py-10 text-center">
-                      <p className="text-[17px] font-bold text-[#1C1C1E]">No providers yet</p>
-                      <p className="text-sm text-[#8E8E93] mt-1.5 leading-5">
-                        Add your care team to keep everything in one place.
-                      </p>
-                    </div>
-                  )}
-                  {uniqueDoctors.map((provider, i) => {
-                    const Icon = specialtyIcon(provider.specialty);
-                    // Name line: show name, or practice_name if no name
-                    const displayName = provider.name || provider.practice_name || provider.specialty;
-                    // Detail line: credential · specialty (skip if same as name)
-                    const detailParts = [provider.credential, provider.specialty].filter(Boolean);
-                    const detail = detailParts.join(" · ");
-                    return (
-                      <React.Fragment key={provider.id || i}>
-                        {i > 0 && <div className="h-px bg-[#E5E5EA] ml-[62px] mr-3.5" />}
-                        <button
-                          className="flex w-full items-center gap-3 px-3.5 py-3.5 text-left hover:bg-[#0F1B3D]/[0.02] transition-colors"
-                          onClick={() => setSelectedProvider(provider)}
-                        >
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7F6F2]">
-                            <Icon className="h-[18px] w-[18px] text-[#0F1B3D]" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[16px] font-semibold text-[#1C1C1E] truncate">{displayName}</p>
-                            {detail && detail !== displayName && (
-                              <p className="text-[13px] text-[#8E8E93] mt-px truncate">{detail}</p>
-                            )}
-                          </div>
-                          <ChevronRight className="h-[18px] w-[18px] text-[#0F1B3D] shrink-0" />
-                        </button>
-                      </React.Fragment>
-                    );
-                  })}
+                  <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
+                    {uniqueDoctors.length === 0 && profileDetailsLoaded && (
+                      <div className="px-3.5 py-10 text-center">
+                        <p className="text-[17px] font-bold text-[#1C1C1E]">No providers yet</p>
+                        <p className="text-sm text-[#8E8E93] mt-1.5 leading-5">
+                          Add your care team to keep everything in one place.
+                        </p>
+                      </div>
+                    )}
+                    {uniqueDoctors.map((provider, i) => {
+                      const Icon = specialtyIcon(provider.specialty);
+                      const displayName = provider.name || provider.practice_name || provider.specialty;
+                      const detailParts = [provider.credential, provider.specialty].filter(Boolean);
+                      const detail = detailParts.join(" · ");
+                      return (
+                        <React.Fragment key={provider.id || i}>
+                          {i > 0 && <div className="h-px bg-[#E5E5EA] ml-[62px] mr-3.5" />}
+                          <button
+                            className="flex w-full items-center gap-3 px-3.5 py-3.5 text-left hover:bg-[#0F1B3D]/[0.02] transition-colors"
+                            onClick={() => setSelectedProvider(provider)}
+                          >
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7F6F2]">
+                              <Icon className="h-[18px] w-[18px] text-[#0F1B3D]" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[16px] font-semibold text-[#1C1C1E] truncate">{displayName}</p>
+                              {detail && detail !== displayName && (
+                                <p className="text-[13px] text-[#8E8E93] mt-px truncate">{detail}</p>
+                              )}
+                            </div>
+                            <ChevronRight className="h-[18px] w-[18px] text-[#0F1B3D] shrink-0" />
+                          </button>
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {/* Plan summary */}
