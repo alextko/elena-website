@@ -162,13 +162,18 @@ export function ChatArea({
     scrollEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, toolLabel]);
 
-  // Load session or welcome when activeSessionId changes
+  // Load session or welcome when activeSessionId, isNewChat, or profileId changes.
+  // profileId is included so switching profiles forces a full session reload.
   const loadRequestRef = useRef(0);
+  const prevProfileIdRef = useRef(profileId);
 
   useEffect(() => {
+    const profileChanged = profileId !== prevProfileIdRef.current;
+    prevProfileIdRef.current = profileId;
+
     // If ChatArea already created this session (first message just sent),
-    // skip reloading — we already have the messages locally.
-    if (activeSessionId && sessionIdRef.current === activeSessionId) {
+    // skip reloading — UNLESS the profile changed, which requires a full reset.
+    if (!profileChanged && activeSessionId && sessionIdRef.current === activeSessionId) {
       return;
     }
 
@@ -186,6 +191,7 @@ export function ChatArea({
     setPendingFiles([]);
     hasCreatedSessionRef.current = false;
     setSessionReady(false);
+    sessionIdRef.current = null;
 
     // Increment request ID so stale fetches are ignored
     const requestId = ++loadRequestRef.current;
@@ -194,9 +200,8 @@ export function ChatArea({
       // Load existing session messages
       sessionIdRef.current = activeSessionId;
       loadMessages(activeSessionId, requestId);
-    } else if (isNewChat) {
-      sessionIdRef.current = null;
-      // Check for pending query directly from localStorage (props may be stale)
+    } else if (isNewChat || profileChanged) {
+      // Start a fresh welcome session for the active profile
       const pending = initialQuery || localStorage.getItem("elena_pending_query");
       fetchWelcome(!!pending);
     }
