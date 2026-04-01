@@ -66,8 +66,9 @@ export default function ResetPasswordPage() {
     if (err) {
       setError(err.message);
     } else {
+      await supabase.auth.signOut();
       setSuccess(true);
-      setTimeout(() => router.push("/chat"), 2000);
+      setTimeout(() => router.push("/"), 2000);
     }
   }
 
@@ -103,7 +104,7 @@ export default function ResetPasswordPage() {
         <div className="rounded-3xl bg-white/[0.08] border border-white/[0.12] p-8 space-y-5">
           {success ? (
             <p className="rounded-2xl bg-green-500/20 border border-green-400/20 px-4 py-3 text-sm text-green-200 text-center">
-              Password updated! Redirecting to chat...
+              Password updated! Redirecting to sign in...
             </p>
           ) : expired ? (
             <div className="text-center space-y-3">
