@@ -380,7 +380,7 @@ function LandingPage() {
             )}
           </h1>
           <p className="text-[1.15rem] max-md:text-[1rem] font-light text-white/85 mt-4 tracking-wide">
-            {hero ? hero.subtitle : "I\u0027m a healthcare system expert that can call, email, and use a computer."}
+            {hero ? hero.subtitle : "I\u0027m a healthcare expert that can call, email, and use a computer."}
           </p>
 
           {/* Chat input bar */}
