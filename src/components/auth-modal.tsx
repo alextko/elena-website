@@ -77,10 +77,10 @@ export function AuthModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg p-0 border-0 overflow-hidden rounded-3xl shadow-[0_16px_48px_rgba(0,0,0,0.25)] font-[family-name:var(--font-inter)]">
+      <DialogContent className="max-sm:w-[75vw] w-[calc(100%-2rem)] max-w-lg max-h-[90dvh] overflow-y-auto p-0 border-0 rounded-3xl shadow-[0_16px_48px_rgba(0,0,0,0.25)] font-[family-name:var(--font-inter)] [&_[data-slot=dialog-close]]:text-white/70 [&_[data-slot=dialog-close]:hover]:text-white [&_[data-slot=dialog-close]:hover]:bg-white/10">
         {/* Gradient background matching hero */}
         <div
-          className="relative px-10 py-10 max-sm:px-6 max-sm:py-8"
+          className="relative px-10 py-10 max-sm:px-4 max-sm:py-5"
           style={{
             background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%, #2E6BB5 100%)",
           }}
@@ -100,12 +100,12 @@ export function AuthModal({
             }}
           />
 
-          <div className="relative z-10 space-y-6">
+          <div className="relative z-10 space-y-6 max-sm:space-y-4">
             <DialogHeader>
-              <DialogTitle className="text-center text-2xl font-extrabold tracking-tight text-white">
+              <DialogTitle className="text-center text-2xl max-sm:text-xl font-extrabold tracking-tight text-white">
                 {mode === "signin" ? "Sign in to chat" : "Create an account"}
               </DialogTitle>
-              <DialogDescription className="text-center text-white/60 text-sm font-light">
+              <DialogDescription className="text-center text-white/60 text-sm max-sm:text-xs font-light">
                 {mode === "signin"
                   ? "Sign in to start chatting with Elena"
                   : "Sign up to get started with Elena"}
@@ -115,7 +115,7 @@ export function AuthModal({
             {/* Google OAuth */}
             <button
               onClick={handleGoogleSignIn}
-              className="flex w-full items-center justify-center gap-3 rounded-full bg-white/95 py-4 text-sm font-semibold text-[#0F1B3D] transition-colors hover:bg-white shadow-[0_4px_16px_rgba(0,0,0,0.1)]"
+              className="flex w-full items-center justify-center gap-3 rounded-full bg-white/95 py-4 max-sm:py-3 text-sm max-sm:text-xs font-semibold text-[#0F1B3D] transition-colors hover:bg-white shadow-[0_4px_16px_rgba(0,0,0,0.1)]"
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -140,7 +140,7 @@ export function AuthModal({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-2xl bg-white/10 border border-white/[0.15] px-5 py-4 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/30 focus:bg-white/15"
+                  className="w-full rounded-2xl bg-white/10 border border-white/[0.15] px-5 py-4 max-sm:px-4 max-sm:py-3 text-sm max-sm:text-xs text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/30 focus:bg-white/15"
                   placeholder="you@example.com"
                 />
               </div>
@@ -151,7 +151,7 @@ export function AuthModal({
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-2xl bg-white/10 border border-white/[0.15] px-5 py-4 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/30 focus:bg-white/15"
+                  className="w-full rounded-2xl bg-white/10 border border-white/[0.15] px-5 py-4 max-sm:px-4 max-sm:py-3 text-sm max-sm:text-xs text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/30 focus:bg-white/15"
                   placeholder="Your password"
                   minLength={6}
                 />
@@ -182,7 +182,7 @@ export function AuthModal({
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full rounded-full bg-white/95 py-4 text-sm font-semibold text-[#0F1B3D] transition-colors hover:bg-white disabled:opacity-50 shadow-[0_4px_16px_rgba(0,0,0,0.1)]"
+                className="w-full rounded-full bg-white/95 py-4 max-sm:py-3 text-sm max-sm:text-xs font-semibold text-[#0F1B3D] transition-colors hover:bg-white disabled:opacity-50 shadow-[0_4px_16px_rgba(0,0,0,0.1)]"
               >
                 {submitting ? "..." : mode === "signin" ? "Sign in" : "Sign up"}
               </button>
