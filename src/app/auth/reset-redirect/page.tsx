@@ -43,11 +43,13 @@ export default function ResetRedirectPage() {
       return;
     }
 
-    // Try opening the app
-    const deepLink = `elenaapp://reset-password?${paramString}`;
-    window.location.href = deepLink;
+    // Try opening the app — try production scheme first, then dev
+    window.location.href = `elenaapp://reset-password?${paramString}`;
+    setTimeout(() => {
+      window.location.href = `elenaapp-dev://reset-password?${paramString}`;
+    }, 500);
 
-    // If the app doesn't open in 1.5s, fall back to web reset page
+    // If neither opens in 2.5s, fall back to web reset page
     const timeout = setTimeout(() => {
       setStatus("App not found. Opening web reset...");
       // Pass tokens to the web reset page
@@ -59,7 +61,7 @@ export default function ResetRedirectPage() {
       } else {
         window.location.href = "/";
       }
-    }, 1500);
+    }, 2500);
 
     return () => clearTimeout(timeout);
   }, []);
