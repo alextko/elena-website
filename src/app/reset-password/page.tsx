@@ -111,7 +111,10 @@ export default function ResetPasswordPage() {
                 This reset link has expired or has already been used.
               </p>
               <button
-                onClick={() => router.push("/")}
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  router.push("/");
+                }}
                 className="text-sm text-white/50 underline hover:text-white/80 transition-colors"
               >
                 Go back and request a new link
