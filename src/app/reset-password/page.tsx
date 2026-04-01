@@ -18,24 +18,47 @@ export default function ResetPasswordPage() {
   // Supabase auto-detects the recovery token from the URL hash
   // (detectSessionInUrl: true is configured in supabase.ts)
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    console.log("[RESET] Page loaded, hash:", window.location.hash?.substring(0, 80));
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("[RESET] Auth event:", event, "session:", !!session);
       if (event === "PASSWORD_RECOVERY") {
+        setReady(true);
+      } else if (event === "SIGNED_IN" && session) {
+        // PASSWORD_RECOVERY may arrive as SIGNED_IN in some Supabase versions
         setReady(true);
       }
     });
 
     // Also check if we already have a session (page might have loaded with tokens)
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("[RESET] getSession:", !!session);
       if (session) setReady(true);
     });
 
-    // Timeout: if no recovery event after 3 seconds, link is likely invalid
+    // Also try manually extracting tokens from the hash if Supabase doesn't auto-detect
+    const hash = window.location.hash;
+    if (hash && hash.includes("access_token")) {
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+      if (accessToken && refreshToken) {
+        console.log("[RESET] Manually setting session from hash tokens");
+        supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+          .then(({ error: err }) => {
+            if (!err) setReady(true);
+            else console.error("[RESET] setSession error:", err.message);
+          });
+      }
+    }
+
+    // Timeout: if no recovery event after 10 seconds, link is likely invalid
     const timeout = setTimeout(() => {
       setReady((prev) => {
         if (!prev) setError("This reset link has expired or is invalid. Please request a new one.");
         return prev;
       });
-    }, 3000);
+    }, 10000);
 
     return () => {
       subscription.unsubscribe();
