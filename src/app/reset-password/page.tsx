@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function ResetPasswordPage() {
+function ResetPasswordInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -17,37 +18,50 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     let settled = false;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const markReady = () => {
       if (settled) return;
+      settled = true;
+      setReady(true);
+    };
+
+    const markExpired = () => {
+      if (settled) return;
+      settled = true;
+      setExpired(true);
+    };
+
+    // Listen for PASSWORD_RECOVERY event (normal web flow via Supabase redirect)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
-        settled = true;
-        setReady(true);
+        markReady();
       }
     });
 
-    // If no PASSWORD_RECOVERY event fires within 3 seconds, the link is
-    // expired, already used, or invalid. Also check the URL hash for an
-    // error from Supabase (e.g. ?error=access_denied&error_description=...).
-    const timeout = setTimeout(() => {
-      if (!settled) {
-        settled = true;
-        setExpired(true);
-      }
-    }, 3000);
+    // Check for token_hash in query params (mobile fallback via /auth/reset-redirect)
+    const tokenHash = searchParams.get("token_hash");
+    if (tokenHash) {
+      supabase.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" }).then(({ error: err }) => {
+        if (!err) markReady();
+        else markExpired();
+      });
+    }
 
     // Check for error params in URL (Supabase redirects with these on failure)
     const hash = window.location.hash;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("error") || hash.includes("error=")) {
-      settled = true;
-      setExpired(true);
+    if (searchParams.get("error") || hash.includes("error=")) {
+      markExpired();
     }
+
+    // Timeout: if nothing settles within 3 seconds, mark expired
+    const timeout = setTimeout(() => {
+      markExpired();
+    }, 3000);
 
     return () => {
       clearTimeout(timeout);
       subscription.unsubscribe();
     };
-  }, []);
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -168,5 +182,24 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          className="flex min-h-screen items-center justify-center"
+          style={{
+            background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%, #2E6BB5 100%)",
+          }}
+        >
+          <p className="text-white/60 text-sm">Loading...</p>
+        </div>
+      }
+    >
+      <ResetPasswordInner />
+    </Suspense>
   );
 }
