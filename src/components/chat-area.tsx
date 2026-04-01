@@ -54,11 +54,27 @@ type Message = {
   formRequest?: FormRequest | null;
 };
 
-function renderMarkdown(text: string) {
-  const parts = text.split(/(\*\*.*?\*\*)/g);
+function renderMarkdown(text: string, streaming = false) {
+  if (streaming) {
+    // While streaming, strip link syntax to just show the display text
+    // This avoids partial "[text](http..." rendering mid-stream
+    const cleaned = text.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1");
+    const parts = cleaned.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>;
+      }
+      return <span key={i}>{part}</span>;
+    });
+  }
+  const parts = text.split(/(\*\*.*?\*\*|\[.*?\]\(.*?\))/g);
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
       return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>;
+    }
+    const linkMatch = part.match(/^\[(.*?)\]\((.*?)\)$/);
+    if (linkMatch) {
+      return <a key={i} href={linkMatch[2]} target="_blank" rel="noopener noreferrer" className="text-[#2E6BB5] underline underline-offset-2">{linkMatch[1]}</a>;
     }
     return <span key={i}>{part}</span>;
   });
@@ -97,7 +113,7 @@ function StreamingText({ content, onComplete }: { content: string; onComplete?: 
     <>
       {displayed.split("\n").map((line, i) => (
         <p key={i} className={line === "" ? "h-3" : "mb-1"}>
-          {renderMarkdown(line)}
+          {renderMarkdown(line, !done)}
         </p>
       ))}
       {!done && <span className="inline-block w-[2px] h-[1em] bg-[#0F1B3D] animate-pulse ml-0.5 align-text-bottom" />}
