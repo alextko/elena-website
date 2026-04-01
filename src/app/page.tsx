@@ -231,7 +231,7 @@ function LandingPage() {
   const hero = (ref && HERO_COPY[ref]) || null;
   const [input, setInput] = useState("");
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const heroRef = useRef<HTMLElement>(null);
   const blobRefs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -326,7 +326,7 @@ function LandingPage() {
       <nav className="absolute top-0 left-0 right-0 z-[100] px-8 py-5 flex items-center justify-between max-md:px-4">
         <a
           href="#"
-          className="bg-white/[0.08] backdrop-blur-[40px] border border-white/[0.18] border-t-white/30 rounded-[18px_18px_18px_4px] px-5 py-2.5 text-[1.35rem] font-semibold text-white no-underline tracking-tight shadow-[0_4px_16px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.15)]"
+          className="bg-white/[0.08] backdrop-blur-[40px] border border-white/[0.18] border-t-white/30 rounded-[18px_18px_18px_4px] px-5 py-2.5 max-md:px-4 max-md:py-2 text-[1.35rem] max-md:text-[1.1rem] font-semibold text-white no-underline tracking-tight shadow-[0_4px_16px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.15)]"
           style={{ WebkitBackdropFilter: "blur(40px) saturate(1.8)" }}
         >
           elena
@@ -344,7 +344,7 @@ function LandingPage() {
         </div>
         <button
           onClick={() => { analytics.track("Login Button Clicked"); setAuthModalOpen(true); }}
-          className="bg-white/[0.08] backdrop-blur-[40px] border border-white/[0.18] border-t-white/30 rounded-full px-7 py-3 text-white/90 text-[0.9rem] font-normal cursor-pointer transition-all shadow-[0_4px_16px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.15)] hover:bg-white/15 hover:text-white hover:border-white/25"
+          className="bg-white/[0.08] backdrop-blur-[40px] border border-white/[0.18] border-t-white/30 rounded-full px-7 py-3 max-md:px-5 max-md:py-2 text-white/90 text-[0.9rem] max-md:text-[0.8rem] font-normal cursor-pointer transition-all shadow-[0_4px_16px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.15)] hover:bg-white/15 hover:text-white hover:border-white/25"
           style={{ WebkitBackdropFilter: "blur(40px) saturate(1.8)" }}
         >
           Log in
@@ -376,24 +376,28 @@ function LandingPage() {
             {hero ? (
               <>{hero.headline[0]}<br />{hero.headline[1]}</>
             ) : (
-              <>What can I help<br />you with <em className="italic font-normal font-[family-name:var(--font-dm-serif)]">today?</em></>
+              <>What can I help you<br />with <em className="italic font-normal font-[family-name:var(--font-dm-serif)]">today?</em></>
             )}
           </h1>
-          <p className="text-[1.15rem] font-light text-white/85 mt-4 tracking-wide">
-            {hero ? hero.subtitle : "Elena is a personal health assistant. She can make calls, use a computer, and write emails, and she\u0027s an expert in navigating the healthcare system."}
+          <p className="text-[1.15rem] max-md:text-[1rem] font-light text-white/85 mt-4 tracking-wide">
+            {hero ? hero.subtitle : "I\u0027m a healthcare system expert that can call, email, and use a computer."}
           </p>
 
           {/* Chat input bar */}
           <div className="flex flex-col bg-white/95 rounded-[20px] border border-white/30 max-w-[620px] w-full mx-auto mt-8 shadow-[0_4px_24px_rgba(0,0,0,0.1)] overflow-hidden">
             <div className="px-5 pt-[18px] pb-3">
-              <input
+              <textarea
                 ref={inputRef}
-                type="text"
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSend(); } }}
-                placeholder="Can you call my doctor and schedule a follow-up?"
-                className="w-full border-none outline-none bg-transparent text-base text-[#1C1C1E] placeholder:text-[#AEAEB2]"
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  e.target.style.height = "auto";
+                  e.target.style.height = `${e.target.scrollHeight}px`;
+                }}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                placeholder="Ask Elena anything..."
+                rows={1}
+                className="w-full border-none outline-none bg-transparent text-base max-md:text-sm text-[#1C1C1E] placeholder:text-[#AEAEB2] resize-none max-h-32 overflow-y-auto"
               />
             </div>
             <div className="flex items-center justify-between px-3 pb-3 pt-1">
