@@ -12,6 +12,7 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/apiFetch";
+import { getStoredAttribution } from "@/lib/attribution";
 import * as analytics from "@/lib/analytics";
 import type { MeResponse, DoctorItem, CareVisit, CareTodo, CareTodoCreate, Habit, SubscriptionResponse, InsuranceCard, ProfileSummary } from "@/lib/types";
 
@@ -156,9 +157,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!data.has_profile) {
         console.log("[auth] No profile but onboarding already done, creating silently");
         try {
+          const silentAttribution = getStoredAttribution();
           const createRes = await apiFetch("/profile", {
             method: "POST",
-            body: JSON.stringify({ email: data.email || "" }),
+            body: JSON.stringify({
+              email: data.email || "",
+              ...(silentAttribution?.ref ? { referral_code: silentAttribution.ref } : {}),
+              ...(silentAttribution?.utm_source ? { utm_source: silentAttribution.utm_source } : {}),
+              ...(silentAttribution?.utm_medium ? { utm_medium: silentAttribution.utm_medium } : {}),
+              ...(silentAttribution?.utm_campaign ? { utm_campaign: silentAttribution.utm_campaign } : {}),
+            }),
           });
           if (createRes.ok) {
             const created = await createRes.json();
@@ -633,6 +641,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     home_address?: string;
   }) => {
     try {
+      const attribution = getStoredAttribution();
       const createRes = await apiFetch("/profile", {
         method: "POST",
         body: JSON.stringify({
@@ -641,6 +650,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           date_of_birth: data.date_of_birth || "",
           zip_code: data.home_address || "",
           email: profileData?.email || "",
+          ...(attribution?.ref ? { referral_code: attribution.ref } : {}),
+          ...(attribution?.utm_source ? { utm_source: attribution.utm_source } : {}),
+          ...(attribution?.utm_medium ? { utm_medium: attribution.utm_medium } : {}),
+          ...(attribution?.utm_campaign ? { utm_campaign: attribution.utm_campaign } : {}),
+          ...(attribution?.utm_content ? { utm_content: attribution.utm_content } : {}),
+          ...(attribution?.utm_term ? { utm_term: attribution.utm_term } : {}),
         }),
       });
       if (createRes.ok) {

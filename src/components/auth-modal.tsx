@@ -60,10 +60,10 @@ export function AuthModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg p-0 border-0 overflow-hidden rounded-3xl shadow-[0_16px_48px_rgba(0,0,0,0.25)] font-[family-name:var(--font-inter)]">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-lg p-0 border-0 overflow-hidden rounded-3xl shadow-[0_16px_48px_rgba(0,0,0,0.25)] font-[family-name:var(--font-inter)] [&_[data-slot=dialog-close]]:text-white/70 [&_[data-slot=dialog-close]:hover]:text-white [&_[data-slot=dialog-close]:hover]:bg-white/10">
         {/* Gradient background matching hero */}
         <div
-          className="relative px-10 py-10 max-sm:px-6 max-sm:py-8"
+          className="relative px-10 py-10 max-sm:px-5 max-sm:py-6"
           style={{
             background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%, #2E6BB5 100%)",
           }}

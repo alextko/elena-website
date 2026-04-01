@@ -775,30 +775,32 @@ export function ChatArea({
             />
           )}
 
-          {/* Suggestion chips */}
-          {!isLoading && !streamingId && suggestions.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-1 animate-in fade-in duration-500">
-              {suggestions.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => {
-                    analytics.track(
-                      messages.length === 0 ? "Welcome Suggestion Clicked" : "Suggestion Chip Clicked",
-                      { suggestion_text: s },
-                    );
-                    handleSend(s);
-                  }}
-                  className="rounded-full border border-[#0F1B3D]/10 bg-[#f5f7fb] px-4 py-2.5 text-sm font-semibold text-[#0F1B3D]/70 shadow-[0_2px_8px_rgba(15,27,61,0.04),inset_0_1px_0_rgba(255,255,255,0.5)] transition-all hover:bg-[#0F1B3D]/[0.08] hover:-translate-y-px"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          )}
-
           <div ref={scrollEndRef} className="h-6" />
         </div>
       </div>
+
+      {/* Suggestion chips — above input bar, horizontal scroll on mobile */}
+      {!isLoading && !streamingId && suggestions.length > 0 && (
+        <div className="flex-shrink-0 relative z-10 max-w-2xl w-full mx-auto max-md:max-w-none animate-in fade-in duration-500">
+          <div className="flex gap-2 px-4 pb-2 max-md:overflow-x-auto max-md:flex-nowrap max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:flex-wrap md:justify-center">
+            {suggestions.map((s) => (
+              <button
+                key={s}
+                onClick={() => {
+                  analytics.track(
+                    messages.length === 0 ? "Welcome Suggestion Clicked" : "Suggestion Chip Clicked",
+                    { suggestion_text: s },
+                  );
+                  handleSend(s);
+                }}
+                className="rounded-full border border-[#0F1B3D]/10 bg-[#f5f7fb] px-4 py-2.5 text-sm font-semibold text-[#0F1B3D]/70 whitespace-nowrap shrink-0 max-md:shrink-0 md:shrink shadow-[0_2px_8px_rgba(15,27,61,0.04),inset_0_1px_0_rgba(255,255,255,0.5)] transition-all hover:bg-[#0F1B3D]/[0.08] hover:-translate-y-px"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Input bar */}
       <div

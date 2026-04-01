@@ -352,7 +352,7 @@ function LandingPage() {
       </nav>
 
       {/* HERO */}
-      <section ref={heroRef} className="relative h-screen flex flex-col items-center justify-center overflow-hidden">
+      <section ref={heroRef} className="relative h-dvh flex flex-col items-center justify-center overflow-hidden">
         {/* Gradient bg */}
         <div className="absolute inset-0 z-0 bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)]">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_130%,#F4B084_0%,#E8956D_25%,rgba(46,107,181,0)_60%)]" />
