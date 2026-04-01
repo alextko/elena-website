@@ -178,17 +178,17 @@ const INSURERS = [
   { src: "/images/insurers/vsp.svg", alt: "VSP Vision" },
 ];
 
-const HERO_COPY: Record<string, { headline: [string, string]; subtitle: string }> = {
+const HERO_COPY: Record<string, { headline: [string, string, string]; subtitle: string }> = {
   bills: {
-    headline: ["Elena finds the", "errors in your bill."],
+    headline: ["Elena finds the", "errors in your ", "bill."],
     subtitle: "80% of hospital bills have errors. Elena reads every line, flags mistakes, and fights them for you.",
   },
   calls: {
-    headline: ["Elena calls your", "insurance for you."],
+    headline: ["Elena calls your", "insurance ", "for you."],
     subtitle: "No more hold music. No more transfers. Elena sits on hold, talks to your insurer, and reports back.",
   },
   caregiver: {
-    headline: ["Manage their health", "from your phone."],
+    headline: ["Manage their health", "from your ", "phone."],
     subtitle: "Insurance, doctors, meds, and bills for the people you care for — all in one place.",
   },
 };
@@ -230,6 +230,7 @@ function LandingPage() {
     "/lp/caregiver": "caregiver",
   };
   const ref = searchParams.get("ref") || LP_PATH_MAP[pathname] || null;
+  const redditMode = searchParams.get("reddit") === "1" || pathname.startsWith("/lp/");
   const hero = (ref && HERO_COPY[ref]) || null;
   const [input, setInput] = useState("");
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -239,12 +240,12 @@ function LandingPage() {
 
   const hasTrackedPageView = useRef(false);
 
-  // Authenticated → go to /chat
+  // Authenticated → go to /chat (skip in reddit screenshot mode)
   useEffect(() => {
-    if (!loading && session) {
+    if (!loading && session && !redditMode) {
       router.replace("/chat");
     }
-  }, [loading, session, router]);
+  }, [loading, session, router, redditMode]);
 
   // ViewContent pixel event for landing pages
   useEffect(() => {
@@ -314,7 +315,7 @@ function LandingPage() {
     inputRef.current?.focus();
   }, []);
 
-  if (loading || session) {
+  if (loading || (session && !redditMode)) {
     return (
       <div className="flex h-dvh items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#0F1B3D] border-t-transparent" />
@@ -323,9 +324,9 @@ function LandingPage() {
   }
 
   return (
-    <div className="font-[family-name:var(--font-inter)]">
-      {/* NAV */}
-      <nav className="absolute top-0 left-0 right-0 z-[100] px-8 py-5 flex items-center justify-between max-md:px-4">
+    <div className={`font-[family-name:var(--font-inter)] ${redditMode ? "bg-[#e5e7eb] min-h-dvh" : ""}`}>
+      {/* NAV — hidden in reddit screenshot mode */}
+      <nav className={`absolute top-0 left-0 right-0 z-[100] px-8 py-5 flex items-center justify-between max-md:px-4 ${redditMode ? "hidden" : ""}`}>
         <a
           href="#"
           className="bg-white/[0.08] backdrop-blur-[40px] border border-white/[0.18] border-t-white/30 rounded-[18px_18px_18px_4px] px-5 py-2.5 text-[1.35rem] font-semibold text-white no-underline tracking-tight shadow-[0_4px_16px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.15)]"
@@ -354,7 +355,7 @@ function LandingPage() {
       </nav>
 
       {/* HERO */}
-      <section ref={heroRef} className="relative h-screen flex flex-col items-center justify-center overflow-hidden">
+      <section ref={heroRef} className={`relative flex flex-col items-center justify-center overflow-hidden ${redditMode ? "mx-auto mt-6 pt-14" : "h-screen"}`} style={redditMode ? { width: 540, aspectRatio: '4/5', outline: '2px solid #9ca3af', outlineOffset: 4 } : undefined}>
         {/* Gradient bg */}
         <div className="absolute inset-0 z-0 bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)]">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_130%,#F4B084_0%,#E8956D_25%,rgba(46,107,181,0)_60%)]" />
@@ -372,11 +373,18 @@ function LandingPage() {
           ))}
         </div>
 
+        {/* Elena logo for reddit ad mode */}
+        {redditMode && (
+          <div className="absolute top-3 left-3 z-[50] bg-white/[0.12] backdrop-blur-[40px] border border-white/[0.2] rounded-[14px_14px_14px_3px] px-[18px] py-2.5 shadow-lg" style={{ WebkitBackdropFilter: "blur(40px) saturate(1.8)" }}>
+            <span className="text-[1.2rem] font-semibold text-white tracking-tight">elena</span>
+          </div>
+        )}
+
         {/* Content */}
-        <div className="relative z-[4] text-center max-w-[700px] w-full px-6">
+        <div className={`relative z-[4] text-center max-w-[700px] w-full px-6 ${redditMode ? "mb-20" : ""}`}>
           <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] font-light leading-[1.15] tracking-tight text-white">
             {hero ? (
-              <>{hero.headline[0]}<br />{hero.headline[1]}</>
+              <>{hero.headline[0]}<br />{hero.headline[1]}<em className="italic font-normal font-[family-name:var(--font-dm-serif)]">{hero.headline[2]}</em></>
             ) : (
               <>What can I help<br />you with <em className="italic font-normal font-[family-name:var(--font-dm-serif)]">today?</em></>
             )}
@@ -463,6 +471,7 @@ function LandingPage() {
         </div>
       </section>
 
+      {!redditMode && <>
       {/* STATS BAR */}
       <StatsBar />
 
@@ -541,6 +550,7 @@ function LandingPage() {
       </footer>
 
       <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
+      </>}
     </div>
   );
 }

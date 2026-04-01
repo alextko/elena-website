@@ -590,49 +590,55 @@ function CG1ManagingMom() {
   );
 }
 
-// ── Caregiver Ad 2: fulltime-job-v2 ──────────────────────
+// ── Caregiver Ad 2: retire-medicare-v2 ──────────────────
 
-function MedsRefillCard() {
-  const meds = [
-    { name: "Metformin 500mg", status: "Refill in 3 days", alert: true },
-    { name: "Lisinopril 10mg", status: "Refill in 12 days", alert: false },
-    { name: "Atorvastatin 20mg", status: "OK until May", alert: false },
+function MedicarePlanCard() {
+  const plans = [
+    { name: "Original Medicare + Medigap", estimate: "$164 + $150/mo", note: "Parts A & B + supplement. Any doctor that accepts Medicare." },
+    { name: "Medicare Advantage (Part C)", estimate: "$0-$75/mo", note: "All-in-one. Lower premiums, but network restrictions apply." },
+    { name: "Stay on employer plan (COBRA)", estimate: "$580/mo", note: "18 months max. Same coverage, but you pay full cost." },
   ];
   return (
-    <div className="mt-2 rounded-2xl border border-[#E5E5EA] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
-      <div className="px-4 py-2.5">
-        <p className="text-[16px] font-bold text-[#0F1B3D]">Margaret's Medications</p>
+    <div className="mt-3 rounded-2xl border border-[#E5E5EA] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
+      <div className="px-4 py-3">
+        <p className="text-[20px] font-extrabold text-[#0F1B3D]">Robert's Options</p>
+        <p className="text-[13px] text-[#8E8E93]">Initial Enrollment Period — 7 months around 65th birthday</p>
       </div>
       <div className="h-px bg-[#E5E5EA] mx-3.5" />
       <div className="divide-y divide-[#F2F2F7]">
-        {meds.map((m) => (
-          <div key={m.name} className="flex items-center justify-between px-4 py-2.5">
-            <p className="text-[14px] font-medium text-[#1C1C1E]">{m.name}</p>
-            <span className={`text-[12px] font-semibold ${m.alert ? "text-[#EF4444]" : "text-[#8E8E93]"}`}>{m.status}</span>
+        {plans.map((p) => (
+          <div key={p.name} className="flex items-center gap-3.5 px-4 py-3.5">
+            <div className="flex-1 min-w-0">
+              <p className="text-[16px] font-bold text-[#1C1C1E]">{p.name}</p>
+              <p className="text-[13px] text-[#8E8E93] mt-px">{p.note}</p>
+            </div>
+            <div className="flex items-center gap-2.5 shrink-0">
+              <span className="text-[14px] font-bold text-[#0F1B3D]">{p.estimate}</span>
+              <button className="shrink-0 rounded-lg bg-[#4A6CF7] px-3 py-1.5 text-[12px] font-semibold text-white hover:opacity-90 transition-opacity">
+                Compare
+              </button>
+            </div>
           </div>
         ))}
-      </div>
-      <div className="px-4 py-2.5 bg-[#F7F6F2] flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-[#34C759]" />
-        <p className="text-[12px] text-[#8E8E93]">Pharmacy on file: <span className="font-medium text-[#1C1C1E]">CVS, 340 E 23rd St</span></p>
       </div>
     </div>
   );
 }
 
-function CG2FulltimeJob() {
+function CG2RetireMedicare() {
   return (
     <div className="space-y-4">
-      <UserBubble text="Can you call my mom's doctor to reschedule?" />
+      <UserBubble text="My dad just retired. He has no idea what Medicare plan to pick." />
       <Elena>
-        <p className="mb-1">On it. Calling Dr. Patel's office now to reschedule Margaret's follow-up.</p>
+        <p className="mb-1">Retiring at 65 means Robert has a <B>7-month Initial Enrollment Period</B> — 3 months before his birthday, the birthday month, and 3 months after. Missing it means a <B>permanent late penalty</B> on Part B premiums.</p>
+        <p className="mb-1">Based on his doctors and prescriptions, here are his best options:</p>
       </Elena>
-      <BookingStatusBubble status={MOCK_BOOKING_STATUS_CALLING} />
+      <MedicarePlanCard />
       <Elena>
-        <p className="mb-1">While I'm on hold, I checked Margaret's medications. Her Metformin refill is due in 3 days. Want me to call CVS and get it refilled?</p>
+        <p className="mb-1">His cardiologist Dr. Chen is <B>not in-network</B> for 3 of the 4 Advantage plans in his area. If keeping Dr. Chen matters, <B>Original Medicare + Medigap Plan G</B> is the safest option — any doctor that takes Medicare.</p>
+        <p className="mb-1">Want me to call Medicare to confirm his enrollment window and check Part D drug plans for his medications?</p>
       </Elena>
-      <MedsRefillCard />
-      <SuggestionChips suggestions={["Yes, call CVS", "Refill all three", "Her appointment schedule"]} />
+      <SuggestionChips suggestions={["Call Medicare for us", "Compare drug plans", "What's Medigap Plan G?"]} />
     </div>
   );
 }
@@ -1034,6 +1040,10 @@ function Ad8CallSummary() {
 
 // ── Page layout ──────────────────────────────────────────
 
+// Tabs that need 4:5 Reddit ad bounding box treatment
+const REDDIT_AD_TABS = new Set(["ad1", "ad2", "ad3", "ad6", "ad8", "cg4"]);
+// ad1=bill-errors, ad2=mri-compare, ad3=denied-claim, ad6=turned-26/price_secret, ad8=phone-hold, cg4=parent-denied
+
 const TABS = [
   { id: "ad1", label: "Bill Errors", component: Ad1BillErrors },
   { id: "ad2", label: "MRI Compare", component: Ad2MRICompare },
@@ -1044,7 +1054,7 @@ const TABS = [
   { id: "ad7", label: "Deductibles", component: Ad7Deductibles },
   { id: "ad8", label: "Call Summary", component: Ad8CallSummary },
   { id: "cg1", label: "CG: Managing Mom", component: CG1ManagingMom },
-  { id: "cg2", label: "CG: Call Doctor", component: CG2FulltimeJob },
+  { id: "cg2", label: "CG: Retire Medicare", component: CG2RetireMedicare },
   { id: "cg3", label: "CG: Weekly List", component: CG3WeeklyList },
   { id: "cg4", label: "CG: Mom Denied", component: CG4ParentDenied },
   { id: "cg5", label: "CG: Kids Care", component: CG5KidsCare },
@@ -1053,10 +1063,11 @@ const TABS = [
 export default function ScreenshotsPage() {
   const [activeTab, setActiveTab] = useState("ad1");
   const ActiveComponent = TABS.find((t) => t.id === activeTab)!.component;
+  const isRedditAd = REDDIT_AD_TABS.has(activeTab);
 
   return (
-    <div className="min-h-dvh bg-white font-[family-name:var(--font-inter)]">
-      {/* Tab bar — crop this out of screenshots */}
+    <div className={`min-h-dvh ${isRedditAd ? "bg-[#e5e7eb]" : "bg-white"} font-[family-name:var(--font-inter)]`}>
+      {/* Tab bar */}
       <div className="sticky top-0 z-50 bg-white border-b border-[#e5e7eb] px-4 py-2">
         <div className="flex items-center gap-1 max-w-2xl mx-auto">
           <span className="text-xs font-semibold text-[#0F1B3D]/40 mr-2">AD:</span>
@@ -1076,36 +1087,82 @@ export default function ScreenshotsPage() {
         </div>
       </div>
 
-      {/* Chat area — screenshot this */}
-      <div className="relative">
-        <div
-          className="pointer-events-none absolute inset-0 z-0 opacity-[0.08] mix-blend-overlay"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-          }}
-        />
-        <div className="mx-auto max-w-2xl px-4 py-6 space-y-4 relative z-10">
-          <ActiveComponent />
-        </div>
+      {isRedditAd ? (
+        /* 4:5 bounding box — matches LP reddit mode dimensions (540×675, 1080×1350 at 2x) */
+        <div className="flex justify-center mt-6">
+          <div
+            className="relative bg-white overflow-hidden"
+            style={{ width: 540, aspectRatio: '4/5', outline: '2px solid #9ca3af', outlineOffset: 4 }}
+          >
+            {/* Elena logo — matches LP reddit mode size */}
+            <div className="absolute top-3 left-3 z-40 bg-[#0F1B3D] rounded-[14px_14px_14px_3px] px-[18px] py-2.5 shadow-lg">
+              <span className="text-[1.2rem] font-semibold text-white tracking-tight">elena</span>
+            </div>
 
-        {/* Fake input bar — matches real ChatArea input */}
-        <div className="sticky bottom-0 z-20 bg-white/80 backdrop-blur-sm">
-          <div className="mx-auto max-w-2xl px-4 py-3">
-            <div className="flex items-end gap-2 rounded-[28px] border border-[#E5E5EA] bg-white px-2 py-1.5 shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
-              <div className="flex h-8 w-8 mb-0.5 flex-shrink-0 items-center justify-center rounded-full text-[#AEAEB2]">
-                <Plus className="h-4 w-4" />
+            {/* Noise texture */}
+            <div
+              className="pointer-events-none absolute inset-0 z-0 opacity-[0.08] mix-blend-overlay"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+              }}
+            />
+
+            {/* Chat content + input bar — zoomed out to fit */}
+            <div className="h-full flex flex-col relative">
+              <div className="flex-1 overflow-hidden px-5 pt-16 pb-2 space-y-4 relative z-10" style={{ zoom: 0.82 }}>
+                <ActiveComponent />
               </div>
-              <div className="flex-1 py-2 text-sm text-[#AEAEB2]">Ask Elena anything...</div>
-              <div className="h-[34px] w-[34px] mb-0.5 flex-shrink-0 rounded-full bg-[#0F1B3D] flex items-center justify-center opacity-40">
-                <svg className="h-4 w-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+
+              {/* Fake input bar — anchored to bottom, not zoomed */}
+              <div className="shrink-0 bg-white/80 backdrop-blur-sm z-20">
+                <div className="px-4 py-3">
+                  <div className="flex items-end gap-2 rounded-[28px] border border-[#E5E5EA] bg-white px-2 py-1.5 shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+                    <div className="flex h-8 w-8 mb-0.5 flex-shrink-0 items-center justify-center rounded-full text-[#AEAEB2]">
+                      <Plus className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 py-2 text-sm text-[#AEAEB2]">Ask Elena anything...</div>
+                    <div className="h-[34px] w-[34px] mb-0.5 flex-shrink-0 rounded-full bg-[#0F1B3D] flex items-center justify-center opacity-40">
+                      <svg className="h-4 w-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-center text-[0.7rem] text-[#AEAEB2]">
+                    Elena can make mistakes. Always verify important health information.
+                  </p>
+                </div>
               </div>
             </div>
-            <p className="mt-2 text-center text-[0.7rem] text-[#AEAEB2]">
-              Elena can make mistakes. Always verify important health information.
-            </p>
           </div>
         </div>
-      </div>
+      ) : (
+        /* Original layout for non-reddit-ad tabs */
+        <div className="relative">
+          <div
+            className="pointer-events-none absolute inset-0 z-0 opacity-[0.08] mix-blend-overlay"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+            }}
+          />
+          <div className="mx-auto max-w-2xl px-4 py-6 space-y-4 relative z-10">
+            <ActiveComponent />
+          </div>
+          <div className="sticky bottom-0 z-20 bg-white/80 backdrop-blur-sm">
+            <div className="mx-auto max-w-2xl px-4 py-3">
+              <div className="flex items-end gap-2 rounded-[28px] border border-[#E5E5EA] bg-white px-2 py-1.5 shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+                <div className="flex h-8 w-8 mb-0.5 flex-shrink-0 items-center justify-center rounded-full text-[#AEAEB2]">
+                  <Plus className="h-4 w-4" />
+                </div>
+                <div className="flex-1 py-2 text-sm text-[#AEAEB2]">Ask Elena anything...</div>
+                <div className="h-[34px] w-[34px] mb-0.5 flex-shrink-0 rounded-full bg-[#0F1B3D] flex items-center justify-center opacity-40">
+                  <svg className="h-4 w-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                </div>
+              </div>
+              <p className="mt-2 text-center text-[0.7rem] text-[#AEAEB2]">
+                Elena can make mistakes. Always verify important health information.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
