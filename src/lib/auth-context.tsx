@@ -744,10 +744,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resetPassword = useCallback(async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    return { error: error?.message ?? null };
+    try {
+      const res = await apiFetch("/auth/request-password-reset", {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          redirect_to: `${window.location.origin}/reset-password`,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        return { error: data.detail || "Something went wrong. Please try again." };
+      }
+      return { error: null };
+    } catch {
+      return { error: "Network error. Please try again." };
+    }
   }, []);
 
   const signInWithApple = useCallback(async () => {
