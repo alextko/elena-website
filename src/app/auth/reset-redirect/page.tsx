@@ -1,42 +1,68 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 
-function ResetRedirectInner() {
-  const searchParams = useSearchParams();
-  const [fallback, setFallback] = useState(false);
-
-  const tokenHash = searchParams.get("token_hash");
-  const type = searchParams.get("type") || "recovery";
+/**
+ * Intermediary page for mobile password resets.
+ *
+ * Supabase redirects here with tokens in the hash fragment:
+ *   /auth/reset-redirect#access_token=...&refresh_token=...&type=recovery
+ *
+ * Or with a token_hash query param (from our custom flow):
+ *   /auth/reset-redirect?token_hash=...&type=recovery
+ *
+ * This page tries to open the app via deep link. If the app doesn't
+ * open (not installed), falls back to the web reset page.
+ */
+export default function ResetRedirectPage() {
+  const [status, setStatus] = useState("Opening Elena...");
 
   useEffect(() => {
-    if (!tokenHash) {
-      setFallback(true);
+    // Collect tokens from hash fragment or query params
+    const hash = window.location.hash.substring(1);
+    const hashParams = new URLSearchParams(hash);
+    const queryParams = new URLSearchParams(window.location.search);
+
+    const accessToken = hashParams.get("access_token");
+    const refreshToken = hashParams.get("refresh_token");
+    const tokenHash = queryParams.get("token_hash") || hashParams.get("token_hash");
+
+    // Build the app deep link with all available tokens
+    const deepLinkParams = new URLSearchParams();
+    if (accessToken) deepLinkParams.set("access_token", accessToken);
+    if (refreshToken) deepLinkParams.set("refresh_token", refreshToken);
+    if (tokenHash) deepLinkParams.set("token_hash", tokenHash);
+    deepLinkParams.set("type", "recovery");
+
+    const paramString = deepLinkParams.toString();
+
+    if (!accessToken && !refreshToken && !tokenHash) {
+      // No tokens at all -- redirect to home
+      setStatus("Invalid reset link. Redirecting...");
+      setTimeout(() => { window.location.href = "/"; }, 1500);
       return;
     }
 
-    // Try to open the app via deep link
-    const deepLink = `elenaapp://reset-password?token_hash=${encodeURIComponent(tokenHash)}&type=${type}`;
+    // Try opening the app
+    const deepLink = `elenaapp://reset-password?${paramString}`;
     window.location.href = deepLink;
 
-    // If the app doesn't open within 1.5 seconds, fall back to the web reset page
+    // If the app doesn't open in 1.5s, fall back to web reset page
     const timeout = setTimeout(() => {
-      setFallback(true);
+      setStatus("App not found. Opening web reset...");
+      // Pass tokens to the web reset page
+      if (tokenHash) {
+        window.location.href = `/reset-password?token_hash=${encodeURIComponent(tokenHash)}&type=recovery`;
+      } else if (accessToken && refreshToken) {
+        // Pass via hash fragment (web reset page handles this via Supabase)
+        window.location.href = `/reset-password#access_token=${encodeURIComponent(accessToken)}&refresh_token=${encodeURIComponent(refreshToken)}&type=recovery`;
+      } else {
+        window.location.href = "/";
+      }
     }, 1500);
 
     return () => clearTimeout(timeout);
-  }, [tokenHash, type]);
-
-  if (fallback) {
-    // Redirect to web reset page with the token
-    if (typeof window !== "undefined" && tokenHash) {
-      window.location.href = `/reset-password?token_hash=${encodeURIComponent(tokenHash)}&type=${type}`;
-    } else if (typeof window !== "undefined") {
-      window.location.href = "/";
-    }
-  }
+  }, []);
 
   return (
     <div
@@ -45,26 +71,7 @@ function ResetRedirectInner() {
         background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%, #2E6BB5 100%)",
       }}
     >
-      <p className="text-white/60 text-sm">Opening Elena...</p>
+      <p className="text-white/60 text-sm">{status}</p>
     </div>
-  );
-}
-
-export default function ResetRedirectPage() {
-  return (
-    <Suspense
-      fallback={
-        <div
-          className="flex min-h-screen items-center justify-center"
-          style={{
-            background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%, #2E6BB5 100%)",
-          }}
-        >
-          <p className="text-white/60 text-sm">Loading...</p>
-        </div>
-      }
-    >
-      <ResetRedirectInner />
-    </Suspense>
   );
 }
