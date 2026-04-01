@@ -18,12 +18,13 @@ export function AuthModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { signIn, signUp, signInWithGoogle } = useAuth();
+  const { signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   useEffect(() => {
     if (open) analytics.track("Auth Modal Opened");
@@ -45,6 +46,22 @@ export function AuthModal({
       setError(result.error);
     } else {
       onOpenChange(false);
+    }
+  }
+
+  async function handleForgotPassword() {
+    if (!email) {
+      setError("Enter your email address first.");
+      return;
+    }
+    setError(null);
+    setSubmitting(true);
+    const result = await resetPassword(email);
+    setSubmitting(false);
+    if (result.error) {
+      setError(result.error);
+    } else {
+      setResetSent(true);
     }
   }
 
@@ -123,7 +140,7 @@ export function AuthModal({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-2xl bg-white/10 backdrop-blur-[20px] border border-white/[0.15] px-5 py-4 text-sm text-white outline-none transition-all placeholder:text-white/30 focus:border-white/30 focus:bg-white/15"
+                  className="w-full rounded-2xl bg-white/10 backdrop-blur-[20px] border border-white/[0.15] px-5 py-4 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/30 focus:bg-white/15"
                   style={{ WebkitBackdropFilter: "blur(20px)" }}
                   placeholder="you@example.com"
                 />
@@ -135,12 +152,30 @@ export function AuthModal({
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-2xl bg-white/10 backdrop-blur-[20px] border border-white/[0.15] px-5 py-4 text-sm text-white outline-none transition-all placeholder:text-white/30 focus:border-white/30 focus:bg-white/15"
+                  className="w-full rounded-2xl bg-white/10 backdrop-blur-[20px] border border-white/[0.15] px-5 py-4 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/30 focus:bg-white/15"
                   style={{ WebkitBackdropFilter: "blur(20px)" }}
                   placeholder="Your password"
                   minLength={6}
                 />
               </div>
+
+              {mode === "signin" && !resetSent && (
+                <div className="flex justify-end -mt-2">
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    className="text-xs text-white/40 hover:text-white/70 transition-colors"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
+
+              {resetSent && (
+                <p className="rounded-2xl bg-green-500/20 border border-green-400/20 px-4 py-3 text-sm text-green-200">
+                  Check your email for a password reset link.
+                </p>
+              )}
 
               {error && (
                 <p className="rounded-2xl bg-red-500/20 border border-red-400/20 px-4 py-3 text-sm text-red-200">{error}</p>
@@ -160,7 +195,7 @@ export function AuthModal({
                 <>
                   Don&apos;t have an account?{" "}
                   <button
-                    onClick={() => { setMode("signup"); setError(null); }}
+                    onClick={() => { setMode("signup"); setError(null); setResetSent(false); }}
                     className="text-white/60 underline hover:text-white transition-colors"
                   >
                     Sign up
@@ -170,7 +205,7 @@ export function AuthModal({
                 <>
                   Already have an account?{" "}
                   <button
-                    onClick={() => { setMode("signin"); setError(null); }}
+                    onClick={() => { setMode("signin"); setError(null); setResetSent(false); }}
                     className="text-white/60 underline hover:text-white transition-colors"
                   >
                     Sign in
