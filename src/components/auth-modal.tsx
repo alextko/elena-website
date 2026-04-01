@@ -115,7 +115,7 @@ export function AuthModal({
             {/* Google OAuth */}
             <button
               onClick={handleGoogleSignIn}
-              className="flex w-full items-center justify-center gap-3 rounded-full bg-white/95 py-4 text-sm font-semibold text-[#0F1B3D] transition-all hover:bg-white shadow-[0_4px_16px_rgba(0,0,0,0.1)]"
+              className="flex w-full items-center justify-center gap-3 rounded-full bg-white/95 py-4 text-sm font-semibold text-[#0F1B3D] transition-colors hover:bg-white shadow-[0_4px_16px_rgba(0,0,0,0.1)]"
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -140,8 +140,7 @@ export function AuthModal({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-2xl bg-white/10 backdrop-blur-[20px] border border-white/[0.15] px-5 py-4 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/30 focus:bg-white/15"
-                  style={{ WebkitBackdropFilter: "blur(20px)" }}
+                  className="w-full rounded-2xl bg-white/10 border border-white/[0.15] px-5 py-4 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/30 focus:bg-white/15"
                   placeholder="you@example.com"
                 />
               </div>
@@ -152,8 +151,7 @@ export function AuthModal({
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-2xl bg-white/10 backdrop-blur-[20px] border border-white/[0.15] px-5 py-4 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/30 focus:bg-white/15"
-                  style={{ WebkitBackdropFilter: "blur(20px)" }}
+                  className="w-full rounded-2xl bg-white/10 border border-white/[0.15] px-5 py-4 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/30 focus:bg-white/15"
                   placeholder="Your password"
                   minLength={6}
                 />
@@ -184,7 +182,7 @@ export function AuthModal({
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full rounded-full bg-white/95 py-4 text-sm font-semibold text-[#0F1B3D] transition-all hover:bg-white disabled:opacity-50 shadow-[0_4px_16px_rgba(0,0,0,0.1)]"
+                className="w-full rounded-full bg-white/95 py-4 text-sm font-semibold text-[#0F1B3D] transition-colors hover:bg-white disabled:opacity-50 shadow-[0_4px_16px_rgba(0,0,0,0.1)]"
               >
                 {submitting ? "..." : mode === "signin" ? "Sign in" : "Sign up"}
               </button>
