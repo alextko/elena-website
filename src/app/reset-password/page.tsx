@@ -12,14 +12,41 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [ready, setReady] = useState(false);
+  const [expired, setExpired] = useState(false);
 
   useEffect(() => {
+    let settled = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (settled) return;
       if (event === "PASSWORD_RECOVERY") {
+        settled = true;
         setReady(true);
       }
     });
-    return () => subscription.unsubscribe();
+
+    // If no PASSWORD_RECOVERY event fires within 3 seconds, the link is
+    // expired, already used, or invalid. Also check the URL hash for an
+    // error from Supabase (e.g. ?error=access_denied&error_description=...).
+    const timeout = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        setExpired(true);
+      }
+    }, 3000);
+
+    // Check for error params in URL (Supabase redirects with these on failure)
+    const hash = window.location.hash;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("error") || hash.includes("error=")) {
+      settled = true;
+      setExpired(true);
+    }
+
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -78,6 +105,18 @@ export default function ResetPasswordPage() {
             <p className="rounded-2xl bg-green-500/20 border border-green-400/20 px-4 py-3 text-sm text-green-200 text-center">
               Password updated! Redirecting to chat...
             </p>
+          ) : expired ? (
+            <div className="text-center space-y-3">
+              <p className="text-sm text-white/70">
+                This reset link has expired or has already been used.
+              </p>
+              <button
+                onClick={() => router.push("/")}
+                className="text-sm text-white/50 underline hover:text-white/80 transition-colors"
+              >
+                Go back and request a new link
+              </button>
+            </div>
           ) : !ready ? (
             <p className="text-center text-sm text-white/50">
               Verifying your reset link...
