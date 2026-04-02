@@ -560,9 +560,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiFetch("/todos?include_future=true");
       if (!res.ok) return;
       const data: CareTodo[] = await res.json();
-      console.log("[game-plan] todos loaded:", data.length, data.map(t => `${t.title}(${t.frequency}/${t.status})`));
       setTodos(data);
-    } catch (err) { console.error("[game-plan] refreshTodos error:", err); }
+    } catch {}
   }, []);
 
   const refreshDoctors = useCallback(async () => {
@@ -627,7 +626,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ]);
       if (habitsRes.ok) {
         const data: Habit[] = await habitsRes.json();
-        console.log("[game-plan] habits loaded:", data.length, data.map(h => h.title));
         setHabits(data);
       }
       if (completionsRes.ok) {
@@ -651,11 +649,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           }
         }
-        const todayLocal = new Date().toLocaleDateString("en-CA");
-        console.log("[game-plan] completions loaded, dates:", Object.keys(byDate), "today:", todayLocal, "todayMatch:", byDate[todayLocal]?.size || 0);
         setHabitCompletions(byDate);
       }
-    } catch (err) { console.error("[game-plan] refreshHabits error:", err); }
+    } catch {}
   }, []);
 
   const completeOnboarding = useCallback(async (data: {

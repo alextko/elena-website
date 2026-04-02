@@ -234,12 +234,12 @@ export function ProfilePopover({
         });
       }
       const hd: HealthData = { conditions: [], medications: [], surgeries: [], allergies: [], familyHistory: [], socialHistory: [] };
-      if (condRes.ok) hd.conditions = await condRes.json();
-      if (medRes.ok) hd.medications = await medRes.json();
-      if (surgRes.ok) hd.surgeries = await surgRes.json();
-      if (allergyRes.ok) hd.allergies = await allergyRes.json();
-      if (famRes.ok) hd.familyHistory = await famRes.json();
-      if (socRes.ok) hd.socialHistory = await socRes.json();
+      if (condRes.ok) { const d = await condRes.json(); hd.conditions = d.conditions || d || []; }
+      if (medRes.ok) { const d = await medRes.json(); hd.medications = d.medications || d || []; }
+      if (surgRes.ok) { const d = await surgRes.json(); hd.surgeries = d.surgeries || d || []; }
+      if (allergyRes.ok) { const d = await allergyRes.json(); hd.allergies = d.allergies || d || []; }
+      if (famRes.ok) { const d = await famRes.json(); hd.familyHistory = d.family_history || d || []; }
+      if (socRes.ok) { const d = await socRes.json(); hd.socialHistory = d.social_history || d || []; }
       setHealthData(hd);
       if (docRes.ok) setPersonalDocuments(await docRes.json());
     } catch {
@@ -837,8 +837,6 @@ export function ProfilePopover({
                           todo: t,
                           sortOrder: t.sort_order + 1000, // after habits
                         }));
-
-                      console.log("[game-plan] isViewingToday:", isViewingToday, "selectedDay:", selectedDay, "todayKey:", todayKey, "dayHabits:", dayHabits.length, "dayTodos:", dayTodos.length, dayTodos.map(d => (d as { todo: CareTodo }).todo.title));
 
                       const items: GamePlanItem[] = [...dayVisits, ...dayHabits, ...dayTodos];
 
@@ -2923,14 +2921,38 @@ function PersonalDetailsPanel({
 //  Health Data Panel
 // ═══════════════════════════════════════════════════
 
-const HEALTH_SECTIONS: { key: string; label: string; icon: typeof Activity; dataKey: keyof HealthData }[] = [
-  { key: "conditions", label: "Active Conditions", icon: Activity, dataKey: "conditions" },
-  { key: "medications", label: "Medications", icon: Pill, dataKey: "medications" },
-  { key: "surgeries", label: "Surgeries & Procedures", icon: Stethoscope, dataKey: "surgeries" },
-  { key: "allergies", label: "Allergies", icon: SmilePlus, dataKey: "allergies" },
-  { key: "family", label: "Family History", icon: User, dataKey: "familyHistory" },
-  { key: "social", label: "Social History", icon: Heart, dataKey: "socialHistory" },
+// Health section configs: key, label, icon, dataKey, API path key, editable fields
+const HEALTH_SECTIONS: {
+  key: string; label: string; icon: typeof Activity; dataKey: keyof HealthData;
+  apiKey: string; // key in the PUT body and GET response
+  apiPath: string; // URL path segment
+  fields: { key: string; label: string; placeholder?: string }[];
+}[] = [
+  { key: "conditions", label: "Active Conditions", icon: Activity, dataKey: "conditions", apiKey: "conditions", apiPath: "conditions",
+    fields: [{ key: "name", label: "Condition" }, { key: "status", label: "Status", placeholder: "Active, Managed, In remission" }, { key: "notes", label: "Notes" }] },
+  { key: "medications", label: "Medications", icon: Pill, dataKey: "medications", apiKey: "medications", apiPath: "medications",
+    fields: [{ key: "name", label: "Medication" }, { key: "dosage_strength", label: "Dosage" }, { key: "frequency", label: "Frequency" }, { key: "indication", label: "Reason" }] },
+  { key: "surgeries", label: "Surgeries & Procedures", icon: Stethoscope, dataKey: "surgeries", apiKey: "surgeries", apiPath: "surgeries",
+    fields: [{ key: "name", label: "Procedure" }, { key: "year", label: "Year" }, { key: "notes", label: "Notes" }] },
+  { key: "allergies", label: "Allergies", icon: SmilePlus, dataKey: "allergies", apiKey: "allergies", apiPath: "allergies",
+    fields: [{ key: "name", label: "Allergen" }, { key: "type", label: "Type", placeholder: "Drug, Food, Environmental" }, { key: "reaction", label: "Reaction" }, { key: "severity", label: "Severity", placeholder: "Mild, Moderate, Severe" }] },
+  { key: "family", label: "Family History", icon: User, dataKey: "familyHistory", apiKey: "family_history", apiPath: "family-history",
+    fields: [{ key: "condition", label: "Condition" }, { key: "relationship", label: "Relationship" }, { key: "details", label: "Details" }] },
+  { key: "social", label: "Social History", icon: Heart, dataKey: "socialHistory", apiKey: "social_history", apiPath: "social-history",
+    fields: [{ key: "category", label: "Category", placeholder: "Tobacco, Alcohol, Exercise" }, { key: "status", label: "Status", placeholder: "Never, Former, Current" }, { key: "details", label: "Details" }] },
 ];
+
+function describeItem(section: string, item: Record<string, unknown>): { title: string; detail: string } {
+  switch (section) {
+    case "conditions": return { title: (item.name as string) || "", detail: (item.status as string) || "" };
+    case "medications": return { title: (item.name as string) || "", detail: [(item.dosage_strength as string), (item.frequency as string)].filter(Boolean).join(" - ") };
+    case "surgeries": return { title: (item.name as string) || "", detail: (item.year as string) || "" };
+    case "allergies": return { title: (item.name as string) || "", detail: [(item.severity as string), (item.reaction as string)].filter(Boolean).join(" - ") };
+    case "family": return { title: (item.condition as string) || "", detail: (item.relationship as string) || "" };
+    case "social": return { title: (item.category as string) || "", detail: (item.status as string) || "" };
+    default: return { title: "", detail: "" };
+  }
+}
 
 function HealthDataPanel({
   profileId,
@@ -2944,17 +2966,81 @@ function HealthDataPanel({
   onUpdated: (data: HealthData) => void;
 }) {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [editingSection, setEditingSection] = useState<string | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
 
-  function describeItem(section: string, item: Record<string, unknown>): { title: string; detail: string } {
-    switch (section) {
-      case "conditions": return { title: (item.name as string) || "", detail: (item.status as string) || "" };
-      case "medications": return { title: (item.name as string) || "", detail: [(item.dosage_strength as string), (item.frequency as string)].filter(Boolean).join(" - ") };
-      case "surgeries": return { title: (item.name as string) || "", detail: (item.year as string) || "" };
-      case "allergies": return { title: (item.name as string) || "", detail: [(item.severity as string), (item.reaction as string)].filter(Boolean).join(" - ") };
-      case "family": return { title: (item.condition as string) || "", detail: (item.relationship as string) || "" };
-      case "social": return { title: (item.category as string) || "", detail: (item.status as string) || "" };
-      default: return { title: "", detail: "" };
+  function startEdit(sectionKey: string, index: number, item: Record<string, unknown>) {
+    setEditingSection(sectionKey);
+    setEditingIndex(index);
+    const form: Record<string, string> = {};
+    const section = HEALTH_SECTIONS.find((s) => s.key === sectionKey);
+    for (const f of section?.fields || []) {
+      form[f.key] = (item[f.key] as string) || "";
     }
+    setEditForm(form);
+  }
+
+  function startAdd(sectionKey: string) {
+    setEditingSection(sectionKey);
+    setEditingIndex(-1); // -1 = new item
+    const form: Record<string, string> = {};
+    const section = HEALTH_SECTIONS.find((s) => s.key === sectionKey);
+    for (const f of section?.fields || []) {
+      form[f.key] = "";
+    }
+    setEditForm(form);
+  }
+
+  function cancelEdit() {
+    setEditingSection(null);
+    setEditingIndex(null);
+    setEditForm({});
+  }
+
+  async function saveEdit() {
+    if (!profileId || !healthData || !editingSection) return;
+    const section = HEALTH_SECTIONS.find((s) => s.key === editingSection);
+    if (!section) return;
+
+    setSaving(true);
+    const items = [...((healthData[section.dataKey] || []) as unknown as Record<string, unknown>[])];
+
+    if (editingIndex === -1) {
+      items.push({ ...editForm });
+    } else if (editingIndex !== null) {
+      items[editingIndex] = { ...items[editingIndex], ...editForm };
+    }
+
+    try {
+      await apiFetch(`/profile/${profileId}/${section.apiPath}`, {
+        method: "PUT",
+        body: JSON.stringify({ [section.apiKey]: items }),
+      });
+      const updated = { ...healthData, [section.dataKey]: items };
+      onUpdated(updated as HealthData);
+      cancelEdit();
+    } catch {}
+    setSaving(false);
+  }
+
+  async function deleteItem(sectionKey: string, index: number) {
+    if (!profileId || !healthData) return;
+    const section = HEALTH_SECTIONS.find((s) => s.key === sectionKey);
+    if (!section) return;
+
+    const items = [...((healthData[section.dataKey] || []) as unknown as Record<string, unknown>[])];
+    items.splice(index, 1);
+
+    try {
+      await apiFetch(`/profile/${profileId}/${section.apiPath}`, {
+        method: "PUT",
+        body: JSON.stringify({ [section.apiKey]: items }),
+      });
+      const updated = { ...healthData, [section.dataKey]: items };
+      onUpdated(updated as HealthData);
+    } catch {}
   }
 
   return (
@@ -2970,7 +3056,7 @@ function HealthDataPanel({
       </div>
 
       <div className="space-y-3">
-        {HEALTH_SECTIONS.map(({ key, label, icon: Icon, dataKey }) => {
+        {HEALTH_SECTIONS.map(({ key, label, icon: Icon, dataKey, fields }) => {
           const items = (healthData?.[dataKey] || []) as unknown as Record<string, unknown>[];
           const isOpen = expanded === key;
           return (
@@ -2996,23 +3082,82 @@ function HealthDataPanel({
               </button>
               {isOpen && (
                 <div className="border-t border-[#E5E5EA]">
-                  {items.length === 0 && (
+                  {items.length === 0 && editingSection !== key && (
                     <div className="px-4 py-6 text-center">
                       <p className="text-sm text-[#8E8E93]">None recorded</p>
                     </div>
                   )}
                   {items.map((item, i) => {
+                    if (editingSection === key && editingIndex === i) {
+                      return (
+                        <div key={i} className="px-4 py-3 space-y-2 bg-[#F7F6F2]">
+                          {fields.map((f) => (
+                            <input key={f.key} type="text" placeholder={f.placeholder || f.label}
+                              value={editForm[f.key] || ""}
+                              onChange={(e) => setEditForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                              className="w-full rounded-lg border border-[#E5E5EA] bg-white px-3 py-2 text-[14px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30 placeholder:text-[#AEAEB2]" />
+                          ))}
+                          <div className="flex gap-2 pt-1">
+                            <button onClick={saveEdit} disabled={saving}
+                              className="flex-1 rounded-lg bg-[#0F1B3D] py-2 text-[13px] font-semibold text-white disabled:opacity-40">
+                              {saving ? "..." : "Save"}
+                            </button>
+                            <button onClick={cancelEdit}
+                              className="flex-1 rounded-lg border border-[#E5E5EA] py-2 text-[13px] font-semibold text-[#0F1B3D]/60">
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
                     const { title, detail } = describeItem(key, item);
                     return (
                       <React.Fragment key={(item.id as string) || i}>
                         {i > 0 && <div className="h-px bg-[#E5E5EA] mx-4" />}
-                        <div className="px-4 py-3">
-                          <p className="text-[14px] font-medium text-[#1C1C1E]">{title}</p>
-                          {detail && <p className="text-[13px] text-[#8E8E93] mt-0.5">{detail}</p>}
+                        <div className="flex items-center px-4 py-3 group">
+                          <div className="flex-1 min-w-0 cursor-pointer" onClick={() => startEdit(key, i, item)}>
+                            <p className="text-[14px] font-medium text-[#1C1C1E]">{title}</p>
+                            {detail && <p className="text-[13px] text-[#8E8E93] mt-0.5">{detail}</p>}
+                          </div>
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => startEdit(key, i, item)} className="p-1 text-[#0F1B3D]/30 hover:text-[#0F1B3D]">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button onClick={() => deleteItem(key, i)} className="p-1 text-[#0F1B3D]/30 hover:text-red-500">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </div>
                       </React.Fragment>
                     );
                   })}
+                  {/* Add new item form */}
+                  {editingSection === key && editingIndex === -1 && (
+                    <div className="px-4 py-3 space-y-2 bg-[#F7F6F2] border-t border-[#E5E5EA]">
+                      {fields.map((f) => (
+                        <input key={f.key} type="text" placeholder={f.placeholder || f.label}
+                          value={editForm[f.key] || ""}
+                          onChange={(e) => setEditForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                          className="w-full rounded-lg border border-[#E5E5EA] bg-white px-3 py-2 text-[14px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30 placeholder:text-[#AEAEB2]" />
+                      ))}
+                      <div className="flex gap-2 pt-1">
+                        <button onClick={saveEdit} disabled={saving}
+                          className="flex-1 rounded-lg bg-[#0F1B3D] py-2 text-[13px] font-semibold text-white disabled:opacity-40">
+                          {saving ? "..." : "Add"}
+                        </button>
+                        <button onClick={cancelEdit}
+                          className="flex-1 rounded-lg border border-[#E5E5EA] py-2 text-[13px] font-semibold text-[#0F1B3D]/60">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {editingSection !== key && (
+                    <button onClick={() => startAdd(key)}
+                      className="flex w-full items-center justify-center gap-1.5 px-4 py-3 text-[13px] font-semibold text-[#0F1B3D]/50 hover:text-[#0F1B3D] border-t border-[#E5E5EA] transition-colors">
+                      <Plus className="h-3.5 w-3.5" /> Add
+                    </button>
+                  )}
                 </div>
               )}
             </div>
