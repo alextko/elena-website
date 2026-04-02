@@ -32,7 +32,9 @@ function ChatPageInner() {
   const { session, loading, profileId, refreshSubscription, onboardingJustCompleted, needsOnboarding, profileChecked } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 768 : true
+  );
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<ChatSessionItem[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
@@ -207,14 +209,29 @@ function ChatPageInner() {
         </div>
       )}
       {sidebarOpen && (
-        <Sidebar
-          activeSessionId={activeSessionId}
-          onSelectSession={handleSelectSession}
-          onNewChat={handleNewChat}
-          onBookMessage={(msg) => setBookMessage(msg)}
-          sessions={sessions}
-          loadingSessions={loadingSessions}
-        />
+        <>
+          {/* Backdrop overlay on mobile */}
+          <div
+            className="fixed inset-0 z-30 bg-black/20 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <div className="max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40">
+            <Sidebar
+              activeSessionId={activeSessionId}
+              onSelectSession={(id) => {
+                handleSelectSession(id);
+                if (window.innerWidth < 768) setSidebarOpen(false);
+              }}
+              onNewChat={() => {
+                handleNewChat();
+                if (window.innerWidth < 768) setSidebarOpen(false);
+              }}
+              onBookMessage={(msg) => setBookMessage(msg)}
+              sessions={sessions}
+              loadingSessions={loadingSessions}
+            />
+          </div>
+        </>
       )}
       <ChatErrorBoundary>
         <ChatArea

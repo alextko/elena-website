@@ -12,6 +12,7 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/apiFetch";
+import { getStoredAttribution } from "@/lib/attribution";
 import * as analytics from "@/lib/analytics";
 import type { MeResponse, DoctorItem, CareVisit, CareTodo, CareTodoCreate, Habit, SubscriptionResponse, InsuranceCard, ProfileSummary } from "@/lib/types";
 
@@ -53,6 +54,7 @@ interface AuthContextValue {
   signUp: (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<{ error: string | null }>;
   signInWithApple: () => Promise<{ error: string | null }>;
+  resetPassword: (email: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -156,9 +158,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!data.has_profile) {
         console.log("[auth] No profile but onboarding already done, creating silently");
         try {
+          const silentAttribution = getStoredAttribution();
           const createRes = await apiFetch("/profile", {
             method: "POST",
-            body: JSON.stringify({ email: data.email || "" }),
+            body: JSON.stringify({
+              email: data.email || "",
+              ...(silentAttribution?.ref ? { referral_code: silentAttribution.ref } : {}),
+              ...(silentAttribution?.utm_source ? { utm_source: silentAttribution.utm_source } : {}),
+              ...(silentAttribution?.utm_medium ? { utm_medium: silentAttribution.utm_medium } : {}),
+              ...(silentAttribution?.utm_campaign ? { utm_campaign: silentAttribution.utm_campaign } : {}),
+            }),
           });
           if (createRes.ok) {
             const created = await createRes.json();
@@ -635,6 +644,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     home_address?: string;
   }) => {
     try {
+      const attribution = getStoredAttribution();
       const createRes = await apiFetch("/profile", {
         method: "POST",
         body: JSON.stringify({
@@ -643,6 +653,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           date_of_birth: data.date_of_birth || "",
           zip_code: data.home_address || "",
           email: profileData?.email || "",
+          ...(attribution?.ref ? { referral_code: attribution.ref } : {}),
+          ...(attribution?.utm_source ? { utm_source: attribution.utm_source } : {}),
+          ...(attribution?.utm_medium ? { utm_medium: attribution.utm_medium } : {}),
+          ...(attribution?.utm_campaign ? { utm_campaign: attribution.utm_campaign } : {}),
+          ...(attribution?.utm_content ? { utm_content: attribution.utm_content } : {}),
+          ...(attribution?.utm_term ? { utm_term: attribution.utm_term } : {}),
         }),
       });
       if (createRes.ok) {
@@ -744,6 +760,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null };
   }, []);
 
+  const resetPassword = useCallback(async (email: string) => {
+    try {
+      const res = await apiFetch("/auth/request-password-reset", {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          redirect_to: `${window.location.origin}/reset-password`,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        return { error: data.detail || "Something went wrong. Please try again." };
+      }
+      return { error: null };
+    } catch {
+      return { error: "Network error. Please try again." };
+    }
+  }, []);
+
   const signInWithApple = useCallback(async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "apple",
@@ -810,6 +845,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUp,
         signInWithGoogle,
         signInWithApple,
+        resetPassword,
         signOut,
       }}
     >
