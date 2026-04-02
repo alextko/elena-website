@@ -279,7 +279,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Habits + completions (8 weeks back for calendar strip checkmarks)
       const now = new Date();
       const startDate = new Date(now);
-      startDate.setDate(now.getDate() - 8 * 7);
+      startDate.setDate(now.getDate() - 12 * 7); // 12 weeks back to match mobile
       const endDate = new Date(now);
       endDate.setDate(now.getDate() + 7);
       const startStr = startDate.toISOString().slice(0, 10);
@@ -553,8 +553,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiFetch("/todos?include_future=true");
       if (!res.ok) return;
       const data: CareTodo[] = await res.json();
+      console.log("[game-plan] todos loaded:", data.length, data.map(t => `${t.title}(${t.frequency}/${t.status})`));
       setTodos(data);
-    } catch {}
+    } catch (err) { console.error("[game-plan] refreshTodos error:", err); }
   }, []);
 
   const refreshDoctors = useCallback(async () => {
@@ -607,7 +608,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshHabits = useCallback(async () => {
     const now = new Date();
     const startDate = new Date(now);
-    startDate.setDate(now.getDate() - 8 * 7);
+    startDate.setDate(now.getDate() - 12 * 7); // 12 weeks back to match mobile
     const endDate = new Date(now);
     endDate.setDate(now.getDate() + 7);
     const startStr = startDate.toISOString().slice(0, 10);
@@ -619,6 +620,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ]);
       if (habitsRes.ok) {
         const data: Habit[] = await habitsRes.json();
+        console.log("[game-plan] habits loaded:", data.length, data.map(h => h.title));
         setHabits(data);
       }
       if (completionsRes.ok) {
@@ -632,9 +634,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           }
         }
+        console.log("[game-plan] completions loaded, dates with data:", Object.keys(byDate).length);
         setHabitCompletions(byDate);
       }
-    } catch {}
+    } catch (err) { console.error("[game-plan] refreshHabits error:", err); }
   }, []);
 
   const completeOnboarding = useCallback(async (data: {
