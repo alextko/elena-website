@@ -297,13 +297,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         apiFetch(`/habits/completions?start_date=${startStr}&end_date=${endStr}`)
           .then(async (res) => {
             if (!res.ok) return;
-            const data: Record<string, Record<string, boolean>> = await res.json();
+            const raw = await res.json();
             const byDate: Record<string, Set<string>> = {};
-            for (const [habitId, dates] of Object.entries(data)) {
-              for (const [dateKey, done] of Object.entries(dates)) {
-                if (done) {
-                  if (!byDate[dateKey]) byDate[dateKey] = new Set();
-                  byDate[dateKey].add(habitId);
+            if (Array.isArray(raw)) {
+              for (const row of raw as { habit_id: string; completed_date: string }[]) {
+                if (!byDate[row.completed_date]) byDate[row.completed_date] = new Set();
+                byDate[row.completed_date].add(row.habit_id);
+              }
+            } else {
+              for (const [habitId, dates] of Object.entries(raw as Record<string, Record<string, boolean>>)) {
+                for (const [dateKey, done] of Object.entries(dates)) {
+                  if (done) {
+                    if (!byDate[dateKey]) byDate[dateKey] = new Set();
+                    byDate[dateKey].add(habitId);
+                  }
                 }
               }
             }
@@ -624,19 +631,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setHabits(data);
       }
       if (completionsRes.ok) {
-        const data: Record<string, Record<string, boolean>> = await completionsRes.json();
+        const raw = await completionsRes.json();
         const byDate: Record<string, Set<string>> = {};
-        for (const [habitId, dates] of Object.entries(data)) {
-          for (const [dateKey, done] of Object.entries(dates)) {
-            if (done) {
-              if (!byDate[dateKey]) byDate[dateKey] = new Set();
-              byDate[dateKey].add(habitId);
+        // API returns array of {id, habit_id, completed_date}
+        if (Array.isArray(raw)) {
+          for (const row of raw as { habit_id: string; completed_date: string }[]) {
+            const dateKey = row.completed_date;
+            if (!byDate[dateKey]) byDate[dateKey] = new Set();
+            byDate[dateKey].add(row.habit_id);
+          }
+        } else {
+          // Legacy format: {habit_id: {date: true}}
+          for (const [habitId, dates] of Object.entries(raw as Record<string, Record<string, boolean>>)) {
+            for (const [dateKey, done] of Object.entries(dates)) {
+              if (done) {
+                if (!byDate[dateKey]) byDate[dateKey] = new Set();
+                byDate[dateKey].add(habitId);
+              }
             }
           }
         }
-        const todayUTC = new Date().toISOString().slice(0, 10);
-        const todayLocal = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD in local tz
-        console.log("[game-plan] completions loaded, dates:", Object.keys(byDate), "todayUTC:", todayUTC, "todayLocal:", todayLocal, "utcMatch:", byDate[todayUTC]?.size || 0, "localMatch:", byDate[todayLocal]?.size || 0);
+        const todayLocal = new Date().toLocaleDateString("en-CA");
+        console.log("[game-plan] completions loaded, dates:", Object.keys(byDate), "today:", todayLocal, "todayMatch:", byDate[todayLocal]?.size || 0);
         setHabitCompletions(byDate);
       }
     } catch (err) { console.error("[game-plan] refreshHabits error:", err); }
