@@ -804,13 +804,11 @@ export function ProfilePopover({
 
                       // Care todos: show all non-dismissed todos (matching mobile behavior).
                       // The backend already filters by profile and status.
-                      const todayKey = new Date().toISOString().slice(0, 10);
-                      const isToday = selectedDay === todayKey;
                       const dayTodos: GamePlanItem[] = todos
                         .filter((t) => {
                           if (t.status === "dismissed") return false;
                           // For today: show everything (matches mobile home screen)
-                          if (isToday) return true;
+                          if (isViewingToday) return true;
                           // For other days: match by due_date or recurring schedule
                           if (!t.due_date) return true;
                           if (t.due_date === selectedDay) return true;
@@ -836,7 +834,7 @@ export function ProfilePopover({
                           sortOrder: t.sort_order + 1000, // after habits
                         }));
 
-                      console.log("[game-plan] isToday:", isToday, "selectedDay:", selectedDay, "todayKey:", todayKey, "dayHabits:", dayHabits.length, "dayTodos:", dayTodos.length, dayTodos.map(d => d.todo.title));
+                      console.log("[game-plan] isViewingToday:", isViewingToday, "selectedDay:", selectedDay, "todayKey:", todayKey, "dayHabits:", dayHabits.length, "dayTodos:", dayTodos.length, dayTodos.map(d => (d as { todo: CareTodo }).todo.title));
 
                       const items: GamePlanItem[] = [...dayVisits, ...dayHabits, ...dayTodos];
 
