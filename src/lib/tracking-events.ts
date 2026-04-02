@@ -91,6 +91,17 @@ export async function trackSignup(method: 'email' | 'google' | 'apple' | string,
       rdt('track', 'SignUp');
     }
   } catch { /* Reddit pixel error — safe to ignore */ }
+
+  // Meta Pixel
+  try {
+    const fbq = (window as any).fbq;
+    if (fbq) {
+      fbq('track', 'CompleteRegistration', {
+        content_name: 'elena_signup',
+        method,
+      });
+    }
+  } catch { /* Meta pixel error — safe to ignore */ }
 }
 
 export function trackSubscription(plan: string, value: number, currency: string = 'USD') {
@@ -136,6 +147,18 @@ export function trackSubscription(plan: string, value: number, currency: string 
       rdt('track', 'Purchase', { value, currency });
     }
   } catch { /* safe to ignore */ }
+
+  // Meta Pixel
+  try {
+    const fbq = (window as any).fbq;
+    if (fbq) {
+      fbq('track', 'Subscribe', {
+        value,
+        currency,
+        content_name: plan,
+      });
+    }
+  } catch { /* Meta pixel error — safe to ignore */ }
 }
 
 export function trackViewContent(contentType: 'blog' | 'landing_page', contentName: string) {
@@ -162,6 +185,17 @@ export function trackViewContent(contentType: 'blog' | 'landing_page', contentNa
       rdt('track', 'ViewContent', { content_name: contentName });
     }
   } catch { /* Reddit pixel error — safe to ignore */ }
+
+  // Meta Pixel
+  try {
+    const fbq = (window as any).fbq;
+    if (fbq) {
+      fbq('track', 'ViewContent', {
+        content_type: contentType,
+        content_name: contentName,
+      });
+    }
+  } catch { /* Meta pixel error — safe to ignore */ }
 }
 
 export function identifyUser(userId: string, email?: string) {
