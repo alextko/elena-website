@@ -6,6 +6,7 @@ import { PanelLeft, Plus, ArrowUp, Square, Paperclip, X } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
 import * as analytics from "@/lib/analytics";
+import { trackPaywallHit } from "@/lib/tracking-events";
 import { usePollChat } from "@/hooks/usePollChat";
 import { useBookingPoll } from "@/hooks/useBookingPoll";
 import { UpgradeModal } from "@/components/upgrade-modal";
@@ -449,6 +450,7 @@ export function ChatArea({
         if (urlRes.status === 402) {
           setUpgradeReason("document_limit");
           setUpgradeOpen(true);
+          trackPaywallHit("document_limit", "upload_document");
           setUploading(false);
           return;
         }
@@ -576,6 +578,7 @@ export function ChatArea({
             setUpgradeReason("upgrade_required");
             setUpgradeFeature(chatResult.gated_feature || undefined);
             setUpgradeOpen(true);
+            trackPaywallHit("upgrade_required", chatResult.gated_feature || undefined);
           }
 
           // Update session ref

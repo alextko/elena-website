@@ -198,6 +198,42 @@ export function trackViewContent(contentType: 'blog' | 'landing_page', contentNa
   } catch { /* Meta pixel error — safe to ignore */ }
 }
 
+export function trackPaywallHit(reason: string, feature?: string) {
+  try {
+    const mp = getMixpanelAny();
+    if (mp) {
+      mp.track('paywall_hit', { reason, ...(feature ? { gated_feature: feature } : {}) });
+    }
+  } catch { /* safe to ignore */ }
+
+  try {
+    const ttq = (window as any).ttq;
+    if (ttq) {
+      ttq.track('ViewContent', {
+        content_type: 'paywall',
+        content_name: feature || reason,
+      });
+    }
+  } catch { /* safe to ignore */ }
+
+  try {
+    const rdt = (window as any).rdt;
+    if (rdt) {
+      rdt('track', 'ViewContent', { content_name: `paywall_${feature || reason}` });
+    }
+  } catch { /* safe to ignore */ }
+
+  try {
+    const fbq = (window as any).fbq;
+    if (fbq) {
+      fbq('trackCustom', 'PaywallHit', {
+        reason,
+        ...(feature ? { gated_feature: feature } : {}),
+      });
+    }
+  } catch { /* safe to ignore */ }
+}
+
 export function identifyUser(userId: string, email?: string) {
   try {
     const mp = getMixpanelAny();
