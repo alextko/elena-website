@@ -176,18 +176,26 @@ const INSURERS = [
   { src: "/images/insurers/vsp.svg", alt: "VSP Vision" },
 ];
 
-const HERO_COPY: Record<string, { headline: [string, string]; subtitle: string }> = {
+const HERO_COPY: Record<string, { headline: [string, string]; subtitle: string; prefill: string }> = {
   bills: {
     headline: ["Elena finds the", "errors in your bill."],
     subtitle: "80% of hospital bills have errors. Elena reads every line, flags mistakes, and fights them for you.",
+    prefill: "I want to dispute a medical bill",
   },
   calls: {
     headline: ["Elena calls your", "insurance for you."],
     subtitle: "No more hold music. No more transfers. Elena sits on hold, talks to your insurer, and reports back.",
+    prefill: "Call my insurance company for me",
   },
   caregiver: {
     headline: ["Manage their health", "from your phone."],
     subtitle: "Insurance, doctors, meds, and bills for the people you care for — all in one place.",
+    prefill: "Help me manage my parents' healthcare from my phone",
+  },
+  risk_assessment: {
+    headline: ["Know your risk", "before it's too late."],
+    subtitle: "Take our assessment, learn your risks, and get the right tests on the way.",
+    prefill: "I want to understand my health risks based on my family history",
   },
 };
 
@@ -227,9 +235,9 @@ function LandingPage() {
     "/lp/calls": "calls",
     "/lp/caregiver": "caregiver",
   };
-  const ref = searchParams.get("ref") || LP_PATH_MAP[pathname] || null;
+  const ref = searchParams.get("ref") || searchParams.get("utm_content") || LP_PATH_MAP[pathname] || null;
   const hero = (ref && HERO_COPY[ref]) || null;
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(hero?.prefill || "");
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const heroRef = useRef<HTMLElement>(null);
