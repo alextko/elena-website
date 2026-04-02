@@ -634,7 +634,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           }
         }
-        console.log("[game-plan] completions loaded, dates with data:", Object.keys(byDate).length);
+        const todayStr = new Date().toISOString().slice(0, 10);
+        console.log("[game-plan] completions loaded, dates:", Object.keys(byDate), "today:", todayStr, "today completed:", byDate[todayStr]?.size || 0);
         setHabitCompletions(byDate);
       }
     } catch (err) { console.error("[game-plan] refreshHabits error:", err); }

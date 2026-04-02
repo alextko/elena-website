@@ -802,20 +802,20 @@ export function ProfilePopover({
                         sortOrder: h.sort_order,
                       }));
 
-                      // Care todos: match by due_date, no due_date (always visible), or recurring schedule
-                      console.log("[game-plan] filtering todos for", selectedDay, "from", todos.map(t => `${t.title}(freq=${t.frequency}, due=${t.due_date}, status=${t.status})`));
+                      // Care todos: show all non-dismissed todos (matching mobile behavior).
+                      // The backend already filters by profile and status.
+                      const todayKey = new Date().toISOString().slice(0, 10);
+                      const isToday = selectedDay === todayKey;
                       const dayTodos: GamePlanItem[] = todos
                         .filter((t) => {
                           if (t.status === "dismissed") return false;
-                          // Daily todos show every day (on or after their start date)
-                          if (t.frequency === "daily") {
-                            if (!t.due_date) return true;
-                            return selectedDay >= t.due_date;
-                          }
-                          if (!t.due_date) return true; // no due date = always visible
+                          // For today: show everything (matches mobile home screen)
+                          if (isToday) return true;
+                          // For other days: match by due_date or recurring schedule
+                          if (!t.due_date) return true;
                           if (t.due_date === selectedDay) return true;
                           if (t.frequency === "once") return false;
-                          // Recurring: check if selectedDay falls on a recurrence
+                          if (t.frequency === "daily") return selectedDay >= t.due_date;
                           const start = new Date(t.due_date + "T00:00:00");
                           const sel = new Date(selectedDay + "T00:00:00");
                           if (sel < start) return false;
