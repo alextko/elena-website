@@ -807,8 +807,12 @@ export function ProfilePopover({
                       const dayTodos: GamePlanItem[] = todos
                         .filter((t) => {
                           if (t.status === "dismissed") return false;
-                          // For today: show everything (matches mobile home screen)
-                          if (isViewingToday) return true;
+                          // For today: show todos with due_date <= today or no due_date
+                          // (matches mobile's /todos endpoint which excludes future-dated)
+                          if (isViewingToday) {
+                            if (!t.due_date) return true;
+                            return t.due_date <= todayKey;
+                          }
                           // For other days: match by due_date or recurring schedule
                           if (!t.due_date) return true;
                           if (t.due_date === selectedDay) return true;
