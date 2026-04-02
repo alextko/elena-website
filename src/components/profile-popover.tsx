@@ -806,6 +806,11 @@ export function ProfilePopover({
                       const dayTodos: GamePlanItem[] = todos
                         .filter((t) => {
                           if (t.status === "dismissed") return false;
+                          // Daily todos show every day (on or after their start date)
+                          if (t.frequency === "daily") {
+                            if (!t.due_date) return true;
+                            return selectedDay >= t.due_date;
+                          }
                           if (!t.due_date) return true; // no due date = always visible
                           if (t.due_date === selectedDay) return true;
                           if (t.frequency === "once") return false;
