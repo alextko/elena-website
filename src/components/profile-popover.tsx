@@ -31,12 +31,16 @@ import {
   Trash2,
   UserPlus,
   Link2,
+  Heart,
+  User,
+  Activity,
+  ChevronUp,
 } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
 import { AddFamilyModal } from "@/components/add-family-modal";
 import { AcceptInviteModal } from "@/components/accept-invite-modal";
-import type { CareTodo, CareTodoCreate, CareVisit, DoctorItem, Habit, ProfileSummary } from "@/lib/types";
+import type { CareTodo, CareTodoCreate, CareVisit, DoctorItem, Habit, ProfileSummary, PersonalInfo, HealthData, StructuredDocument as ProfileDocument, SavedCondition, SavedMedication, SavedSurgery, SavedAllergy, SavedFamilyHistory, SavedSocialHistory } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import type { InsuranceCard } from "@/lib/types";
 
@@ -156,6 +160,11 @@ export function ProfilePopover({
   const [acceptInviteOpen, setAcceptInviteOpen] = useState(false);
   const [confirmUnlink, setConfirmUnlink] = useState<ProfileSummary | null>(null);
   const [unlinking, setUnlinking] = useState(false);
+  const [personalPanel, setPersonalPanel] = useState<"details" | "health" | "documents" | null>(null);
+  const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
+  const [healthData, setHealthData] = useState<HealthData | null>(null);
+  const [personalDocuments, setPersonalDocuments] = useState<ProfileDocument[]>([]);
+  const personalDataLoadedRef = useRef(false);
   const switcherRef = useRef<HTMLDivElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const todayRef = useRef<HTMLDivElement>(null);
@@ -198,6 +207,44 @@ export function ProfilePopover({
     }
     setUnlinking(false);
     setConfirmUnlink(null);
+  }
+
+  async function fetchPersonalData() {
+    if (personalDataLoadedRef.current || !profileId) return;
+    personalDataLoadedRef.current = true;
+    try {
+      const [profileRes, condRes, medRes, surgRes, allergyRes, famRes, socRes, docRes] = await Promise.all([
+        apiFetch(`/profile/${profileId}`),
+        apiFetch(`/profile/${profileId}/conditions`),
+        apiFetch(`/profile/${profileId}/medications`),
+        apiFetch(`/profile/${profileId}/surgeries`),
+        apiFetch(`/profile/${profileId}/allergies`),
+        apiFetch(`/profile/${profileId}/family-history`),
+        apiFetch(`/profile/${profileId}/social-history`),
+        apiFetch("/structured-documents"),
+      ]);
+      if (profileRes.ok) {
+        const p = await profileRes.json();
+        setPersonalInfo({
+          first_name: p.first_name || "", last_name: p.last_name || "",
+          preferred_name: p.preferred_name || "", email: p.email || "",
+          date_of_birth: p.date_of_birth || "", gender: p.gender || "",
+          phone_number: p.phone_number || "", home_address: p.home_address || "",
+          city: p.city || "", state: p.state || "", zip_code: p.zip_code || "",
+        });
+      }
+      const hd: HealthData = { conditions: [], medications: [], surgeries: [], allergies: [], familyHistory: [], socialHistory: [] };
+      if (condRes.ok) hd.conditions = await condRes.json();
+      if (medRes.ok) hd.medications = await medRes.json();
+      if (surgRes.ok) hd.surgeries = await surgRes.json();
+      if (allergyRes.ok) hd.allergies = await allergyRes.json();
+      if (famRes.ok) hd.familyHistory = await famRes.json();
+      if (socRes.ok) hd.socialHistory = await socRes.json();
+      setHealthData(hd);
+      if (docRes.ok) setPersonalDocuments(await docRes.json());
+    } catch {
+      personalDataLoadedRef.current = false;
+    }
   }
 
   async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -339,6 +386,30 @@ export function ProfilePopover({
             />
           )}
 
+          {/* ═══════════ PERSONAL PANELS ═══════════ */}
+          {personalPanel === "details" && !selectedProvider && !selectedVisit && !addingProvider && !editingTodo && (
+            <PersonalDetailsPanel
+              profileId={profileId}
+              personalInfo={personalInfo}
+              onClose={() => setPersonalPanel(null)}
+              onUpdated={(updated) => setPersonalInfo(updated)}
+            />
+          )}
+          {personalPanel === "health" && !selectedProvider && !selectedVisit && !addingProvider && !editingTodo && (
+            <HealthDataPanel
+              profileId={profileId}
+              healthData={healthData}
+              onClose={() => setPersonalPanel(null)}
+              onUpdated={(updated) => setHealthData(updated)}
+            />
+          )}
+          {personalPanel === "documents" && !selectedProvider && !selectedVisit && !addingProvider && !editingTodo && (
+            <DocumentsPanel
+              documents={personalDocuments}
+              onClose={() => setPersonalPanel(null)}
+            />
+          )}
+
           {/* ═══════════ TODO EDITOR ═══════════ */}
           {editingTodo && !selectedProvider && !selectedVisit && !addingProvider && (
             <TodoEditorPanel
@@ -351,7 +422,7 @@ export function ProfilePopover({
           )}
 
           {/* ═══════════ MAIN PROFILE CONTENT ═══════════ */}
-          {!selectedProvider && !selectedVisit && !editingTodo && !addingProvider && (
+          {!selectedProvider && !selectedVisit && !editingTodo && !addingProvider && !personalPanel && (
           <div className="p-8 pb-10">
             {/* User header */}
             <div className="flex items-center gap-4 pb-4">
@@ -938,6 +1009,51 @@ export function ProfilePopover({
                         </React.Fragment>
                       );
                     })}
+                  </div>
+                </div>
+
+                {/* Personal */}
+                <div>
+                  <h3 className="text-[15px] font-extrabold text-[#0F1B3D] mb-2">Personal</h3>
+                  <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
+                    <button
+                      className="flex w-full items-center gap-3 px-3.5 py-3.5 text-left hover:bg-[#0F1B3D]/[0.02] transition-colors"
+                      onClick={async () => { await fetchPersonalData(); setPersonalPanel("details"); }}
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7F6F2]">
+                        <User className="h-[18px] w-[18px] text-[#0F1B3D]" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[16px] font-semibold text-[#1C1C1E]">Personal Details</p>
+                      </div>
+                      <ChevronRight className="h-[18px] w-[18px] text-[#0F1B3D] shrink-0" />
+                    </button>
+                    <div className="h-px bg-[#E5E5EA] ml-[62px] mr-3.5" />
+                    <button
+                      className="flex w-full items-center gap-3 px-3.5 py-3.5 text-left hover:bg-[#0F1B3D]/[0.02] transition-colors"
+                      onClick={async () => { await fetchPersonalData(); setPersonalPanel("health"); }}
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7F6F2]">
+                        <Heart className="h-[18px] w-[18px] text-[#0F1B3D]" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[16px] font-semibold text-[#1C1C1E]">Health</p>
+                      </div>
+                      <ChevronRight className="h-[18px] w-[18px] text-[#0F1B3D] shrink-0" />
+                    </button>
+                    <div className="h-px bg-[#E5E5EA] ml-[62px] mr-3.5" />
+                    <button
+                      className="flex w-full items-center gap-3 px-3.5 py-3.5 text-left hover:bg-[#0F1B3D]/[0.02] transition-colors"
+                      onClick={async () => { await fetchPersonalData(); setPersonalPanel("documents"); }}
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7F6F2]">
+                        <FileText className="h-[18px] w-[18px] text-[#0F1B3D]" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[16px] font-semibold text-[#1C1C1E]">Documents</p>
+                      </div>
+                      <ChevronRight className="h-[18px] w-[18px] text-[#0F1B3D] shrink-0" />
+                    </button>
                   </div>
                 </div>
 
@@ -2649,5 +2765,310 @@ function InsuranceDetailRow({
         </div>
       )}
     </>
+  );
+}
+
+// ═══════════════════════════════════════════════════
+//  Personal Details Panel
+// ═══════════════════════════════════════════════════
+
+const GENDER_OPTIONS = ["Male", "Female", "Non-binary", "Prefer not to say", "Other"];
+
+function PersonalDetailsPanel({
+  profileId,
+  personalInfo,
+  onClose,
+  onUpdated,
+}: {
+  profileId: string | null;
+  personalInfo: PersonalInfo | null;
+  onClose: () => void;
+  onUpdated: (info: PersonalInfo) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<PersonalInfo>(personalInfo || {
+    first_name: "", last_name: "", preferred_name: "", email: "",
+    date_of_birth: "", gender: "", phone_number: "",
+    home_address: "", city: "", state: "", zip_code: "",
+  });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (personalInfo) setForm(personalInfo);
+  }, [personalInfo]);
+
+  const set = (k: keyof PersonalInfo, v: string) => setForm((prev) => ({ ...prev, [k]: v }));
+
+  async function handleSave() {
+    if (!profileId) return;
+    setSaving(true);
+    try {
+      const res = await apiFetch(`/profile/${profileId}`, {
+        method: "PUT",
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        onUpdated(form);
+        setEditing(false);
+      }
+    } catch {}
+    setSaving(false);
+  }
+
+  const fields: [string, keyof PersonalInfo][] = [
+    ["First Name", "first_name"], ["Last Name", "last_name"],
+    ["Preferred Name", "preferred_name"], ["Email", "email"],
+    ["Date of Birth", "date_of_birth"], ["Gender", "gender"],
+    ["Phone", "phone_number"], ["Address", "home_address"],
+    ["City", "city"], ["State", "state"], ["Zip Code", "zip_code"],
+  ];
+
+  if (!editing) {
+    return (
+      <div className="p-6 pb-8 animate-in fade-in duration-200">
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={onClose} className="flex items-center gap-1.5 text-sm font-medium text-[#0F1B3D]/50 hover:text-[#0F1B3D] transition-colors">
+            <ArrowLeft className="h-4 w-4" /> Back
+          </button>
+          <button onClick={() => setEditing(true)} className="text-[#0F1B3D]/40 hover:text-[#0F1B3D] transition-colors">
+            <Pencil className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="flex items-center gap-3 mb-5">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0F1B3D]/[0.06]">
+            <User className="h-5 w-5 text-[#0F1B3D]" />
+          </div>
+          <p className="text-[18px] font-extrabold text-[#0F1B3D]">Personal Details</p>
+        </div>
+        <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
+          {fields.map(([label, key], i) => {
+            let val = form[key];
+            if (key === "date_of_birth" && val) {
+              try { val = new Date(val + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }); } catch {}
+            }
+            if (!val) return null;
+            return (
+              <React.Fragment key={key}>
+                {i > 0 && <div className="h-px bg-[#E5E5EA] mx-4" />}
+                <div className="flex items-center justify-between px-4 py-3.5">
+                  <span className="text-[14px] text-[#8E8E93]">{label}</span>
+                  <span className="text-[14px] font-medium text-[#0F1B3D] text-right max-w-[60%] truncate">{val}</span>
+                </div>
+              </React.Fragment>
+            );
+          }).filter(Boolean)}
+          {!personalInfo && (
+            <div className="px-3.5 py-10 text-center">
+              <p className="text-sm text-[#8E8E93]">No personal details yet.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 pb-8 animate-in fade-in duration-200">
+      <button onClick={() => setEditing(false)} className="flex items-center gap-1.5 text-sm font-medium text-[#0F1B3D]/50 hover:text-[#0F1B3D] transition-colors mb-4">
+        <ArrowLeft className="h-4 w-4" /> Cancel
+      </button>
+      <h3 className="text-[20px] font-extrabold text-[#0F1B3D] mb-5">Edit Personal Details</h3>
+      <div className="space-y-4">
+        {[
+          ["First Name", "first_name", "text"] as const,
+          ["Last Name", "last_name", "text"] as const,
+          ["Preferred Name", "preferred_name", "text"] as const,
+          ["Email", "email", "email"] as const,
+          ["Date of Birth", "date_of_birth", "date"] as const,
+          ["Phone", "phone_number", "tel"] as const,
+          ["Address", "home_address", "text"] as const,
+          ["City", "city", "text"] as const,
+          ["State", "state", "text"] as const,
+          ["Zip Code", "zip_code", "text"] as const,
+        ].map(([label, key, type]) => (
+          <div key={key}>
+            <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">{label}</label>
+            <input type={type} value={form[key]} onChange={(e) => set(key, e.target.value)}
+              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30" />
+          </div>
+        ))}
+        <div>
+          <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Gender</label>
+          <select value={form.gender} onChange={(e) => set("gender", e.target.value)}
+            className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30">
+            <option value="">Select...</option>
+            {GENDER_OPTIONS.map((g) => <option key={g} value={g}>{g}</option>)}
+          </select>
+        </div>
+      </div>
+      <button onClick={handleSave} disabled={saving}
+        className="mt-6 w-full rounded-2xl bg-[#0F1B3D] px-4 py-3 text-[15px] font-semibold text-white hover:bg-[#0F1B3D]/90 disabled:opacity-40 transition-colors">
+        {saving ? "Saving..." : "Save Changes"}
+      </button>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════
+//  Health Data Panel
+// ═══════════════════════════════════════════════════
+
+const HEALTH_SECTIONS: { key: string; label: string; icon: typeof Activity; dataKey: keyof HealthData }[] = [
+  { key: "conditions", label: "Active Conditions", icon: Activity, dataKey: "conditions" },
+  { key: "medications", label: "Medications", icon: Pill, dataKey: "medications" },
+  { key: "surgeries", label: "Surgeries & Procedures", icon: Stethoscope, dataKey: "surgeries" },
+  { key: "allergies", label: "Allergies", icon: SmilePlus, dataKey: "allergies" },
+  { key: "family", label: "Family History", icon: User, dataKey: "familyHistory" },
+  { key: "social", label: "Social History", icon: Heart, dataKey: "socialHistory" },
+];
+
+function HealthDataPanel({
+  profileId,
+  healthData,
+  onClose,
+  onUpdated,
+}: {
+  profileId: string | null;
+  healthData: HealthData | null;
+  onClose: () => void;
+  onUpdated: (data: HealthData) => void;
+}) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  function describeItem(section: string, item: Record<string, unknown>): { title: string; detail: string } {
+    switch (section) {
+      case "conditions": return { title: (item.name as string) || "", detail: (item.status as string) || "" };
+      case "medications": return { title: (item.name as string) || "", detail: [(item.dosage_strength as string), (item.frequency as string)].filter(Boolean).join(" - ") };
+      case "surgeries": return { title: (item.name as string) || "", detail: (item.year as string) || "" };
+      case "allergies": return { title: (item.name as string) || "", detail: [(item.severity as string), (item.reaction as string)].filter(Boolean).join(" - ") };
+      case "family": return { title: (item.condition as string) || "", detail: (item.relationship as string) || "" };
+      case "social": return { title: (item.category as string) || "", detail: (item.status as string) || "" };
+      default: return { title: "", detail: "" };
+    }
+  }
+
+  return (
+    <div className="p-6 pb-8 animate-in fade-in duration-200">
+      <button onClick={onClose} className="flex items-center gap-1.5 text-sm font-medium text-[#0F1B3D]/50 hover:text-[#0F1B3D] transition-colors mb-4">
+        <ArrowLeft className="h-4 w-4" /> Back
+      </button>
+      <div className="flex items-center gap-3 mb-5">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0F1B3D]/[0.06]">
+          <Heart className="h-5 w-5 text-[#0F1B3D]" />
+        </div>
+        <p className="text-[18px] font-extrabold text-[#0F1B3D]">Health</p>
+      </div>
+
+      <div className="space-y-3">
+        {HEALTH_SECTIONS.map(({ key, label, icon: Icon, dataKey }) => {
+          const items = (healthData?.[dataKey] || []) as unknown as Record<string, unknown>[];
+          const isOpen = expanded === key;
+          return (
+            <div key={key} className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
+              <button
+                className="flex w-full items-center gap-3 px-3.5 py-3.5 text-left hover:bg-[#0F1B3D]/[0.02] transition-colors"
+                onClick={() => setExpanded(isOpen ? null : key)}
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7F6F2]">
+                  <Icon className="h-[18px] w-[18px] text-[#0F1B3D]" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[16px] font-semibold text-[#1C1C1E]">{label}</p>
+                </div>
+                {items.length > 0 && (
+                  <span className="text-[13px] font-medium text-[#8E8E93] mr-1">{items.length}</span>
+                )}
+                {isOpen ? (
+                  <ChevronUp className="h-[18px] w-[18px] text-[#0F1B3D] shrink-0" />
+                ) : (
+                  <ChevronDown className="h-[18px] w-[18px] text-[#0F1B3D] shrink-0" />
+                )}
+              </button>
+              {isOpen && (
+                <div className="border-t border-[#E5E5EA]">
+                  {items.length === 0 && (
+                    <div className="px-4 py-6 text-center">
+                      <p className="text-sm text-[#8E8E93]">None recorded</p>
+                    </div>
+                  )}
+                  {items.map((item, i) => {
+                    const { title, detail } = describeItem(key, item);
+                    return (
+                      <React.Fragment key={(item.id as string) || i}>
+                        {i > 0 && <div className="h-px bg-[#E5E5EA] mx-4" />}
+                        <div className="px-4 py-3">
+                          <p className="text-[14px] font-medium text-[#1C1C1E]">{title}</p>
+                          {detail && <p className="text-[13px] text-[#8E8E93] mt-0.5">{detail}</p>}
+                        </div>
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════
+//  Documents Panel
+// ═══════════════════════════════════════════════════
+
+function DocumentsPanel({
+  documents,
+  onClose,
+}: {
+  documents: ProfileDocument[];
+  onClose: () => void;
+}) {
+  return (
+    <div className="p-6 pb-8 animate-in fade-in duration-200">
+      <button onClick={onClose} className="flex items-center gap-1.5 text-sm font-medium text-[#0F1B3D]/50 hover:text-[#0F1B3D] transition-colors mb-4">
+        <ArrowLeft className="h-4 w-4" /> Back
+      </button>
+      <div className="flex items-center gap-3 mb-5">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0F1B3D]/[0.06]">
+          <FileText className="h-5 w-5 text-[#0F1B3D]" />
+        </div>
+        <p className="text-[18px] font-extrabold text-[#0F1B3D]">Documents</p>
+      </div>
+
+      <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
+        {documents.length === 0 && (
+          <div className="px-3.5 py-10 text-center">
+            <p className="text-[17px] font-bold text-[#1C1C1E]">No documents yet</p>
+            <p className="text-sm text-[#8E8E93] mt-1.5 leading-5">
+              Documents uploaded through chat will appear here.
+            </p>
+          </div>
+        )}
+        {documents.map((doc, i) => (
+          <React.Fragment key={doc.id}>
+            {i > 0 && <div className="h-px bg-[#E5E5EA] ml-[62px] mr-3.5" />}
+            <a
+              href={doc.download_url || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-full items-center gap-3 px-3.5 py-3.5 text-left hover:bg-[#0F1B3D]/[0.02] transition-colors"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7F6F2]">
+                <FileText className="h-[18px] w-[18px] text-[#0F1B3D]" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[16px] font-semibold text-[#1C1C1E] truncate">{doc.doc_title || doc.filename}</p>
+                <p className="text-[13px] text-[#8E8E93] mt-px truncate">
+                  {doc.doc_type?.replace(/_/g, " ") || "Document"}
+                  {doc.created_at && ` · ${new Date(doc.created_at).toLocaleDateString()}`}
+                </p>
+              </div>
+              {doc.download_url && <Download className="h-[18px] w-[18px] text-[#0F1B3D]/40 shrink-0" />}
+            </a>
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
   );
 }

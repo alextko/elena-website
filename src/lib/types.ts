@@ -324,6 +324,85 @@ export interface FormRequest {
   save_to: "profile" | "insurance" | "none";
 }
 
+// --- Personal / Health profile (api_profile.py) ---
+
+export interface PersonalInfo {
+  first_name: string;
+  last_name: string;
+  preferred_name: string;
+  email: string;
+  date_of_birth: string;
+  gender: string;
+  phone_number: string;
+  home_address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+}
+
+export interface SavedCondition {
+  id: string;
+  name: string;
+  status: string;
+  diagnosed_date: string;
+  notes: string;
+}
+
+export interface SavedMedication {
+  id: string;
+  name: string;
+  dosage_strength: string;
+  frequency: string;
+  indication: string;
+}
+
+export interface SavedSurgery {
+  id: string;
+  name: string;
+  year: string;
+  notes: string;
+}
+
+export interface SavedAllergy {
+  id: string;
+  name: string;
+  type: string;
+  reaction: string;
+  severity: string;
+}
+
+export interface SavedFamilyHistory {
+  id: string;
+  condition: string;
+  relationship: string;
+  details: string;
+}
+
+export interface SavedSocialHistory {
+  id: string;
+  category: string;
+  status: string;
+  details: string;
+}
+
+export interface HealthData {
+  conditions: SavedCondition[];
+  medications: SavedMedication[];
+  surgeries: SavedSurgery[];
+  allergies: SavedAllergy[];
+  familyHistory: SavedFamilyHistory[];
+  socialHistory: SavedSocialHistory[];
+}
+
+export interface StructuredDocument {
+  id: string;
+  filename: string;
+  doc_type: string;
+  doc_title: string;
+  download_url: string | null;
+  created_at: string;
+}
+
 export interface CareVisit {
   id: string;
   visit_type: string;
