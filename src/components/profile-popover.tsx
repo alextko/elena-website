@@ -836,6 +836,8 @@ export function ProfilePopover({
                           sortOrder: t.sort_order + 1000, // after habits
                         }));
 
+                      console.log("[game-plan] isToday:", isToday, "selectedDay:", selectedDay, "todayKey:", todayKey, "dayHabits:", dayHabits.length, "dayTodos:", dayTodos.length, dayTodos.map(d => d.todo.title));
+
                       const items: GamePlanItem[] = [...dayVisits, ...dayHabits, ...dayTodos];
 
                       // Sort: visits first, then uncompleted before completed, then by sort order
