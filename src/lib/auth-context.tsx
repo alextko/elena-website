@@ -391,7 +391,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       setUser(s?.user ?? null);
 
-      if (event === "SIGNED_IN") {
+      if (event === "PASSWORD_RECOVERY") {
+        // Recovery session — don't fetch profile, the reset-password page handles this
+      } else if (event === "SIGNED_IN") {
         // Fresh sign-in — fetch profile if not already done
         fetchProfile();
 
