@@ -147,7 +147,7 @@ export function ProfilePopover({
   const [open, setOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("health");
-  const [selectedDay, setSelectedDay] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [selectedDay, setSelectedDay] = useState<string>(new Date().toLocaleDateString("en-CA")); // YYYY-MM-DD local time
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<typeof doctors[number] | null>(null);
@@ -637,11 +637,11 @@ export function ProfilePopover({
                     const dayOfWeek = now.getDay();
                     const monday = new Date(now);
                     monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
-                    const todayKey = now.toISOString().slice(0, 10);
+                    const todayKey = now.toLocaleDateString("en-CA"); // YYYY-MM-DD local time
                     const days = Array.from({ length: 7 }, (_, i) => {
                       const d = new Date(monday);
                       d.setDate(monday.getDate() + i);
-                      const dateKey = d.toISOString().slice(0, 10);
+                      const dateKey = d.toLocaleDateString("en-CA"); // YYYY-MM-DD local time
                       const isToday = d.toDateString() === now.toDateString();
                       const isFuture = d > now && !isToday;
                       // Day is complete if all habits are done for that date
@@ -742,7 +742,7 @@ export function ProfilePopover({
                   {/* To Do section */}
                   <div className="px-5 pb-4">
                     {(() => {
-                      const todayKey = new Date().toISOString().slice(0, 10);
+                      const todayKey = new Date().toLocaleDateString("en-CA");
                       const isViewingToday = selectedDay === todayKey;
                       const dayLabel = isViewingToday
                         ? "To Do"
@@ -773,7 +773,7 @@ export function ProfilePopover({
                     })()}
 
                     {(() => {
-                      const todayKey = new Date().toISOString().slice(0, 10);
+                      const todayKey = new Date().toLocaleDateString("en-CA");
                       const isViewingToday = selectedDay === todayKey;
 
                       // Merge visits, habits, and care todos into one list (matches mobile app)

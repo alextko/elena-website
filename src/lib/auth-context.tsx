@@ -493,7 +493,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [todos]);
 
   const toggleHabit = useCallback(async (id: string) => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD local time
     setHabitCompletions((prev) => {
       const next = { ...prev };
       const todaySet = new Set(next[today] || []);
@@ -634,8 +634,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           }
         }
-        const todayStr = new Date().toISOString().slice(0, 10);
-        console.log("[game-plan] completions loaded, dates:", Object.keys(byDate), "today:", todayStr, "today completed:", byDate[todayStr]?.size || 0);
+        const todayUTC = new Date().toISOString().slice(0, 10);
+        const todayLocal = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD in local tz
+        console.log("[game-plan] completions loaded, dates:", Object.keys(byDate), "todayUTC:", todayUTC, "todayLocal:", todayLocal, "utcMatch:", byDate[todayUTC]?.size || 0, "localMatch:", byDate[todayLocal]?.size || 0);
         setHabitCompletions(byDate);
       }
     } catch (err) { console.error("[game-plan] refreshHabits error:", err); }
