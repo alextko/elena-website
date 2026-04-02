@@ -393,7 +393,7 @@ export function DoctorResultsCard({
 
   const { containerRef, height } = useInlineMap({
     items: mapItems,
-    height: 260,
+    height: 180,
     selectedIndex: selectedIdx,
     onSelect: handleSelect,
   });
@@ -612,7 +612,7 @@ export function LocationResultsCard({
 
   const { containerRef, height } = useInlineMap({
     items: mapItems,
-    height: 200,
+    height: 150,
     selectedIndex: selectedIdx,
     onSelect: handleSelect,
   });
