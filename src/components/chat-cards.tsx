@@ -399,12 +399,12 @@ export function DoctorResultsCard({
   });
 
   return (
-    <div className="mt-3 rounded-2xl bg-white elena-card-shadow overflow-hidden border border-[var(--elena-border-light)]">
+    <div className="mt-3 max-w-md rounded-2xl bg-white elena-card-shadow overflow-hidden border border-[var(--elena-border-light)]">
       {hasMap && <InlineMapView containerRef={containerRef} height={height} />}
 
       {/* Header */}
-      <div className="px-4 py-2.5 border-b border-[var(--elena-border-light)]">
-        <p className="text-xs font-semibold uppercase tracking-wider text-[var(--elena-text-muted)]">
+      <div className="px-3 py-2 border-b border-[var(--elena-border-light)]">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--elena-text-muted)]">
           {doctors.length} Provider{doctors.length !== 1 ? "s" : ""} Found
         </p>
       </div>
@@ -618,12 +618,12 @@ export function LocationResultsCard({
   });
 
   return (
-    <div className="mt-3 rounded-2xl bg-white elena-card-shadow overflow-hidden border border-[var(--elena-border-light)]">
+    <div className="mt-3 max-w-md rounded-2xl bg-white elena-card-shadow overflow-hidden border border-[var(--elena-border-light)]">
       {hasMap && <InlineMapView containerRef={containerRef} height={height} />}
 
       {/* Header */}
-      <div className="px-4 py-2.5 border-b border-[var(--elena-border-light)]">
-        <p className="text-xs font-semibold uppercase tracking-wider text-[var(--elena-text-muted)]">
+      <div className="px-3 py-2 border-b border-[var(--elena-border-light)]">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--elena-text-muted)]">
           {locations.length} Location{locations.length !== 1 ? "s" : ""} Found
         </p>
       </div>

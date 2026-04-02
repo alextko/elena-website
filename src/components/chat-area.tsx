@@ -823,9 +823,9 @@ export function ChatArea({
             />
           )}
 
-          {/* Suggestion chips — inline after last message */}
+          {/* Suggestion chips — inline after last message, left-aligned with text */}
           {!isLoading && !streamingId && suggestions.length > 0 && (
-            <div className="max-w-2xl mx-auto animate-in fade-in duration-500 px-4 pb-2">
+            <div className="mt-3 animate-in fade-in duration-500">
               <div className="flex gap-1.5 flex-wrap">
                 {suggestions.map((s) => (
                   <button
