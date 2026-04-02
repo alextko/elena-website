@@ -179,7 +179,7 @@ export function ChatArea({
   onBookMessageConsumed?: () => void;
   isNewChat?: boolean;
 }) {
-  const { profileId, profileData, profiles } = useAuth();
+  const { profileId, profileData, profiles, refreshInsurance } = useAuth();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -787,6 +787,8 @@ export function ChatArea({
                         form={msg.formRequest}
                         onSubmitted={(data) => {
                           analytics.track("Form Submitted", { form_id: msg.formRequest?.form_id });
+                          // Refresh cached data after form save
+                          if (msg.formRequest?.save_to === "insurance") refreshInsurance();
                           // Send the submitted data as a user message so Elena can continue
                           const summary = Object.entries(data)
                             .filter(([, v]) => v)
