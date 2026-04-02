@@ -803,6 +803,7 @@ export function ProfilePopover({
                       }));
 
                       // Care todos: match by due_date, no due_date (always visible), or recurring schedule
+                      console.log("[game-plan] filtering todos for", selectedDay, "from", todos.map(t => `${t.title}(freq=${t.frequency}, due=${t.due_date}, status=${t.status})`));
                       const dayTodos: GamePlanItem[] = todos
                         .filter((t) => {
                           if (t.status === "dismissed") return false;
