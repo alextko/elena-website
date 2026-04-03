@@ -32,6 +32,7 @@ export const metadata: Metadata = {
   description:
     "Elena is your AI-powered healthcare assistant. Chat with an AI that calls doctors, negotiates bills, compares drug prices, and manages your entire medical life.",
   icons: { icon: "/images/favicon.png" },
+  themeColor: "#FFFFFF",
 };
 
 export default function RootLayout({
