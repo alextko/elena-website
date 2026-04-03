@@ -208,31 +208,30 @@ function ChatPageInner() {
           </button>
         </div>
       )}
-      {sidebarOpen && (
-        <>
-          {/* Backdrop overlay on mobile */}
-          <div
-            className="fixed inset-0 z-30 bg-black/20 md:hidden"
-            onClick={() => setSidebarOpen(false)}
+      {/* Backdrop overlay on mobile */}
+      <div
+        className={`fixed inset-0 z-30 bg-black/20 md:hidden transition-opacity duration-300 ${sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+      {/* Sidebar — always mounted, slides in/out */}
+      <div className={`max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 transition-all duration-300 ease-in-out ${sidebarOpen ? "md:w-64 max-md:translate-x-0" : "md:w-0 md:overflow-hidden max-md:-translate-x-full"}`}>
+        <div className="w-64 h-full">
+          <Sidebar
+            activeSessionId={activeSessionId}
+            onSelectSession={(id) => {
+              handleSelectSession(id);
+              if (window.innerWidth < 768) setSidebarOpen(false);
+            }}
+            onNewChat={() => {
+              handleNewChat();
+              if (window.innerWidth < 768) setSidebarOpen(false);
+            }}
+            onBookMessage={(msg) => setBookMessage(msg)}
+            sessions={sessions}
+            loadingSessions={loadingSessions}
           />
-          <div className="max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40">
-            <Sidebar
-              activeSessionId={activeSessionId}
-              onSelectSession={(id) => {
-                handleSelectSession(id);
-                if (window.innerWidth < 768) setSidebarOpen(false);
-              }}
-              onNewChat={() => {
-                handleNewChat();
-                if (window.innerWidth < 768) setSidebarOpen(false);
-              }}
-              onBookMessage={(msg) => setBookMessage(msg)}
-              sessions={sessions}
-              loadingSessions={loadingSessions}
-            />
-          </div>
-        </>
-      )}
+        </div>
+      </div>
       <ChatErrorBoundary>
         <ChatArea
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
