@@ -265,7 +265,11 @@ function LandingPage() {
     }
   }, [loading, session]);
 
-
+  // Set body background to hero color on mobile so browser chrome areas match
+  useEffect(() => {
+    document.body.style.backgroundColor = "#0F1B3D";
+    return () => { document.body.style.backgroundColor = ""; };
+  }, []);
 
   // Parallax blobs
   useEffect(() => {
@@ -329,13 +333,6 @@ function LandingPage() {
       </div>
     );
   }
-
-  // Set body background to hero color on mobile so browser chrome areas match
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    document.body.style.backgroundColor = "#0F1B3D";
-    return () => { document.body.style.backgroundColor = ""; };
-  }, []);
 
   return (
     <div className="font-[family-name:var(--font-inter)]">
