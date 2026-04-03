@@ -582,34 +582,33 @@ export function ProfilePopover({
 
             {/* ═══════════ HEALTH TAB ═══════════ */}
             {activeTab === "health" && !profileDetailsLoaded && (
-              <div className="space-y-5 animate-pulse">
+              <div className="space-y-4 animate-pulse">
                 {/* Game Plan shimmer */}
-                <div className="rounded-[22px] p-6 pb-4" style={{ background: "#F4B084" }}>
-                  <div className="h-7 w-32 rounded bg-[#5C1A2A]/20 mb-4" />
-                  <div className="flex justify-center gap-[10px] mb-4">
+                <div className="rounded-[18px] p-4 pb-3" style={{ background: "#F4B084" }}>
+                  <div className="h-5 w-24 rounded bg-[#5C1A2A]/20 mb-3" />
+                  <div className="flex justify-center gap-1.5 mb-3">
                     {Array.from({ length: 7 }).map((_, i) => (
-                      <div key={i} className="flex flex-col items-center gap-1 w-11">
-                        <div className="h-3 w-5 rounded bg-[#5C1A2A]/10" />
-                        <div className="w-9 h-9 rounded-full bg-[#5C1A2A]/10" />
+                      <div key={i} className="flex flex-col items-center gap-1 flex-1 min-w-0">
+                        <div className="h-2.5 w-4 rounded bg-[#5C1A2A]/10" />
+                        <div className="w-7 h-7 rounded-full bg-[#5C1A2A]/10" />
                       </div>
                     ))}
                   </div>
-                  <div className="rounded-[14px] p-4 space-y-3" style={{ background: "rgba(255,255,255,0.3)" }}>
-                    <div className="h-4 w-3/4 rounded bg-[#5C1A2A]/10" />
-                    <div className="h-4 w-1/2 rounded bg-[#5C1A2A]/10" />
-                    <div className="h-4 w-2/3 rounded bg-[#5C1A2A]/10" />
+                  <div className="rounded-xl p-3 space-y-2" style={{ background: "rgba(255,255,255,0.3)" }}>
+                    <div className="h-3 w-3/4 rounded bg-[#5C1A2A]/10" />
+                    <div className="h-3 w-1/2 rounded bg-[#5C1A2A]/10" />
                   </div>
                 </div>
                 {/* Providers shimmer */}
                 <div>
-                  <div className="h-4 w-20 rounded bg-[#0F1B3D]/[0.08] mb-2" />
-                  <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] p-3.5 space-y-3">
+                  <div className="h-3.5 w-16 rounded bg-[#0F1B3D]/[0.08] mb-2" />
+                  <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] p-3 space-y-2.5">
                     {[1, 2].map((i) => (
-                      <div key={i} className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-[#0F1B3D]/[0.06]" />
+                      <div key={i} className="flex items-center gap-2.5">
+                        <div className="h-8 w-8 rounded-full bg-[#0F1B3D]/[0.06]" />
                         <div className="flex-1 space-y-1.5">
-                          <div className="h-4 w-32 rounded bg-[#0F1B3D]/[0.06]" />
-                          <div className="h-3 w-24 rounded bg-[#0F1B3D]/[0.04]" />
+                          <div className="h-3.5 w-28 rounded bg-[#0F1B3D]/[0.06]" />
+                          <div className="h-2.5 w-20 rounded bg-[#0F1B3D]/[0.04]" />
                         </div>
                       </div>
                     ))}
@@ -1094,20 +1093,20 @@ export function ProfilePopover({
 
             {/* ═══════════ VISITS TAB ═══════════ */}
             {activeTab === "visits" && !profileDetailsLoaded && (
-              <div className="rounded-3xl bg-[#DBEAFE] p-4 animate-pulse">
-                <div className="h-6 w-24 rounded bg-[#0F1B3D]/[0.08] mb-4" />
-                <div className="space-y-3">
+              <div className="rounded-2xl bg-[#DBEAFE] p-3 animate-pulse">
+                <div className="h-5 w-20 rounded bg-[#0F1B3D]/[0.08] mb-3" />
+                <div className="space-y-2.5">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex gap-3">
-                      <div className="flex flex-col items-center w-6 shrink-0">
+                    <div key={i} className="flex gap-2.5">
+                      <div className="flex flex-col items-center w-5 shrink-0">
                         <div className="w-0.5 flex-1 bg-[#93B5E1]/30" />
-                        <div className="w-3 h-3 rounded-full bg-[#93B5E1]/30 shrink-0" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#93B5E1]/30 shrink-0" />
                         <div className="w-0.5 flex-1 bg-[#93B5E1]/30" />
                       </div>
-                      <div className="flex-1 bg-white/50 rounded-[14px] p-3.5 mb-2 space-y-2">
-                        <div className="h-3 w-24 rounded bg-[#0F1B3D]/[0.06]" />
-                        <div className="h-4 w-40 rounded bg-[#0F1B3D]/[0.08]" />
-                        <div className="h-3 w-28 rounded bg-[#0F1B3D]/[0.04]" />
+                      <div className="flex-1 bg-white/50 rounded-xl p-3 mb-1.5 space-y-1.5">
+                        <div className="h-2.5 w-20 rounded bg-[#0F1B3D]/[0.06]" />
+                        <div className="h-3.5 w-32 rounded bg-[#0F1B3D]/[0.08]" />
+                        <div className="h-2.5 w-24 rounded bg-[#0F1B3D]/[0.04]" />
                       </div>
                     </div>
                   ))}
@@ -1328,20 +1327,20 @@ export function ProfilePopover({
             {/* ═══════════ INSURANCE TAB ═══════════ */}
             {activeTab === "insurance" && !profileDetailsLoaded && (
               <div className="animate-pulse">
-                <div className="flex gap-3 pb-6 -mx-2 px-2 pt-1">
-                  {[1, 2, 3].map((i) => (
+                <div className="flex gap-2 pb-4 overflow-hidden pt-1">
+                  {[1, 2].map((i) => (
                     <div
                       key={i}
-                      className="shrink-0 rounded-3xl bg-[#0F1B3D]/[0.06]"
-                      style={{ width: "min(280px, 75vw)", aspectRatio: "1.6" }}
+                      className="shrink-0 rounded-2xl bg-[#0F1B3D]/[0.06]"
+                      style={{ width: "min(200px, 45%)", aspectRatio: "1.6" }}
                     />
                   ))}
                 </div>
-                <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] p-3.5 space-y-4 mt-3">
+                <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] p-3 space-y-3">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-full bg-[#0F1B3D]/[0.06]" />
-                      <div className="h-4 w-20 rounded bg-[#0F1B3D]/[0.06]" />
+                      <div className="h-8 w-8 rounded-full bg-[#0F1B3D]/[0.06]" />
+                      <div className="h-3.5 w-20 rounded bg-[#0F1B3D]/[0.06]" />
                     </div>
                   ))}
                 </div>
