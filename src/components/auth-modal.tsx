@@ -77,10 +77,10 @@ export function AuthModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-sm:w-[75vw] w-[calc(100%-2rem)] max-w-lg max-h-[90dvh] overflow-y-auto p-0 border-0 rounded-3xl shadow-[0_16px_48px_rgba(0,0,0,0.25)] font-[family-name:var(--font-inter)] [&_[data-slot=dialog-close]]:text-white/70 [&_[data-slot=dialog-close]:hover]:text-white [&_[data-slot=dialog-close]:hover]:bg-white/10 max-md:!fixed max-md:!inset-0 max-md:!top-0 max-md:!left-0 max-md:!translate-x-0 max-md:!translate-y-0 max-md:!w-full max-md:!max-w-none max-md:!max-h-none max-md:!h-full max-md:!rounded-none">
+      <DialogContent className="max-sm:w-[75vw] w-[calc(100%-2rem)] max-w-lg max-h-[90dvh] overflow-y-auto p-0 border-0 rounded-3xl shadow-[0_16px_48px_rgba(0,0,0,0.25)] font-[family-name:var(--font-inter)] [&_[data-slot=dialog-close]]:text-white/70 [&_[data-slot=dialog-close]:hover]:text-white [&_[data-slot=dialog-close]:hover]:bg-white/10 max-md:!fixed max-md:!inset-0 max-md:!top-0 max-md:!left-0 max-md:!translate-x-0 max-md:!translate-y-0 max-md:!w-full max-md:!max-w-none max-md:!max-h-none max-md:!h-full max-md:!rounded-none max-md:!shadow-none max-md:!border-0">
         {/* Gradient background matching hero */}
         <div
-          className="relative px-10 py-10 max-sm:px-4 max-sm:py-5"
+          className="relative px-10 py-10 max-sm:px-6 max-sm:py-5 max-md:min-h-full max-md:flex max-md:flex-col max-md:justify-center"
           style={{
             background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%, #2E6BB5 100%)",
           }}
