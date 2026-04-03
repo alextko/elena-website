@@ -370,7 +370,7 @@ function LandingPage() {
       </nav>
 
       {/* HERO */}
-      <section ref={heroRef} className="relative h-dvh min-h-dvh max-md:min-h-[calc(100dvh+80px)] flex flex-col items-center justify-center overflow-hidden">
+      <section ref={heroRef} className="relative h-dvh min-h-dvh max-md:min-h-[calc(100dvh+120px)] flex flex-col items-center justify-center overflow-hidden">
         {/* Gradient bg */}
         <div className="absolute inset-0 z-0 bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)]">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_130%,#F4B084_0%,#E8956D_25%,rgba(46,107,181,0)_60%)]" />
@@ -389,7 +389,7 @@ function LandingPage() {
         </div>
 
         {/* Content */}
-        <div className="relative z-[4] text-center max-w-[700px] w-full px-6">
+        <div className="relative z-[4] text-center max-w-[700px] w-full px-6 max-md:-mt-16">
           <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[1.9rem] font-light leading-[1.15] tracking-tight text-white">
             {hero ? (
               <>{hero.headline[0]}<br />{hero.headline[1]}</>
@@ -457,7 +457,7 @@ function LandingPage() {
         </div>
 
         {/* Trusted by strip */}
-        <div className="absolute bottom-5 max-md:bottom-12 left-0 right-0 z-[2] text-center">
+        <div className="absolute bottom-5 max-md:bottom-28 left-0 right-0 z-[2] text-center">
           <div className="text-[11px] font-semibold uppercase tracking-[2px] text-white/30 mb-4">
             Trusted by members insured with
           </div>
