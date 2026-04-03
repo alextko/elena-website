@@ -62,6 +62,7 @@ function init() {
     track_pageview: false,
     persistence: "localStorage",
     record_sessions_percent: 100,
+    record_mask_text_selector: "",
   });
 
   mixpanel.register({ platform: "web" });
