@@ -950,7 +950,7 @@ export function AppointmentConfirmationCard({
       : "text-[#0F1B3D]";
 
   return (
-    <div className="mt-3 rounded-2xl border border-[#0F1B3D]/[0.06] bg-white p-4 shadow-[0_2px_8px_rgba(15,27,61,0.06)]">
+    <div className="mt-3 max-w-md rounded-2xl border border-[#0F1B3D]/[0.08] bg-white p-4 shadow-[0_4px_16px_rgba(15,27,61,0.10)]">
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
         <div
@@ -1014,7 +1014,7 @@ export function AddToCalendarCard({
   if (!hasGoogle && !hasApple) return null;
 
   return (
-    <div className="mt-3 rounded-2xl border border-[#0F1B3D]/[0.06] bg-white p-4 shadow-[0_2px_8px_rgba(15,27,61,0.06)]">
+    <div className="mt-3 max-w-md rounded-2xl border border-[#0F1B3D]/[0.08] bg-white p-4 shadow-[0_4px_16px_rgba(15,27,61,0.10)]">
       <p className="text-sm font-semibold text-[#0F1B3D] mb-3">
         Add to your calendar?
       </p>

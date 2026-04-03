@@ -408,6 +408,58 @@ export function ChatArea({
     }
   }, [booking.status, booking.bookingId]);
 
+  // Poll for escalation resolution — when ops resolves via Slack, inject the message live
+  const escalatedBookingRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!booking.status || !booking.bookingId) return;
+    const result = booking.status.booking_result;
+    if (result?.status === "escalated" || booking.status.phase === "completed" && result?.status === "escalated") {
+      escalatedBookingRef.current = booking.bookingId;
+    }
+  }, [booking.status, booking.bookingId]);
+
+  useEffect(() => {
+    const bid = escalatedBookingRef.current;
+    if (!bid || !sessionIdRef.current) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await apiFetch(`/chat/${sessionIdRef.current}/messages`);
+        if (!res.ok) return;
+        const msgs: ChatMessageItem[] = await res.json();
+        // Look for a resolved escalation message we haven't shown yet
+        const resolved = msgs.find(
+          (m) => m.booking_result?.status === "confirmed" ||
+                 (m.booking_result?.booking_id === bid && m.booking_result?.status !== "escalated")
+        );
+        if (resolved && resolved.booking_result) {
+          // Check if we already have this message
+          const alreadyShown = messages.some(
+            (m) => m.bookingResult?.status === "confirmed" && m.bookingResult?.booking_id === bid
+          );
+          if (!alreadyShown) {
+            const newId = nextId();
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: newId,
+                role: "assistant",
+                content: resolved.text || "",
+                isStreaming: true,
+                bookingResult: resolved.booking_result ?? undefined,
+              },
+            ]);
+            setStreamingId(newId);
+            escalatedBookingRef.current = null;
+            clearInterval(pollInterval);
+          }
+        }
+      } catch {}
+    }, 15000); // Poll every 15 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [messages]);
+
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files || files.length === 0) return;
