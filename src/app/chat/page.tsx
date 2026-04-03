@@ -29,6 +29,13 @@ export default function ChatPage() {
 }
 
 function ChatPageInner() {
+  // Set browser chrome to white for chat page
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", "#FFFFFF");
+    return () => { if (meta) meta.setAttribute("content", "#0F1B3D"); };
+  }, []);
+
   const { session, loading, profileId, refreshSubscription, onboardingJustCompleted, needsOnboarding, profileChecked } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();

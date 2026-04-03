@@ -265,13 +265,7 @@ function LandingPage() {
     }
   }, [loading, session]);
 
-  // Set browser chrome to match hero on mobile
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", "#0F1B3D");
-    return () => { if (meta) meta.setAttribute("content", "#FFFFFF"); };
-  }, []);
+
 
   // Parallax blobs
   useEffect(() => {

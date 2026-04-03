@@ -32,7 +32,6 @@ export const metadata: Metadata = {
   description:
     "Elena is your AI-powered healthcare assistant. Chat with an AI that calls doctors, negotiates bills, compares drug prices, and manages your entire medical life.",
   icons: { icon: "/images/favicon.png" },
-  themeColor: "#FFFFFF",
 };
 
 export default function RootLayout({
@@ -42,7 +41,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${dmSerif.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <head />
+      <head>
+        <meta name="theme-color" content="#0F1B3D" />
+      </head>
       <body className="h-full overflow-x-hidden bg-background text-foreground">
         <Script
           id="mp-error-guard"
