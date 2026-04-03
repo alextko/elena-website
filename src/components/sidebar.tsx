@@ -114,7 +114,7 @@ export function Sidebar({
   const groupOrder = ["Today", "Yesterday", "Last week", "Older"];
 
   return (
-    <div className="flex h-dvh w-64 flex-shrink-0 flex-col bg-[#f5f7fb]">
+    <div className="flex h-dvh w-64 flex-shrink-0 flex-col bg-[#f5f7fb] max-md:bg-white">
       {/* Header */}
       <div className="flex-shrink-0 flex items-center gap-2.5 px-5 pt-5 pb-4">
         <div className="h-12 w-12 rounded-xl overflow-hidden bg-[#0F1B3D] shrink-0">
