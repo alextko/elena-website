@@ -201,10 +201,10 @@ export function Sidebar({
       </div>
 
       {/* Fade-out gradient above profile */}
-      <div className="flex-shrink-0 pointer-events-none h-8 -mb-8 relative z-10 bg-gradient-to-t from-[#f5f7fb] to-transparent" />
+      <div className="flex-shrink-0 pointer-events-none h-8 -mb-8 relative z-10 bg-gradient-to-t from-[#f5f7fb] max-md:from-white to-transparent" />
 
       {/* Profile — pinned to bottom, never scrolls */}
-      <div className="flex-shrink-0 relative z-10 shadow-[0_-4px_12px_rgba(15,27,61,0.06)]">
+      <div className="flex-shrink-0 relative z-10 shadow-[0_-4px_12px_rgba(15,27,61,0.06)] bg-[#f5f7fb] max-md:bg-white">
         <SidebarProfile onBookMessage={onBookMessage} />
       </div>
     </div>
