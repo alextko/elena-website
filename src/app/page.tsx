@@ -433,7 +433,7 @@ function LandingPage() {
           <div className="text-[11px] font-semibold uppercase tracking-[1.5px] text-white/40 text-center mt-7 mb-3.5">
             Common problems Elena can solve
           </div>
-          <div className="flex gap-2.5 justify-center flex-nowrap px-3 max-md:overflow-x-auto max-md:justify-start max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
+          <div className="flex gap-2.5 justify-center flex-nowrap px-3 max-md:overflow-x-auto max-md:justify-start max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden max-md:[mask-image:linear-gradient(to_right,black_80%,transparent_100%)]">
             {SUGGESTIONS.map((s) => (
               <button
                 key={s.label}
