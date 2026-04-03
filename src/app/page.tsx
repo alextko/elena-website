@@ -265,10 +265,14 @@ function LandingPage() {
     }
   }, [loading, session]);
 
-  // Set body background to hero color on mobile so browser chrome areas match
+  // Set body background to match hero gradient edges on mobile
   useEffect(() => {
-    document.body.style.backgroundColor = "#0F1B3D";
-    return () => { document.body.style.backgroundColor = ""; };
+    document.body.style.backgroundColor = "#2E6BB5";
+    document.documentElement.style.backgroundColor = "#0F1B3D";
+    return () => {
+      document.body.style.backgroundColor = "";
+      document.documentElement.style.backgroundColor = "";
+    };
   }, []);
 
   // Parallax blobs
@@ -366,7 +370,7 @@ function LandingPage() {
       </nav>
 
       {/* HERO */}
-      <section ref={heroRef} className="relative h-dvh min-h-dvh max-md:pb-16 flex flex-col items-center justify-center overflow-hidden">
+      <section ref={heroRef} className="relative h-dvh min-h-dvh max-md:min-h-[calc(100dvh+80px)] flex flex-col items-center justify-center overflow-hidden">
         {/* Gradient bg */}
         <div className="absolute inset-0 z-0 bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)]">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_130%,#F4B084_0%,#E8956D_25%,rgba(46,107,181,0)_60%)]" />
@@ -453,7 +457,7 @@ function LandingPage() {
         </div>
 
         {/* Trusted by strip */}
-        <div className="absolute bottom-5 left-0 right-0 z-[2] text-center">
+        <div className="absolute bottom-5 max-md:bottom-12 left-0 right-0 z-[2] text-center">
           <div className="text-[11px] font-semibold uppercase tracking-[2px] text-white/30 mb-4">
             Trusted by members insured with
           </div>
