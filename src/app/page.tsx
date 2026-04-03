@@ -265,6 +265,14 @@ function LandingPage() {
     }
   }, [loading, session]);
 
+  // Set browser chrome to match hero on mobile
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", "#0F1B3D");
+    return () => { if (meta) meta.setAttribute("content", "#FFFFFF"); };
+  }, []);
+
   // Parallax blobs
   useEffect(() => {
     const hero = heroRef.current;
@@ -360,7 +368,7 @@ function LandingPage() {
       </nav>
 
       {/* HERO */}
-      <section ref={heroRef} className="relative h-dvh min-h-dvh flex flex-col items-center justify-center overflow-hidden">
+      <section ref={heroRef} className="relative h-dvh min-h-dvh max-md:pb-16 flex flex-col items-center justify-center overflow-hidden">
         {/* Gradient bg */}
         <div className="absolute inset-0 z-0 bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)]">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_130%,#F4B084_0%,#E8956D_25%,rgba(46,107,181,0)_60%)]" />
