@@ -26,6 +26,13 @@ export function AuthModal({
   const [submitting, setSubmitting] = useState(false);
   const [resetSent, setResetSent] = useState(false);
 
+  // Keep browser chrome navy when auth modal is open on mobile
+  useEffect(() => {
+    if (!open || typeof window === "undefined" || window.innerWidth >= 768) return;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", "#0F1B3D");
+  }, [open]);
+
   useEffect(() => {
     if (open) analytics.track("Auth Modal Opened");
   }, [open]);
@@ -77,7 +84,9 @@ export function AuthModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-sm:w-[75vw] w-[calc(100%-2rem)] max-w-lg max-h-[90dvh] overflow-y-auto p-0 border-0 rounded-3xl shadow-[0_16px_48px_rgba(0,0,0,0.25)] font-[family-name:var(--font-inter)] [&_[data-slot=dialog-close]]:text-white/70 [&_[data-slot=dialog-close]:hover]:text-white [&_[data-slot=dialog-close]:hover]:bg-white/10 max-md:!fixed max-md:!inset-0 max-md:!top-0 max-md:!left-0 max-md:!translate-x-0 max-md:!translate-y-0 max-md:!w-full max-md:!max-w-none max-md:!max-h-none max-md:!h-full max-md:!rounded-none max-md:!shadow-none max-md:!border-0">
+      {/* Bump overlay z-index on mobile to cover the nav */}
+      <style>{`@media (max-width: 767px) { [data-slot="dialog-overlay"] { z-index: 199 !important; } }`}</style>
+      <DialogContent className="max-sm:w-[75vw] w-[calc(100%-2rem)] max-w-lg max-h-[90dvh] overflow-y-auto p-0 border-0 rounded-3xl shadow-[0_16px_48px_rgba(0,0,0,0.25)] font-[family-name:var(--font-inter)] [&_[data-slot=dialog-close]]:text-white/70 [&_[data-slot=dialog-close]:hover]:text-white [&_[data-slot=dialog-close]:hover]:bg-white/10 max-md:!fixed max-md:!inset-0 max-md:!top-0 max-md:!left-0 max-md:!translate-x-0 max-md:!translate-y-0 max-md:!w-full max-md:!max-w-none max-md:!max-h-none max-md:!h-full max-md:!rounded-none max-md:!shadow-none max-md:!border-0 max-md:!z-[200]">
         {/* Gradient background matching hero */}
         <div
           className="relative px-10 py-10 max-sm:px-6 max-sm:py-5 max-md:min-h-full max-md:flex max-md:flex-col max-md:justify-center"
