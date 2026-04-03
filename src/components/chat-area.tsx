@@ -243,7 +243,6 @@ export function ChatArea({
     setStreamingId(null);
     setChatTitle(null);
     setLoadError(null);
-    setLoadingMessages(false);
     setPendingFiles([]);
     hasCreatedSessionRef.current = false;
     setSessionReady(false);
@@ -253,13 +252,18 @@ export function ChatArea({
     const requestId = ++loadRequestRef.current;
 
     if (activeSessionId) {
+      // Keep loadingMessages true — loadMessages() will manage it from here
+      setLoadingMessages(true);
       // Load existing session messages
       sessionIdRef.current = activeSessionId;
       loadMessages(activeSessionId, requestId);
     } else if (isNewChat || profileChanged) {
+      setLoadingMessages(false);
       // Start a fresh welcome session for the active profile
       const pending = initialQuery || localStorage.getItem("elena_pending_query");
       fetchWelcome(!!pending);
+    } else {
+      setLoadingMessages(false);
     }
     // When activeSessionId is null and isNewChat is false, we're still loading
     // sessions — don't create a new welcome session yet.
