@@ -799,12 +799,9 @@ export function ChatArea({
                           analytics.track("Form Submitted", { form_id: msg.formRequest?.form_id });
                           // Refresh cached data after form save
                           if (msg.formRequest?.save_to === "insurance") refreshInsurance();
-                          // Send the submitted data as a user message so Elena can continue
-                          const summary = Object.entries(data)
-                            .filter(([, v]) => v)
-                            .map(([k, v]) => `${k}: ${v}`)
-                            .join(", ");
-                          if (summary) handleSend(`Here's my info: ${summary}`);
+                          // Tell Elena the form was submitted and saved — don't re-request
+                          const saveTo = msg.formRequest?.save_to || "profile";
+                          handleSend(`[Form submitted and saved to ${saveTo}. The data has already been persisted — do NOT show another form or ask for this information again. Confirm to the user that their information has been updated.]`);
                         }}
                       />
                     )}
