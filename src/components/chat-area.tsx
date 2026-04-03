@@ -704,14 +704,12 @@ export function ChatArea({
 
       {/* Sidebar toggle + viewing-as indicator */}
       <div className="flex-shrink-0 relative z-10 flex items-center gap-2.5 px-4 py-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
+        <button
+          className="h-8 w-8 md:h-8 md:w-8 max-md:h-11 max-md:w-11 flex items-center justify-center rounded-full max-md:bg-white max-md:shadow-[0_2px_12px_rgba(15,27,61,0.12)] max-md:border max-md:border-[#0F1B3D]/[0.08] text-[#0F1B3D]/60 hover:text-[#0F1B3D] transition-all"
           onClick={onToggleSidebar}
         >
-          <PanelLeft className="h-4 w-4" />
-        </Button>
+          <PanelLeft className="h-4 w-4 max-md:h-5 max-md:w-5" />
+        </button>
         {(() => {
           const activeProfile = profiles.find((p) => p.id === profileId);
           if (!activeProfile || activeProfile.is_primary) return null;
