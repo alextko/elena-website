@@ -85,22 +85,6 @@ export default function SupportPage() {
       </div>
 
       <div className="mx-auto max-w-[720px] px-6 py-12 space-y-16">
-        {/* Contact */}
-        <section>
-          <h2 className="text-[20px] font-extrabold text-[#0F1B3D] mb-4">Contact Us</h2>
-          <div className="rounded-2xl bg-white p-6 shadow-[0_2px_12px_rgba(15,27,61,0.06)]">
-            <p className="text-[15px] leading-[1.7] text-[#3C3C43]">
-              Have a question, issue, or feedback? Reach out and we'll get back to you as soon as possible.
-            </p>
-            <a
-              href="mailto:support@elena-health.com"
-              className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#0F1B3D] px-6 py-3 text-[15px] font-semibold text-white hover:bg-[#0F1B3D]/90 transition-colors"
-            >
-              Email support@elena-health.com
-            </a>
-          </div>
-        </section>
-
         {/* How Elena Works */}
         <section>
           <h2 className="text-[20px] font-extrabold text-[#0F1B3D] mb-4">How Elena Works</h2>
@@ -143,6 +127,17 @@ export default function SupportPage() {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Contact */}
+        <section className="text-center">
+          <h2 className="text-[20px] font-extrabold text-[#0F1B3D] mb-2">Still need help?</h2>
+          <p className="text-[15px] text-[#8E8E93]">
+            Reach out to us at{" "}
+            <a href="mailto:support@elena-health.com" className="text-[#0F1B3D] font-medium hover:underline">
+              support@elena-health.com
+            </a>
+          </p>
         </section>
 
         {/* Back to home */}
