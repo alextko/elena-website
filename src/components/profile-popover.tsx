@@ -363,9 +363,9 @@ export function ProfilePopover({
       <DialogTrigger render={children as React.ReactElement}></DialogTrigger>
       <DialogContent
         showCloseButton
-        className="w-[90vw] max-w-[36rem] rounded-2xl border-[#0F1B3D]/[0.08] bg-[#F7F6F2] p-0 shadow-xl max-md:!fixed max-md:!inset-0 max-md:!top-0 max-md:!left-0 max-md:!translate-x-0 max-md:!translate-y-0 max-md:!w-full max-md:!max-w-none max-md:!rounded-none max-md:!border-0"
+        className="w-[90vw] max-w-[36rem] rounded-2xl border-[#0F1B3D]/[0.08] bg-[#F7F6F2] p-0 shadow-xl max-md:!fixed max-md:!inset-0 max-md:!top-0 max-md:!left-0 max-md:!translate-x-0 max-md:!translate-y-0 max-md:!w-full max-md:!h-full max-md:!max-w-none max-md:!rounded-none max-md:!border-0 max-md:!bg-[#F7F6F2]"
       >
-        <div ref={scrollRef} className="max-h-[65vh] overflow-y-auto max-md:max-h-full max-md:h-full">
+        <div ref={scrollRef} className="max-h-[65vh] overflow-y-auto max-md:max-h-full max-md:h-full max-md:bg-[#F7F6F2]">
           {/* ═══════════ PROVIDER DETAIL VIEW ═══════════ */}
           {selectedProvider && (
             <ProviderDetailPanel
