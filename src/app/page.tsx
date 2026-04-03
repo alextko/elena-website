@@ -380,7 +380,7 @@ function LandingPage() {
 
         {/* Content */}
         <div className="relative z-[4] text-center max-w-[700px] w-full px-6">
-          <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] font-light leading-[1.15] tracking-tight text-white">
+          <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[2.1rem] font-light leading-[1.15] tracking-tight text-white">
             {hero ? (
               <>{hero.headline[0]}<br />{hero.headline[1]}</>
             ) : (
