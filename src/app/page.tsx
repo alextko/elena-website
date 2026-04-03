@@ -448,7 +448,7 @@ function LandingPage() {
               <button
                 key={s.label}
                 onClick={() => handleChipClick(s.text)}
-                className="bg-white/10 border border-white/20 rounded-[22px] px-[18px] py-2.5 text-sm font-normal text-white/90 whitespace-nowrap cursor-pointer transition-all hover:bg-white/[0.18] hover:border-white/[0.35] active:scale-[0.97]"
+                className="bg-white/10 border border-white/20 rounded-[22px] px-[18px] py-2.5 max-md:px-3.5 max-md:py-2 text-sm max-md:text-xs font-normal text-white/90 whitespace-nowrap cursor-pointer transition-all hover:bg-white/[0.18] hover:border-white/[0.35] active:scale-[0.97]"
               >
                 {s.label}
               </button>
