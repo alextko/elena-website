@@ -43,6 +43,8 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${dmSerif.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <head>
         <meta name="theme-color" content="#0F1B3D" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className="h-full overflow-x-hidden bg-background text-foreground">
         <Script
