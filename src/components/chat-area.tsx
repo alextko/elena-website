@@ -500,10 +500,20 @@ export function ChatArea({
       const docKeys = pendingFiles.map((f) => f.key);
       setPendingFiles([]);
 
+      // Promote welcome into the message list so it persists as first message
+      const welcomeMsg: typeof messages[number] | null =
+        welcomeHeading || welcomeMessage
+          ? {
+              id: nextId(),
+              role: "assistant" as const,
+              content: `**${welcomeHeading || ""}**\n\n${welcomeMessage || ""}`.trim(),
+            }
+          : null;
+
       // Optimistic user message (with inline attachment indicators)
       const userMsgId = nextId();
       setMessages((prev) => [
-        ...prev,
+        ...(welcomeMsg && prev.length === 0 ? [welcomeMsg] : prev),
         {
           id: userMsgId,
           role: "user",
