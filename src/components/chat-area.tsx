@@ -797,11 +797,21 @@ export function ChatArea({
                         form={msg.formRequest}
                         onSubmitted={(data) => {
                           analytics.track("Form Submitted", { form_id: msg.formRequest?.form_id });
-                          // Refresh cached data after form save
-                          if (msg.formRequest?.save_to === "insurance") refreshInsurance();
-                          // Tell Elena the form was submitted and saved — don't re-request
-                          const saveTo = msg.formRequest?.save_to || "profile";
-                          handleSend(`[Form submitted and saved to ${saveTo}. The data has already been persisted — do NOT show another form or ask for this information again. Confirm to the user that their information has been updated.]`);
+                          // Send form data back to the agent with clear instructions to save it
+                          const saveTo = msg.formRequest?.save_to || "none";
+                          const summary = Object.entries(data)
+                            .filter(([, v]) => v && String(v).trim())
+                            .map(([k, v]) => `${k}: ${v}`)
+                            .join("\n");
+                          handleSend(
+                            `[FORM SUBMITTED — save_to: ${saveTo}]\n${summary}\n\n` +
+                            `[SYSTEM: The user submitted the form above. You MUST now use the appropriate tool to save this data. ` +
+                            `If save_to is "insurance", call the manage_insurance tool to REPLACE the user's current ${saveTo === "insurance" ? "insurance" : "data"} with this new data. ` +
+                            `If save_to is "profile", call update_health_profile or the relevant profile tool. ` +
+                            `Do NOT show another form. Do NOT ask for this information again. Save it NOW, then confirm to the user.]`
+                          );
+                          // Refresh insurance display after a short delay for the save to complete
+                          if (saveTo === "insurance") setTimeout(() => refreshInsurance(), 3000);
                         }}
                       />
                     )}
