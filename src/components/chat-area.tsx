@@ -811,7 +811,7 @@ export function ChatArea({
                 </div>
                 {/* Structured result cards — hidden while streaming, fade in after */}
                 {msg.id !== streamingId && (
-                  <div className={msg.isStreaming === false || !msg.isStreaming ? "elena-card-enter" : ""}>
+                  <div className={`${msg.isStreaming === false || !msg.isStreaming ? "elena-card-enter" : ""} max-md:scale-[0.88] max-md:origin-top-left`}>
                     {/* Show location card if present (pharmacies, labs, etc.), otherwise doctor card — skip if form is shown */}
                     {!msg.formRequest && msg.locationResults && msg.locationResults.length > 0 ? (
                       <LocationResultsCard
