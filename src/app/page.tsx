@@ -548,6 +548,7 @@ function LandingPage() {
               <div className="flex flex-col gap-2">
                 <a href="/blog" className="text-sm text-white/60 no-underline transition-colors hover:text-white">Blog</a>
                 <a href="/research" className="text-sm text-white/60 no-underline transition-colors hover:text-white">Research</a>
+                <a href="/support" className="text-sm text-white/60 no-underline transition-colors hover:text-white">Support</a>
                 <a href="https://www.tiktok.com/@elenahealth" target="_blank" rel="noopener noreferrer" className="text-sm text-white/60 no-underline transition-colors hover:text-white">TikTok</a>
               </div>
             </div>
