@@ -267,7 +267,7 @@ function LandingPage() {
 
   // Set body background to match hero gradient edges on mobile
   useEffect(() => {
-    document.body.style.backgroundColor = "#2E6BB5";
+    document.body.style.backgroundColor = "#0F1B3D";
     document.documentElement.style.backgroundColor = "#0F1B3D";
     return () => {
       document.body.style.backgroundColor = "";
