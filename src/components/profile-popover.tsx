@@ -343,6 +343,19 @@ export function ProfilePopover({
     router.push("/");
   }
 
+  // Update mobile browser chrome color when popover opens/closes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) return;
+    if (open && window.innerWidth < 768) {
+      meta.setAttribute("content", "#F7F6F2");
+    } else {
+      meta.setAttribute("content", "#FFFFFF");
+    }
+    return () => { meta.setAttribute("content", "#FFFFFF"); };
+  }, [open]);
+
   return (
     <>
     <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} />
