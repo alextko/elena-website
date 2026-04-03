@@ -382,7 +382,7 @@ function LandingPage() {
 
         {/* Content */}
         <div className="relative z-[4] text-center max-w-[700px] w-full px-6">
-          <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[1.75rem] font-light leading-[1.15] tracking-tight text-white">
+          <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[1.9rem] font-light leading-[1.15] tracking-tight text-white">
             {hero ? (
               <>{hero.headline[0]}<br />{hero.headline[1]}</>
             ) : (
@@ -392,7 +392,7 @@ function LandingPage() {
           <p className="text-[1.15rem] max-md:text-[0.85rem] font-light text-white/85 mt-4 tracking-wide">
             {hero ? hero.subtitle : (<>
               <span className="hidden md:inline">Elena is a personal health assistant. She can make calls, use a computer, and write emails, and she&apos;s an expert in navigating the healthcare system.</span>
-              <span className="md:hidden">Elena is your personal health assistant who can call, email, and use a computer to help you navigate the healthcare system.</span>
+              <span className="md:hidden">Elena is your personal health assistant who can call, email, and use a computer.</span>
             </>)}
           </p>
 
