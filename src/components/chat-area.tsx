@@ -702,7 +702,7 @@ export function ChatArea({
 
           {/* Welcome state -- hidden when there's a pending query */}
           {messages.length === 0 && !loadingMessages && !loadError && welcomeHeading && !initialQuery && !localStorage.getItem("elena_pending_query") && (
-            <div className="flex flex-col items-center text-center py-12 animate-in fade-in duration-500">
+            <div className="flex flex-col items-start py-12 animate-in fade-in duration-500">
               <h2 className="text-2xl font-bold text-[#0F1B3D] mb-3">{welcomeHeading}</h2>
               {welcomeMessage && (
                 <p className="text-[0.9rem] leading-relaxed text-[#0F1B3D]/60 max-w-md">
