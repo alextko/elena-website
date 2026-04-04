@@ -52,11 +52,6 @@ export default function RootLayout({
         <meta name="theme-color" content="#0F1B3D" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <Script
-          src="https://cloud.umami.is/script.js"
-          data-website-id="a3769e64-67ea-47d8-96ce-4dddd14e409d"
-          strategy="afterInteractive"
-        />
       </head>
       <body className="h-full overflow-x-hidden bg-background text-foreground">
         <Script
