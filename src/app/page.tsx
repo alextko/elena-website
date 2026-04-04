@@ -97,14 +97,14 @@ function StatsBar() {
 
 
         {/* Stats grid */}
-        <div className="grid grid-cols-4 gap-6 max-md:grid-cols-2 max-md:gap-10">
+        <div className="grid grid-cols-4 gap-6 max-md:grid-cols-2 max-md:gap-x-6 max-md:gap-y-10 max-sm:grid-cols-1 max-sm:gap-8">
           {STATS.map((stat, i) => {
             const accents = ["#F4B084", "#93B5E1", "#FFFFFF", "#F4B084"];
             const delays = [0, 150, 300, 450];
             return (
               <div
                 key={stat.label}
-                className="text-center transition-all duration-700 ease-out"
+                className="text-center transition-all duration-700 ease-out min-w-0"
                 style={{
                   opacity: visible ? 1 : 0,
                   transform: visible ? "translateY(0)" : "translateY(20px)",
@@ -261,7 +261,9 @@ function LandingPage() {
   useEffect(() => {
     if (!loading && !session && !hasTrackedPageView.current) {
       hasTrackedPageView.current = true;
-      analytics.track("Landing Page Viewed");
+      analytics.track("Landing Page Viewed", {
+        landing_variant: ref || "homepage",
+      });
     }
   }, [loading, session]);
 
@@ -319,10 +321,18 @@ function LandingPage() {
     const query = input.trim();
     if (query) {
       analytics.track("Hero Input Submitted", { query_length: query.length });
+      analytics.track("Message Sent", {
+        is_first_message: true,
+        has_attachment: false,
+        message_length: query.length,
+        authenticated: false,
+        source: "landing_page",
+        landing_variant: ref || "homepage",
+      });
       localStorage.setItem("elena_pending_query", query);
     }
     setAuthModalOpen(true);
-  }, [input]);
+  }, [input, ref]);
 
   const handleChipClick = useCallback((text: string) => {
     analytics.track("Suggested Prompt Clicked", { prompt_label: text });

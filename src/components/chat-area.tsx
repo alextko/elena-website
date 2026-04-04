@@ -589,6 +589,8 @@ export function ChatArea({
         is_first_message: messages.length === 0,
         has_attachment: sentFiles.length > 0,
         message_length: message.length,
+        authenticated: true,
+        source: initialQuery && messages.length === 0 ? "post_signup" : "chat",
       });
 
       setIsLoading(true);
