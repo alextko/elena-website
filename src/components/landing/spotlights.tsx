@@ -1441,7 +1441,7 @@ function FamilyProfiles() {
 export default function Spotlights() {
   return (
     <section
-      id="how-it-works"
+      id="features"
       className="relative z-10"
       style={{ background: "#FFFFFF", padding: "80px 0 120px" }}
     >

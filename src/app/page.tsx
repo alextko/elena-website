@@ -66,6 +66,7 @@ function StatsBar() {
 
   return (
     <section
+      id="how-it-works"
       ref={ref}
       className="relative z-10 py-20 px-8 max-md:py-14 max-md:px-5 overflow-hidden"
       style={{
