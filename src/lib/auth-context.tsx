@@ -242,6 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let doctorsResult: DoctorItem[] | null = null;
     let visitsResult: CareVisit[] | null = null;
     let todosResult: CareTodo[] | null = null;
+    let todayTodosResult: CareTodo[] | null = null;
     let habitsResult: Habit[] | null = null;
     let completionsResult: Record<string, Set<string>> | null = null;
     let insuranceResult: InsuranceCard[] | null = null;
@@ -269,7 +270,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .catch(() => {}),
       );
 
-      let todayTodosResult: CareTodo[] | null = null;
       promises.push(
         apiFetch("/todos?include_future=true")
           .then(async (res) => {
