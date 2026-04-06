@@ -107,7 +107,14 @@ function ChatPageInner() {
         return;
       }
       const data: ChatSessionItem[] = await res.json();
-      setSessions(data);
+      // Deduplicate by ID (backend may return sessions created by welcome + chat)
+      const seen = new Set<string>();
+      const deduped = data.filter((s) => {
+        if (seen.has(s.id)) return false;
+        seen.add(s.id);
+        return true;
+      });
+      setSessions(deduped);
     } catch {
       // Network error — still allow the user to start a new chat
       setIsNewChat(true);
@@ -179,9 +186,8 @@ function ChatPageInner() {
         }, ...prev];
       });
       // Then fetch real data (may take a moment for DB to persist)
-      setTimeout(() => fetchSessions(), 2000);
-      // Fetch again after title generation completes (Haiku call takes a few seconds)
-      setTimeout(() => fetchSessions(), 6000);
+      // Use a single delayed fetch to avoid duplicates from rapid fetches
+      setTimeout(() => fetchSessions(), 4000);
     },
     [fetchSessions],
   );
