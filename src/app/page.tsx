@@ -503,7 +503,7 @@ function LandingPage() {
               <>What can I help you<br />with <em className="italic font-normal font-[family-name:var(--font-dm-serif)]">today?</em></>
             )}
           </h1>
-          <p className="text-[1.15rem] max-md:text-[0.85rem] font-light text-white/85 mt-4 tracking-wide">
+          <p className="text-[0.95rem] max-md:text-[0.8rem] font-light text-white/85 mt-4 tracking-wide">
             {hero ? hero.subtitle : (<>
               <span className="hidden md:inline">Elena is a personal health assistant. She can make calls, use a computer, and write emails, and she&apos;s an expert in navigating the healthcare system.</span>
               <span className="md:hidden">Elena is your personal health assistant who can call, email, and use a computer.</span>

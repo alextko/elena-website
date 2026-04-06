@@ -136,7 +136,7 @@ export function Intro({ onStart }: IntroProps) {
           <span className="font-extrabold">2 critical health screenings.</span>
         </h1>
 
-        <p className="text-[1.15rem] max-md:text-[0.85rem] font-light text-white/85 mt-4 tracking-wide max-w-[520px] mx-auto">
+        <p className="text-[0.95rem] max-md:text-[0.8rem] font-light text-white/85 mt-4 tracking-wide max-w-[520px] mx-auto">
           Find out exactly which screenings you're missing, what your risk factors are, and what to do about them.
         </p>
 
