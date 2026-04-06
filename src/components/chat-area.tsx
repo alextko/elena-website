@@ -731,7 +731,7 @@ export function ChatArea({
       </div>
 
       {/* Messages */}
-      <div className="relative z-10 flex-1 min-h-0 overflow-y-auto chat-selectable">
+      <div className="relative z-10 flex-1 min-h-0 overflow-y-auto overflow-x-hidden chat-selectable">
         <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
           {/* Shimmer loading -- shown while waiting for sessions to resolve or messages to load */}
           {(loadingMessages || (!activeSessionId && !isNewChat)) && messages.length === 0 && !loadError && (
