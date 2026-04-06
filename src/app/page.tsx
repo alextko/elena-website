@@ -524,8 +524,8 @@ function LandingPage() {
                         onChange={(e) => setMadlibVals((prev) => ({ ...prev, [part.key]: e.target.value }))}
                         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSend(); } }}
                         placeholder={part.placeholder}
-                        size={Math.max((madlibVals[part.key] || part.placeholder || "").length + 1, 7)}
-                        className="inline-block border border-[#D1D1D6] rounded-lg px-2.5 py-1 mx-0.5 text-[0.95rem] max-md:text-[0.85rem] text-[#1C1C1E] font-medium placeholder:text-[#C7C7CC] placeholder:font-normal outline-none focus:border-[#0F1B3D]/40 focus:shadow-[0_0_0_3px_rgba(15,27,61,0.06)] bg-white transition-all"
+                        size={Math.max((madlibVals[part.key] || "").length || (part.placeholder || "").length, 1)}
+                        className="inline-block border border-[#D1D1D6] rounded-md px-2 py-0.5 mx-0.5 text-[0.95rem] max-md:text-[0.85rem] text-[#1C1C1E] font-medium text-center placeholder:text-[#C7C7CC] placeholder:font-normal outline-none focus:border-[#0F1B3D]/40 focus:shadow-[0_0_0_3px_rgba(15,27,61,0.06)] bg-white transition-all"
                       />
                     )
                   )}
