@@ -160,7 +160,7 @@ export function Intro({ onStart }: IntroProps) {
       </div>
 
       {/* Testimonials */}
-      <div className="absolute bottom-0 left-0 right-0 z-[2] w-full pb-8 max-md:pb-6" style={{
+      <div className="absolute bottom-0 left-0 right-0 z-[2] w-full pb-3 max-md:pb-2" style={{
         maskImage: "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
         WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
       }}>
