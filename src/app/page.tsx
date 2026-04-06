@@ -646,7 +646,7 @@ function LandingPage() {
                   ].map((card) => (
                     <div key={`${set}-${card.name}`} className="bg-white/70 backdrop-blur-md rounded-2xl px-6 pt-5 pb-4 w-[310px] h-[130px] shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex flex-col">
                       <p className="text-[0.88rem] text-[#1C1C1E] leading-relaxed flex-1">{card.text}</p>
-                      <img src={card.logo} alt={card.logoAlt} className="h-4 mt-auto pt-2 self-start" />
+                      <img src={card.logo} alt={card.logoAlt} className="h-6 mt-auto pt-2 self-start" />
                     </div>
                   ))}
                 </div>
