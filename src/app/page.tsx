@@ -214,6 +214,23 @@ const BLOBS = [
   "w-[450px] h-[450px] bg-[radial-gradient(circle,rgba(232,149,109,0.25)_0%,transparent_70%)] bottom-[10%] left-[5%]",
 ];
 
+// Mad Libs template for the bills landing page
+const MADLIB_TEMPLATE = {
+  bills: {
+    parts: [
+      { type: "text" as const, value: "Compare " },
+      { type: "blank" as const, key: "procedure", placeholder: "procedure", width: "8rem" },
+      { type: "text" as const, value: " prices near " },
+      { type: "blank" as const, key: "location", placeholder: "zip code", width: "5rem" },
+      { type: "text" as const, value: " with my " },
+      { type: "blank" as const, key: "insurance", placeholder: "insurance", width: "7rem" },
+      { type: "text" as const, value: " plan." },
+    ],
+    buildQuery: (vals: Record<string, string>) =>
+      `Compare ${vals.procedure || "MRI"} prices near ${vals.location || "me"} with my ${vals.insurance || ""} insurance plan.`.replace(/\s+/g, " ").trim(),
+  },
+};
+
 const ROTATING_QUERIES: Record<string, string[]> = {
   bills: [
     "compare cataract surgery prices near me",
@@ -308,9 +325,13 @@ function LandingPage() {
   const [inputFocused, setInputFocused] = useState(false);
   const { displayed: rotatingText, fullQuery } = useRotatingQuery(queries, userHasEdited || inputFocused);
   const [manualInput, setManualInput] = useState("");
+  const madlib = ref ? MADLIB_TEMPLATE[ref as keyof typeof MADLIB_TEMPLATE] : undefined;
+  const [madlibVals, setMadlibVals] = useState<Record<string, string>>({});
   const input = userHasEdited ? manualInput : (queries ? rotatingText : (hero?.prefill || ""));
   // When sending mid-animation, use the full target query instead of partial text
-  const sendQuery = userHasEdited ? manualInput : (queries ? fullQuery : (hero?.prefill || ""));
+  const sendQuery = madlib
+    ? madlib.buildQuery(madlibVals)
+    : (userHasEdited ? manualInput : (queries ? fullQuery : (hero?.prefill || "")));
   const setInput = useCallback((val: string) => { setUserHasEdited(true); setManualInput(val); }, []);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -492,26 +513,49 @@ function LandingPage() {
           {/* Chat input bar */}
           <div className="flex flex-col bg-white/95 rounded-[20px] border border-white/30 max-w-[620px] w-full mx-auto mt-8 shadow-[0_4px_24px_rgba(0,0,0,0.1)] overflow-hidden">
             <div className="px-5 pt-[18px] pb-3 relative">
-              <textarea
-                ref={inputRef}
-                value={input}
-                onFocus={() => setInputFocused(true)}
-                onBlur={() => setInputFocused(false)}
-                onChange={(e) => {
-                  setUserHasEdited(true);
-                  setManualInput(e.target.value);
-                  e.target.style.height = "auto";
-                  e.target.style.height = `${e.target.scrollHeight}px`;
-                }}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                placeholder="Ask Elena anything..."
-                rows={1}
-                className={`w-full border-none outline-none bg-transparent text-base max-md:text-sm text-[#1C1C1E] placeholder:text-[#AEAEB2] resize-none max-h-32 overflow-y-auto ${queries && !userHasEdited && !inputFocused ? "caret-transparent" : ""}`}
-              />
-              {queries && !userHasEdited && !inputFocused && (
-                <span className="pointer-events-none absolute top-[18px] left-5 text-base max-md:text-sm text-transparent whitespace-pre" aria-hidden>
-                  {input}<span className="animate-[cursor-blink_1s_step-end_infinite] text-[#1C1C1E]">|</span>
-                </span>
+              {madlib ? (
+                <div className="flex flex-wrap items-baseline gap-y-1 text-base max-md:text-sm text-[#1C1C1E] leading-relaxed">
+                  {madlib.parts.map((part, i) =>
+                    part.type === "text" ? (
+                      <span key={i}>{part.value}</span>
+                    ) : (
+                      <input
+                        key={part.key}
+                        type="text"
+                        value={madlibVals[part.key] || ""}
+                        onChange={(e) => setMadlibVals((prev) => ({ ...prev, [part.key]: e.target.value }))}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSend(); } }}
+                        placeholder={part.placeholder}
+                        style={{ width: part.width }}
+                        className="inline-block border border-[#0F1B3D]/15 rounded-lg px-2.5 py-1 mx-0.5 text-base max-md:text-sm text-[#0F1B3D] placeholder:text-[#AEAEB2] outline-none focus:border-[#0F1B3D]/30 focus:bg-[#0F1B3D]/[0.02] transition-colors bg-white/80"
+                      />
+                    )
+                  )}
+                </div>
+              ) : (
+                <>
+                  <textarea
+                    ref={inputRef}
+                    value={input}
+                    onFocus={() => setInputFocused(true)}
+                    onBlur={() => setInputFocused(false)}
+                    onChange={(e) => {
+                      setUserHasEdited(true);
+                      setManualInput(e.target.value);
+                      e.target.style.height = "auto";
+                      e.target.style.height = `${e.target.scrollHeight}px`;
+                    }}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                    placeholder="Ask Elena anything..."
+                    rows={1}
+                    className={`w-full border-none outline-none bg-transparent text-base max-md:text-sm text-[#1C1C1E] placeholder:text-[#AEAEB2] resize-none max-h-32 overflow-y-auto ${queries && !userHasEdited && !inputFocused ? "caret-transparent" : ""}`}
+                  />
+                  {queries && !userHasEdited && !inputFocused && (
+                    <span className="pointer-events-none absolute top-[18px] left-5 text-base max-md:text-sm text-transparent whitespace-pre" aria-hidden>
+                      {input}<span className="animate-[cursor-blink_1s_step-end_infinite] text-[#1C1C1E]">|</span>
+                    </span>
+                  )}
+                </>
               )}
             </div>
             <div className="flex items-center justify-between px-3 pb-3 pt-1">
