@@ -185,6 +185,11 @@ function QuizContent() {
       quiz: "health_assessment",
       recommendation_count: recommendations.length,
     });
+    // Tag this user's session as coming from the quiz funnel.
+    // registerOnce: attaches to every subsequent event (super property, set once)
+    // setPeopleProperties: persists on the user profile for segmentation
+    analytics.registerOnce({ acquisition_source: "quiz", quiz_type: "health_assessment" });
+    analytics.setPeopleProperties({ acquisition_source: "quiz", quiz_type: "health_assessment" });
     sessionStorage.setItem("elena_quiz_answers", JSON.stringify(answers));
     sessionStorage.setItem("elena_quiz_recs", JSON.stringify(recommendations));
     setAuthModalOpen(true);

@@ -117,3 +117,9 @@ export function setPeopleProperties(props: Record<string, unknown>) {
   if (disabled) return;
   mixpanel.people.set(props);
 }
+
+export function registerOnce(props: Record<string, unknown>) {
+  init();
+  if (disabled) return;
+  mixpanel.register_once(props);
+}
