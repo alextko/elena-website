@@ -156,15 +156,14 @@ export function Results({ recommendations, answers }: ResultsProps) {
             <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">you.</em>
           </h1>
 
-          {selfRating && (selfRating === "great" || selfRating === "good") && highCount > 0 && (
+          {totalCount > 0 && (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3, duration: 0.5 }}
               className="text-white/60 text-[15px] font-light mt-4 max-w-lg mx-auto leading-relaxed"
             >
-              You rated your health as "{RATING_LABELS[selfRating]}" -- but we found{" "}
-              {highCount} high-priority {highCount === 1 ? "item" : "items"} that may need your attention.
+              Based on your answers, here are a few things worth looking into. Small steps now can make a big difference later.
             </motion.p>
           )}
 
