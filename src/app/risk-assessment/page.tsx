@@ -338,6 +338,7 @@ function QuizContent() {
         open={authModalOpen}
         onOpenChange={setAuthModalOpen}
         oauthRedirectTo={`${typeof window !== "undefined" ? window.location.origin : ""}/risk-assessment?completed=1`}
+        defaultMode="signup"
       />
     </>
   );

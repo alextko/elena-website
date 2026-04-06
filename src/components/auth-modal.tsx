@@ -15,13 +15,15 @@ export function AuthModal({
   open,
   onOpenChange,
   oauthRedirectTo,
+  defaultMode = "signin",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   oauthRedirectTo?: string;
+  defaultMode?: "signin" | "signup";
 }) {
   const { signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup">(defaultMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
