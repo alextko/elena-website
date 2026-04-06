@@ -81,7 +81,11 @@ function init() {
 
 export function track(event: AnalyticsEvent, properties?: Record<string, unknown>) {
   init();
-  if (disabled) return;
+  if (disabled) {
+    console.warn("[analytics] Mixpanel disabled, skipping:", event);
+    return;
+  }
+  console.log("[analytics] Tracking:", event, properties);
   mixpanel.track(event, properties);
 }
 
