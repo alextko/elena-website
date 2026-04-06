@@ -491,7 +491,7 @@ function LandingPage() {
 
           {/* Chat input bar */}
           <div className="flex flex-col bg-white/95 rounded-[20px] border border-white/30 max-w-[620px] w-full mx-auto mt-8 shadow-[0_4px_24px_rgba(0,0,0,0.1)] overflow-hidden">
-            <div className="px-5 pt-[18px] pb-3">
+            <div className="px-5 pt-[18px] pb-3 relative">
               <textarea
                 ref={inputRef}
                 value={input}
@@ -506,8 +506,13 @@ function LandingPage() {
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                 placeholder="Ask Elena anything..."
                 rows={1}
-                className="w-full border-none outline-none bg-transparent text-base max-md:text-sm text-[#1C1C1E] placeholder:text-[#AEAEB2] resize-none max-h-32 overflow-y-auto"
+                className={`w-full border-none outline-none bg-transparent text-base max-md:text-sm text-[#1C1C1E] placeholder:text-[#AEAEB2] resize-none max-h-32 overflow-y-auto ${queries && !userHasEdited && !inputFocused ? "caret-transparent" : ""}`}
               />
+              {queries && !userHasEdited && !inputFocused && (
+                <span className="pointer-events-none absolute top-[18px] left-5 text-base max-md:text-sm text-transparent whitespace-pre" aria-hidden>
+                  {input}<span className="animate-[cursor-blink_1s_step-end_infinite] text-[#1C1C1E]">|</span>
+                </span>
+              )}
             </div>
             <div className="flex items-center justify-between px-3 pb-3 pt-1">
               <button className="w-9 h-9 rounded-full flex items-center justify-center text-[#AEAEB2] hover:text-[#8E8E93] hover:bg-black/[0.04] transition-all" aria-label="Attach document">
@@ -556,7 +561,7 @@ function LandingPage() {
               WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
             }}
           >
-            <div className="flex items-center animate-[trusted-scroll_30s_linear_infinite]">
+            <div className="flex items-center animate-[trusted-scroll_30s_linear_infinite] will-change-transform">
               {[0, 1].map((set) => (
                 <div key={set} className="flex items-center gap-10 pr-10 shrink-0">
                   {INSURERS.map((ins) => (
