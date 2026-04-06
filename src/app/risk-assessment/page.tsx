@@ -18,6 +18,7 @@ import { GenderSpecific, shouldSkipGenderStep } from "./components/gender-specif
 import { SelfRating } from "./components/self-rating";
 import { Interstitial } from "./components/interstitial";
 import { Teaser } from "./components/teaser";
+import { getInterstitial1, getInterstitial2, getInterstitial3 } from "./lib/stats";
 import { Results } from "./components/results";
 import { getRecommendations } from "./lib/recommendations";
 import { INITIAL_ANSWERS } from "./lib/types";
@@ -238,6 +239,10 @@ function QuizContent() {
     }
   }, [session, step, saveQuizResults]);
 
+  function renderInterstitial(stat: { headline: string; detail: string; source: string; sourceUrl: string }) {
+    return <Interstitial headline={stat.headline} detail={stat.detail} source={stat.source} sourceUrl={stat.sourceUrl} onContinue={advance} />;
+  }
+
   function renderStep() {
     switch (step) {
       case 0:
@@ -246,54 +251,8 @@ function QuizContent() {
         return <Demographics answers={answers} onSubmit={setAnswer} onAdvance={advance} />;
       case 2:
         return <FamilyHistory answers={answers} onSubmit={setAnswer} onAdvance={advance} />;
-      case 3: {
-        const hasHeartFamily = answers.familyHistory.includes("heart_disease");
-        const hasCancerFamily = answers.familyHistory.includes("cancer");
-        const hasDiabetesFamily = answers.familyHistory.includes("diabetes");
-        const hasStrokeFamily = answers.familyHistory.includes("stroke");
-        const hasNone = answers.familyHistory.includes("none") || answers.familyHistory.length === 0;
-
-        let headline = "Family history is one of the strongest predictors of your health.";
-        let detail = "Even without a family history, the next few questions help us identify lifestyle and screening gaps that matter for your age group.";
-        let source = "American Heart Association";
-        let sourceUrl = "https://www.heart.org/en/health-topics/heart-attack/understand-your-risks-to-prevent-a-heart-attack";
-
-        if (hasHeartFamily) {
-          headline = "Your family history of heart disease doubles your risk.";
-          detail = "With a first-degree relative affected, your risk of heart disease is roughly 2x higher. The good news: early screening and lifestyle changes can significantly reduce that risk.";
-        } else if (hasCancerFamily) {
-          const ageNote = answers.age === "40-49" || answers.age === "50-64" || answers.age === "65+"
-            ? " Especially in your age group, early screening is critical."
-            : " Guidelines may recommend starting screenings earlier than usual for you.";
-          headline = "With cancer in your family, early screening could save your life.";
-          detail = `When colorectal cancer is caught early, the survival rate is 91%. When caught late, it's just 14%.${ageNote}`;
-          source = "American Cancer Society";
-          sourceUrl = "https://www.cancer.org/cancer/colon-rectal-cancer/detection-diagnosis-staging/survival-rates.html";
-        } else if (hasDiabetesFamily) {
-          headline = "Family history of diabetes puts you at higher risk.";
-          detail = "Over 80% of people with prediabetes don't know they have it. A simple A1C blood test can catch it years before complications start.";
-          source = "Centers for Disease Control and Prevention";
-          sourceUrl = "https://www.cdc.gov/diabetes/data/statistics-report/index.html";
-        } else if (hasStrokeFamily) {
-          headline = "With stroke in your family, prevention matters even more.";
-          detail = "Up to 80% of strokes are preventable. Knowing your risk factors early means you can take action before something happens.";
-          source = "American Heart Association / ASA";
-          sourceUrl = "https://www.stroke.org/en/about-stroke";
-        } else if (hasNone) {
-          headline = "No family history is great news. But it's not the whole picture.";
-          detail = "Lifestyle, age, and screening gaps can still put you at risk. The next few questions help us find anything you might be missing.";
-        }
-
-        return (
-          <Interstitial
-            headline={headline}
-            detail={detail}
-            source={source}
-            sourceUrl={sourceUrl}
-            onContinue={advance}
-          />
-        );
-      }
+      case 3:
+        return renderInterstitial(getInterstitial1(answers));
       case 4:
         return (
           <Lifestyle
@@ -306,45 +265,8 @@ function QuizContent() {
         );
       case 5:
         return <Conditions answers={answers} onSubmit={setAnswer} onAdvance={advance} />;
-      case 6: {
-        const hasConditions = answers.diagnosedConditions.length > 0 && !answers.diagnosedConditions.includes("none_diagnosed");
-        const hasSymptoms = answers.recentSymptoms.length > 0 && !answers.recentSymptoms.includes("none_symptoms");
-        const smokes = answers.smokeVape === "yes";
-        const noExercise = answers.exercise === "none";
-
-        let headline = "1 in 3 adults are behind on at least one recommended screening.";
-        let detail = "Most people don't realize they're overdue. Early detection is the single biggest factor in survival rates for cancer, heart disease, and diabetes.";
-        let source = "Centers for Disease Control and Prevention";
-        let sourceUrl = "https://www.cdc.gov/nchs/fastats/physician-visits.htm";
-
-        if (hasSymptoms && hasConditions) {
-          headline = "The symptoms you're experiencing could be connected to your conditions.";
-          detail = "When existing conditions go unmonitored, new symptoms can escalate quickly. The next questions help us figure out if you're getting the right follow-up care.";
-        } else if (hasSymptoms) {
-          headline = "The symptoms you mentioned deserve attention.";
-          detail = "Persistent fatigue, chest discomfort, and unexplained weight changes can all be early warning signs. A simple checkup or blood test can often identify the cause.";
-        } else if (smokes && hasConditions) {
-          headline = "Smoking combined with existing conditions significantly increases your risk.";
-          detail = "Smoking doubles the risk of heart attack and makes existing conditions like high blood pressure and high cholesterol much more dangerous. But quitting at any age helps immediately.";
-          source = "U.S. Preventive Services Task Force";
-          sourceUrl = "https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/tobacco-use-in-adults-and-pregnant-women-counseling-and-interventions";
-        } else if (noExercise) {
-          headline = "Physical inactivity is a major risk factor on its own.";
-          detail = "Lack of exercise increases risk for heart disease, diabetes, and several cancers. Even small increases in activity can make a measurable difference in your numbers.";
-          source = "Centers for Disease Control and Prevention";
-          sourceUrl = "https://www.cdc.gov/physicalactivity/basics/pa-health/index.htm";
-        }
-
-        return (
-          <Interstitial
-            headline={headline}
-            detail={detail}
-            source={source}
-            sourceUrl={sourceUrl}
-            onContinue={advance}
-          />
-        );
-      }
+      case 6:
+        return renderInterstitial(getInterstitial2(answers));
       case 7:
         return (
           <CareGaps
@@ -355,56 +277,8 @@ function QuizContent() {
             }}
           />
         );
-      case 8: {
-        const overduePhysical = answers.lastPhysical === "3+ years" || answers.lastPhysical === "never";
-        const overdueBloodwork = answers.lastBloodwork === "3+ years" || answers.lastBloodwork === "never";
-        const overdueScreening = answers.lastScreening === "3+ years" || answers.lastScreening === "never";
-        const noPCP = answers.hasPCP === "no";
-        const overdueCount = [overduePhysical, overdueBloodwork, overdueScreening].filter(Boolean).length;
-
-        let headline: string;
-        let detail: string;
-        let source = "American Cancer Society";
-        let sourceUrl = "https://www.cancer.org/cancer/colon-rectal-cancer/detection-diagnosis-staging/survival-rates.html";
-
-        if (overdueCount >= 2 && noPCP) {
-          headline = `You're overdue on ${overdueCount} screenings and don't have a doctor.`;
-          detail = "That's not uncommon, but it's exactly the kind of gap that lets serious conditions go undetected. The good news: getting back on track is easier than you think.";
-          source = "Centers for Disease Control and Prevention";
-          sourceUrl = "https://www.cdc.gov/prevention/about/index.html";
-        } else if (overdueCount >= 2) {
-          headline = `You're behind on ${overdueCount} recommended health checks.`;
-          detail = "Most serious conditions are treatable when caught early. A single round of appointments could get you fully up to date.";
-          source = "Centers for Disease Control and Prevention";
-          sourceUrl = "https://www.cdc.gov/prevention/about/index.html";
-        } else if (noPCP) {
-          headline = "People without a primary care doctor are diagnosed later.";
-          detail = "Having a PCP means someone is watching the full picture of your health over time. It's the single highest-impact thing you can do for long-term health.";
-          source = "Centers for Disease Control and Prevention";
-          sourceUrl = "https://www.cdc.gov/prevention/about/index.html";
-        } else if (overdueScreening) {
-          const isOlder = answers.age === "40-49" || answers.age === "50-64" || answers.age === "65+";
-          headline = isOlder
-            ? "In your age group, screening is no longer optional."
-            : "Colorectal cancer has a 91% survival rate when caught early.";
-          detail = isOlder
-            ? "Rates of colorectal, breast, and prostate cancer all increase significantly after 40. A single screening can catch something years before symptoms appear."
-            : "When caught late, that drops to 14%. The difference is often a single screening that takes less than an hour.";
-        } else {
-          headline = "You're more on track than most people.";
-          detail = "But even people who stay current on checkups can have blind spots. Let's make sure nothing is slipping through the cracks.";
-        }
-
-        return (
-          <Interstitial
-            headline={headline}
-            detail={detail}
-            source={source}
-            sourceUrl={sourceUrl}
-            onContinue={advance}
-          />
-        );
-      }
+      case 8:
+        return renderInterstitial(getInterstitial3(answers));
       case 9:
         return (
           <GenderSpecific
