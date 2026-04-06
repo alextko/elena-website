@@ -179,34 +179,6 @@ export function Intro({ onStart }: IntroProps) {
             ))}
           </div>
         </div>
-        {/* Trusted by carousel */}
-        <div className="text-center">
-          <div className="text-[11px] font-semibold uppercase tracking-[2px] text-white/30 mb-4">
-            Trusted by members insured with
-          </div>
-          <div
-            className="overflow-hidden w-full relative"
-            style={{
-              maskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
-              WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
-            }}
-          >
-            <div className="flex w-max items-center animate-[trusted-scroll_80s_linear_infinite] will-change-transform">
-              {[0, 1].map((set) => (
-                <div key={set} className="flex items-center gap-10 pr-10 shrink-0">
-                  {INSURERS.map((ins) => (
-                    <img
-                      key={`${set}-${ins.alt}`}
-                      src={ins.src}
-                      alt={ins.alt}
-                      className="h-7 w-auto brightness-0 invert opacity-60 shrink-0"
-                    />
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );
