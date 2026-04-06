@@ -8,7 +8,6 @@ function parseAge(bucket?: AgeBucket): number {
 }
 
 export function getRecommendations(answers: QuizAnswers): Recommendation[] {
-  console.log("[Quiz] Computing recommendations with answers:", JSON.stringify(answers, null, 2));
   const recs: Recommendation[] = [];
   const age = parseAge(answers.age);
 
