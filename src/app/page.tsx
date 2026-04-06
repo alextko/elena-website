@@ -608,58 +608,8 @@ function LandingPage() {
 
         </div>{/* close content wrapper */}
 
-        {/* Testimonials + Trusted by strip — hidden on bills variant (moved to testimonials section) */}
-        <div className={`absolute bottom-0 left-0 right-0 z-[2] w-full pb-5 max-md:pb-4 ${ref === "bills" ? "hidden" : ""}`} style={{
-          maskImage: "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
-          WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
-        }}>
-          {/* Testimonial cards */}
-          <div className="overflow-hidden w-full mb-6">
-            <div className="flex w-max animate-[scroll-left_140s_linear_infinite] max-md:animate-[scroll-left_90s_linear_infinite] will-change-transform [backface-visibility:hidden]">
-              {[0, 1].map((set) => (
-                <div key={set} className="flex gap-3 pr-3 shrink-0">
-                  {TESTIMONIALS.map((card) => (
-                    <div key={`${set}-${card.name}`} className="bg-white/70 backdrop-blur-md rounded-2xl px-6 pt-5 pb-4 w-[310px] h-[130px] shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex flex-col">
-                      <p className="text-[0.88rem] text-[#1C1C1E] leading-relaxed flex-1">{card.text}</p>
-                      <img src={card.logo} alt={card.logoAlt} className="h-6 mt-auto pt-2 self-start" />
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* Trusted by carousel */}
-          <div className="text-center">
-            <div className="text-[11px] font-semibold uppercase tracking-[2px] text-white/30 mb-4">
-              Trusted by members insured with
-            </div>
-            <div
-              className="overflow-hidden w-full relative"
-              style={{
-                maskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
-                WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
-              }}
-            >
-              <div className="flex w-max items-center animate-[trusted-scroll_120s_linear_infinite] will-change-transform">
-                {[0, 1].map((set) => (
-                  <div key={set} className="flex items-center gap-10 pr-10 shrink-0">
-                    {INSURERS.map((ins) => (
-                      <img
-                        key={`${set}-${ins.alt}`}
-                        src={ins.src}
-                        alt={ins.alt}
-                        className="h-7 w-auto brightness-0 invert opacity-60 shrink-0"
-                      />
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-        {/* Testimonial cards + trusted by — bills variant, inside hero */}
-        {ref === "bills" && (
-          <div className="relative z-[3] w-full mt-8 pb-20" style={{
+        {/* Testimonial cards + trusted by */}
+        <div className="relative z-[3] w-full mt-8 pb-20" style={{
             maskImage: "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
             WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
           }}>
@@ -696,7 +646,6 @@ function LandingPage() {
               </div>
             </div>
           </div>
-        )}
       </section>
 
       {/* STATS BAR */}
