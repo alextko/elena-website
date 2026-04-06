@@ -516,8 +516,8 @@ function LandingPage() {
           </h1>
           <p className="text-[0.95rem] max-md:text-[0.8rem] font-light text-white/85 mt-4 tracking-wide">
             {hero ? hero.subtitle : (<>
-              <span className="hidden md:inline">Elena is your personal health assistant. She&apos;s like ChatGPT; she can make calls, use a computer, and she&apos;s an expert in navigating the healthcare system.</span>
-              <span className="md:hidden">Elena is your personal health assistant. She can make calls, use a computer, and navigate the healthcare system.</span>
+              <span className="hidden md:inline">Elena is your personal health assistant. She&apos;s like ChatGPT, but she can make calls and is an expert in navigating the healthcare system.</span>
+              <span className="md:hidden">Elena is your personal health assistant. She&apos;s like ChatGPT, but she can make calls and navigate the healthcare system.</span>
             </>)}
           </p>
 
