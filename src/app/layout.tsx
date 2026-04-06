@@ -46,19 +46,19 @@ export const metadata: Metadata = {
     siteName: "Elena",
     images: [
       {
-        url: "https://elena-health.com/images/elena-icon-cropped.png",
-        width: 512,
-        height: 512,
-        alt: "Elena",
+        url: "https://elena-health.com/images/og-hero.png",
+        width: 2670,
+        height: 1786,
+        alt: "Elena - What can I help you with today?",
       },
     ],
     type: "website",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Elena | Your Healthcare Assistant",
     description: "Elena is your AI-powered healthcare assistant. She can make calls, compare prices, negotiate bills, and manage your entire medical life.",
-    images: ["https://elena-health.com/images/elena-icon-cropped.png"],
+    images: ["https://elena-health.com/images/og-hero.png"],
   },
 };
 
