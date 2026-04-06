@@ -1,7 +1,9 @@
 "use client";
 
+import { useState, useRef, useCallback } from "react";
 import { StepLayout } from "./step-layout";
 import { OptionButton } from "./option-button";
+import { SubStepWrapper } from "./sub-step-wrapper";
 import type { QuizAnswers } from "../lib/types";
 
 interface ConditionsProps {
@@ -36,39 +38,54 @@ function toggleList(list: string[], value: string, noneValue: string): string[] 
 }
 
 export function Conditions({ answers, onSubmit, onAdvance }: ConditionsProps) {
+  const [subStep, setSubStep] = useState(0);
   const diagnosed = answers.diagnosedConditions;
   const symptoms = answers.recentSymptoms;
 
-  return (
-    <StepLayout
-      question="Let's check in on how you've been feeling."
-      ctaLabel="Continue"
-      ctaEnabled={diagnosed.length > 0 && symptoms.length > 0}
-      onCta={onAdvance}
-    >
-      <p className="text-[11px] font-semibold text-[#0F1B3D]/30 uppercase tracking-[2px] mb-2">
-        Has a doctor ever told you that you have...
-      </p>
-      {DIAGNOSED.map((opt) => (
-        <OptionButton
-          key={opt.value}
-          label={opt.label}
-          selected={diagnosed.includes(opt.value)}
-          onClick={() => onSubmit({ diagnosedConditions: toggleList(diagnosed, opt.value, "none_diagnosed") })}
-        />
-      ))}
+  const handleDiagnosedContinue = useCallback(() => {
+    setSubStep(1);
+  }, []);
 
-      <p className="text-[11px] font-semibold text-[#0F1B3D]/30 uppercase tracking-[2px] mb-2 mt-6">
-        Do any of these sound like you?
-      </p>
-      {SYMPTOMS.map((opt) => (
-        <OptionButton
-          key={opt.value}
-          label={opt.label}
-          selected={symptoms.includes(opt.value)}
-          onClick={() => onSubmit({ recentSymptoms: toggleList(symptoms, opt.value, "none_symptoms") })}
-        />
-      ))}
-    </StepLayout>
+  if (subStep === 0) {
+    return (
+      <SubStepWrapper stepKey={0}>
+        <StepLayout
+          question="Has a doctor ever told you that you have any of these?"
+          ctaLabel="Continue"
+          ctaEnabled={diagnosed.length > 0}
+          onCta={handleDiagnosedContinue}
+        >
+          {DIAGNOSED.map((opt) => (
+            <OptionButton
+              key={opt.value}
+              label={opt.label}
+              selected={diagnosed.includes(opt.value)}
+              onClick={() => onSubmit({ diagnosedConditions: toggleList(diagnosed, opt.value, "none_diagnosed") })}
+            />
+          ))}
+        </StepLayout>
+      </SubStepWrapper>
+    );
+  }
+
+  return (
+    <SubStepWrapper stepKey={1}>
+      <StepLayout
+        question="Do any of these sound like you?"
+        subtitle="Select all that apply."
+        ctaLabel="Continue"
+        ctaEnabled={symptoms.length > 0}
+        onCta={onAdvance}
+      >
+        {SYMPTOMS.map((opt) => (
+          <OptionButton
+            key={opt.value}
+            label={opt.label}
+            selected={symptoms.includes(opt.value)}
+            onClick={() => onSubmit({ recentSymptoms: toggleList(symptoms, opt.value, "none_symptoms") })}
+          />
+        ))}
+      </StepLayout>
+    </SubStepWrapper>
   );
 }
