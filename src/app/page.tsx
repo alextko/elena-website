@@ -179,9 +179,9 @@ const INSURERS = [
 
 const HERO_COPY: Record<string, { headline: [string, string]; subtitle: string; prefill: string }> = {
   bills: {
-    headline: ["Elena finds the", "errors in your bill."],
-    subtitle: "80% of hospital bills have errors. Elena reads every line, flags mistakes, and fights them for you.",
-    prefill: "I want to dispute a medical bill",
+    headline: ["Never get a", "surprise bill again."],
+    subtitle: "Elena helps you compare prices using real, insurance-negotiated rates. Never overpay again.",
+    prefill: "find the cheapest MRI near me",
   },
   calls: {
     headline: ["Elena calls your", "insurance for you."],
@@ -214,6 +214,70 @@ const BLOBS = [
   "w-[450px] h-[450px] bg-[radial-gradient(circle,rgba(232,149,109,0.25)_0%,transparent_70%)] bottom-[10%] left-[5%]",
 ];
 
+const ROTATING_QUERIES: Record<string, string[]> = {
+  bills: [
+    "find the cheapest MRI near me",
+    "how much does a knee replacement cost in-network?",
+    "compare colonoscopy prices near me",
+    "what will I pay for an ER visit with my plan?",
+    "find affordable physical therapy near me",
+    "how much is an ultrasound at a freestanding clinic?",
+  ],
+};
+
+function useRotatingQuery(
+  queries: string[] | undefined,
+  paused: boolean,
+) {
+  const [displayed, setDisplayed] = useState(queries?.[0] ?? "");
+  const [queryIndex, setQueryIndex] = useState(0);
+  const [charIndex, setCharIndex] = useState(queries?.[0]?.length ?? 0);
+  const [phase, setPhase] = useState<"idle" | "erasing" | "typing">("idle");
+
+  // The full query the animation is currently targeting
+  const fullQuery = queries?.[queryIndex] ?? "";
+
+  useEffect(() => {
+    if (!queries || queries.length <= 1 || paused) return;
+
+    if (phase === "idle") {
+      const t = setTimeout(() => setPhase("erasing"), 3000);
+      return () => clearTimeout(t);
+    }
+
+    if (phase === "erasing") {
+      if (charIndex > 0) {
+        const t = setTimeout(() => {
+          setCharIndex((c) => c - 1);
+          setDisplayed(queries[queryIndex].slice(0, charIndex - 1));
+        }, 20);
+        return () => clearTimeout(t);
+      }
+      const next = (queryIndex + 1) % queries.length;
+      setQueryIndex(next);
+      setCharIndex(0);
+      setDisplayed("");
+      setPhase("typing");
+      return;
+    }
+
+    if (phase === "typing") {
+      const target = queries[queryIndex % queries.length];
+      if (charIndex < target.length) {
+        const t = setTimeout(() => {
+          setCharIndex((c) => c + 1);
+          setDisplayed(target.slice(0, charIndex + 1));
+        }, 35);
+        return () => clearTimeout(t);
+      }
+      setPhase("idle");
+      return;
+    }
+  }, [phase, charIndex, queryIndex, queries, paused]);
+
+  return { displayed, fullQuery };
+}
+
 export default function LandingPageWrapper() {
   return (
     <Suspense fallback={<div className="flex h-dvh items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[#0F1B3D] border-t-transparent" /></div>}>
@@ -238,7 +302,15 @@ function LandingPage() {
   };
   const ref = searchParams.get("ref") || searchParams.get("utm_content") || LP_PATH_MAP[pathname] || null;
   const hero = (ref && HERO_COPY[ref]) || null;
-  const [input, setInput] = useState(hero?.prefill || "");
+  const queries = ref ? ROTATING_QUERIES[ref] : undefined;
+  const [userHasEdited, setUserHasEdited] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
+  const { displayed: rotatingText, fullQuery } = useRotatingQuery(queries, userHasEdited || inputFocused);
+  const [manualInput, setManualInput] = useState("");
+  const input = userHasEdited ? manualInput : (queries ? rotatingText : (hero?.prefill || ""));
+  // When sending mid-animation, use the full target query instead of partial text
+  const sendQuery = userHasEdited ? manualInput : (queries ? fullQuery : (hero?.prefill || ""));
+  const setInput = useCallback((val: string) => { setUserHasEdited(true); setManualInput(val); }, []);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const heroRef = useRef<HTMLElement>(null);
@@ -318,8 +390,8 @@ function LandingPage() {
   }, []);
 
   const handleSend = useCallback(() => {
-    // Persist the query so /chat can auto-send it after auth
-    const query = input.trim();
+    // Use full query even if animation is mid-typewriter
+    const query = sendQuery.trim();
     if (query) {
       analytics.track("Hero Input Submitted", { query_length: query.length });
       analytics.track("Message Sent", {
@@ -333,11 +405,12 @@ function LandingPage() {
       localStorage.setItem("elena_pending_query", query);
     }
     setAuthModalOpen(true);
-  }, [input, ref]);
+  }, [sendQuery, ref]);
 
   const handleChipClick = useCallback((text: string) => {
     analytics.track("Suggested Prompt Clicked", { prompt_label: text });
-    setInput(text);
+    setUserHasEdited(true);
+    setManualInput(text);
     inputRef.current?.focus();
   }, []);
 
@@ -421,8 +494,11 @@ function LandingPage() {
               <textarea
                 ref={inputRef}
                 value={input}
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setInputFocused(false)}
                 onChange={(e) => {
-                  setInput(e.target.value);
+                  setUserHasEdited(true);
+                  setManualInput(e.target.value);
                   e.target.style.height = "auto";
                   e.target.style.height = `${e.target.scrollHeight}px`;
                 }}
