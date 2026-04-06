@@ -512,7 +512,7 @@ function LandingPage() {
           <div className="flex flex-col bg-white/95 rounded-[20px] border border-white/30 max-w-[620px] w-full mx-auto mt-8 shadow-[0_4px_24px_rgba(0,0,0,0.1)] overflow-hidden">
             <div className="px-5 pt-[18px] pb-3 relative">
               {madlib ? (
-                <p className="text-[1.05rem] max-md:text-[0.9rem] text-[#1C1C1E] leading-[2.2]">
+                <p className="text-[0.95rem] max-md:text-[0.85rem] text-[#3C3C43] leading-[2.4]">
                   {madlib.parts.map((part, i) =>
                     part.type === "text" ? (
                       <span key={i}>{part.value} </span>
@@ -524,8 +524,8 @@ function LandingPage() {
                         onChange={(e) => setMadlibVals((prev) => ({ ...prev, [part.key]: e.target.value }))}
                         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSend(); } }}
                         placeholder={part.placeholder}
-                        size={Math.max((madlibVals[part.key] || part.placeholder || "").length, 6)}
-                        className="border-b-2 border-[#0F1B3D]/20 bg-transparent px-1 pb-0.5 text-[1.05rem] max-md:text-[0.9rem] text-[#0F1B3D] font-medium placeholder:text-[#AEAEB2] placeholder:font-normal outline-none focus:border-[#0F1B3D]/50 transition-colors"
+                        size={Math.max((madlibVals[part.key] || part.placeholder || "").length + 1, 7)}
+                        className="inline-block border border-[#D1D1D6] rounded-lg px-2.5 py-1 mx-0.5 text-[0.95rem] max-md:text-[0.85rem] text-[#1C1C1E] font-medium placeholder:text-[#C7C7CC] placeholder:font-normal outline-none focus:border-[#0F1B3D]/40 focus:shadow-[0_0_0_3px_rgba(15,27,61,0.06)] bg-white transition-all"
                       />
                     )
                   )}
