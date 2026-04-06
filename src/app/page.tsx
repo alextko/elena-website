@@ -658,6 +658,10 @@ function LandingPage() {
                     <p className="text-[0.88rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Abhi</span> got back on track with all of his preventative health for free.</p>
                     <img src="/images/insurers/kaiser.svg" alt="Kaiser Permanente" className="h-4 mt-3" />
                   </div>
+                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-6 pt-5 pb-4 w-[310px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                    <p className="text-[0.88rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Andy</span> figured out the best insurance plan for him and his family.</p>
+                    <img src="/images/insurers/medicare.svg" alt="Medicare" className="h-4 mt-3" />
+                  </div>
                 </div>
               ))}
             </div>
