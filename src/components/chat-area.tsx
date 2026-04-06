@@ -734,7 +734,7 @@ export function ChatArea({
       <div className="relative z-10 flex-1 min-h-0 overflow-y-auto overflow-x-hidden chat-selectable">
         <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
           {/* Shimmer loading -- shown while waiting for sessions to resolve or messages to load */}
-          {(loadingMessages || (!activeSessionId && !isNewChat)) && messages.length === 0 && !loadError && (
+          {messages.length === 0 && !welcomeHeading && !loadError && !initialQuery && !localStorage.getItem("elena_pending_query") && (
             <div className="space-y-6 py-8 animate-pulse">
               <div className="flex justify-end">
                 <div className="h-10 w-48 rounded-2xl bg-[#0F1B3D]/[0.06]" />
