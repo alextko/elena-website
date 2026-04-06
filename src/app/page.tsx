@@ -216,12 +216,13 @@ const BLOBS = [
 
 const ROTATING_QUERIES: Record<string, string[]> = {
   bills: [
+    "compare cataract surgery prices near me",
+    "what options do i have for a hip replacement with Medicare?",
     "find the cheapest MRI near me",
-    "how much does a knee replacement cost in-network?",
+    "what are the cheapest prices for a knee replacement in-network?",
     "compare colonoscopy prices near me",
-    "what will I pay for an ER visit with my plan?",
-    "find affordable physical therapy near me",
-    "how much is an ultrasound at a freestanding clinic?",
+    "compare affordable physical therapy prices near me",
+    "what are ultrasound costs at freestanding clinics nearby?",
   ],
 };
 
