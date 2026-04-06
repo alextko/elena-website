@@ -90,6 +90,8 @@ export function Sidebar({
   onBookMessage,
   sessions,
   loadingSessions,
+  showProfileTooltip,
+  onDismissProfileTooltip,
 }: {
   activeSessionId: string | null;
   onSelectSession: (id: string) => void;
@@ -97,6 +99,8 @@ export function Sidebar({
   onBookMessage?: (msg: string) => void;
   sessions: ChatSessionItem[];
   loadingSessions: boolean;
+  showProfileTooltip?: boolean;
+  onDismissProfileTooltip?: () => void;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -207,6 +211,21 @@ export function Sidebar({
 
       {/* Fade-out gradient above profile */}
       <div className="flex-shrink-0 pointer-events-none h-8 -mb-8 relative z-10 bg-gradient-to-t from-[#f5f7fb] max-md:from-white to-transparent" />
+
+      {/* Profile tooltip */}
+      {showProfileTooltip && (
+        <div className="flex-shrink-0 relative z-20 px-3">
+          <div
+            className="relative bg-[#0F1B3D] text-white rounded-xl px-4 py-3 mb-2 shadow-[0_4px_16px_rgba(15,27,61,0.25)] cursor-pointer animate-[elena-card-reveal_0.4s_ease-out_forwards]"
+            onClick={onDismissProfileTooltip}
+          >
+            <p className="text-[13px] font-medium leading-snug">
+              Tap your profile to see your health data. It gets smarter as you use Elena.
+            </p>
+            <div className="absolute -bottom-1.5 left-8 w-3 h-3 bg-[#0F1B3D] rotate-45" />
+          </div>
+        </div>
+      )}
 
       {/* Profile — pinned to bottom, never scrolls */}
       <div className="flex-shrink-0 relative z-10 shadow-[0_-4px_12px_rgba(15,27,61,0.06)] bg-[#f5f7fb] max-md:bg-white">

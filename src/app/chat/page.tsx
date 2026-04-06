@@ -49,6 +49,7 @@ function ChatPageInner() {
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
   const [bookMessage, setBookMessage] = useState<string | null>(null);
   const [isNewChat, setIsNewChat] = useState(false);
+  const [showProfileTooltip, setShowProfileTooltip] = useState(false);
   const sessionsFetchedRef = useRef(false);
 
   // Read pending query from landing page (set before auth redirect)
@@ -153,6 +154,15 @@ function ChatPageInner() {
     }
   }, [onboardingJustCompleted, isNewChat, activeSessionId]);
 
+  // Show profile tooltip after onboarding, auto-dismiss after 8 seconds
+  useEffect(() => {
+    if (onboardingJustCompleted) {
+      const showTimer = setTimeout(() => setShowProfileTooltip(true), 1500);
+      const hideTimer = setTimeout(() => setShowProfileTooltip(false), 9500);
+      return () => { clearTimeout(showTimer); clearTimeout(hideTimer); };
+    }
+  }, [onboardingJustCompleted]);
+
   const handleSessionCreated = useCallback(
     (sessionId: string, firstMessage?: string) => {
       setActiveSessionId(sessionId);
@@ -236,6 +246,8 @@ function ChatPageInner() {
             onBookMessage={(msg) => setBookMessage(msg)}
             sessions={sessions}
             loadingSessions={loadingSessions}
+            showProfileTooltip={showProfileTooltip}
+            onDismissProfileTooltip={() => setShowProfileTooltip(false)}
           />
         </div>
       </div>
