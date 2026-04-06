@@ -158,8 +158,8 @@ const SUGGESTIONS = [
   { label: "Compare Prices", text: "Compare MRI prices near me" },
   { label: "Dispute a Bill", text: "I want to dispute a medical bill" },
   { label: "Find a Doctor", text: "Find an in-network doctor near me" },
-  { label: "Schedule an Appointment", text: "Schedule an appointment with my doctor" },
   { label: "Manage Family Care", text: "Help me manage my parents' healthcare from my phone" },
+  { label: "Find Insurance", text: "Help me find the right insurance plan" },
 ];
 
 const TESTIMONIALS = [
