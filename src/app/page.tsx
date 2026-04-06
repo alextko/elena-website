@@ -594,6 +594,80 @@ function LandingPage() {
           </div>
         </div>
 
+        {/* Testimonial cards — bills variant only */}
+        {ref === "bills" && (
+          <div className="relative z-[3] mt-10 max-md:mt-6 w-full overflow-hidden" style={{
+            maskImage: "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
+          }}>
+            <div className="text-[10px] font-semibold uppercase tracking-[2px] text-white/30 text-center mb-4">
+              Real results from Elena users
+            </div>
+            {/* Row 1 — scrolls left */}
+            <div className="flex animate-[scroll-left_40s_linear_infinite] mb-3">
+              {[0, 1].map((set) => (
+                <div key={set} className="flex gap-3 pr-3 shrink-0">
+                  <div className="flex items-center gap-4 bg-white/95 rounded-2xl px-5 py-4 min-w-[300px] max-w-[340px] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+                    <div className="flex-1">
+                      <p className="text-[0.85rem] text-[#1C1C1E] leading-snug"><span className="font-bold">Sarah</span> saved <span className="font-bold">$650</span> on her CT scan by comparing prices before her appointment.</p>
+                      <div className="flex items-center gap-1.5 mt-2"><div className="w-5 h-5 rounded-full bg-[#0074BC] flex items-center justify-center text-white text-[8px] font-bold">O</div><span className="text-[11px] text-[#8E8E93]">Oscar Health</span></div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 bg-white/95 rounded-2xl px-5 py-4 min-w-[300px] max-w-[340px] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+                    <div className="flex-1">
+                      <p className="text-[0.85rem] text-[#1C1C1E] leading-snug"><span className="font-bold">Mike</span> had Elena call Blue Cross and got his <span className="font-bold">$2,400</span> claim reprocessed.</p>
+                      <div className="flex items-center gap-1.5 mt-2"><div className="w-5 h-5 rounded-full bg-[#0051A5] flex items-center justify-center text-white text-[8px] font-bold">+</div><span className="text-[11px] text-[#8E8E93]">Blue Cross Blue Shield</span></div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 bg-white/95 rounded-2xl px-5 py-4 min-w-[300px] max-w-[340px] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+                    <div className="flex-1">
+                      <p className="text-[0.85rem] text-[#1C1C1E] leading-snug"><span className="font-bold">Emma</span> found an in-network MRI for <span className="font-bold">$350</span> instead of the <span className="font-bold">$1,200</span> she was quoted.</p>
+                      <div className="flex items-center gap-1.5 mt-2"><div className="w-5 h-5 rounded-full bg-[#CC0000] flex items-center justify-center text-white text-[8px] font-bold">A</div><span className="text-[11px] text-[#8E8E93]">Aetna</span></div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 bg-white/95 rounded-2xl px-5 py-4 min-w-[300px] max-w-[340px] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+                    <div className="flex-1">
+                      <p className="text-[0.85rem] text-[#1C1C1E] leading-snug"><span className="font-bold">James</span> booked a new PCP and saved <span className="font-bold">45 minutes</span> of hold time.</p>
+                      <div className="flex items-center gap-1.5 mt-2"><div className="w-5 h-5 rounded-full bg-[#002677] flex items-center justify-center text-white text-[8px] font-bold">U</div><span className="text-[11px] text-[#8E8E93]">UnitedHealthcare</span></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Row 2 — scrolls right */}
+            <div className="flex animate-[scroll-right_45s_linear_infinite]">
+              {[0, 1].map((set) => (
+                <div key={set} className="flex gap-3 pr-3 shrink-0">
+                  <div className="flex items-center gap-4 bg-white/95 rounded-2xl px-5 py-4 min-w-[300px] max-w-[340px] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+                    <div className="flex-1">
+                      <p className="text-[0.85rem] text-[#1C1C1E] leading-snug"><span className="font-bold">Lisa</span> discovered she was overcharged <span className="font-bold">$800</span> on her ER bill.</p>
+                      <div className="flex items-center gap-1.5 mt-2"><div className="w-5 h-5 rounded-full bg-[#E31837] flex items-center justify-center text-white text-[8px] font-bold">C</div><span className="text-[11px] text-[#8E8E93]">Cigna</span></div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 bg-white/95 rounded-2xl px-5 py-4 min-w-[300px] max-w-[340px] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+                    <div className="flex-1">
+                      <p className="text-[0.85rem] text-[#1C1C1E] leading-snug"><span className="font-bold">David</span> compared colonoscopy prices and saved <span className="font-bold">$1,100</span> going to a freestanding center.</p>
+                      <div className="flex items-center gap-1.5 mt-2"><div className="w-5 h-5 rounded-full bg-[#4CAF50] flex items-center justify-center text-white text-[8px] font-bold">H</div><span className="text-[11px] text-[#8E8E93]">Humana</span></div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 bg-white/95 rounded-2xl px-5 py-4 min-w-[300px] max-w-[340px] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+                    <div className="flex-1">
+                      <p className="text-[0.85rem] text-[#1C1C1E] leading-snug"><span className="font-bold">Maria</span> had Elena negotiate her physical therapy bill down by <span className="font-bold">40%</span>.</p>
+                      <div className="flex items-center gap-1.5 mt-2"><div className="w-5 h-5 rounded-full bg-[#4B2D83] flex items-center justify-center text-white text-[8px] font-bold">A</div><span className="text-[11px] text-[#8E8E93]">Anthem</span></div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 bg-white/95 rounded-2xl px-5 py-4 min-w-[300px] max-w-[340px] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+                    <div className="flex-1">
+                      <p className="text-[0.85rem] text-[#1C1C1E] leading-snug"><span className="font-bold">Alex</span> got his denied claim overturned, recovering <span className="font-bold">$3,200</span>.</p>
+                      <div className="flex items-center gap-1.5 mt-2"><div className="w-5 h-5 rounded-full bg-[#006C4E] flex items-center justify-center text-white text-[8px] font-bold">M</div><span className="text-[11px] text-[#8E8E93]">Medicare</span></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Trusted by strip */}
         <div className="absolute bottom-5 max-md:bottom-32 left-0 right-0 z-[2] text-center">
           <div className="text-[11px] font-semibold uppercase tracking-[2px] text-white/30 mb-4">
