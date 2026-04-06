@@ -39,6 +39,27 @@ export const metadata: Metadata = {
   description:
     "Elena is your AI-powered healthcare assistant. Chat with an AI that calls doctors, negotiates bills, compares drug prices, and manages your entire medical life.",
   icons: { icon: "/images/favicon.png" },
+  openGraph: {
+    title: "Elena | Your Healthcare Assistant",
+    description: "Elena is your AI-powered healthcare assistant. She can make calls, compare prices, negotiate bills, and manage your entire medical life.",
+    url: "https://elena-health.com",
+    siteName: "Elena",
+    images: [
+      {
+        url: "https://elena-health.com/images/elena-icon-cropped.png",
+        width: 512,
+        height: 512,
+        alt: "Elena",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Elena | Your Healthcare Assistant",
+    description: "Elena is your AI-powered healthcare assistant. She can make calls, compare prices, negotiate bills, and manage your entire medical life.",
+    images: ["https://elena-health.com/images/elena-icon-cropped.png"],
+  },
 };
 
 export default function RootLayout({
