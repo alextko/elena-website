@@ -30,7 +30,8 @@ interface AuthContextValue {
   careVisits: CareVisit[];
   subscription: SubscriptionResponse | null;
   insuranceCards: InsuranceCard[];
-  todos: CareTodo[];
+  todos: CareTodo[];       // all todos (calendar view, include_future=true)
+  todayTodos: CareTodo[];  // filtered for today only
   habits: Habit[];
   habitCompletions: Record<string, Set<string>>; // date -> habit IDs completed
   toggleHabit: (id: string) => Promise<void>;
@@ -84,7 +85,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [careVisits, setCareVisits] = useState<CareVisit[]>([]);
   const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null);
   const [insuranceCards, setInsuranceCards] = useState<InsuranceCard[]>([]);
-  const [todos, setTodos] = useState<CareTodo[]>([]);
+  const [todos, setTodos] = useState<CareTodo[]>([]);  // all todos (calendar view)
+  const [todayTodos, setTodayTodos] = useState<CareTodo[]>([]);  // filtered for today
   const [habits, setHabits] = useState<Habit[]>([]);
   const [habitCompletions, setHabitCompletions] = useState<Record<string, Set<string>>>({});
   const [profileDetailsLoaded, setProfileDetailsLoaded] = useState(false);
@@ -267,11 +269,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .catch(() => {}),
       );
 
+      let todayTodosResult: CareTodo[] | null = null;
       promises.push(
         apiFetch("/todos?include_future=true")
           .then(async (res) => {
             if (!res.ok) return;
             todosResult = await res.json();
+          })
+          .catch(() => {}),
+      );
+      promises.push(
+        apiFetch("/todos")
+          .then(async (res) => {
+            if (!res.ok) return;
+            todayTodosResult = await res.json();
           })
           .catch(() => {}),
       );
@@ -370,6 +381,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (doctorsResult !== null) setDoctors(doctorsResult);
     if (visitsResult !== null) setCareVisits(visitsResult);
     if (todosResult !== null) setTodos(todosResult);
+    if (todayTodosResult !== null) setTodayTodos(todayTodosResult);
     if (habitsResult !== null) setHabits(habitsResult);
     if (completionsResult !== null) setHabitCompletions(completionsResult);
     if (insuranceResult !== null) setInsuranceCards(insuranceResult);
@@ -436,7 +448,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCareVisits([]);
         setSubscription(null);
         setInsuranceCards([]);
-        setTodos([]);
+        setTodos([]); setTodayTodos([]);
         setHabits([]);
         setHabitCompletions({});
         setProfileDetailsLoaded(false);
@@ -557,10 +569,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshTodos = useCallback(async () => {
     try {
-      const res = await apiFetch("/todos?include_future=true");
-      if (!res.ok) return;
-      const data: CareTodo[] = await res.json();
-      setTodos(data);
+      const [allRes, todayRes] = await Promise.all([
+        apiFetch("/todos?include_future=true"),
+        apiFetch("/todos"),
+      ]);
+      if (allRes.ok) setTodos(await allRes.json());
+      if (todayRes.ok) setTodayTodos(await todayRes.json());
     } catch {}
   }, []);
 
@@ -838,6 +852,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         subscription,
         insuranceCards,
         todos,
+        todayTodos,
         habits,
         habitCompletions,
         toggleHabit,

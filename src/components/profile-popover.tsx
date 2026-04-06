@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -138,7 +138,7 @@ export function ProfilePopover({
 }) {
   const {
     user, profileId, profiles, switchProfile, profileData, doctors, careVisits,
-    subscription, insuranceCards, todos, habits, habitCompletions,
+    subscription, insuranceCards, todos, todayTodos, habits, habitCompletions,
     toggleHabit, toggleTodo, createTodo, updateTodo, deleteTodo,
     refreshTodos, refreshDoctors, refreshVisits, refreshInsurance, refreshHabits,
     profileDetailsLoaded, fetchProfileDetails, updateProfilePicture, signOut,
@@ -153,6 +153,7 @@ export function ProfilePopover({
   const [selectedProvider, setSelectedProvider] = useState<typeof doctors[number] | null>(null);
   const [selectedVisit, setSelectedVisit] = useState<typeof careVisits[number] | null>(null);
   const [editingTodo, setEditingTodo] = useState<{ mode: "create" } | { mode: "edit"; todo: typeof todos[number] } | null>(null);
+  const completedTodoIds = useMemo(() => new Set(todos.filter(t => t.status === 'completed').map(t => t.id)), [todos]);
   const [addingProvider, setAddingProvider] = useState(false);
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -815,16 +816,16 @@ export function ProfilePopover({
                         sortOrder: h.sort_order,
                       }));
 
-                      // Care todos: show all non-dismissed todos (matching mobile behavior).
-                      // The backend already filters by profile and status.
-                      const dayTodos: GamePlanItem[] = todos
+                      // Care todos: for today use backend-filtered todayTodos,
+                      // for other dates use all todos with client-side filtering.
+                      const todoSource = isViewingToday ? todayTodos : todos;
+                      const dayTodos: GamePlanItem[] = todoSource
                         .filter((t) => {
                           if (t.status === "dismissed") return false;
-                          // For today: show todos with due_date <= today or no due_date
-                          // (matches mobile's /todos endpoint which excludes future-dated)
+                          if (t.frequency === "daily") return false; // daily shows as habits
                           if (isViewingToday) {
-                            if (!t.due_date) return true;
-                            return t.due_date <= todayKey;
+                            // Backend already filtered — show everything it returned
+                            return true;
                           }
                           // For other days: match by due_date or recurring schedule
                           if (!t.due_date) return true;
