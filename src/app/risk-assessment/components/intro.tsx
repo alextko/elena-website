@@ -159,13 +159,16 @@ export function Intro({ onStart }: IntroProps) {
         </p>
       </div>
 
-      {/* Testimonials + Trusted by */}
-      <div className="absolute bottom-0 left-0 right-0 z-[2] w-full pb-5 max-md:pb-4" style={{
+      {/* Testimonials */}
+      <div className="absolute bottom-0 left-0 right-0 z-[2] w-full pb-8 max-md:pb-6" style={{
         maskImage: "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
         WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
       }}>
+        <div className="text-[11px] font-semibold uppercase tracking-[2px] text-white/30 text-center mb-4">
+          Real people. Real results.
+        </div>
         {/* Testimonial cards */}
-        <div className="overflow-hidden w-full mb-6">
+        <div className="overflow-hidden w-full">
           <div className="flex w-max animate-[scroll-left_100s_linear_infinite] max-md:animate-[scroll-left_60s_linear_infinite] will-change-transform [backface-visibility:hidden]">
             {[0, 1].map((set) => (
               <div key={set} className="flex gap-3 pr-3 shrink-0">
