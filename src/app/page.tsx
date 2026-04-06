@@ -214,18 +214,18 @@ const BLOBS = [
   "w-[450px] h-[450px] bg-[radial-gradient(circle,rgba(232,149,109,0.25)_0%,transparent_70%)] bottom-[10%] left-[5%]",
 ];
 
-// Mad Libs template for the bills landing page
-const MADLIB_TEMPLATE = {
+// Mad Libs template: editable textarea with inline styled blanks
+// Each template is an array of segments. "text" segments are plain text,
+// "blank" segments render as styled pill inputs inline.
+const MADLIB_TEMPLATES: Record<string, { segments: { type: "text" | "blank"; value: string; placeholder?: string }[] }> = {
   bills: {
-    parts: [
-      { type: "text" as const, value: "I need a" },
-      { type: "blank" as const, key: "procedure", placeholder: "procedure" },
-      { type: "text" as const, value: ". Find me the cheapest option near" },
-      { type: "blank" as const, key: "location", placeholder: "zip code" },
-      { type: "text" as const, value: "." },
+    segments: [
+      { type: "text", value: "I need a " },
+      { type: "blank", value: "", placeholder: "procedure" },
+      { type: "text", value: " done. Find me the cheapest option near " },
+      { type: "blank", value: "", placeholder: "zip code" },
+      { type: "text", value: "." },
     ],
-    buildQuery: (vals: Record<string, string>) =>
-      `I need a ${vals.procedure || "MRI"}. Find me the cheapest option near ${vals.location || "me"}.`,
   },
 };
 
@@ -323,12 +323,13 @@ function LandingPage() {
   const [inputFocused, setInputFocused] = useState(false);
   const { displayed: rotatingText, fullQuery } = useRotatingQuery(queries, userHasEdited || inputFocused);
   const [manualInput, setManualInput] = useState("");
-  const madlib = ref ? MADLIB_TEMPLATE[ref as keyof typeof MADLIB_TEMPLATE] : undefined;
-  const [madlibVals, setMadlibVals] = useState<Record<string, string>>({});
+  const madlib = ref ? MADLIB_TEMPLATES[ref] : undefined;
   const input = userHasEdited ? manualInput : (queries ? rotatingText : (hero?.prefill || ""));
   // When sending mid-animation, use the full target query instead of partial text
+  const madlibRef = useRef<HTMLDivElement>(null);
+  const getMadlibText = () => madlibRef.current?.innerText?.replace(/\n/g, " ").trim() || "";
   const sendQuery = madlib
-    ? madlib.buildQuery(madlibVals)
+    ? getMadlibText()
     : (userHasEdited ? manualInput : (queries ? fullQuery : (hero?.prefill || "")));
   const setInput = useCallback((val: string) => { setUserHasEdited(true); setManualInput(val); }, []);
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -512,24 +513,26 @@ function LandingPage() {
           <div className="flex flex-col bg-white/95 rounded-[20px] border border-white/30 max-w-[620px] w-full mx-auto mt-8 shadow-[0_4px_24px_rgba(0,0,0,0.1)] overflow-hidden">
             <div className="px-5 pt-[18px] pb-3 relative">
               {madlib ? (
-                <p className="text-[0.95rem] max-md:text-[0.85rem] text-[#3C3C43] leading-[2.4]">
-                  {madlib.parts.map((part, i) =>
-                    part.type === "text" ? (
-                      <span key={i}>{part.value} </span>
+                <div
+                  ref={madlibRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                  className="text-base max-md:text-[0.9rem] text-[#1C1C1E] leading-[2.2] outline-none min-h-[3rem]"
+                  style={{ wordBreak: "break-word" }}
+                >
+                  {madlib.segments.map((seg, i) =>
+                    seg.type === "text" ? (
+                      <span key={i}>{seg.value}</span>
                     ) : (
-                      <input
-                        key={part.key}
-                        type="text"
-                        value={madlibVals[part.key] || ""}
-                        onChange={(e) => setMadlibVals((prev) => ({ ...prev, [part.key]: e.target.value }))}
-                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSend(); } }}
-                        placeholder={part.placeholder}
-                        size={Math.max((madlibVals[part.key] || "").length || (part.placeholder || "").length, 1)}
-                        className="inline-block border border-[#D1D1D6] rounded-md px-2 py-0.5 mx-0.5 text-[0.95rem] max-md:text-[0.85rem] text-[#1C1C1E] font-medium text-center placeholder:text-[#C7C7CC] placeholder:font-normal outline-none focus:border-[#0F1B3D]/40 focus:shadow-[0_0_0_3px_rgba(15,27,61,0.06)] bg-white transition-all"
+                      <span
+                        key={i}
+                        data-placeholder={seg.placeholder}
+                        className="inline-block border border-[#D1D1D6] rounded-lg px-3 py-0.5 mx-0.5 text-base max-md:text-[0.9rem] text-[#1C1C1E] font-medium text-center bg-[#F9F9F9] min-w-[4rem] empty:before:content-[attr(data-placeholder)] empty:before:text-[#C7C7CC] empty:before:font-normal focus-within:border-[#0F1B3D]/40 focus-within:shadow-[0_0_0_3px_rgba(15,27,61,0.06)] transition-all"
                       />
                     )
                   )}
-                </p>
+                </div>
               ) : (
                 <>
                   <textarea
