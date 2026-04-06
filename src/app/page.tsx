@@ -604,63 +604,65 @@ function LandingPage() {
               Real results from Elena users
             </div>
             {/* Row 1 — scrolls left */}
-            <div className="flex animate-[scroll-left_40s_linear_infinite] mb-3">
+            <div className="flex animate-[scroll-left_50s_linear_infinite] will-change-transform mb-3">
               {[0, 1].map((set) => (
                 <div key={set} className="flex gap-3 pr-3 shrink-0">
-                  <div className="flex items-center gap-4 bg-white/95 rounded-2xl px-5 py-4 min-w-[300px] max-w-[340px] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-                    <div className="flex-1">
-                      <p className="text-[0.85rem] text-[#1C1C1E] leading-snug"><span className="font-bold">Sarah</span> saved <span className="font-bold">$650</span> on her CT scan by comparing prices before her appointment.</p>
-                      <div className="flex items-center gap-1.5 mt-2"><div className="w-5 h-5 rounded-full bg-[#0074BC] flex items-center justify-center text-white text-[8px] font-bold">O</div><span className="text-[11px] text-[#8E8E93]">Oscar Health</span></div>
-                    </div>
+                  {/* Card: text only */}
+                  <div className="relative bg-white/[0.07] backdrop-blur-sm border border-white/[0.1] rounded-2xl px-5 py-4 w-[280px] shrink-0">
+                    <p className="text-[0.82rem] text-white/90 leading-relaxed">Saved <span className="font-bold text-white">$650</span> on a CT scan by comparing prices before the appointment.</p>
+                    <img src="/images/insurers/oscar.svg" alt="Oscar" className="h-4 mt-3 opacity-50" />
                   </div>
-                  <div className="flex items-center gap-4 bg-white/95 rounded-2xl px-5 py-4 min-w-[300px] max-w-[340px] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-                    <div className="flex-1">
-                      <p className="text-[0.85rem] text-[#1C1C1E] leading-snug"><span className="font-bold">Mike</span> had Elena call Blue Cross and got his <span className="font-bold">$2,400</span> claim reprocessed.</p>
-                      <div className="flex items-center gap-1.5 mt-2"><div className="w-5 h-5 rounded-full bg-[#0051A5] flex items-center justify-center text-white text-[8px] font-bold">+</div><span className="text-[11px] text-[#8E8E93]">Blue Cross Blue Shield</span></div>
-                    </div>
+                  {/* Card: with name */}
+                  <div className="relative bg-white/[0.07] backdrop-blur-sm border border-white/[0.1] rounded-2xl px-5 py-4 w-[300px] shrink-0">
+                    <p className="text-[0.82rem] text-white/90 leading-relaxed"><span className="font-bold text-white">Mike</span> had Elena call Blue Cross and got his <span className="font-bold text-white">$2,400</span> claim reprocessed.</p>
+                    <img src="/images/insurers/bcbs.svg" alt="BCBS" className="h-4 mt-3 opacity-50" />
                   </div>
-                  <div className="flex items-center gap-4 bg-white/95 rounded-2xl px-5 py-4 min-w-[300px] max-w-[340px] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-                    <div className="flex-1">
-                      <p className="text-[0.85rem] text-[#1C1C1E] leading-snug"><span className="font-bold">Emma</span> found an in-network MRI for <span className="font-bold">$350</span> instead of the <span className="font-bold">$1,200</span> she was quoted.</p>
-                      <div className="flex items-center gap-1.5 mt-2"><div className="w-5 h-5 rounded-full bg-[#CC0000] flex items-center justify-center text-white text-[8px] font-bold">A</div><span className="text-[11px] text-[#8E8E93]">Aetna</span></div>
-                    </div>
+                  {/* Card: text only, logo bottom-right */}
+                  <div className="relative bg-white/[0.07] backdrop-blur-sm border border-white/[0.1] rounded-2xl px-5 py-4 w-[290px] shrink-0">
+                    <p className="text-[0.82rem] text-white/90 leading-relaxed">Found an in-network MRI for <span className="font-bold text-white">$350</span> instead of the <span className="font-bold text-white">$1,200</span> quoted.</p>
+                    <div className="flex justify-end mt-3"><img src="/images/insurers/aetna.svg" alt="Aetna" className="h-4 opacity-50" /></div>
                   </div>
-                  <div className="flex items-center gap-4 bg-white/95 rounded-2xl px-5 py-4 min-w-[300px] max-w-[340px] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-                    <div className="flex-1">
-                      <p className="text-[0.85rem] text-[#1C1C1E] leading-snug"><span className="font-bold">James</span> booked a new PCP and saved <span className="font-bold">45 minutes</span> of hold time.</p>
-                      <div className="flex items-center gap-1.5 mt-2"><div className="w-5 h-5 rounded-full bg-[#002677] flex items-center justify-center text-white text-[8px] font-bold">U</div><span className="text-[11px] text-[#8E8E93]">UnitedHealthcare</span></div>
-                    </div>
+                  {/* Card: with name */}
+                  <div className="relative bg-white/[0.07] backdrop-blur-sm border border-white/[0.1] rounded-2xl px-5 py-4 w-[270px] shrink-0">
+                    <p className="text-[0.82rem] text-white/90 leading-relaxed"><span className="font-bold text-white">James</span> booked a new PCP and saved <span className="font-bold text-white">45 minutes</span> of hold time.</p>
+                    <img src="/images/insurers/uhc.svg" alt="UHC" className="h-4 mt-3 opacity-50" />
+                  </div>
+                  {/* Card: text only */}
+                  <div className="relative bg-white/[0.07] backdrop-blur-sm border border-white/[0.1] rounded-2xl px-5 py-4 w-[280px] shrink-0">
+                    <p className="text-[0.82rem] text-white/90 leading-relaxed">Caught a <span className="font-bold text-white">$940</span> billing error on a routine blood panel.</p>
+                    <div className="flex justify-end mt-3"><img src="/images/insurers/cigna.svg" alt="Cigna" className="h-4 opacity-50" /></div>
                   </div>
                 </div>
               ))}
             </div>
             {/* Row 2 — scrolls right */}
-            <div className="flex animate-[scroll-right_45s_linear_infinite]">
+            <div className="flex animate-[scroll-right_55s_linear_infinite] will-change-transform">
               {[0, 1].map((set) => (
                 <div key={set} className="flex gap-3 pr-3 shrink-0">
-                  <div className="flex items-center gap-4 bg-white/95 rounded-2xl px-5 py-4 min-w-[300px] max-w-[340px] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-                    <div className="flex-1">
-                      <p className="text-[0.85rem] text-[#1C1C1E] leading-snug"><span className="font-bold">Lisa</span> discovered she was overcharged <span className="font-bold">$800</span> on her ER bill.</p>
-                      <div className="flex items-center gap-1.5 mt-2"><div className="w-5 h-5 rounded-full bg-[#E31837] flex items-center justify-center text-white text-[8px] font-bold">C</div><span className="text-[11px] text-[#8E8E93]">Cigna</span></div>
-                    </div>
+                  {/* Card: text only, logo bottom-right */}
+                  <div className="relative bg-white/[0.07] backdrop-blur-sm border border-white/[0.1] rounded-2xl px-5 py-4 w-[290px] shrink-0">
+                    <p className="text-[0.82rem] text-white/90 leading-relaxed">Discovered an ER overcharge of <span className="font-bold text-white">$800</span> and got it corrected.</p>
+                    <div className="flex justify-end mt-3"><img src="/images/insurers/humana.svg" alt="Humana" className="h-4 opacity-50" /></div>
                   </div>
-                  <div className="flex items-center gap-4 bg-white/95 rounded-2xl px-5 py-4 min-w-[300px] max-w-[340px] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-                    <div className="flex-1">
-                      <p className="text-[0.85rem] text-[#1C1C1E] leading-snug"><span className="font-bold">David</span> compared colonoscopy prices and saved <span className="font-bold">$1,100</span> going to a freestanding center.</p>
-                      <div className="flex items-center gap-1.5 mt-2"><div className="w-5 h-5 rounded-full bg-[#4CAF50] flex items-center justify-center text-white text-[8px] font-bold">H</div><span className="text-[11px] text-[#8E8E93]">Humana</span></div>
-                    </div>
+                  {/* Card: with name */}
+                  <div className="relative bg-white/[0.07] backdrop-blur-sm border border-white/[0.1] rounded-2xl px-5 py-4 w-[310px] shrink-0">
+                    <p className="text-[0.82rem] text-white/90 leading-relaxed"><span className="font-bold text-white">David</span> compared colonoscopy prices and saved <span className="font-bold text-white">$1,100</span> by going to a freestanding center.</p>
+                    <img src="/images/insurers/anthem.svg" alt="Anthem" className="h-4 mt-3 opacity-50" />
                   </div>
-                  <div className="flex items-center gap-4 bg-white/95 rounded-2xl px-5 py-4 min-w-[300px] max-w-[340px] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-                    <div className="flex-1">
-                      <p className="text-[0.85rem] text-[#1C1C1E] leading-snug"><span className="font-bold">Maria</span> had Elena negotiate her physical therapy bill down by <span className="font-bold">40%</span>.</p>
-                      <div className="flex items-center gap-1.5 mt-2"><div className="w-5 h-5 rounded-full bg-[#4B2D83] flex items-center justify-center text-white text-[8px] font-bold">A</div><span className="text-[11px] text-[#8E8E93]">Anthem</span></div>
-                    </div>
+                  {/* Card: text only */}
+                  <div className="relative bg-white/[0.07] backdrop-blur-sm border border-white/[0.1] rounded-2xl px-5 py-4 w-[260px] shrink-0">
+                    <p className="text-[0.82rem] text-white/90 leading-relaxed">Negotiated a physical therapy bill down by <span className="font-bold text-white">40%</span>.</p>
+                    <img src="/images/insurers/kaiser.svg" alt="Kaiser" className="h-4 mt-3 opacity-50" />
                   </div>
-                  <div className="flex items-center gap-4 bg-white/95 rounded-2xl px-5 py-4 min-w-[300px] max-w-[340px] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-                    <div className="flex-1">
-                      <p className="text-[0.85rem] text-[#1C1C1E] leading-snug"><span className="font-bold">Alex</span> got his denied claim overturned, recovering <span className="font-bold">$3,200</span>.</p>
-                      <div className="flex items-center gap-1.5 mt-2"><div className="w-5 h-5 rounded-full bg-[#006C4E] flex items-center justify-center text-white text-[8px] font-bold">M</div><span className="text-[11px] text-[#8E8E93]">Medicare</span></div>
-                    </div>
+                  {/* Card: with name, logo bottom-right */}
+                  <div className="relative bg-white/[0.07] backdrop-blur-sm border border-white/[0.1] rounded-2xl px-5 py-4 w-[280px] shrink-0">
+                    <p className="text-[0.82rem] text-white/90 leading-relaxed"><span className="font-bold text-white">Alex</span> got a denied claim overturned, recovering <span className="font-bold text-white">$3,200</span>.</p>
+                    <div className="flex justify-end mt-3"><img src="/images/insurers/medicare.svg" alt="Medicare" className="h-4 opacity-50" /></div>
+                  </div>
+                  {/* Card: text only */}
+                  <div className="relative bg-white/[0.07] backdrop-blur-sm border border-white/[0.1] rounded-2xl px-5 py-4 w-[300px] shrink-0">
+                    <p className="text-[0.82rem] text-white/90 leading-relaxed">Saved <span className="font-bold text-white">$2,100</span> on knee surgery by switching to a freestanding surgery center.</p>
+                    <img src="/images/insurers/bcbs.svg" alt="BCBS" className="h-4 mt-3 opacity-50" />
                   </div>
                 </div>
               ))}
