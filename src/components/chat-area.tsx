@@ -675,8 +675,9 @@ export function ChatArea({
           const errorId = nextId();
           setMessages((prev) => [
             ...prev,
-            { id: errorId, role: "assistant", content: `Something went wrong: ${error}` },
+            { id: errorId, role: "assistant", content: "Sorry, something went wrong on my end. Could you try that again?" },
           ]);
+          setSuggestions(["Try again", "Start a new chat"]);
           setToolLabel(null);
           setIsLoading(false);
         },
