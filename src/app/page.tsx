@@ -475,7 +475,7 @@ function LandingPage() {
       </nav>
 
       {/* HERO */}
-      <section ref={heroRef} className={`relative flex flex-col items-center justify-center ${ref === "bills" ? "min-h-dvh" : "h-dvh min-h-dvh max-md:min-h-[calc(100dvh+120px)] overflow-hidden"}`}>
+      <section ref={heroRef} className={`relative flex flex-col items-center ${ref === "bills" ? "" : "justify-center h-dvh min-h-dvh max-md:min-h-[calc(100dvh+120px)] overflow-hidden"}`}>
         {/* Gradient bg */}
         <div className="absolute inset-0 z-0 bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)]">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_130%,#F4B084_0%,#E8956D_25%,rgba(46,107,181,0)_60%)]" />
@@ -493,7 +493,8 @@ function LandingPage() {
           ))}
         </div>
 
-        {/* Content */}
+        {/* Content wrapper — viewport-height centered for bills, inline for others */}
+        <div className={ref === "bills" ? "h-dvh flex flex-col items-center justify-center w-full shrink-0" : "contents"}>
         <div className="relative z-[4] text-center max-w-[700px] w-full px-6 max-md:-mt-20">
           <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[1.9rem] font-light leading-[1.15] tracking-tight text-white">
             {hero ? (
@@ -593,6 +594,8 @@ function LandingPage() {
             ))}
           </div>
         </div>
+
+        </div>{/* close content wrapper */}
 
         {/* Trusted by strip — hidden on bills variant (moved to testimonials section) */}
         <div className={`absolute bottom-5 max-md:bottom-32 left-0 right-0 z-[2] text-center ${ref === "bills" ? "hidden" : ""}`}>
