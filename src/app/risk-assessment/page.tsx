@@ -95,11 +95,13 @@ function QuizContent() {
     if (restoredRef.current) return;
     restoredRef.current = true;
     const saved = sessionStorage.getItem("elena_quiz_answers");
+    const savedStep = sessionStorage.getItem("elena_quiz_step");
     if (saved) {
       try {
         const answers = JSON.parse(saved) as QuizAnswers;
         dispatch({ type: "SET_ANSWER", payload: answers });
-        dispatch({ type: "GO_TO_STEP", payload: 11 });
+        const step = savedStep ? parseInt(savedStep, 10) as QuizStep : 11;
+        dispatch({ type: "GO_TO_STEP", payload: step });
       } catch {}
     }
   }, []);
@@ -129,10 +131,11 @@ function QuizContent() {
     dispatch({ type: "PREV_STEP", answers });
   }, [answers]);
 
-  // Persist answers to sessionStorage
+  // Persist answers and step to sessionStorage
   useEffect(() => {
-    if (step > 0) {
+    if (step > 0 && step < 12) {
       sessionStorage.setItem("elena_quiz_answers", JSON.stringify(answers));
+      sessionStorage.setItem("elena_quiz_step", String(step));
     }
   }, [answers, step]);
 
@@ -167,6 +170,7 @@ function QuizContent() {
       saveQuizResults();
       sessionStorage.removeItem("elena_quiz_answers");
       sessionStorage.removeItem("elena_quiz_recs");
+      sessionStorage.removeItem("elena_quiz_step");
       dispatch({ type: "GO_TO_STEP", payload: 12 });
     }
     prevSession.current = session;
@@ -179,6 +183,7 @@ function QuizContent() {
       saveQuizResults();
       sessionStorage.removeItem("elena_quiz_answers");
       sessionStorage.removeItem("elena_quiz_recs");
+      sessionStorage.removeItem("elena_quiz_step");
       dispatch({ type: "GO_TO_STEP", payload: 12 });
     }
   }, [session, step, saveQuizResults]);
