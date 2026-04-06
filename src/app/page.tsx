@@ -449,8 +449,10 @@ function LandingPage() {
   }, []);
 
   const handleSend = useCallback(() => {
-    // Use full query even if animation is mid-typewriter
-    const query = sendQuery.trim();
+    // Read madlib inputs at send time (not render time) so user input is captured
+    const query = madlib
+      ? getMadlibText().trim()
+      : sendQuery.trim();
     if (query) {
       analytics.track("Hero Input Submitted", { query_length: query.length });
       analytics.track("Message Sent", {
@@ -464,7 +466,7 @@ function LandingPage() {
       localStorage.setItem("elena_pending_query", query);
     }
     setAuthModalOpen(true);
-  }, [sendQuery, ref]);
+  }, [sendQuery, ref, madlib]);
 
   const handleChipClick = useCallback((text: string) => {
     analytics.track("Suggested Prompt Clicked", { prompt_label: text });

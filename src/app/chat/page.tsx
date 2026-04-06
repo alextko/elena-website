@@ -16,11 +16,18 @@ export default function ChatPage() {
   return (
     <Suspense fallback={
       <div className="flex h-dvh">
-        <div className="w-64 bg-[#f5f7fb] flex-shrink-0 animate-pulse">
+        <div className="w-64 bg-[#f5f7fb] flex-shrink-0 animate-pulse max-md:hidden">
           <div className="px-5 pt-5 pb-4"><div className="h-12 w-12 rounded-xl bg-[#0F1B3D]/[0.06]" /></div>
           <div className="px-4 space-y-2"><div className="h-10 rounded-full bg-[#0F1B3D]/[0.04]" /><div className="h-10 rounded-full bg-[#0F1B3D]/[0.04]" /></div>
         </div>
-        <div className="flex-1" />
+        <div className="flex-1 flex flex-col animate-pulse">
+          <div className="h-14 border-b border-[#0F1B3D]/[0.04]" />
+          <div className="flex-1 flex flex-col gap-3 px-5 py-6 max-w-2xl mx-auto w-full">
+            <div className="h-10 w-3/4 rounded-2xl bg-[#0F1B3D]/[0.04]" />
+            <div className="h-10 w-1/2 rounded-2xl bg-[#0F1B3D]/[0.04]" />
+            <div className="h-10 w-2/3 rounded-2xl bg-[#0F1B3D]/[0.04]" />
+          </div>
+        </div>
       </div>
     }>
       <ChatPageInner />
@@ -205,11 +212,18 @@ function ChatPageInner() {
   if (loading) {
     return (
       <div className="flex h-dvh">
-        <div className="w-64 bg-[#f5f7fb] flex-shrink-0 animate-pulse">
+        <div className="w-64 bg-[#f5f7fb] flex-shrink-0 animate-pulse max-md:hidden">
           <div className="px-5 pt-5 pb-4"><div className="h-12 w-12 rounded-xl bg-[#0F1B3D]/[0.06]" /></div>
           <div className="px-4 space-y-2"><div className="h-10 rounded-full bg-[#0F1B3D]/[0.04]" /><div className="h-10 rounded-full bg-[#0F1B3D]/[0.04]" /></div>
         </div>
-        <div className="flex-1" />
+        <div className="flex-1 flex flex-col animate-pulse">
+          <div className="h-14 border-b border-[#0F1B3D]/[0.04]" />
+          <div className="flex-1 flex flex-col gap-3 px-5 py-6 max-w-2xl mx-auto w-full">
+            <div className="h-10 w-3/4 rounded-2xl bg-[#0F1B3D]/[0.04]" />
+            <div className="h-10 w-1/2 rounded-2xl bg-[#0F1B3D]/[0.04]" />
+            <div className="h-10 w-2/3 rounded-2xl bg-[#0F1B3D]/[0.04]" />
+          </div>
+        </div>
       </div>
     );
   }
