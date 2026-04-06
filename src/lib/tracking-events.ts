@@ -1,21 +1,14 @@
+import mixpanel from 'mixpanel-browser';
 import { getStoredAttribution } from './attribution';
 
-/** Returns the mixpanel object (stub or real). Safe for track() and identify(). */
+/** Returns the mixpanel instance from the npm package. */
 function getMixpanelAny(): any | null {
-  const mp = (window as any).mixpanel;
-  return mp || null;
+  return mixpanel || null;
 }
 
-/** Returns the REAL mixpanel library only (not the stub). Required for register()/people.*. */
+/** Returns the mixpanel instance (same as getMixpanelAny since we use the npm package). */
 function getMixpanelReal(): any | null {
-  try {
-    const mp = (window as any).mixpanel;
-    if (!mp) return null;
-    mp.get_config('token'); // throws on stub, succeeds on real library
-    return mp;
-  } catch {
-    return null;
-  }
+  return mixpanel || null;
 }
 
 async function sha256(str: string): Promise<string> {
