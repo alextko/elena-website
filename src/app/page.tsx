@@ -617,7 +617,7 @@ function LandingPage() {
                       key={`${set}-${ins.alt}`}
                       src={ins.src}
                       alt={ins.alt}
-                      className="h-7 w-auto brightness-0 invert opacity-30 shrink-0"
+                      className="h-7 w-auto brightness-0 invert opacity-60 shrink-0"
                     />
                   ))}
                 </div>
@@ -698,7 +698,7 @@ function LandingPage() {
                   {[0, 1].map((set) => (
                     <div key={set} className="flex items-center gap-10 pr-10 shrink-0">
                       {INSURERS.map((ins) => (
-                        <img key={`${set}-${ins.alt}`} src={ins.src} alt={ins.alt} className="h-7 w-auto brightness-0 invert opacity-30 shrink-0" />
+                        <img key={`${set}-${ins.alt}`} src={ins.src} alt={ins.alt} className="h-7 w-auto brightness-0 invert opacity-60 shrink-0" />
                       ))}
                     </div>
                   ))}
