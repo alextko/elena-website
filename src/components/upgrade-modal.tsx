@@ -28,7 +28,7 @@ type Tier = "standard" | "premium";
 const PLANS = {
   standard: {
     name: "Standard",
-    monthly: 29.99,
+    monthly: 19.99,
     annual: 179.99,
     annualMonthly: 15.0,
     features: [
@@ -40,7 +40,7 @@ const PLANS = {
   },
   premium: {
     name: "Premium",
-    monthly: 49.99,
+    monthly: 39.99,
     annual: 299.99,
     annualMonthly: 25.0,
     popular: true,
@@ -61,7 +61,7 @@ export function UpgradeModal({
 }: UpgradeModalProps) {
   const { subscription } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [billing, setBilling] = useState<BillingPeriod>("monthly");
+  const [billing, setBilling] = useState<BillingPeriod>("annual");
 
   useEffect(() => {
     if (open) analytics.track("Upgrade Modal Shown", { reason, feature_name: featureName });
@@ -189,22 +189,20 @@ export function UpgradeModal({
 
                 <div className="flex items-baseline justify-between mb-3">
                   <p className="text-[17px] font-extrabold tracking-tight text-[#0F1B3D]">{plan.name}</p>
-                  <div className="flex items-baseline gap-1">
-                    <span className="relative text-2xl font-bold text-[#0F1B3D] w-[85px] text-right inline-block">
-                      <AnimatePresence mode="wait">
-                        <motion.span
-                          key={`${tier}-${billing}`}
-                          initial={{ opacity: 0, y: 6, filter: "blur(3px)" }}
-                          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                          exit={{ opacity: 0, y: -6, filter: "blur(3px)" }}
-                          transition={{ duration: 0.2 }}
-                          className="absolute right-0"
-                        >
-                          ${price}
-                        </motion.span>
-                      </AnimatePresence>
-                    </span>
-                    <span className="text-sm text-[#8E8E93]">/mo</span>
+                  <div className="flex items-baseline">
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        key={`${tier}-${billing}`}
+                        initial={{ opacity: 0, y: 6, filter: "blur(3px)" }}
+                        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                        exit={{ opacity: 0, y: -6, filter: "blur(3px)" }}
+                        transition={{ duration: 0.2 }}
+                        className="text-2xl font-bold text-[#0F1B3D]"
+                      >
+                        ${price}
+                      </motion.span>
+                    </AnimatePresence>
+                    <span className="text-sm text-[#8E8E93] ml-0.5">/mo</span>
                   </div>
                 </div>
 
