@@ -494,7 +494,7 @@ function LandingPage() {
         </div>
 
         {/* Content wrapper — viewport-height centered for bills, inline for others */}
-        <div className={ref === "bills" ? "h-[80dvh] flex flex-col items-center justify-end pb-8 w-full shrink-0" : "contents"}>
+        <div className={ref === "bills" ? "h-[80dvh] flex flex-col items-center justify-end pb-16 w-full shrink-0" : "contents"}>
         <div className="relative z-[4] text-center max-w-[700px] w-full px-6 max-md:-mt-20">
           <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[1.9rem] font-light leading-[1.15] tracking-tight text-white">
             {hero ? (
@@ -635,24 +635,24 @@ function LandingPage() {
             <div className="flex animate-[scroll-left_50s_linear_infinite] will-change-transform mb-3">
               {[0, 1].map((set) => (
                 <div key={set} className="flex gap-3 pr-3 shrink-0">
-                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-5 pt-4 pb-3 w-[280px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-                    <p className="text-[0.82rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Sarah</span> saved <span className="font-bold">$650</span> on a CT scan by comparing prices before the appointment.</p>
+                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-6 pt-5 pb-4 w-[310px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                    <p className="text-[0.88rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Sarah</span> saved <span className="font-bold">$650</span> on a CT scan by comparing prices before the appointment.</p>
                     <img src="/images/insurers/oscar.svg" alt="Oscar" className="h-4 mt-3" />
                   </div>
-                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-5 pt-4 pb-3 w-[280px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-                    <p className="text-[0.82rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Mike</span> had Elena call Blue Cross and got his <span className="font-bold">$2,400</span> claim reprocessed.</p>
+                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-6 pt-5 pb-4 w-[310px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                    <p className="text-[0.88rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Mike</span> had Elena call Blue Cross and got his <span className="font-bold">$2,400</span> claim reprocessed.</p>
                     <img src="/images/insurers/bcbs.svg" alt="BCBS" className="h-4 mt-3" />
                   </div>
-                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-5 pt-4 pb-3 w-[280px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-                    <p className="text-[0.82rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Emma</span> found an in-network MRI for <span className="font-bold">$350</span> instead of the <span className="font-bold">$1,200</span> quoted.</p>
+                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-6 pt-5 pb-4 w-[310px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                    <p className="text-[0.88rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Emma</span> found an in-network MRI for <span className="font-bold">$350</span> instead of the <span className="font-bold">$1,200</span> quoted.</p>
                     <img src="/images/insurers/aetna.svg" alt="Aetna" className="h-4 mt-3" />
                   </div>
-                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-5 pt-4 pb-3 w-[280px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-                    <p className="text-[0.82rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">James</span> booked a new PCP and saved <span className="font-bold">45 minutes</span> of hold time.</p>
+                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-6 pt-5 pb-4 w-[310px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                    <p className="text-[0.88rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">James</span> booked a new PCP and saved <span className="font-bold">45 minutes</span> of hold time.</p>
                     <img src="/images/insurers/uhc.svg" alt="UHC" className="h-4 mt-3" />
                   </div>
-                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-5 pt-4 pb-3 w-[280px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-                    <p className="text-[0.82rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Rachel</span> caught a <span className="font-bold">$940</span> billing error on a routine blood panel.</p>
+                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-6 pt-5 pb-4 w-[310px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                    <p className="text-[0.88rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Rachel</span> caught a <span className="font-bold">$940</span> billing error on a routine blood panel.</p>
                     <img src="/images/insurers/cigna.svg" alt="Cigna" className="h-4 mt-3" />
                   </div>
                 </div>
@@ -662,24 +662,24 @@ function LandingPage() {
             <div className="flex animate-[scroll-right_55s_linear_infinite] will-change-transform mb-16">
               {[0, 1].map((set) => (
                 <div key={set} className="flex gap-3 pr-3 shrink-0">
-                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-5 pt-4 pb-3 w-[280px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-                    <p className="text-[0.82rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Lisa</span> discovered an ER overcharge of <span className="font-bold">$800</span> and got it corrected.</p>
+                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-6 pt-5 pb-4 w-[310px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                    <p className="text-[0.88rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Lisa</span> discovered an ER overcharge of <span className="font-bold">$800</span> and got it corrected.</p>
                     <img src="/images/insurers/humana.svg" alt="Humana" className="h-4 mt-3" />
                   </div>
-                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-5 pt-4 pb-3 w-[280px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-                    <p className="text-[0.82rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">David</span> compared colonoscopy prices and saved <span className="font-bold">$1,100</span> by going to a freestanding center.</p>
+                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-6 pt-5 pb-4 w-[310px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                    <p className="text-[0.88rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">David</span> compared colonoscopy prices and saved <span className="font-bold">$1,100</span> by going to a freestanding center.</p>
                     <img src="/images/insurers/anthem.svg" alt="Anthem" className="h-4 mt-3" />
                   </div>
-                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-5 pt-4 pb-3 w-[280px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-                    <p className="text-[0.82rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Maria</span> negotiated a physical therapy bill down by <span className="font-bold">40%</span>.</p>
+                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-6 pt-5 pb-4 w-[310px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                    <p className="text-[0.88rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Maria</span> negotiated a physical therapy bill down by <span className="font-bold">40%</span>.</p>
                     <img src="/images/insurers/kaiser.svg" alt="Kaiser" className="h-4 mt-3" />
                   </div>
-                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-5 pt-4 pb-3 w-[280px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-                    <p className="text-[0.82rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Alex</span> got a denied claim overturned, recovering <span className="font-bold">$3,200</span>.</p>
+                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-6 pt-5 pb-4 w-[310px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                    <p className="text-[0.88rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Alex</span> got a denied claim overturned, recovering <span className="font-bold">$3,200</span>.</p>
                     <img src="/images/insurers/medicare.svg" alt="Medicare" className="h-4 mt-3" />
                   </div>
-                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-5 pt-4 pb-3 w-[280px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-                    <p className="text-[0.82rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Kevin</span> saved <span className="font-bold">$2,100</span> on knee surgery by switching to a freestanding surgery center.</p>
+                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-6 pt-5 pb-4 w-[310px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                    <p className="text-[0.88rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Kevin</span> saved <span className="font-bold">$2,100</span> on knee surgery by switching to a freestanding surgery center.</p>
                     <img src="/images/insurers/bcbs.svg" alt="BCBS" className="h-4 mt-3" />
                   </div>
                 </div>
