@@ -355,7 +355,17 @@ function LandingPage() {
   const input = userHasEdited ? manualInput : (queries ? rotatingText : (hero?.prefill || ""));
   // When sending mid-animation, use the full target query instead of partial text
   const madlibRef = useRef<HTMLDivElement>(null);
-  const getMadlibText = () => madlibRef.current?.innerText?.replace(/\n/g, " ").trim() || "";
+  const getMadlibText = () => {
+    if (!madlibRef.current || !madlib) return "";
+    const inputs = madlibRef.current.querySelectorAll("input");
+    let inputIdx = 0;
+    return madlib.segments.map((seg) => {
+      if (seg.type === "text") return seg.value;
+      const val = inputs[inputIdx]?.value || seg.placeholder || "";
+      inputIdx++;
+      return val;
+    }).join("").trim();
+  };
   const sendQuery = madlib
     ? getMadlibText()
     : (userHasEdited ? manualInput : (queries ? fullQuery : (hero?.prefill || "")));
@@ -544,20 +554,21 @@ function LandingPage() {
               {madlib ? (
                 <div
                   ref={madlibRef}
-                  contentEditable
-                  suppressContentEditableWarning
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                  className="text-base max-md:text-[0.9rem] text-[#1C1C1E] leading-[2.2] outline-none min-h-[3rem] max-h-[6rem] overflow-y-auto text-left"
+                  className="text-base max-md:text-[0.9rem] text-[#1C1C1E] leading-[2.6] min-h-[3rem] max-h-[6rem] overflow-y-auto text-left"
                   style={{ wordBreak: "break-word" }}
                 >
                   {madlib.segments.map((seg, i) =>
                     seg.type === "text" ? (
-                      <span key={i}>{seg.value}</span>
+                      <span key={i} className="align-middle">{seg.value}</span>
                     ) : (
-                      <span
+                      <input
                         key={i}
-                        data-placeholder={seg.placeholder}
-                        className="inline-block border border-[#D1D1D6] rounded-lg px-3 py-0.5 mx-0.5 text-base max-md:text-[0.9rem] text-[#1C1C1E] font-medium text-center bg-[#F9F9F9] min-w-[4rem] empty:before:content-[attr(data-placeholder)] empty:before:text-[#C7C7CC] empty:before:font-normal focus-within:border-[#0F1B3D]/40 focus-within:shadow-[0_0_0_3px_rgba(15,27,61,0.06)] transition-all"
+                        type="text"
+                        placeholder={seg.placeholder}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSend(); } }}
+                        onChange={() => setUserHasEdited(true)}
+                        className="inline-block border border-[#D1D1D6] rounded-lg px-3 py-1 mx-0.5 text-base max-md:text-[0.9rem] text-[#1C1C1E] font-medium text-center bg-[#F9F9F9] min-w-[4rem] w-auto placeholder:text-[#C7C7CC] placeholder:font-normal focus:border-[#0F1B3D]/40 focus:shadow-[0_0_0_3px_rgba(15,27,61,0.06)] focus:outline-none transition-all align-middle"
+                        style={{ width: seg.placeholder ? `${Math.max(seg.placeholder.length + 2, 6)}ch` : "6ch" }}
                       />
                     )
                   )}
