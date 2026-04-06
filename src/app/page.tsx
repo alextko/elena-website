@@ -475,7 +475,7 @@ function LandingPage() {
       </nav>
 
       {/* HERO */}
-      <section ref={heroRef} className="relative h-dvh min-h-dvh max-md:min-h-[calc(100dvh+120px)] flex flex-col items-center justify-center overflow-hidden">
+      <section ref={heroRef} className={`relative flex flex-col items-center justify-center ${ref === "bills" ? "min-h-dvh" : "h-dvh min-h-dvh max-md:min-h-[calc(100dvh+120px)] overflow-hidden"}`}>
         {/* Gradient bg */}
         <div className="absolute inset-0 z-0 bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)]">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_130%,#F4B084_0%,#E8956D_25%,rgba(46,107,181,0)_60%)]" />
@@ -622,12 +622,9 @@ function LandingPage() {
             </div>
           </div>
         </div>
-      </section>
-
-      {/* TESTIMONIALS — bills variant only, separate section below hero */}
-      {ref === "bills" && (
-        <section className="relative overflow-hidden pb-20" style={{ background: "linear-gradient(135deg, #1A3A6E 0%, #2E6BB5 50%, #2E6BB5 100%)" }}>
-          <div className="w-full overflow-hidden" style={{
+        {/* Testimonial cards + trusted by — bills variant, inside hero */}
+        {ref === "bills" && (
+          <div className="relative z-[3] w-full mt-8 pb-20" style={{
             maskImage: "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
             WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
           }}>
@@ -659,7 +656,7 @@ function LandingPage() {
               ))}
             </div>
             {/* Row 2 — scrolls right */}
-            <div className="flex animate-[scroll-right_55s_linear_infinite] will-change-transform">
+            <div className="flex animate-[scroll-right_55s_linear_infinite] will-change-transform mb-16">
               {[0, 1].map((set) => (
                 <div key={set} className="flex gap-3 pr-3 shrink-0">
                   <div className="relative bg-white/[0.07] backdrop-blur-sm border border-white/[0.1] rounded-2xl px-5 py-4 w-[290px] shrink-0">
@@ -685,38 +682,29 @@ function LandingPage() {
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Trusted by — with buffer above */}
-          <div className="mt-16 text-center">
-            <div className="text-[11px] font-semibold uppercase tracking-[2px] text-white/30 mb-4">
-              Trusted by members insured with
-            </div>
-            <div
-              className="overflow-hidden w-full relative"
-              style={{
+            {/* Trusted by carousel */}
+            <div className="text-center">
+              <div className="text-[11px] font-semibold uppercase tracking-[2px] text-white/30 mb-4">
+                Trusted by members insured with
+              </div>
+              <div className="overflow-hidden w-full relative" style={{
                 maskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
                 WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
-              }}
-            >
-              <div className="flex items-center animate-[trusted-scroll_30s_linear_infinite] will-change-transform">
-                {[0, 1].map((set) => (
-                  <div key={set} className="flex items-center gap-10 pr-10 shrink-0">
-                    {INSURERS.map((ins) => (
-                      <img
-                        key={`${set}-${ins.alt}`}
-                        src={ins.src}
-                        alt={ins.alt}
-                        className="h-7 w-auto brightness-0 invert opacity-30 shrink-0"
-                      />
-                    ))}
-                  </div>
-                ))}
+              }}>
+                <div className="flex items-center animate-[trusted-scroll_30s_linear_infinite] will-change-transform">
+                  {[0, 1].map((set) => (
+                    <div key={set} className="flex items-center gap-10 pr-10 shrink-0">
+                      {INSURERS.map((ins) => (
+                        <img key={`${set}-${ins.alt}`} src={ins.src} alt={ins.alt} className="h-7 w-auto brightness-0 invert opacity-30 shrink-0" />
+                      ))}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       {/* STATS BAR */}
       <StatsBar />
