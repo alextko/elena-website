@@ -851,21 +851,24 @@ export function ChatArea({
                     {msg.formRequest && (
                       <FormRequestCard
                         form={msg.formRequest}
-                        onSubmitted={(data) => {
+                        onSubmitted={async (data) => {
                           analytics.track("Form Submitted", { form_id: msg.formRequest?.form_id });
-                          // Send form data back to the agent with clear instructions to save it
                           const saveTo = msg.formRequest?.save_to || "none";
-                          const summary = Object.entries(data)
-                            .filter(([, v]) => v && String(v).trim())
-                            .map(([k, v]) => `${k}: ${v}`)
-                            .join("\n");
-                          handleSend(
-                            `[FORM SUBMITTED — save_to: ${saveTo}]\n${summary}\n\n` +
-                            `[SYSTEM: The user submitted the form above. You MUST now use the appropriate tool to save this data. ` +
-                            `If save_to is "insurance", call the manage_insurance tool to REPLACE the user's current ${saveTo === "insurance" ? "insurance" : "data"} with this new data. ` +
-                            `If save_to is "profile", call update_health_profile or the relevant profile tool. ` +
-                            `Do NOT show another form. Do NOT ask for this information again. Save it NOW, then confirm to the user.]`
-                          );
+                          // Save data via the form-submit endpoint
+                          try {
+                            await apiFetch("/chat/form-submit", {
+                              method: "POST",
+                              body: JSON.stringify({
+                                form_id: msg.formRequest?.form_id,
+                                save_to: saveTo,
+                                data,
+                              }),
+                            });
+                          } catch {}
+                          // Refresh cached data
+                          if (saveTo === "insurance") refreshInsurance();
+                          // Send a clean confirmation to the agent (not the raw data)
+                          handleSend("I submitted the form.");
                           // Refresh insurance display after a short delay for the save to complete
                           if (saveTo === "insurance") setTimeout(() => refreshInsurance(), 3000);
                         }}
