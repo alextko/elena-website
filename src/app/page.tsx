@@ -647,8 +647,12 @@ function LandingPage() {
                     <img src="/images/insurers/uhc.svg" alt="UnitedHealthcare" className="h-4 mt-3" />
                   </div>
                   <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-6 pt-5 pb-4 w-[310px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-                    <p className="text-[0.88rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Anna</span> negotiated her physical therapy bill down by <span className="font-bold">40%</span>.</p>
-                    <img src="/images/insurers/kaiser.svg" alt="Kaiser Permanente" className="h-4 mt-3" />
+                    <p className="text-[0.88rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Elena</span> negotiated an out-of-network ambulance ride down by <span className="font-bold">$1,000</span>.</p>
+                    <img src="/images/insurers/humana.svg" alt="Humana" className="h-4 mt-3" />
+                  </div>
+                  <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-6 pt-5 pb-4 w-[310px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                    <p className="text-[0.88rem] text-[#1C1C1E] leading-relaxed"><span className="font-bold">Doriam</span> found the best price for her blood work and cardiology appointments.</p>
+                    <img src="/images/insurers/uhc.svg" alt="UnitedHealthcare" className="h-4 mt-3" />
                   </div>
                 </div>
               ))}
