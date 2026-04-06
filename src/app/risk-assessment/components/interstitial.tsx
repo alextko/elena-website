@@ -3,14 +3,14 @@
 import { motion } from "framer-motion";
 
 interface InterstitialProps {
-  stat: string;
-  context: string;
+  headline: string;
+  detail: string;
   source: string;
   sourceUrl: string;
   onContinue: () => void;
 }
 
-export function Interstitial({ stat, context, source, sourceUrl, onContinue }: InterstitialProps) {
+export function Interstitial({ headline, detail, source, sourceUrl, onContinue }: InterstitialProps) {
   return (
     <div
       className="flex-1 flex flex-col items-center justify-center px-6 min-h-dvh relative"
@@ -24,22 +24,22 @@ export function Interstitial({ stat, context, source, sourceUrl, onContinue }: I
         transition={{ duration: 0.5 }}
         className="relative z-10 max-w-md text-center"
       >
-        <motion.div
+        <motion.h2
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="text-[clamp(2.5rem,8vw,4rem)] font-extrabold text-white leading-none tracking-tight"
+          className="text-[clamp(1.6rem,5vw,2.2rem)] font-light text-white leading-[1.2] tracking-tight"
         >
-          {stat}
-        </motion.div>
+          {headline}
+        </motion.h2>
 
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.5 }}
-          className="text-white/70 text-[1.05rem] font-light mt-5 leading-relaxed"
+          className="text-white/50 text-[15px] font-light mt-4 leading-relaxed"
         >
-          {context}
+          {detail}
         </motion.p>
 
         <motion.a

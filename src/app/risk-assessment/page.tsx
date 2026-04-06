@@ -194,8 +194,8 @@ function QuizContent() {
       case 3:
         return (
           <Interstitial
-            stat="2x"
-            context="If a parent or sibling had heart disease before age 60, your own risk is roughly double. Family history is one of the strongest predictors of future health events."
+            headline="Family history doubles your risk of heart disease."
+            detail="If a parent or sibling was diagnosed before age 60, your own risk is roughly 2x higher than average. That's why the next few questions matter."
             source="American Heart Association"
             sourceUrl="https://www.heart.org/en/health-topics/heart-attack/understand-your-risks-to-prevent-a-heart-attack"
             onContinue={advance}
@@ -216,8 +216,8 @@ function QuizContent() {
       case 6:
         return (
           <Interstitial
-            stat="1 in 3"
-            context="About 1 in 3 American adults are behind on at least one recommended health screening. Early detection is the single biggest factor in survival rates."
+            headline="1 in 3 adults are behind on a recommended screening."
+            detail="Most people don't realize they're overdue. Early detection is the single biggest factor in survival rates for cancer, heart disease, and diabetes."
             source="Centers for Disease Control and Prevention"
             sourceUrl="https://www.cdc.gov/nchs/fastats/physician-visits.htm"
             onContinue={advance}
@@ -236,8 +236,8 @@ function QuizContent() {
       case 8:
         return (
           <Interstitial
-            stat="91%"
-            context="The 5-year survival rate for colorectal cancer caught early is 91%. When caught late, it drops to just 14%. The difference is a single screening."
+            headline="Colorectal cancer has a 91% survival rate when caught early."
+            detail="When caught late, that number drops to 14%. The difference between the two is often a single screening that takes less than an hour."
             source="American Cancer Society"
             sourceUrl="https://www.cancer.org/cancer/colon-rectal-cancer/detection-diagnosis-staging/survival-rates.html"
             onContinue={advance}
