@@ -18,11 +18,11 @@ const DIAGNOSED = [
 ];
 
 const SYMPTOMS = [
-  { value: "fatigue", label: "Persistent fatigue" },
-  { value: "unexplained_weight", label: "Unexplained weight changes" },
-  { value: "chest_discomfort", label: "Chest discomfort" },
-  { value: "digestive", label: "Digestive issues" },
-  { value: "none_symptoms", label: "None of these" },
+  { value: "fatigue", label: "I've been feeling tired even after a full night's sleep" },
+  { value: "unexplained_weight", label: "I've noticed unexplained changes in my weight" },
+  { value: "chest_discomfort", label: "I sometimes feel tightness or discomfort in my chest" },
+  { value: "digestive", label: "I've had persistent digestive issues" },
+  { value: "none_symptoms", label: "None of these apply to me" },
 ];
 
 function toggleList(list: string[], value: string, noneValue: string): string[] {
@@ -41,13 +41,13 @@ export function Conditions({ answers, onSubmit, onAdvance }: ConditionsProps) {
 
   return (
     <StepLayout
-      question="A few questions about your health."
+      question="Let's check in on how you've been feeling."
       ctaLabel="Continue"
       ctaEnabled={diagnosed.length > 0 && symptoms.length > 0}
       onCta={onAdvance}
     >
       <p className="text-[11px] font-semibold text-[#0F1B3D]/30 uppercase tracking-[2px] mb-2">
-        Have you ever been told you have...
+        Has a doctor ever told you that you have...
       </p>
       {DIAGNOSED.map((opt) => (
         <OptionButton
@@ -59,7 +59,7 @@ export function Conditions({ answers, onSubmit, onAdvance }: ConditionsProps) {
       ))}
 
       <p className="text-[11px] font-semibold text-[#0F1B3D]/30 uppercase tracking-[2px] mb-2 mt-6">
-        Have you noticed recently...
+        Do any of these sound like you?
       </p>
       {SYMPTOMS.map((opt) => (
         <OptionButton

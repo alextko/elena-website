@@ -28,16 +28,17 @@ const variants = {
 
 export function QuizShell({ step, direction, onBack, children }: QuizShellProps) {
   const isIntro = step === 0;
-  const isTeaser = step === 8;
-  const isResults = step === 9;
-  const showProgress = !isIntro && !isTeaser && !isResults;
+  const isInterstitial = [3, 6, 8].includes(step);
+  const isTeaser = step === 11;
+  const isResults = step === 12;
+  const showProgress = !isIntro && !isInterstitial && !isTeaser && !isResults;
 
   return (
     <div className={`min-h-dvh flex flex-col font-[family-name:var(--font-inter)] ${showProgress ? "bg-[#F7F6F2]" : ""}`}>
       {showProgress && (
         <ProgressBar
           step={step}
-          totalSteps={8}
+          totalSteps={10}
           onBack={onBack}
           showBack={step >= 1}
         />

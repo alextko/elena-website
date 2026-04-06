@@ -1,4 +1,4 @@
-import type { QuizAnswers, AgeBucket, Recommendation } from "./types";
+import type { QuizAnswers, AgeBucket, Recommendation, QuizScore } from "./types";
 
 function parseAge(bucket?: AgeBucket): number {
   const map: Record<AgeBucket, number> = {
@@ -274,4 +274,22 @@ export function getRecommendations(answers: QuizAnswers): Recommendation[] {
   recs.sort((a, b) => order[a.severity] - order[b.severity]);
 
   return recs;
+}
+
+export function getQuizScore(recommendations: Recommendation[]): QuizScore {
+  // Score based on number and severity of recommendations
+  const highCount = recommendations.filter(r => r.severity === "high").length;
+  const mediumCount = recommendations.filter(r => r.severity === "medium").length;
+  const lowCount = recommendations.filter(r => r.severity === "low").length;
+
+  // Each high = 15 points, medium = 8 points, low = 3 points
+  const riskPoints = highCount * 15 + mediumCount * 8 + lowCount * 3;
+
+  // Clamp to 0-100
+  const value = Math.min(100, Math.max(0, riskPoints));
+
+  if (value >= 60) return { value, label: "High Risk", color: "#EF4444" };
+  if (value >= 35) return { value, label: "Moderate Risk", color: "#F59E0B" };
+  if (value >= 15) return { value, label: "Low Risk", color: "#3B82F6" };
+  return { value, label: "Minimal Risk", color: "#22C55E" };
 }

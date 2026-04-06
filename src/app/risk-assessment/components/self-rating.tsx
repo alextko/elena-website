@@ -20,9 +20,9 @@ export function SelfRating({ answers, onSubmit }: SelfRatingProps) {
     <div className="flex-1 flex flex-col px-6 pt-16 pb-6 max-w-lg mx-auto w-full">
       <div className="mb-8">
         <h2 className="text-[clamp(1.4rem,5vw,1.75rem)] font-light text-[#0F1B3D] leading-tight tracking-tight">
-          Overall, how would you rate your health?
+          Last question. How would you rate your overall health?
         </h2>
-        <p className="text-[15px] text-[#8E8E93] mt-2">Be honest. There's no wrong answer.</p>
+        <p className="text-[15px] text-[#8E8E93] mt-2 font-light">Be honest with yourself. We'll compare this to what your answers actually suggest.</p>
       </div>
 
       <div className="flex-1 flex flex-col gap-3 p-1 -m-1">

@@ -35,8 +35,8 @@ export function FamilyHistory({ answers, onSubmit, onAdvance }: FamilyHistoryPro
 
   return (
     <StepLayout
-      question="Has an immediate family member had any of these?"
-      subtitle="Parents, siblings, or grandparents."
+      question="Has anyone in your immediate family experienced any of these?"
+      subtitle="Parents, siblings, or grandparents. Family history is one of the strongest predictors of your own health risks."
       ctaLabel="Continue"
       ctaEnabled={selected.length > 0}
       onCta={onAdvance}

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { getQuizScore } from "../lib/recommendations";
 import type { Recommendation, QuizAnswers, HealthRating } from "../lib/types";
 
 interface ResultsProps {
@@ -55,6 +56,7 @@ export function Results({ recommendations, answers }: ResultsProps) {
   const highCount = recommendations.filter(r => r.severity === "high").length;
   const totalCount = recommendations.length;
   const selfRating = answers.selfRating;
+  const score = getQuizScore(recommendations);
 
   // Set body bg to match hero
   useEffect(() => {
@@ -106,7 +108,37 @@ export function Results({ recommendations, answers }: ResultsProps) {
           transition={{ duration: 0.6 }}
           className="relative z-10 max-w-2xl mx-auto text-center"
         >
-          <h1 className="text-[clamp(2rem,5vw,3rem)] font-light leading-[1.15] tracking-tight text-white">
+          {/* Risk Score */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="mb-6"
+          >
+            <div className="inline-flex flex-col items-center bg-white/[0.08] backdrop-blur-sm border border-white/[0.12] rounded-2xl px-8 py-5">
+              <div className="text-[48px] font-extrabold tracking-tight" style={{ color: score.color }}>
+                {score.value}
+              </div>
+              <div className="text-[13px] font-bold uppercase tracking-wide mt-1" style={{ color: score.color }}>
+                {score.label}
+              </div>
+              <div className="w-48 h-2 bg-white/10 rounded-full mt-3 overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{ backgroundColor: score.color }}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${score.value}%` }}
+                  transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }}
+                />
+              </div>
+              <div className="flex justify-between w-48 mt-1">
+                <span className="text-[9px] text-white/30">Low</span>
+                <span className="text-[9px] text-white/30">High</span>
+              </div>
+            </div>
+          </motion.div>
+
+          <h1 className="text-[clamp(1.6rem,4vw,2.2rem)] font-light leading-[1.15] tracking-tight text-white">
             We found{" "}
             <span className="font-extrabold">{totalCount} {totalCount === 1 ? "recommendation" : "recommendations"}</span>{" "}
             for{" "}
@@ -118,7 +150,7 @@ export function Results({ recommendations, answers }: ResultsProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3, duration: 0.5 }}
-              className="text-white/60 text-[1.05rem] font-light mt-5 max-w-lg mx-auto leading-relaxed"
+              className="text-white/60 text-[15px] font-light mt-4 max-w-lg mx-auto leading-relaxed"
             >
               You rated your health as "{RATING_LABELS[selfRating]}" -- but we found{" "}
               {highCount} high-priority {highCount === 1 ? "item" : "items"} that may need your attention.
@@ -126,7 +158,7 @@ export function Results({ recommendations, answers }: ResultsProps) {
           )}
 
           {/* Summary pills */}
-          <div className="flex justify-center gap-3 mt-8 flex-wrap">
+          <div className="flex justify-center gap-3 mt-6 flex-wrap">
             {[
               { label: "Screenings due", value: recommendations.filter(r => r.category === "screening").length },
               { label: "Care gaps", value: recommendations.filter(r => r.category === "care_gap").length },
@@ -136,7 +168,7 @@ export function Results({ recommendations, answers }: ResultsProps) {
                 key={stat.label}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.4 + i * 0.1, duration: 0.4 }}
+                transition={{ delay: 0.6 + i * 0.1, duration: 0.4 }}
                 className="bg-white/[0.1] backdrop-blur-sm border border-white/[0.15] rounded-full px-5 py-2 flex items-center gap-2.5"
               >
                 <span className="text-[22px] font-extrabold text-white">{stat.value}</span>

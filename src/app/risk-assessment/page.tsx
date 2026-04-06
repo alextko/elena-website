@@ -14,11 +14,21 @@ import { Conditions } from "./components/conditions";
 import { CareGaps } from "./components/care-gaps";
 import { GenderSpecific, shouldSkipGenderStep } from "./components/gender-specific";
 import { SelfRating } from "./components/self-rating";
+import { Interstitial } from "./components/interstitial";
 import { Teaser } from "./components/teaser";
 import { Results } from "./components/results";
 import { getRecommendations } from "./lib/recommendations";
 import { INITIAL_ANSWERS } from "./lib/types";
 import type { QuizAnswers, QuizStep } from "./lib/types";
+
+// Step map:
+// 0: Intro, 1: Demographics, 2: Family History, 3: Interstitial (family),
+// 4: Lifestyle, 5: Conditions, 6: Interstitial (screenings), 7: Care Gaps,
+// 8: Interstitial (cost), 9: Gender-Specific, 10: Self-Rating,
+// 11: Teaser, 12: Results
+
+const TOTAL_QUESTION_STEPS = 10; // for progress bar (exclude intro, teaser, results)
+const INTERSTITIAL_STEPS = new Set([3, 6, 8]);
 
 // --- Reducer ---
 
@@ -40,15 +50,19 @@ function reducer(state: QuizState, action: QuizAction): QuizState {
       return { ...state, answers: { ...state.answers, ...action.payload } };
     case "NEXT_STEP": {
       let next = (state.step + 1) as QuizStep;
-      if (next === 6 && shouldSkipGenderStep(action.answers)) {
-        next = 7;
+      if (next === 9 && shouldSkipGenderStep(action.answers)) {
+        next = 10;
       }
-      return { ...state, step: Math.min(next, 9) as QuizStep, direction: 1 };
+      return { ...state, step: Math.min(next, 12) as QuizStep, direction: 1 };
     }
     case "PREV_STEP": {
       let prev = (state.step - 1) as QuizStep;
-      if (prev === 6 && shouldSkipGenderStep(action.answers)) {
-        prev = 5;
+      if (prev === 9 && shouldSkipGenderStep(action.answers)) {
+        prev = 8;
+      }
+      // Skip back over interstitials
+      while (INTERSTITIAL_STEPS.has(prev) && prev > 0) {
+        prev = (prev - 1) as QuizStep;
       }
       return { ...state, step: Math.max(prev, 0) as QuizStep, direction: -1 };
     }
@@ -85,7 +99,7 @@ function QuizContent() {
       try {
         const answers = JSON.parse(saved) as QuizAnswers;
         dispatch({ type: "SET_ANSWER", payload: answers });
-        dispatch({ type: "GO_TO_STEP", payload: 8 });
+        dispatch({ type: "GO_TO_STEP", payload: 11 });
       } catch {}
     }
   }, []);
@@ -93,20 +107,13 @@ function QuizContent() {
   const { step, answers, direction } = state;
 
   const recommendations = useMemo(
-    () => step >= 8 ? getRecommendations(answers) : [],
+    () => step >= 11 ? getRecommendations(answers) : [],
     [step, answers]
   );
 
   const setAnswer = useCallback((data: Partial<QuizAnswers>) => {
     dispatch({ type: "SET_ANSWER", payload: data });
   }, []);
-
-  // Persist answers to sessionStorage so they survive auth redirects
-  useEffect(() => {
-    if (step > 0) {
-      sessionStorage.setItem("elena_quiz_answers", JSON.stringify(answers));
-    }
-  }, [answers, step]);
 
   const advance = useCallback(() => {
     dispatch({ type: "NEXT_STEP", answers });
@@ -122,14 +129,19 @@ function QuizContent() {
     dispatch({ type: "PREV_STEP", answers });
   }, [answers]);
 
-  // "See My Results" opens the auth modal
+  // Persist answers to sessionStorage
+  useEffect(() => {
+    if (step > 0) {
+      sessionStorage.setItem("elena_quiz_answers", JSON.stringify(answers));
+    }
+  }, [answers, step]);
+
   const handleSignup = useCallback(() => {
     sessionStorage.setItem("elena_quiz_answers", JSON.stringify(answers));
     sessionStorage.setItem("elena_quiz_recs", JSON.stringify(recommendations));
     setAuthModalOpen(true);
   }, [answers, recommendations]);
 
-  // Save quiz results to the user's profile
   const saveQuizResults = useCallback(async () => {
     if (savedResultsRef.current || !profileId) return;
     savedResultsRef.current = true;
@@ -148,26 +160,26 @@ function QuizContent() {
     }
   }, [profileId, answers]);
 
-  // Detect when user completes auth (session goes from null to non-null)
+  // Detect auth completion
   useEffect(() => {
-    if (!prevSession.current && session && step === 8) {
+    if (!prevSession.current && session && step === 11) {
       setAuthModalOpen(false);
       saveQuizResults();
       sessionStorage.removeItem("elena_quiz_answers");
       sessionStorage.removeItem("elena_quiz_recs");
-      dispatch({ type: "GO_TO_STEP", payload: 9 });
+      dispatch({ type: "GO_TO_STEP", payload: 12 });
     }
     prevSession.current = session;
   }, [session, step, saveQuizResults]);
 
-  // Check if returning from OAuth redirect or already-authed user with saved answers
+  // Check if returning from OAuth or already-authed
   useEffect(() => {
     const savedAnswers = sessionStorage.getItem("elena_quiz_answers");
-    if (savedAnswers && session && step === 8) {
+    if (savedAnswers && session && step === 11) {
       saveQuizResults();
       sessionStorage.removeItem("elena_quiz_answers");
       sessionStorage.removeItem("elena_quiz_recs");
-      dispatch({ type: "GO_TO_STEP", payload: 9 });
+      dispatch({ type: "GO_TO_STEP", payload: 12 });
     }
   }, [session, step, saveQuizResults]);
 
@@ -181,6 +193,16 @@ function QuizContent() {
         return <FamilyHistory answers={answers} onSubmit={setAnswer} onAdvance={advance} />;
       case 3:
         return (
+          <Interstitial
+            stat="2x"
+            context="If a parent or sibling had heart disease before age 60, your own risk is roughly double. Family history is one of the strongest predictors of future health events."
+            source="American Heart Association"
+            sourceUrl="https://www.heart.org/en/health-topics/heart-attack/understand-your-risks-to-prevent-a-heart-attack"
+            onContinue={advance}
+          />
+        );
+      case 4:
+        return (
           <Lifestyle
             answers={answers}
             onSubmit={(data) => {
@@ -189,9 +211,19 @@ function QuizContent() {
             }}
           />
         );
-      case 4:
-        return <Conditions answers={answers} onSubmit={setAnswer} onAdvance={advance} />;
       case 5:
+        return <Conditions answers={answers} onSubmit={setAnswer} onAdvance={advance} />;
+      case 6:
+        return (
+          <Interstitial
+            stat="1 in 3"
+            context="About 1 in 3 American adults are behind on at least one recommended health screening. Early detection is the single biggest factor in survival rates."
+            source="Centers for Disease Control and Prevention"
+            sourceUrl="https://www.cdc.gov/nchs/fastats/physician-visits.htm"
+            onContinue={advance}
+          />
+        );
+      case 7:
         return (
           <CareGaps
             answers={answers}
@@ -201,7 +233,17 @@ function QuizContent() {
             }}
           />
         );
-      case 6:
+      case 8:
+        return (
+          <Interstitial
+            stat="91%"
+            context="The 5-year survival rate for colorectal cancer caught early is 91%. When caught late, it drops to just 14%. The difference is a single screening."
+            source="American Cancer Society"
+            sourceUrl="https://www.cancer.org/cancer/colon-rectal-cancer/detection-diagnosis-staging/survival-rates.html"
+            onContinue={advance}
+          />
+        );
+      case 9:
         return (
           <GenderSpecific
             answers={answers}
@@ -213,7 +255,7 @@ function QuizContent() {
             }}
           />
         );
-      case 7:
+      case 10:
         return (
           <SelfRating
             answers={answers}
@@ -223,9 +265,9 @@ function QuizContent() {
             }}
           />
         );
-      case 8:
+      case 11:
         return <Teaser recommendations={recommendations} onSignup={handleSignup} />;
-      case 9:
+      case 12:
         return <Results recommendations={recommendations} answers={answers} />;
       default:
         return null;

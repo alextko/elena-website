@@ -122,11 +122,15 @@ export function Intro({ onStart }: IntroProps) {
       <div className="relative z-[4] text-center max-w-[700px] w-full px-6">
         <h1 className="text-[clamp(2rem,4.5vw,3.2rem)] max-md:text-[1.7rem] font-light leading-[1.15] tracking-tight text-white">
           Most people miss at least<br />
-          <span className="font-extrabold">2 critical health risks.</span>
+          <span className="font-extrabold">2 critical health screenings.</span>
         </h1>
 
         <p className="text-[1.15rem] max-md:text-[0.85rem] font-light text-white/85 mt-4 tracking-wide max-w-[520px] mx-auto">
-          Take our 60-second assessment to uncover yours, with personalized recommendations based on real screening guidelines.
+          Find out exactly which screenings you're missing, what your risk factors are, and what to do about them.
+        </p>
+
+        <p className="text-white/40 text-[13px] font-light mt-3">
+          Based on USPSTF and CDC screening guidelines
         </p>
 
         {/* CTA */}

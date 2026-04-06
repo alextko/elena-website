@@ -18,8 +18,8 @@ const FREQUENCY_OPTIONS: { value: Frequency; label: string }[] = [
 ];
 
 const QUESTIONS = [
-  { key: "lastPhysical" as const, question: "When was your last annual physical?" },
-  { key: "lastBloodwork" as const, question: "When was your last bloodwork?" },
+  { key: "lastPhysical" as const, question: "When did you last see a doctor for a checkup?" },
+  { key: "lastBloodwork" as const, question: "When did you last get bloodwork done?" },
   { key: "lastScreening" as const, question: "When was your last preventive screening?" },
 ];
 

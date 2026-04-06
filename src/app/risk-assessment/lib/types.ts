@@ -43,7 +43,17 @@ export interface Recommendation {
   sourceUrl: string;
 }
 
-export type QuizStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+// 0: Intro, 1: Demographics, 2: Family History, 3: Interstitial (family),
+// 4: Lifestyle, 5: Conditions, 6: Interstitial (screenings), 7: Care Gaps,
+// 8: Interstitial (cost), 9: Gender-Specific, 10: Self-Rating,
+// 11: Teaser, 12: Results
+export type QuizStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+
+export interface QuizScore {
+  value: number; // 0-100, higher = more risk
+  label: string; // e.g. "Moderate Risk"
+  color: string; // hex color for display
+}
 
 export const INITIAL_ANSWERS: QuizAnswers = {
   familyHistory: [],
