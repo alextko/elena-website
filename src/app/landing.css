@@ -30,9 +30,19 @@
   to { transform: translateY(0); }
 }
 
+@keyframes slide-down {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
+
 @keyframes fade-in-overlay {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes fade-out-overlay {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 .drawer-slide-up {
@@ -40,7 +50,7 @@
 }
 
 .drawer-slide-down {
-  animation: slide-up 0.3s cubic-bezier(0.32, 0.72, 0, 1) reverse forwards;
+  animation: slide-down 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 
 .drawer-overlay-enter {
@@ -48,7 +58,7 @@
 }
 
 .drawer-overlay-exit {
-  animation: fade-in-overlay 0.3s ease reverse forwards;
+  animation: fade-out-overlay 0.3s ease forwards;
 }
 
 /* ========== NOISE TEXTURE ========== */
