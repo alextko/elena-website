@@ -14,9 +14,11 @@ import {
 export function AuthModal({
   open,
   onOpenChange,
+  oauthRedirectTo,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  oauthRedirectTo?: string;
 }) {
   const { signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -75,7 +77,7 @@ export function AuthModal({
   async function handleGoogleSignIn() {
     setError(null);
     analytics.track("Auth Method Selected", { method: "google" });
-    const result = await signInWithGoogle();
+    const result = await signInWithGoogle(oauthRedirectTo);
     if (result.error) {
       analytics.track("Auth Error", { method: "google", error_type: result.error });
       setError(result.error);

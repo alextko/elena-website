@@ -53,8 +53,8 @@ interface AuthContextValue {
   refreshSubscription: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string) => Promise<{ error: string | null }>;
-  signInWithGoogle: () => Promise<{ error: string | null }>;
-  signInWithApple: () => Promise<{ error: string | null }>;
+  signInWithGoogle: (redirectTo?: string) => Promise<{ error: string | null }>;
+  signInWithApple: (redirectTo?: string) => Promise<{ error: string | null }>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
@@ -123,8 +123,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: { session: currentSessionForProvider } } = await supabase.auth.getSession();
       const provider = currentSessionForProvider?.user?.app_metadata?.provider || "email";
 
-      // New user with no profile - show onboarding popup (only once ever)
-      if (!data.has_profile && !localStorage.getItem("elena_onboarding_done")) {
+      // New user with no profile - show onboarding popup
+      // Use has_profile from backend as source of truth (not localStorage which is per-browser)
+      if (!data.has_profile) {
         analytics.alias(currentSessionForProvider?.user?.id || "");
         analytics.identify(currentSessionForProvider?.user?.id || "", {
           $email: data.email,
@@ -783,10 +784,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const signInWithGoogle = useCallback(async () => {
+  const signInWithGoogle = useCallback(async (redirectTo?: string) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/chat` },
+      options: { redirectTo: redirectTo || `${window.location.origin}/chat` },
     });
     return { error: error?.message ?? null };
   }, []);
@@ -810,10 +811,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const signInWithApple = useCallback(async () => {
+  const signInWithApple = useCallback(async (redirectTo?: string) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "apple",
-      options: { redirectTo: `${window.location.origin}/chat` },
+      options: { redirectTo: redirectTo || `${window.location.origin}/chat` },
     });
     return { error: error?.message ?? null };
   }, []);
