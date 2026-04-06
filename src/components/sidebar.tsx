@@ -166,10 +166,15 @@ export function Sidebar({
             <div className="h-8 w-3/4 rounded-xl bg-[#0F1B3D]/[0.04]" />
             <div className="h-8 w-5/6 rounded-xl bg-[#0F1B3D]/[0.04]" />
           </div>
-        ) : filteredSessions.length === 0 ? (
+        ) : filteredSessions.length === 0 && searchQuery ? (
           <p className="px-3 py-8 text-center text-xs text-[#0F1B3D]/30">
-            {searchQuery ? "No matching chats" : "No conversations yet"}
+            No matching chats
           </p>
+        ) : filteredSessions.length === 0 ? (
+          <div className="space-y-2 px-3 py-4 animate-pulse">
+            <div className="h-8 w-full rounded-xl bg-[#0F1B3D]/[0.06]" />
+            <div className="h-8 w-3/4 rounded-xl bg-[#0F1B3D]/[0.04]" />
+          </div>
         ) : (
           groupOrder.map((label) => {
             const items = grouped[label];
