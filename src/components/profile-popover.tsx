@@ -831,7 +831,6 @@ export function ProfilePopover({
                           if (!t.due_date) return true;
                           if (t.due_date === selectedDay) return true;
                           if (t.frequency === "once") return false;
-                          if (t.frequency === "daily") return selectedDay >= t.due_date;
                           const start = new Date(t.due_date + "T00:00:00");
                           const sel = new Date(selectedDay + "T00:00:00");
                           if (sel < start) return false;
