@@ -29,7 +29,7 @@ export async function trackSignup(method: 'email' | 'google' | 'apple' | string,
     const mp = getMixpanelAny();
     if (mp) {
       if (userId) mp.identify(userId);
-      mp.track('sign_up', { method, ...(attribution || {}) });
+      mp.track('Signup Completed', { method, ...(attribution || {}) });
     }
   } catch { /* safe to ignore */ }
 

@@ -74,6 +74,7 @@ function init() {
     persistence: "localStorage",
     record_sessions_percent: 100,
     record_mask_text_selector: "",
+    debug: process.env.NODE_ENV === "development",
   });
 
   mixpanel.register({ platform: "web" });
