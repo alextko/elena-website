@@ -238,6 +238,15 @@ const MADLIB_TEMPLATES: Record<string, { segments: { type: "text" | "blank"; val
       { type: "text", value: "." },
     ],
   },
+  calls: {
+    segments: [
+      { type: "text", value: "Call " },
+      { type: "blank", value: "", placeholder: "insurer" },
+      { type: "text", value: " and ask about " },
+      { type: "blank", value: "", placeholder: "claim or issue" },
+      { type: "text", value: "." },
+    ],
+  },
 };
 
 const ROTATING_QUERIES: Record<string, string[]> = {
@@ -249,6 +258,14 @@ const ROTATING_QUERIES: Record<string, string[]> = {
     "compare colonoscopy prices near me",
     "compare affordable physical therapy prices near me",
     "what are ultrasound costs at freestanding clinics nearby?",
+  ],
+  calls: [
+    "call UnitedHealthcare about my denied claim",
+    "call my insurance and ask why my referral was rejected",
+    "call Aetna and dispute this $800 charge",
+    "call Blue Cross and check if my MRI is covered",
+    "call my provider and negotiate my outstanding balance",
+    "call Cigna and get my prior authorization status",
   ],
 };
 
