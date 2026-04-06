@@ -334,6 +334,11 @@ export function ChatArea({
       }
       sessionIdRef.current = data.session_id;
       setSessionReady(true);
+      // Notify sidebar immediately so the session appears
+      if (!hasCreatedSessionRef.current && data.session_id) {
+        hasCreatedSessionRef.current = true;
+        onSessionCreated(data.session_id, silent ? "New conversation" : undefined);
+      }
     } catch {
       // Fallback -- show generic welcome so the page is never blank
       if (!silent) {
