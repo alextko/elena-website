@@ -634,9 +634,9 @@ function LandingPage() {
               {[0, 1].map((set) => (
                 <div key={set} className="flex gap-3 pr-3 shrink-0">
                   {TESTIMONIALS.map((card) => (
-                    <div key={`${set}-${card.name}`} className="bg-white/70 backdrop-blur-md rounded-2xl px-6 pt-5 pb-4 w-[310px] h-[130px] shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex flex-col">
-                      <p className="text-[0.88rem] text-[#1C1C1E] leading-relaxed flex-1">{card.text}</p>
-                      <img src={card.logo} alt={card.logoAlt} className="h-6 mt-auto pt-2 self-start" />
+                    <div key={`${set}-${card.name}`} className="bg-white/[0.12] backdrop-blur-xl border border-white/[0.18] rounded-2xl px-6 pt-5 pb-4 w-[310px] h-[130px] shrink-0 shadow-[0_4px_16px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.15)] flex flex-col">
+                      <p className="text-[0.88rem] text-white/90 leading-relaxed flex-1">{card.text}</p>
+                      <img src={card.logo} alt={card.logoAlt} className="h-6 mt-auto pt-2 self-start brightness-0 invert opacity-60" />
                     </div>
                   ))}
                 </div>
