@@ -659,7 +659,7 @@ function LandingPage() {
               ))}
             </div>
             {/* Row 2 — scrolls right */}
-            <div className="flex animate-[scroll-right_55s_linear_infinite] will-change-transform mb-16">
+            <div className="flex animate-[scroll-right_55s_linear_infinite] will-change-transform mb-28">
               {[0, 1].map((set) => (
                 <div key={set} className="flex gap-3 pr-3 shrink-0">
                   <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl px-6 pt-5 pb-4 w-[310px] shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
