@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { AuthModal } from "@/components/auth-modal";
 import { apiFetch } from "@/lib/apiFetch";
+import * as analytics from "@/lib/analytics";
+import { trackViewContent } from "@/lib/tracking-events";
 import { QuizShell } from "./components/quiz-shell";
 import { Intro } from "./components/intro";
 import { Demographics } from "./components/demographics";
@@ -89,6 +91,16 @@ function QuizContent() {
     direction: 1 as const,
   });
 
+  // Track page view on mount
+  const hasTrackedPageView = useRef(false);
+  useEffect(() => {
+    if (!hasTrackedPageView.current) {
+      hasTrackedPageView.current = true;
+      analytics.track("Quiz Page Viewed", { quiz: "health_assessment" });
+      trackViewContent("landing_page", "risk_assessment");
+    }
+  }, []);
+
   // Restore from sessionStorage on mount (client only)
   const restoredRef = useRef(false);
   useEffect(() => {
@@ -139,7 +151,40 @@ function QuizContent() {
     }
   }, [answers, step]);
 
+  // Track step changes
+  const prevStepRef = useRef(step);
+  useEffect(() => {
+    if (step === prevStepRef.current) return;
+    prevStepRef.current = step;
+
+    if (step === 1) {
+      analytics.track("Quiz Started", { quiz: "health_assessment" });
+    } else if (INTERSTITIAL_STEPS.has(step)) {
+      analytics.track("Quiz Interstitial Viewed", { quiz: "health_assessment", step });
+    } else if (step === 11) {
+      analytics.track("Quiz Completed", {
+        quiz: "health_assessment",
+        recommendation_count: recommendations.length,
+      });
+      analytics.track("Quiz Results Gate Shown", {
+        quiz: "health_assessment",
+        recommendation_count: recommendations.length,
+      });
+    } else if (step === 12) {
+      analytics.track("Quiz Results Viewed", {
+        quiz: "health_assessment",
+        recommendation_count: recommendations.length,
+      });
+    } else if (step > 0 && step < 11) {
+      analytics.track("Quiz Step Completed", { quiz: "health_assessment", step });
+    }
+  }, [step, recommendations.length]);
+
   const handleSignup = useCallback(() => {
+    analytics.track("Quiz Signup Clicked", {
+      quiz: "health_assessment",
+      recommendation_count: recommendations.length,
+    });
     sessionStorage.setItem("elena_quiz_answers", JSON.stringify(answers));
     sessionStorage.setItem("elena_quiz_recs", JSON.stringify(recommendations));
     setAuthModalOpen(true);

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import * as analytics from "@/lib/analytics";
 import { getQuizScore } from "../lib/recommendations";
 import type { Recommendation, QuizAnswers, HealthRating } from "../lib/types";
 
@@ -65,12 +66,22 @@ export function Results({ recommendations, answers }: ResultsProps) {
   }, []);
 
   const handleActionClick = useCallback((rec: Recommendation) => {
+    analytics.track("Quiz Action Clicked", {
+      quiz: "health_assessment",
+      recommendation_id: rec.id,
+      recommendation_title: rec.title,
+      severity: rec.severity,
+    });
     const query = `Based on my health risk assessment, I need to: ${rec.title.toLowerCase()}. ${rec.description} Can you help me get this done?`;
     localStorage.setItem("elena_pending_query", query);
     router.push("/chat");
   }, [router]);
 
   const handleGetStarted = useCallback(() => {
+    analytics.track("Quiz Get Started Clicked", {
+      quiz: "health_assessment",
+      recommendation_count: recommendations.length,
+    });
     const query = buildPendingQuery(recommendations);
     localStorage.setItem("elena_pending_query", query);
     router.push("/chat");

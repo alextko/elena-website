@@ -38,7 +38,18 @@ export type AnalyticsEvent =
   | "Checkout Completed"
   // Engagement
   | "App Loaded"
-  | "Login Page Viewed";
+  | "Login Page Viewed"
+  // Quiz Funnel
+  | "Quiz Page Viewed"
+  | "Quiz Started"
+  | "Quiz Step Completed"
+  | "Quiz Interstitial Viewed"
+  | "Quiz Completed"
+  | "Quiz Results Gate Shown"
+  | "Quiz Results Viewed"
+  | "Quiz Signup Clicked"
+  | "Quiz Action Clicked"
+  | "Quiz Get Started Clicked";
 
 let initialized = false;
 let disabled = false;
