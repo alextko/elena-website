@@ -358,15 +358,21 @@ function GamePlanCard() {
    ================================================================ */
 function VisitTimeline() {
   const [modalVisit, setModalVisit] = useState<string | null>(null);
+  const [closing, setClosing] = useState(false);
 
   const openModal = useCallback((id: string) => {
     setModalVisit(id);
+    setClosing(false);
     document.body.style.overflow = "hidden";
   }, []);
 
   const closeModal = useCallback(() => {
-    setModalVisit(null);
-    document.body.style.overflow = "";
+    setClosing(true);
+    setTimeout(() => {
+      setModalVisit(null);
+      setClosing(false);
+      document.body.style.overflow = "";
+    }, 300);
   }, []);
 
   useEffect(() => {
@@ -599,12 +605,12 @@ function VisitTimeline() {
       {visit && typeof document !== "undefined" && ReactDOM.createPortal(
         <>
           <div
-            className="fixed inset-0 z-[1000] transition-opacity duration-300"
+            className={`fixed inset-0 z-[1000] ${closing ? "drawer-overlay-exit" : "drawer-overlay-enter"}`}
             style={{ background: "rgba(0,0,0,0.4)" }}
             onClick={closeModal}
           />
           <div
-            className="fixed bottom-0 left-0 right-0 z-[1001] mx-auto w-full max-w-[480px] max-h-[85vh] bg-white overflow-y-auto"
+            className={`fixed bottom-0 left-0 right-0 z-[1001] mx-auto w-full max-w-[480px] max-h-[85vh] bg-white overflow-y-auto ${closing ? "drawer-slide-down" : "drawer-slide-up"}`}
             style={{
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
