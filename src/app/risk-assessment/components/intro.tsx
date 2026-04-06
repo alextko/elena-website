@@ -166,7 +166,7 @@ export function Intro({ onStart }: IntroProps) {
       }}>
         {/* Testimonial cards */}
         <div className="overflow-hidden w-full mb-6">
-          <div className="flex w-max animate-[scroll-left_80s_linear_infinite] max-md:animate-[scroll-left_50s_linear_infinite] will-change-transform [backface-visibility:hidden]">
+          <div className="flex w-max animate-[scroll-left_100s_linear_infinite] max-md:animate-[scroll-left_60s_linear_infinite] will-change-transform [backface-visibility:hidden]">
             {[0, 1].map((set) => (
               <div key={set} className="flex gap-3 pr-3 shrink-0">
                 {TESTIMONIALS.map((card) => (
@@ -191,7 +191,7 @@ export function Intro({ onStart }: IntroProps) {
               WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
             }}
           >
-            <div className="flex w-max items-center animate-[trusted-scroll_60s_linear_infinite] will-change-transform">
+            <div className="flex w-max items-center animate-[trusted-scroll_80s_linear_infinite] will-change-transform">
               {[0, 1].map((set) => (
                 <div key={set} className="flex items-center gap-10 pr-10 shrink-0">
                   {INSURERS.map((ins) => (
