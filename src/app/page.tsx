@@ -609,7 +609,7 @@ function LandingPage() {
               WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
             }}
           >
-            <div className="flex items-center animate-[trusted-scroll_30s_linear_infinite] will-change-transform">
+            <div className="flex w-max items-center animate-[trusted-scroll_30s_linear_infinite] will-change-transform">
               {[0, 1].map((set) => (
                 <div key={set} className="flex items-center gap-10 pr-10 shrink-0">
                   {INSURERS.map((ins) => (
@@ -631,7 +631,7 @@ function LandingPage() {
             maskImage: "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
             WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
           }}>
-            <div className="flex animate-[scroll-left_60s_linear_infinite] max-md:animate-[scroll-left_30s_linear_infinite] will-change-transform [backface-visibility:hidden] mb-28">
+            <div className="flex w-max animate-[scroll-left_60s_linear_infinite] max-md:animate-[scroll-left_30s_linear_infinite] will-change-transform [backface-visibility:hidden] mb-28">
               {[0, 1].map((set) => (
                 <div key={set} className="flex gap-3 pr-3 shrink-0">
                   {[
@@ -661,7 +661,7 @@ function LandingPage() {
                 maskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
                 WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
               }}>
-                <div className="flex items-center animate-[trusted-scroll_30s_linear_infinite] will-change-transform">
+                <div className="flex w-max items-center animate-[trusted-scroll_30s_linear_infinite] will-change-transform">
                   {[0, 1].map((set) => (
                     <div key={set} className="flex items-center gap-10 pr-10 shrink-0">
                       {INSURERS.map((ins) => (
