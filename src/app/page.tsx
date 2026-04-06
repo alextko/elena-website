@@ -162,6 +162,17 @@ const SUGGESTIONS = [
   { label: "Manage Family Care", text: "Help me manage my parents' healthcare from my phone" },
 ];
 
+const TESTIMONIALS = [
+  { name: "Alex", text: <><span className="font-bold">Alex</span> saved <span className="font-bold">$650</span> on a CT scan by comparing prices before the appointment.</>, logo: "/images/insurers/oscar.svg", logoAlt: "Oscar" },
+  { name: "Elena", text: <><span className="font-bold">Elena</span> negotiated an out-of-network ambulance ride down by <span className="font-bold">$1,000</span>.</>, logo: "/images/insurers/humana.svg", logoAlt: "Humana" },
+  { name: "Andrew", text: <><span className="font-bold">Andrew</span> had Elena call UnitedHealthcare and got his <span className="font-bold">$2,400</span> claim reprocessed.</>, logo: "/images/insurers/uhc.svg", logoAlt: "UnitedHealthcare" },
+  { name: "Abhi", text: <><span className="font-bold">Abhi</span> got back on track with all of his preventative health for free.</>, logo: "/images/insurers/kaiser.svg", logoAlt: "Kaiser Permanente" },
+  { name: "Ryan", text: <><span className="font-bold">Ryan</span> found an in-network MRI for <span className="font-bold">$350</span> instead of the <span className="font-bold">$1,200</span> quoted.</>, logo: "/images/insurers/uhc.svg", logoAlt: "UnitedHealthcare" },
+  { name: "Maria", text: <><span className="font-bold">Maria</span> got her prior authorization for her inhaler approved after being rejected.</>, logo: "/images/insurers/humana.svg", logoAlt: "Humana" },
+  { name: "Doriam", text: <><span className="font-bold">Doriam</span> found the best price for her blood work and cardiology appointments.</>, logo: "/images/insurers/uhc.svg", logoAlt: "UnitedHealthcare" },
+  { name: "Andy", text: <><span className="font-bold">Andy</span> figured out the best insurance plan for him and his family.</>, logo: "/images/insurers/medicare.svg", logoAlt: "Medicare" },
+];
+
 const INSURERS = [
   { src: "/images/insurers/bcbs.svg", alt: "Blue Cross Blue Shield" },
   { src: "/images/insurers/uhc.svg", alt: "UnitedHealthcare" },
@@ -597,31 +608,52 @@ function LandingPage() {
 
         </div>{/* close content wrapper */}
 
-        {/* Trusted by strip — hidden on bills variant (moved to testimonials section) */}
-        <div className={`absolute bottom-5 max-md:bottom-32 left-0 right-0 z-[2] text-center ${ref === "bills" ? "hidden" : ""}`}>
-          <div className="text-[11px] font-semibold uppercase tracking-[2px] text-white/30 mb-4">
-            Trusted by members insured with
-          </div>
-          <div
-            className="overflow-hidden w-full relative"
-            style={{
-              maskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
-              WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
-            }}
-          >
-            <div className="flex w-max items-center animate-[trusted-scroll_120s_linear_infinite] will-change-transform">
+        {/* Testimonials + Trusted by strip — hidden on bills variant (moved to testimonials section) */}
+        <div className={`absolute bottom-0 left-0 right-0 z-[2] w-full pb-5 max-md:pb-4 ${ref === "bills" ? "hidden" : ""}`} style={{
+          maskImage: "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
+        }}>
+          {/* Testimonial cards */}
+          <div className="overflow-hidden w-full mb-6">
+            <div className="flex w-max animate-[scroll-left_140s_linear_infinite] max-md:animate-[scroll-left_90s_linear_infinite] will-change-transform [backface-visibility:hidden]">
               {[0, 1].map((set) => (
-                <div key={set} className="flex items-center gap-10 pr-10 shrink-0">
-                  {INSURERS.map((ins) => (
-                    <img
-                      key={`${set}-${ins.alt}`}
-                      src={ins.src}
-                      alt={ins.alt}
-                      className="h-7 w-auto brightness-0 invert opacity-60 shrink-0"
-                    />
+                <div key={set} className="flex gap-3 pr-3 shrink-0">
+                  {TESTIMONIALS.map((card) => (
+                    <div key={`${set}-${card.name}`} className="bg-white/70 backdrop-blur-md rounded-2xl px-6 pt-5 pb-4 w-[310px] h-[130px] shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex flex-col">
+                      <p className="text-[0.88rem] text-[#1C1C1E] leading-relaxed flex-1">{card.text}</p>
+                      <img src={card.logo} alt={card.logoAlt} className="h-6 mt-auto pt-2 self-start" />
+                    </div>
                   ))}
                 </div>
               ))}
+            </div>
+          </div>
+          {/* Trusted by carousel */}
+          <div className="text-center">
+            <div className="text-[11px] font-semibold uppercase tracking-[2px] text-white/30 mb-4">
+              Trusted by members insured with
+            </div>
+            <div
+              className="overflow-hidden w-full relative"
+              style={{
+                maskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
+                WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
+              }}
+            >
+              <div className="flex w-max items-center animate-[trusted-scroll_120s_linear_infinite] will-change-transform">
+                {[0, 1].map((set) => (
+                  <div key={set} className="flex items-center gap-10 pr-10 shrink-0">
+                    {INSURERS.map((ins) => (
+                      <img
+                        key={`${set}-${ins.alt}`}
+                        src={ins.src}
+                        alt={ins.alt}
+                        className="h-7 w-auto brightness-0 invert opacity-60 shrink-0"
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -634,16 +666,7 @@ function LandingPage() {
             <div className="flex w-max animate-[scroll-left_140s_linear_infinite] max-md:animate-[scroll-left_90s_linear_infinite] will-change-transform [backface-visibility:hidden] mb-28">
               {[0, 1].map((set) => (
                 <div key={set} className="flex gap-3 pr-3 shrink-0">
-                  {[
-                    { name: "Alex", text: <><span className="font-bold">Alex</span> saved <span className="font-bold">$650</span> on a CT scan by comparing prices before the appointment.</>, logo: "/images/insurers/oscar.svg", logoAlt: "Oscar" },
-                    { name: "Elena", text: <><span className="font-bold">Elena</span> negotiated an out-of-network ambulance ride down by <span className="font-bold">$1,000</span>.</>, logo: "/images/insurers/humana.svg", logoAlt: "Humana" },
-                    { name: "Andrew", text: <><span className="font-bold">Andrew</span> had Elena call UnitedHealthcare and got his <span className="font-bold">$2,400</span> claim reprocessed.</>, logo: "/images/insurers/uhc.svg", logoAlt: "UnitedHealthcare" },
-                    { name: "Abhi", text: <><span className="font-bold">Abhi</span> got back on track with all of his preventative health for free.</>, logo: "/images/insurers/kaiser.svg", logoAlt: "Kaiser Permanente" },
-                    { name: "Ryan", text: <><span className="font-bold">Ryan</span> found an in-network MRI for <span className="font-bold">$350</span> instead of the <span className="font-bold">$1,200</span> quoted.</>, logo: "/images/insurers/uhc.svg", logoAlt: "UnitedHealthcare" },
-                    { name: "Maria", text: <><span className="font-bold">Maria</span> got her prior authorization for her inhaler approved after being rejected.</>, logo: "/images/insurers/humana.svg", logoAlt: "Humana" },
-                    { name: "Doriam", text: <><span className="font-bold">Doriam</span> found the best price for her blood work and cardiology appointments.</>, logo: "/images/insurers/uhc.svg", logoAlt: "UnitedHealthcare" },
-                    { name: "Andy", text: <><span className="font-bold">Andy</span> figured out the best insurance plan for him and his family.</>, logo: "/images/insurers/medicare.svg", logoAlt: "Medicare" },
-                  ].map((card) => (
+                  {TESTIMONIALS.map((card) => (
                     <div key={`${set}-${card.name}`} className="bg-white/70 backdrop-blur-md rounded-2xl px-6 pt-5 pb-4 w-[310px] h-[130px] shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex flex-col">
                       <p className="text-[0.88rem] text-[#1C1C1E] leading-relaxed flex-1">{card.text}</p>
                       <img src={card.logo} alt={card.logoAlt} className="h-6 mt-auto pt-2 self-start" />
