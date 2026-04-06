@@ -218,16 +218,14 @@ const BLOBS = [
 const MADLIB_TEMPLATE = {
   bills: {
     parts: [
-      { type: "text" as const, value: "Compare " },
-      { type: "blank" as const, key: "procedure", placeholder: "procedure", width: "8rem" },
-      { type: "text" as const, value: " prices near " },
-      { type: "blank" as const, key: "location", placeholder: "zip code", width: "5rem" },
-      { type: "text" as const, value: " with my " },
-      { type: "blank" as const, key: "insurance", placeholder: "insurance", width: "7rem" },
-      { type: "text" as const, value: " plan." },
+      { type: "text" as const, value: "I need a" },
+      { type: "blank" as const, key: "procedure", placeholder: "procedure" },
+      { type: "text" as const, value: ". Find me the cheapest option near" },
+      { type: "blank" as const, key: "location", placeholder: "zip code" },
+      { type: "text" as const, value: "." },
     ],
     buildQuery: (vals: Record<string, string>) =>
-      `Compare ${vals.procedure || "MRI"} prices near ${vals.location || "me"} with my ${vals.insurance || ""} insurance plan.`.replace(/\s+/g, " ").trim(),
+      `I need a ${vals.procedure || "MRI"}. Find me the cheapest option near ${vals.location || "me"}.`,
   },
 };
 
@@ -514,10 +512,10 @@ function LandingPage() {
           <div className="flex flex-col bg-white/95 rounded-[20px] border border-white/30 max-w-[620px] w-full mx-auto mt-8 shadow-[0_4px_24px_rgba(0,0,0,0.1)] overflow-hidden">
             <div className="px-5 pt-[18px] pb-3 relative">
               {madlib ? (
-                <div className="flex flex-wrap items-baseline gap-y-1 text-base max-md:text-sm text-[#1C1C1E] leading-relaxed">
+                <p className="text-[1.05rem] max-md:text-[0.9rem] text-[#1C1C1E] leading-[2.2]">
                   {madlib.parts.map((part, i) =>
                     part.type === "text" ? (
-                      <span key={i}>{part.value}</span>
+                      <span key={i}>{part.value} </span>
                     ) : (
                       <input
                         key={part.key}
@@ -526,12 +524,12 @@ function LandingPage() {
                         onChange={(e) => setMadlibVals((prev) => ({ ...prev, [part.key]: e.target.value }))}
                         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSend(); } }}
                         placeholder={part.placeholder}
-                        style={{ width: part.width }}
-                        className="inline-block border border-[#0F1B3D]/15 rounded-lg px-2.5 py-1 mx-0.5 text-base max-md:text-sm text-[#0F1B3D] placeholder:text-[#AEAEB2] outline-none focus:border-[#0F1B3D]/30 focus:bg-[#0F1B3D]/[0.02] transition-colors bg-white/80"
+                        size={Math.max((madlibVals[part.key] || part.placeholder || "").length, 6)}
+                        className="border-b-2 border-[#0F1B3D]/20 bg-transparent px-1 pb-0.5 text-[1.05rem] max-md:text-[0.9rem] text-[#0F1B3D] font-medium placeholder:text-[#AEAEB2] placeholder:font-normal outline-none focus:border-[#0F1B3D]/50 transition-colors"
                       />
                     )
                   )}
-                </div>
+                </p>
               ) : (
                 <>
                   <textarea
