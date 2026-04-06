@@ -547,7 +547,7 @@ function LandingPage() {
                   contentEditable
                   suppressContentEditableWarning
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                  className="text-base max-md:text-[0.9rem] text-[#1C1C1E] leading-[2.2] outline-none min-h-[3rem] max-h-[6rem] overflow-y-auto"
+                  className="text-base max-md:text-[0.9rem] text-[#1C1C1E] leading-[2.2] outline-none min-h-[3rem] max-h-[6rem] overflow-y-auto text-left"
                   style={{ wordBreak: "break-word" }}
                 >
                   {madlib.segments.map((seg, i) =>
