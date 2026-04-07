@@ -49,8 +49,23 @@ function ChatPageInner() {
   const [sidebarOpen, setSidebarOpen] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth >= 768 : true
   );
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [sessions, setSessions] = useState<ChatSessionItem[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      // Don't restore if there's a pending query (e.g. quiz → chat redirect)
+      if (localStorage.getItem("elena_pending_query")) return null;
+      return sessionStorage.getItem("elena_active_session_id");
+    }
+    return null;
+  });
+  const [sessions, setSessions] = useState<ChatSessionItem[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("elena_sessions");
+        if (cached) return JSON.parse(cached) as ChatSessionItem[];
+      } catch {}
+    }
+    return [];
+  });
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [pendingQuery, setPendingQuery] = useState<string | null>(null);
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
@@ -99,6 +114,10 @@ function ChatPageInner() {
 
   useEffect(() => {
     if (!loading && !session) {
+      try {
+        sessionStorage.removeItem("elena_sessions");
+        sessionStorage.removeItem("elena_active_session_id");
+      } catch {}
       router.replace("/");
     }
   }, [loading, session, router]);
@@ -122,6 +141,7 @@ function ChatPageInner() {
         return true;
       });
       setSessions(deduped);
+      try { sessionStorage.setItem("elena_sessions", JSON.stringify(deduped)); } catch {}
     } catch {
       // Network error — still allow the user to start a new chat
       setIsNewChat(true);
@@ -179,6 +199,15 @@ function ChatPageInner() {
       return () => { clearTimeout(showTimer); clearTimeout(hideTimer); };
     }
   }, [onboardingJustCompleted]);
+
+  // Persist active session so refresh/navigation restores it
+  useEffect(() => {
+    if (activeSessionId) {
+      try { sessionStorage.setItem("elena_active_session_id", activeSessionId); } catch {}
+    } else {
+      try { sessionStorage.removeItem("elena_active_session_id"); } catch {}
+    }
+  }, [activeSessionId]);
 
   const handleSessionCreated = useCallback(
     (sessionId: string, firstMessage?: string) => {

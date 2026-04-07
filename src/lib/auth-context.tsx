@@ -764,7 +764,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback(
     async (email: string, password: string) => {
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: `${window.location.origin}/chat` },
+      });
       // Signup Completed is tracked in fetchProfile() to avoid duplicates
       return { error: error?.message ?? null };
     },
