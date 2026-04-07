@@ -24,6 +24,11 @@ export function AuthModal({
 }) {
   const { signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">(defaultMode);
+
+  // Sync mode when defaultMode changes (e.g. login button vs chat input)
+  useEffect(() => {
+    setMode(defaultMode);
+  }, [defaultMode]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);

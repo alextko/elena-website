@@ -371,6 +371,7 @@ function LandingPage() {
     : (userHasEdited ? manualInput : (queries ? fullQuery : (hero?.prefill || "")));
   const setInput = useCallback((val: string) => { setUserHasEdited(true); setManualInput(val); }, []);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authDefaultMode, setAuthDefaultMode] = useState<"signin" | "signup">("signup");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const heroRef = useRef<HTMLElement>(null);
   const blobRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -465,6 +466,7 @@ function LandingPage() {
       });
       localStorage.setItem("elena_pending_query", query);
     }
+    setAuthDefaultMode("signup");
     setAuthModalOpen(true);
   }, [sendQuery, ref, madlib]);
 
@@ -506,7 +508,7 @@ function LandingPage() {
           </a>
         </div>
         <button
-          onClick={() => { analytics.track("Login Button Clicked"); setAuthModalOpen(true); }}
+          onClick={() => { analytics.track("Login Button Clicked"); setAuthDefaultMode("signin"); setAuthModalOpen(true); }}
           className="bg-white/[0.08] backdrop-blur-[40px] border border-white/[0.18] border-t-white/30 rounded-full px-7 py-3 max-md:px-5 max-md:py-2 max-md:h-10 text-white/90 text-[0.9rem] max-md:text-[0.8rem] font-normal cursor-pointer transition-all shadow-[0_4px_16px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.15)] hover:bg-white/15 hover:text-white hover:border-white/25"
           style={{ WebkitBackdropFilter: "blur(40px) saturate(1.8)" }}
         >
@@ -756,7 +758,7 @@ function LandingPage() {
         </div>
       </footer>
 
-      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} defaultMode={authDefaultMode} />
     </div>
   );
 }
