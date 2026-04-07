@@ -217,11 +217,14 @@
 .chat-selectable * {
   -webkit-user-select: text !important;
   user-select: text !important;
+  cursor: auto;
 }
 .chat-selectable button,
-.chat-selectable [role="button"] {
+.chat-selectable [role="button"],
+.chat-selectable a {
   -webkit-user-select: none !important;
   user-select: none !important;
+  cursor: pointer;
 }
 
 /* Mapbox overrides */
