@@ -911,8 +911,35 @@ export function ChatArea({
                           } catch {}
                           // Refresh cached data
                           if (saveTo === "insurance") refreshInsurance();
-                          // Send a clean confirmation to the agent (not the raw data)
-                          handleSend("I submitted the form.");
+                          // Send form data to the agent without showing a user message bubble
+                          const formSummary = Object.entries(data)
+                            .filter(([, v]) => v && String(v).trim())
+                            .map(([k, v]) => `${k}: ${v}`)
+                            .join(", ");
+                          const formMsg = `I submitted the form with: ${formSummary}`;
+                          // Send directly via poll (no visible user bubble)
+                          setIsLoading(true);
+                          sendAndPoll(
+                            {
+                              message: formMsg,
+                              session_id: sessionIdRef.current,
+                            },
+                            (label) => setToolLabel(label),
+                            (chatResult) => {
+                              const assistantId = nextId();
+                              setMessages((prev) => [
+                                ...prev,
+                                { id: assistantId, role: "assistant", content: chatResult.reply || "" },
+                              ]);
+                              if (chatResult.suggestions?.length) setSuggestions(chatResult.suggestions);
+                              setToolLabel(null);
+                              setIsLoading(false);
+                            },
+                            () => {
+                              setToolLabel(null);
+                              setIsLoading(false);
+                            },
+                          );
                           // Refresh insurance display after a short delay for the save to complete
                           if (saveTo === "insurance") setTimeout(() => refreshInsurance(), 3000);
                         }}
