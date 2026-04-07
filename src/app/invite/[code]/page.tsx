@@ -58,12 +58,13 @@ function InvitePageInner() {
 
   const autoAcceptAttempted = useRef(false);
 
-  // Fetch invite preview (works without auth)
+  // Fetch invite preview (works without auth — use plain fetch to avoid supabase dependency)
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://elena-backend-production-production.up.railway.app";
   useEffect(() => {
     let cancelled = false;
     async function fetchInvite() {
       try {
-        const res = await apiFetch(`/family/invite/${code}`);
+        const res = await fetch(`${API_BASE}/family/invite/${code}`);
         if (!res.ok) {
           const data = await res.json().catch(() => null);
           setFetchError(data?.detail || "This invite link is not valid.");
