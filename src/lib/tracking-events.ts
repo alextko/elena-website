@@ -43,16 +43,12 @@ async function sha256(str: string): Promise<string> {
 export async function trackSignup(method: 'email' | 'google' | 'apple' | string, userId?: string, email?: string) {
   const attribution = getStoredAttribution();
 
-  // Mixpanel — track() and identify() are safe on the stub (it queues them)
+  // Mixpanel identify + people.set (Signup Completed event is fired from fetchProfile)
   try {
     const mp = getMixpanelAny();
-    if (mp) {
-      if (userId) mp.identify(userId);
-      mp.track('Signup Completed', { method, ...(attribution || {}) });
-    }
+    if (mp && userId) mp.identify(userId);
   } catch { /* safe to ignore */ }
 
-  // people.set requires the real library (not the stub)
   try {
     const mp = getMixpanelReal();
     if (mp) {

@@ -133,6 +133,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           plan_type: "free",
         });
         analytics.track("Signup Completed", { method: provider });
+        // Fire ad pixel events (TikTok, Reddit, Meta) via trackSignup
+        import('@/lib/tracking-events').then(({ trackSignup }) => {
+          trackSignup(provider, currentSessionForProvider?.user?.id, data.email || undefined);
+        });
         console.log("[auth] No profile found, showing onboarding");
         // Pull name from Google/Apple OAuth metadata if available
         // Read directly from Supabase session (not React state, which may be stale)
@@ -426,19 +430,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Fresh sign-in — fetch profile if not already done
         fetchProfile();
 
-        // Identify user in Mixpanel and track OAuth signups
+        // Identify user in Mixpanel (Signup Completed is tracked in fetchProfile)
         if (s?.user) {
-          import('@/lib/tracking-events').then(({ identifyUser, trackSignup }) => {
+          import('@/lib/tracking-events').then(({ identifyUser }) => {
             identifyUser(s.user.id, s.user.email || undefined);
-
-            // Check if this is a brand-new OAuth signup (created within last 60 seconds)
-            const createdAt = new Date(s.user.created_at);
-            const now = new Date();
-            const isNewUser = (now.getTime() - createdAt.getTime()) < 60000;
-            if (isNewUser) {
-              const provider = s.user.app_metadata?.provider || 'unknown';
-              trackSignup(provider, s.user.id, s.user.email || undefined);
-            }
           });
         }
       } else if (event === "SIGNED_OUT") {
@@ -775,10 +770,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = useCallback(
     async (email: string, password: string) => {
       const { error } = await supabase.auth.signUp({ email, password });
-      if (!error) {
-        const { trackSignup } = await import('@/lib/tracking-events');
-        trackSignup('email', undefined, email);
-      }
+      // Signup Completed is tracked in fetchProfile() to avoid duplicates
       return { error: error?.message ?? null };
     },
     [],
