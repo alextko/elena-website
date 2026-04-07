@@ -89,6 +89,9 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
         return;
       }
       setActionResult({ type: "success", message: "You are now connected! Redirecting..." });
+      // Clear any stale pending query and set an invite-related first message
+      localStorage.removeItem("elena_pending_query");
+      localStorage.setItem("elena_pending_query", `I just connected with ${inviterDisplay} on Elena. How do I switch to their profile to help manage their health?`);
       setTimeout(() => { window.location.href = "/chat"; }, 1500);
     } catch {
       setActionResult({ type: "error", message: "Network error. Please try again." });
