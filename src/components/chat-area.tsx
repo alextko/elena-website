@@ -227,9 +227,12 @@ export function ChatArea({
     const profileChanged = profileId !== prevProfileIdRef.current;
     prevProfileIdRef.current = profileId;
 
+    console.log("[chat-area] session effect:", { profileChanged, activeSessionId, isNewChat, profileId, sessionId: sessionIdRef.current, msgCount: messages.length, isLoading });
+
     // If ChatArea already created this session (first message just sent),
     // skip reloading — UNLESS the profile changed, which requires a full reset.
     if (!profileChanged && activeSessionId && sessionIdRef.current === activeSessionId) {
+      console.log("[chat-area] skip: session already matches");
       return;
     }
 
@@ -237,6 +240,7 @@ export function ChatArea({
     // initial query sent during onboarding), keep it. The session may have
     // messages already, or the query may still be loading.
     if (profileChanged && !activeSessionId && sessionIdRef.current) {
+      console.log("[chat-area] profile changed, keeping existing session:", sessionIdRef.current);
       // The session was already created by the initial query — link it to the new profile
       if (profileId) {
         apiFetch(`/chat/sessions/${sessionIdRef.current}/link-profile`, {
@@ -247,6 +251,7 @@ export function ChatArea({
       return;
     }
 
+    console.log("[chat-area] resetting chat state");
     cancel();
     setMessages([]);
     setSuggestions([]);
@@ -266,17 +271,20 @@ export function ChatArea({
     const requestId = ++loadRequestRef.current;
 
     if (activeSessionId) {
+      console.log("[chat-area] loading existing session:", activeSessionId);
       // Keep loadingMessages true — loadMessages() will manage it from here
       setLoadingMessages(true);
       // Load existing session messages
       sessionIdRef.current = activeSessionId;
       loadMessages(activeSessionId, requestId);
     } else if (isNewChat || profileChanged) {
+      const pending = initialQuery || localStorage.getItem("elena_pending_query");
+      console.log("[chat-area] fetching welcome, silent:", !!pending, "isNewChat:", isNewChat, "profileChanged:", profileChanged);
       setLoadingMessages(false);
       // Start a fresh welcome session for the active profile
-      const pending = initialQuery || localStorage.getItem("elena_pending_query");
       fetchWelcome(!!pending);
     } else {
+      console.log("[chat-area] no action — waiting for sessions to load");
       setLoadingMessages(false);
     }
     // When activeSessionId is null and isNewChat is false, we're still loading
@@ -327,19 +335,23 @@ export function ChatArea({
   const [sessionReady, setSessionReady] = useState(false);
 
   async function fetchWelcome(silent = false) {
+    console.log("[chat-area] fetchWelcome called, silent:", silent);
     setLoadError(null);
     try {
       const res = await apiFetch("/chat/welcome", {
         method: "POST",
         body: JSON.stringify({}),
       });
+      console.log("[chat-area] fetchWelcome response:", res.status);
       if (!res.ok) {
+        console.warn("[chat-area] fetchWelcome failed:", res.status);
         // Fallback — still usable, just no personalized welcome
         setWelcomeHeading("What can I help you with?");
         setSuggestions(["What can you help me with?", "Find a cheaper pharmacy", "Help with my insurance"]);
         return;
       }
       const data: WelcomeResponse = await res.json();
+      console.log("[chat-area] fetchWelcome OK, session_id:", data.session_id);
       if (!silent) {
         setWelcomeHeading(data.heading);
         setWelcomeMessage(data.message);
@@ -367,6 +379,14 @@ export function ChatArea({
   const initialQuerySending = useRef(false);
 
   useEffect(() => {
+    console.log("[chat-area] auto-send check:", {
+      hasInitialQuery: !!initialQuery,
+      alreadySent: initialQuerySentRef.current,
+      sending: initialQuerySending.current,
+      sessionId: sessionIdRef.current,
+      hasHandleSend: !!handleSendRef.current,
+      sessionReady,
+    });
     if (
       initialQuery &&
       !initialQuerySentRef.current &&
@@ -374,6 +394,7 @@ export function ChatArea({
       sessionIdRef.current &&
       handleSendRef.current
     ) {
+      console.log("[chat-area] AUTO-SENDING initial query:", initialQuery.slice(0, 50));
       initialQuerySending.current = true;
       initialQuerySentRef.current = true;
       localStorage.removeItem("elena_pending_query");
