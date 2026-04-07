@@ -7,11 +7,13 @@ import { apiFetch } from "@/lib/apiFetch";
 import { AuthModal } from "@/components/auth-modal";
 
 interface InvitePreview {
+  invite_id: string;
+  invite_code: string;
   inviter_name: string;
-  invitee_name: string;
+  inviter_profile_picture_url: string | null;
   relationship: string;
   status: string;
-  invite_code: string;
+  expired: boolean;
 }
 
 export default function InvitePage() {
@@ -87,7 +89,7 @@ function InvitePageInner() {
   // Auto-accept after signup/login if pending invite matches
   useEffect(() => {
     if (authLoading || !session || !invite || autoAcceptAttempted.current) return;
-    if (invite.status !== "pending") return;
+    if (invite.status !== "pending" || invite.expired) return;
 
     const pendingCode = localStorage.getItem("elena_pending_invite");
     if (pendingCode === code) {
@@ -142,7 +144,7 @@ function InvitePageInner() {
   }
 
   const isLoading = loadingInvite || authLoading;
-  const isExpiredOrUsed = invite && invite.status !== "pending";
+  const isExpiredOrUsed = invite && (invite.status !== "pending" || invite.expired);
   const isLoggedIn = !!session;
 
   // Figure out display name for the inviter
@@ -252,7 +254,7 @@ function InvitePageInner() {
           )}
 
           {/* Active invite - not logged in */}
-          {!isLoading && !fetchError && invite && invite.status === "pending" && !isLoggedIn && (
+          {!isLoading && !fetchError && invite && invite.status === "pending" && !invite.expired && !isLoggedIn && (
             <div className="text-center space-y-5">
               {/* Avatar placeholder */}
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#F4B084] to-[#E8956D] flex items-center justify-center mx-auto text-white text-2xl font-bold">
@@ -291,7 +293,7 @@ function InvitePageInner() {
           )}
 
           {/* Active invite - logged in */}
-          {!isLoading && !fetchError && invite && invite.status === "pending" && isLoggedIn && !actionResult && (
+          {!isLoading && !fetchError && invite && invite.status === "pending" && !invite.expired && isLoggedIn && !actionResult && (
             <div className="text-center space-y-5">
               {/* Avatar placeholder */}
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#F4B084] to-[#E8956D] flex items-center justify-center mx-auto text-white text-2xl font-bold">
@@ -305,11 +307,6 @@ function InvitePageInner() {
                 {relationshipDisplay && (
                   <p className="text-white/50 text-sm mt-1">
                     Relationship: {relationshipDisplay}
-                  </p>
-                )}
-                {invite.invitee_name && (
-                  <p className="text-white/40 text-sm mt-1">
-                    Invited as: {invite.invitee_name}
                   </p>
                 )}
                 <p className="text-white/40 text-sm mt-3">
