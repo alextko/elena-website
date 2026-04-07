@@ -643,6 +643,7 @@ export function ChatArea({
       });
 
       setIsLoading(true);
+      console.log("[chat-area] sending message to session:", sessionIdRef.current, "activeSessionId prop:", activeSessionId);
 
       const result = await sendAndPoll(
         {
