@@ -1033,7 +1033,7 @@ export function ChatArea({
             ))}
           </div>
         )}
-        <div className="flex items-end gap-2 rounded-[28px] border border-[#E5E5EA] bg-white px-2 py-1.5 shadow-[0_1px_4px_rgba(0,0,0,0.06)] transition-all focus-within:shadow-[0_2px_8px_rgba(0,0,0,0.1)] focus-within:border-[#AEAEB2]">
+        <form autoComplete="off" data-lpignore="true" data-1p-ignore onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex items-end gap-2 rounded-[28px] border border-[#E5E5EA] bg-white px-2 py-1.5 shadow-[0_1px_4px_rgba(0,0,0,0.06)] transition-all focus-within:shadow-[0_2px_8px_rgba(0,0,0,0.1)] focus-within:border-[#AEAEB2]">
           <input
             ref={fileInputRef}
             type="file"
@@ -1098,7 +1098,7 @@ export function ChatArea({
               <ArrowUp className="h-4 w-4 text-white" />
             )}
           </Button>
-        </div>
+        </form>
         <p className="mt-2 text-center text-[0.7rem] text-[#AEAEB2]">
           Elena can make mistakes. Always verify important health information.
         </p>
