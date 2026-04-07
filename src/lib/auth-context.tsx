@@ -428,14 +428,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Recovery session — don't fetch profile, the reset-password page handles this
       } else if (event === "SIGNED_IN") {
         // Fresh sign-in — fetch profile if not already done
+        // Mixpanel alias/identify is handled inside fetchProfile() to ensure
+        // alias runs before identify (otherwise the anonymous ID never gets linked)
         fetchProfile();
-
-        // Identify user in Mixpanel (Signup Completed is tracked in fetchProfile)
-        if (s?.user) {
-          import('@/lib/tracking-events').then(({ identifyUser }) => {
-            identifyUser(s.user.id, s.user.email || undefined);
-          });
-        }
       } else if (event === "SIGNED_OUT") {
         setProfileId(null);
         setProfiles([]);
