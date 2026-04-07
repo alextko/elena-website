@@ -153,9 +153,9 @@ function ThinkingIndicator({ toolLabel }: { toolLabel: string | null }) {
   const label = toolLabel || THINKING_MESSAGES[idx];
 
   return (
-    <div className="flex items-center gap-2.5 animate-in fade-in duration-300">
+    <div className="flex items-center gap-2.5">
       <span className="h-2 w-2 rounded-full bg-[#0F1B3D]/30 animate-thinking-pulse flex-shrink-0" />
-      <span className="text-[15px] font-semibold text-[#0F1B3D]/40 animate-in fade-in duration-200">
+      <span className="text-[15px] font-semibold text-[#0F1B3D]/40">
         {label}
       </span>
     </div>
@@ -795,7 +795,7 @@ export function ChatArea({
 
           {/* Error loading messages -- retry button */}
           {loadError && messages.length === 0 && !loadingMessages && (
-            <div className="flex flex-col items-center justify-center gap-3 py-20 animate-in fade-in duration-300">
+            <div className="flex flex-col items-center justify-center gap-3 py-20">
               <p className="text-sm text-[#0F1B3D]/50">{loadError}</p>
               <button
                 onClick={() => {
@@ -813,7 +813,7 @@ export function ChatArea({
 
           {/* Welcome state -- hidden when there's a pending query */}
           {messages.length === 0 && !loadingMessages && !loadError && welcomeHeading && !initialQuery && !localStorage.getItem("elena_pending_query") && (
-            <div className="flex flex-col items-start py-12 opacity-0 animate-in fade-in fill-forwards duration-500">
+            <div className="flex flex-col items-start py-12">
               <h2 className="text-2xl font-bold text-[#0F1B3D] mb-3">{welcomeHeading}</h2>
               {welcomeMessage && (
                 <p className="text-[0.9rem] leading-relaxed text-[#0F1B3D]/60 max-w-md">
