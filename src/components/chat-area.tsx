@@ -735,6 +735,8 @@ export function ChatArea({
   // Keep ref in sync for auto-send effect
   handleSendRef.current = handleSend;
 
+  console.log("[chat-area] RENDER:", { msgCount: messages.length, isLoading, loadingMessages, welcomeHeading: !!welcomeHeading, initialQuery: !!initialQuery, sessionId: sessionIdRef.current, activeSessionId });
+
   return (
     <div
       className="relative flex flex-1 flex-col min-w-0 h-dvh overflow-hidden bg-white"
