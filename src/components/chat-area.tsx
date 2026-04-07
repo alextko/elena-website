@@ -916,7 +916,7 @@ export function ChatArea({
                             .filter(([, v]) => v && String(v).trim())
                             .map(([k, v]) => `${k}: ${v}`)
                             .join(", ");
-                          const formMsg = `I submitted the form with: ${formSummary}`;
+                          const formMsg = `[FORM SUBMITTED: ${msg.formRequest?.form_id || "unknown"}] ${formSummary}`;
                           // Send directly via poll (no visible user bubble)
                           setIsLoading(true);
                           sendAndPoll(
