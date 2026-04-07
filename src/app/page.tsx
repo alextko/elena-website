@@ -216,11 +216,9 @@ const SUGGESTIONS: {
     text: "Help me find the right insurance plan",
     madlib: {
       segments: [
-        { type: "text", value: "I'm looking for " },
+        { type: "text", value: "Help me find " },
         { type: "blank", value: "", placeholder: "individual or family" },
-        { type: "text", value: " insurance. I'm currently " },
-        { type: "blank", value: "", placeholder: "employed, self-employed, etc." },
-        { type: "text", value: "." },
+        { type: "text", value: " health insurance." },
       ],
     },
   },
@@ -626,11 +624,11 @@ function LandingPage() {
 
           {/* Chat input bar */}
           <div className="flex flex-col bg-white/95 rounded-[20px] border border-white/30 max-w-[680px] w-full mx-auto mt-8 shadow-[0_4px_24px_rgba(0,0,0,0.1)] overflow-hidden">
-            <div className="px-5 pt-[18px] pb-3 relative min-h-[4.5rem]">
+            <div className="px-5 pt-[18px] pb-3 relative h-[5.5rem] max-md:h-[6.5rem]">
               {madlib ? (
                 <div
                   ref={madlibRef}
-                  className="text-base max-md:text-[0.9rem] text-[#1C1C1E] leading-[2.6] min-h-[3rem] text-left"
+                  className="text-base max-md:text-[0.9rem] text-[#1C1C1E] leading-[2.6] h-full overflow-hidden text-left"
                   style={{ wordBreak: "break-word" }}
                 >
                   {madlib.segments.map((seg, i) =>
