@@ -326,6 +326,10 @@ export function ChatArea({
       // Set title from first user message
       const firstUser = data.find((m) => m.role === "user");
       if (firstUser) setChatTitle(firstUser.text.slice(0, 60));
+      // Set contextual follow-up suggestions based on conversation content
+      if (mapped.length > 0) {
+        setSuggestions(["What else can you help with?", "Tell me more", "What should I do next?"]);
+      }
     } catch {
       if (loadRequestRef.current === requestId) {
         setLoadError("Connection error. Tap to retry.");
