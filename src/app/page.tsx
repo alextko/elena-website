@@ -421,7 +421,7 @@ function LandingPage() {
   const [inputFocused, setInputFocused] = useState(false);
   const { displayed: rotatingText, fullQuery } = useRotatingQuery(queries, userHasEdited || inputFocused);
   const [manualInput, setManualInput] = useState("");
-  const [chipMadlib, setChipMadlib] = useState<typeof SUGGESTIONS[0]["madlib"] | undefined>(undefined);
+  const [chipMadlib, setChipMadlib] = useState<typeof SUGGESTIONS[0]["madlib"] | undefined>(SUGGESTIONS[0].madlib);
   const madlib = ref ? MADLIB_TEMPLATES[ref] : chipMadlib;
   const input = userHasEdited ? manualInput : (queries ? rotatingText : (hero?.prefill || ""));
   // When sending mid-animation, use the full target query instead of partial text
@@ -632,11 +632,11 @@ function LandingPage() {
 
           {/* Chat input bar */}
           <div className="flex flex-col bg-white/95 rounded-[20px] border border-white/30 max-w-[680px] w-full mx-auto mt-8 shadow-[0_4px_24px_rgba(0,0,0,0.1)] overflow-hidden">
-            <div className="px-5 pt-[18px] pb-3 relative">
+            <div className="px-5 pt-[18px] pb-3 relative min-h-[4.5rem]">
               {madlib ? (
                 <div
                   ref={madlibRef}
-                  className="text-base max-md:text-[0.9rem] text-[#1C1C1E] leading-[2.6] min-h-[3rem] max-h-[6rem] overflow-y-auto text-left"
+                  className="text-base max-md:text-[0.9rem] text-[#1C1C1E] leading-[2.6] min-h-[3rem] text-left"
                   style={{ wordBreak: "break-word" }}
                 >
                   {madlib.segments.map((seg, i) =>
