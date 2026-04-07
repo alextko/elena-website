@@ -1052,6 +1052,10 @@ export function ChatArea({
             className="flex-1 resize-none bg-transparent text-sm leading-normal text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] py-2 max-h-32 overflow-y-auto"
             placeholder="Ask Elena anything..."
             rows={1}
+            autoComplete="off"
+            data-1p-ignore
+            data-lpignore="true"
+            data-form-type="other"
             value={input}
             onChange={(e) => {
               setInput(e.target.value);
