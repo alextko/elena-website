@@ -153,13 +153,9 @@ function ThinkingIndicator({ toolLabel }: { toolLabel: string | null }) {
   const label = toolLabel || THINKING_MESSAGES[idx];
 
   return (
-    <div className="flex items-center gap-3 py-3">
-      <div className="flex items-center gap-1.5">
-        <span className="h-2 w-2 rounded-full bg-[#0F1B3D]/50 animate-thinking-pulse" />
-        <span className="h-2 w-2 rounded-full bg-[#0F1B3D]/50 animate-thinking-pulse [animation-delay:0.3s]" />
-        <span className="h-2 w-2 rounded-full bg-[#0F1B3D]/50 animate-thinking-pulse [animation-delay:0.6s]" />
-      </div>
-      <span className="text-[15px] font-medium text-[#0F1B3D]/60">
+    <div className="flex items-center gap-2.5">
+      <span className="h-2 w-2 rounded-full bg-[#0F1B3D]/30 animate-thinking-pulse flex-shrink-0" />
+      <span className="text-[15px] font-semibold text-[#0F1B3D]/40">
         {label}
       </span>
     </div>
