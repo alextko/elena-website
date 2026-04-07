@@ -9,6 +9,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { apiFetch } from "@/lib/apiFetch";
+import { useAuth } from "@/lib/auth-context";
 
 interface AddFamilyModalProps {
   open: boolean;
@@ -40,6 +41,7 @@ export function AddFamilyModal({
   onOpenChange,
   onProfileCreated,
 }: AddFamilyModalProps) {
+  const { profileData } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>("manage");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -313,8 +315,35 @@ export function AddFamilyModal({
                 </div>
                 <button
                   type="button"
-                  onClick={() => handleOpenChange(false)}
+                  onClick={async () => {
+                    const userName = profileData?.firstName || "";
+                    const shareUrl = `https://elena-health.com/invite/${inviteCode}?from=${encodeURIComponent(userName)}`;
+                    if (typeof navigator !== "undefined" && navigator.share) {
+                      try {
+                        await navigator.share({
+                          text: "Connect with me on Elena!",
+                          url: shareUrl,
+                        });
+                      } catch {
+                        // User cancelled or share failed — fall back to copy
+                        await navigator.clipboard.writeText(shareUrl);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }
+                    } else {
+                      await navigator.clipboard.writeText(shareUrl);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }
+                  }}
                   className={gradientButtonClassName}
+                >
+                  Share invite link
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenChange(false)}
+                  className="w-full rounded-full border border-gray-200 bg-white py-2.5 px-4 text-sm font-medium text-[#0F1B3D] hover:bg-gray-50 transition-colors"
                 >
                   Done
                 </button>
