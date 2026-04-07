@@ -175,12 +175,8 @@ const SUGGESTIONS: {
     text: "I want to dispute a medical bill",
     madlib: {
       segments: [
-        { type: "text", value: "I got a " },
-        { type: "blank", value: "", placeholder: "$amount" },
-        { type: "text", value: " bill from " },
+        { type: "text", value: "I got a bill from " },
         { type: "blank", value: "", placeholder: "provider" },
-        { type: "text", value: " for " },
-        { type: "blank", value: "", placeholder: "service" },
         { type: "text", value: ". Help me dispute it." },
       ],
     },
