@@ -307,12 +307,7 @@ export function ChatArea({
       }
       const data: ChatMessageItem[] = await res.json();
       if (loadRequestRef.current !== requestId) return;
-      // Skip the welcome message (first assistant message before any user message)
-      const firstUserIdx = data.findIndex((m) => m.role === "user");
-      const filtered = firstUserIdx > 0
-        ? data.slice(firstUserIdx)
-        : data;
-      const mapped: Message[] = filtered
+      const mapped: Message[] = data
         .filter((m) => m.role === "user" || m.role === "assistant")
         .map((m) => ({
           id: nextId(),

@@ -35,9 +35,10 @@ export function OnboardingModal() {
         zipCode.trim() && "zip_code",
       ].filter(Boolean),
     });
+    const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
     await completeOnboarding({
-      first_name: firstName.trim(),
-      last_name: lastName.trim(),
+      first_name: cap(firstName.trim()),
+      last_name: cap(lastName.trim()),
       date_of_birth: dob,
       home_address: zipCode.trim(),
     });
@@ -89,7 +90,8 @@ export function OnboardingModal() {
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="Alex"
-                    className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors"
+                    autoCapitalize="words"
+                    className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors capitalize"
                   />
                 </div>
                 <div className="flex-1">
@@ -101,7 +103,8 @@ export function OnboardingModal() {
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder="Smith"
-                    className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors"
+                    autoCapitalize="words"
+                    className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors capitalize"
                   />
                 </div>
               </div>
