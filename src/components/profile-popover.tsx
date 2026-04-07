@@ -2347,7 +2347,7 @@ function TodoEditorPanel({
   }
 
   return (
-    <div className="p-6 pb-8 animate-in fade-in duration-200">
+    <div className="p-6 pb-8 max-md:p-4 max-md:pb-6">
       <button
         onClick={onClose}
         className="flex items-center gap-1.5 text-sm font-medium text-[#0F1B3D]/50 hover:text-[#0F1B3D] transition-colors mb-4"
@@ -2356,38 +2356,38 @@ function TodoEditorPanel({
         Back
       </button>
 
-      <h3 className="text-[20px] font-extrabold text-[#0F1B3D] mb-5">
+      <h3 className="text-[20px] max-md:text-[18px] font-extrabold text-[#0F1B3D] mb-5 max-md:mb-4">
         {isEdit ? "Edit Task" : "New Task"}
       </h3>
 
-      <div className="space-y-4">
+      <div className="space-y-4 max-md:space-y-3">
         {/* Title */}
         <div>
-          <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Title</label>
+          <label className="text-[13px] max-md:text-[11px] font-semibold text-[#8E8E93] uppercase tracking-wider">Title</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Schedule annual physical"
-            className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30"
+            className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 max-md:px-3 max-md:py-2 text-[15px] max-md:text-[14px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30"
           />
         </div>
 
         {/* Subtitle */}
         <div>
-          <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Description</label>
+          <label className="text-[13px] max-md:text-[11px] font-semibold text-[#8E8E93] uppercase tracking-wider">Description</label>
           <input
             type="text"
             value={subtitle}
             onChange={(e) => setSubtitle(e.target.value)}
             placeholder="Optional details"
-            className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30"
+            className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 max-md:px-3 max-md:py-2 text-[15px] max-md:text-[14px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30"
           />
         </div>
 
         {/* Frequency */}
         <div>
-          <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Frequency</label>
+          <label className="text-[13px] max-md:text-[11px] font-semibold text-[#8E8E93] uppercase tracking-wider">Frequency</label>
           <div className="flex gap-2 mt-2 flex-wrap">
             {FREQUENCY_OPTIONS.map((opt) => (
               <button
@@ -2406,23 +2406,23 @@ function TodoEditorPanel({
         </div>
 
         {/* Due date */}
-        <div className="flex gap-3">
+        <div className="flex gap-3 max-md:flex-col max-md:gap-2">
           <div className="flex-1">
-            <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Due Date</label>
+            <label className="text-[13px] max-md:text-[11px] font-semibold text-[#8E8E93] uppercase tracking-wider">Due Date</label>
             <input
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 max-md:px-3 max-md:py-2 text-[15px] max-md:text-[14px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
             />
           </div>
           <div className="flex-1">
-            <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Time</label>
+            <label className="text-[13px] max-md:text-[11px] font-semibold text-[#8E8E93] uppercase tracking-wider">Time</label>
             <input
               type="time"
               value={dueTime}
               onChange={(e) => setDueTime(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 max-md:px-3 max-md:py-2 text-[15px] max-md:text-[14px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
             />
           </div>
         </div>
@@ -2432,7 +2432,7 @@ function TodoEditorPanel({
       <button
         onClick={handleSave}
         disabled={!title.trim() || saving}
-        className="mt-6 w-full rounded-2xl bg-[#0F1B3D] px-4 py-3 text-[15px] font-semibold text-white hover:bg-[#0F1B3D]/90 disabled:opacity-40 transition-colors"
+        className="mt-6 max-md:mt-4 w-full rounded-2xl bg-[#0F1B3D] px-4 py-3 max-md:py-2.5 text-[15px] max-md:text-[14px] font-semibold text-white hover:bg-[#0F1B3D]/90 disabled:opacity-40 transition-colors"
       >
         {saving ? "Saving..." : isEdit ? "Save Changes" : "Add Task"}
       </button>
