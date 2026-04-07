@@ -358,12 +358,63 @@ export function ChatArea({
           formRequest: m.form_request,
         }));
       setMessages(mapped);
+      // Empty session — show welcome screen rather than leaving the page blank
+      if (mapped.length === 0) {
+        setWelcomeHeading("What can I help you with?");
+        setSuggestions(["What can you help me with?", "Find a cheaper pharmacy", "Help with my insurance"]);
+        setLoadingMessages(false);
+        return;
+      }
       // Set title from first user message
       const firstUser = data.find((m) => m.role === "user");
       if (firstUser) setChatTitle(firstUser.text.slice(0, 60));
       // Set contextual follow-up suggestions based on conversation content
       if (mapped.length > 0) {
         setSuggestions(["What else can you help with?", "Tell me more", "What should I do next?"]);
+      }
+      // Recovery: last message is from the user, meaning the assistant response
+      // never arrived (e.g. page was refreshed mid-generation). Re-attach to the
+      // in-flight backend request (or restart it if the backend also died).
+      const lastMsg = mapped[mapped.length - 1];
+      if (lastMsg?.role === "user") {
+        setIsLoading(true);
+        setLoadingMessages(false);
+        sendAndPoll(
+          { message: lastMsg.content, session_id: sessionId },
+          (label) => setToolLabel(label),
+          (chatResult: ChatResponse) => {
+            const assistantId = nextId();
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: assistantId,
+                role: "assistant",
+                content: chatResult.reply,
+                isStreaming: true,
+                doctorResults: chatResult.doctor_results,
+                locationResults: chatResult.location_results,
+                reviewResults: chatResult.review_results,
+                webSources: chatResult.web_sources,
+                formRequest: chatResult.form_request,
+              },
+            ]);
+            setStreamingId(assistantId);
+            setSuggestions(chatResult.suggestions || []);
+            setToolLabel(null);
+            setIsLoading(false);
+            if (chatResult.session_id) sessionIdRef.current = chatResult.session_id;
+          },
+          (error) => {
+            setMessages((prev) => [
+              ...prev,
+              { id: nextId(), role: "assistant", content: "Sorry, I wasn\u2019t able to finish that response. Please try sending your message again." },
+            ]);
+            setToolLabel(null);
+            setIsLoading(false);
+          },
+          { timeoutMs: 150_000 }, // 2.5 min — if backend also died, give up gracefully
+        );
+        return;
       }
     } catch {
       if (loadRequestRef.current === requestId) {
@@ -847,19 +898,24 @@ export function ChatArea({
 
       {/* Messages */}
       <div className="relative z-10 flex-1 min-h-0 overflow-y-auto overflow-x-hidden chat-selectable flex flex-col">
-        <div className="mx-auto max-w-2xl px-4 py-8 space-y-6 flex-1 flex flex-col w-full">
+        <div className="mx-auto max-w-2xl px-4 md:px-8 py-8 space-y-6 flex-1 flex flex-col w-full">
           {/* Shimmer loading -- shown while waiting for sessions to resolve or messages to load */}
           {messages.length === 0 && !welcomeHeading && !loadError && !initialQuery && !localStorage.getItem("elena_pending_query") && (
-            <div className="space-y-6 py-8 animate-pulse">
-              <div className="flex justify-end">
-                <div className="h-10 w-48 rounded-2xl bg-[#0F1B3D]/[0.06]" />
+            <div className="space-y-6 py-8">
+              <p className="text-xs font-medium text-[#0F1B3D]/30 tracking-wide uppercase">
+                {loadingMessages ? "Loading conversation…" : "Setting up your chat…"}
+              </p>
+              <div className="animate-pulse space-y-4">
+                <div className="flex justify-end">
+                  <div className="h-10 w-48 rounded-2xl bg-[#0F1B3D]/[0.06]" />
+                </div>
+                <div className="space-y-2">
+                  <div className="h-4 w-3/4 rounded bg-[#0F1B3D]/[0.06]" />
+                  <div className="h-4 w-full rounded bg-[#0F1B3D]/[0.04]" />
+                  <div className="h-4 w-2/3 rounded bg-[#0F1B3D]/[0.04]" />
+                </div>
+                <div className="h-32 w-full rounded-2xl bg-[#0F1B3D]/[0.04]" />
               </div>
-              <div className="space-y-2">
-                <div className="h-4 w-3/4 rounded bg-[#0F1B3D]/[0.06]" />
-                <div className="h-4 w-full rounded bg-[#0F1B3D]/[0.04]" />
-                <div className="h-4 w-2/3 rounded bg-[#0F1B3D]/[0.04]" />
-              </div>
-              <div className="h-32 w-full rounded-2xl bg-[#0F1B3D]/[0.04]" />
             </div>
           )}
 
@@ -883,17 +939,17 @@ export function ChatArea({
 
           {/* Welcome state -- hidden when there's a pending query */}
           {messages.length === 0 && !loadingMessages && !loadError && welcomeHeading && !initialQuery && !localStorage.getItem("elena_pending_query") && (
-            <div className="flex-1 flex flex-col items-start justify-center gap-4 py-8">
+            <div className="flex-1 flex flex-col items-start justify-center gap-5 md:gap-7 py-8">
               <div>
-                <h2 className="text-2xl font-bold text-[#0F1B3D] mb-3">{welcomeHeading}</h2>
+                <h2 className="text-2xl md:text-[2rem] font-bold text-[#0F1B3D] mb-3 md:mb-4 leading-tight">{welcomeHeading}</h2>
                 {welcomeMessage && (
-                  <p className="text-[0.9rem] leading-relaxed text-[#0F1B3D]/60 max-w-md">
+                  <p className="text-[0.9rem] md:text-[1rem] leading-relaxed text-[#0F1B3D]/60 max-w-md md:max-w-lg">
                     {welcomeMessage}
                   </p>
                 )}
               </div>
               {!isLoading && !streamingId && suggestions.length > 0 && (
-                <div className="flex gap-1.5 flex-wrap">
+                <div className="flex gap-2 flex-wrap">
                   {suggestions.map((s) => (
                     <button
                       key={s}
@@ -901,7 +957,7 @@ export function ChatArea({
                         analytics.track("Welcome Suggestion Clicked", { suggestion_text: s });
                         handleSend(s);
                       }}
-                      className="rounded-full border border-[#0F1B3D]/10 bg-[#f5f7fb] px-3 py-1.5 text-xs font-medium text-[#0F1B3D]/70 whitespace-nowrap shadow-[0_1px_4px_rgba(15,27,61,0.04)] transition-all hover:bg-[#0F1B3D]/[0.08] hover:-translate-y-px"
+                      className="rounded-full border border-[#0F1B3D]/10 bg-[#f5f7fb] px-4 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-medium text-[#0F1B3D]/70 whitespace-nowrap shadow-[0_1px_4px_rgba(15,27,61,0.04)] transition-all hover:bg-[#0F1B3D]/[0.08] hover:-translate-y-px"
                     >
                       {s}
                     </button>

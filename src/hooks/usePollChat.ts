@@ -29,9 +29,17 @@ export function usePollChat() {
       onToolProgress: (label: string | null) => void,
       onDone: (result: ChatResponse) => void,
       onError: (error: string) => void,
+      options?: { timeoutMs?: number },
     ) => {
       cancelledRef.current = false;
       let consecutiveFailures = 0;
+      let timedOut = false;
+      const timeoutHandle = options?.timeoutMs
+        ? setTimeout(() => {
+            timedOut = true;
+            abortRef.current?.abort();
+          }, options.timeoutMs)
+        : undefined;
       let chatRequestId: string | null = null;
       let sessionId: string | null = params.session_id;
       let hitPaywall = false;
@@ -94,6 +102,11 @@ export function usePollChat() {
       while (true) {
         if (cancelledRef.current) {
           log("cancelled");
+          break;
+        }
+        if (timedOut) {
+          log("timed out");
+          onError("The response took too long. Please try sending your message again.");
           break;
         }
 
@@ -166,6 +179,7 @@ export function usePollChat() {
       }
 
       log("poll loop ended", { pollCount, chatRequestId });
+      clearTimeout(timeoutHandle);
       activeRequestRef.current = null;
       return { session_id: sessionId };
     },
