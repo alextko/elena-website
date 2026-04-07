@@ -30,7 +30,6 @@ import {
   CircleDot,
   Trash2,
   UserPlus,
-  Link2,
   Heart,
   User,
   Activity,
@@ -39,7 +38,6 @@ import {
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
 import { AddFamilyModal } from "@/components/add-family-modal";
-import { AcceptInviteModal } from "@/components/accept-invite-modal";
 import type { CareTodo, CareTodoCreate, CareVisit, DoctorItem, Habit, ProfileSummary, PersonalInfo, HealthData, StructuredDocument as ProfileDocument, SavedCondition, SavedMedication, SavedSurgery, SavedAllergy, SavedFamilyHistory, SavedSocialHistory } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import type { InsuranceCard } from "@/lib/types";
@@ -158,7 +156,6 @@ export function ProfilePopover({
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [addFamilyOpen, setAddFamilyOpen] = useState(false);
-  const [acceptInviteOpen, setAcceptInviteOpen] = useState(false);
   const [confirmUnlink, setConfirmUnlink] = useState<ProfileSummary | null>(null);
   const [unlinking, setUnlinking] = useState(false);
   const [personalPanel, setPersonalPanel] = useState<"details" | "health" | "documents" | null>(null);
@@ -571,13 +568,6 @@ export function ProfilePopover({
                             >
                               <UserPlus className="h-4 w-4" />
                               Add family member
-                            </button>
-                            <button
-                              onClick={() => { setSwitcherOpen(false); setOpen(false); setAcceptInviteOpen(true); }}
-                              className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-left text-[14px] font-medium text-[#8E8E93] hover:bg-white transition-colors"
-                            >
-                              <Link2 className="h-4 w-4" />
-                              Enter invite code
                             </button>
                           </div>
                         </>
@@ -1459,11 +1449,6 @@ export function ProfilePopover({
         await switchProfile(newId);
         window.location.reload();
       }}
-    />
-    <AcceptInviteModal
-      open={acceptInviteOpen}
-      onOpenChange={setAcceptInviteOpen}
-      onAccepted={() => window.location.reload()}
     />
     </>
   );
