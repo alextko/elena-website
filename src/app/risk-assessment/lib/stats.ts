@@ -21,13 +21,13 @@ const YOUNG_ADULT_STATS: Stat[] = [
     headline: "Most young adults with high blood pressure don't know they have it.",
     detail: "About 70% of 18-39 year olds with hypertension are undiagnosed because they rarely get screened. A checkup catches it in minutes.",
     source: "Centers for Disease Control and Prevention",
-    sourceUrl: "https://www.cdc.gov/bloodpressure/facts.htm",
+    sourceUrl: "https://www.cdc.gov/high-blood-pressure/data-research/facts-stats/index.html",
   },
   {
     headline: "About a third of young adults skip an annual checkup entirely.",
     detail: "Young men are even less likely to go. But your 20s and 30s are when early risk factors first start showing up.",
     source: "CDC National Health Interview Survey",
-    sourceUrl: "https://www.cdc.gov/nchs/nhis/index.htm",
+    sourceUrl: "https://www.cdc.gov/nchs/nhis/index.html",
   },
 ];
 
@@ -36,7 +36,7 @@ const YOUNG_ADULT_FEMALE_STATS: Stat[] = [
     headline: "1 in 4 young women are behind on their Pap smear.",
     detail: "Cervical cancer is almost entirely preventable with regular screening, yet over 4,000 American women die from it every year.",
     source: "Centers for Disease Control and Prevention",
-    sourceUrl: "https://www.cdc.gov/cancer/cervical/statistics/index.htm",
+    sourceUrl: "https://www.cdc.gov/cervical-cancer/statistics/index.html",
   },
   {
     headline: "Melanoma is the second most common cancer in women under 30.",
@@ -60,13 +60,13 @@ const THIRTIES_STATS: Stat[] = [
     headline: "1 in 3 adults already has prediabetes. 80% don't know it.",
     detail: "Your 30s are when it typically develops. A simple A1C blood test catches it years before diabetes does.",
     source: "CDC National Diabetes Statistics Report",
-    sourceUrl: "https://www.cdc.gov/diabetes/data/statistics-report/index.html",
+    sourceUrl: "https://www.cdc.gov/diabetes/php/data-research/index.html",
   },
   {
     headline: "Nearly half of all adults already have at least one heart disease risk factor.",
     detail: "High blood pressure, high cholesterol, and smoking all start doing damage in your 30s, usually without symptoms.",
     source: "Centers for Disease Control and Prevention",
-    sourceUrl: "https://www.cdc.gov/heartdisease/facts.htm",
+    sourceUrl: "https://www.cdc.gov/heart-disease/data-research/facts-stats/index.html",
   },
 ];
 
@@ -87,7 +87,7 @@ const FORTIES_STATS: Stat[] = [
     headline: "Your 40s are when Type 2 diabetes most commonly gets diagnosed.",
     detail: "But it was likely developing for years before. An A1C test costs under $25 and catches it early.",
     source: "CDC National Diabetes Statistics Report",
-    sourceUrl: "https://www.cdc.gov/diabetes/data/statistics-report/index.html",
+    sourceUrl: "https://www.cdc.gov/diabetes/php/data-research/index.html",
   },
 ];
 
@@ -105,13 +105,13 @@ const FIFTIES_STATS: Stat[] = [
     headline: "Heart disease kills 1 in 5 adults between 45 and 64.",
     detail: "The risk climbs sharply each decade. But up to 80% of heart disease events are preventable with screening and lifestyle changes.",
     source: "Centers for Disease Control and Prevention",
-    sourceUrl: "https://www.cdc.gov/heartdisease/facts.htm",
+    sourceUrl: "https://www.cdc.gov/heart-disease/data-research/facts-stats/index.html",
   },
   {
     headline: "By your 50s, 1 in 3 adults is managing multiple chronic conditions.",
     detail: "The ones who catch them early spend less, feel better, and live longer. A yearly checkup is the foundation.",
     source: "Centers for Disease Control and Prevention",
-    sourceUrl: "https://www.cdc.gov/chronicdisease/about/index.htm",
+    sourceUrl: "https://www.cdc.gov/chronic-disease/about/index.html",
   },
 ];
 
@@ -138,19 +138,19 @@ const SENIOR_STATS: Stat[] = [
     headline: "About half of Medicare beneficiaries skip their free Annual Wellness Visit.",
     detail: "It's covered at no cost, and it's the single best way to catch new issues and stay on top of existing ones.",
     source: "Centers for Medicare & Medicaid Services",
-    sourceUrl: "https://www.cms.gov/Outreach-and-Education/Medicare-Learning-Network-MLN/MLNProducts/preventive-services/medicare-wellness-visits.html",
+    sourceUrl: "https://www.cms.gov/medicare/coverage/preventive-services/medicare-wellness-visits",
   },
   {
     headline: "1 in 4 adults over 65 falls every year.",
     detail: "Falls are the leading cause of injury death in older adults. A balance assessment and bone density check can reduce your risk.",
     source: "Centers for Disease Control and Prevention",
-    sourceUrl: "https://www.cdc.gov/falls/facts.htm",
+    sourceUrl: "https://www.cdc.gov/falls/data-research/facts-stats/index.html",
   },
   {
     headline: "Two-thirds of seniors are managing two or more chronic conditions.",
     detail: "Coordinating medications, appointments, and providers gets complex. Staying on top of screenings prevents new ones from sneaking up.",
-    source: "Centers for Medicare & Medicaid Services",
-    sourceUrl: "https://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/Chronic-Conditions",
+    source: "Centers for Disease Control and Prevention",
+    sourceUrl: "https://www.cdc.gov/chronic-disease/about/index.html",
   },
 ];
 
@@ -191,7 +191,7 @@ const SMOKER_STATS: Stat[] = [
     headline: "Smoking doubles your risk of heart attack.",
     detail: "It's responsible for 30% of all cancer deaths. But quitting at any age reduces your risk significantly within the first year.",
     source: "Centers for Disease Control and Prevention",
-    sourceUrl: "https://www.cdc.gov/heartdisease/facts.htm",
+    sourceUrl: "https://www.cdc.gov/heart-disease/data-research/facts-stats/index.html",
   },
 ];
 
@@ -218,7 +218,7 @@ const POOR_SLEEP_STATS: Stat[] = [
     headline: "Chronic short sleep raises your diabetes risk by up to 40%.",
     detail: "One in three adults doesn't get enough sleep. Poor sleep also increases your risk of obesity, heart disease, and depression.",
     source: "Centers for Disease Control and Prevention",
-    sourceUrl: "https://www.cdc.gov/sleep/about_sleep/chronic_disease.html",
+    sourceUrl: "https://www.cdc.gov/sleep/about/index.html",
   },
 ];
 
@@ -228,7 +228,7 @@ const NO_PCP_STATS: Stat[] = [
     headline: "People without a primary care doctor are diagnosed later.",
     detail: "A PCP watches the full picture of your health over time. It's the single highest-impact thing you can do for long-term health.",
     source: "Centers for Disease Control and Prevention",
-    sourceUrl: "https://www.cdc.gov/prevention/about/index.html",
+    sourceUrl: "https://www.cdc.gov/chronic-disease/prevention/index.html",
   },
 ];
 
@@ -286,7 +286,7 @@ export function getInterstitial1(answers: QuizAnswers): Stat {
       headline: "With diabetes in your family, your risk is significantly higher.",
       detail: "Over 80% of people with prediabetes don't know they have it. A simple A1C blood test can catch it years before diabetes develops.",
       source: "CDC National Diabetes Statistics Report",
-      sourceUrl: "https://www.cdc.gov/diabetes/data/statistics-report/index.html",
+      sourceUrl: "https://www.cdc.gov/diabetes/php/data-research/index.html",
     };
   }
 
@@ -337,7 +337,7 @@ export function getInterstitial2(answers: QuizAnswers): Stat {
       headline: "The symptoms you're experiencing could be connected to your conditions.",
       detail: "When existing conditions go unmonitored, new symptoms can escalate. The next questions help us figure out if you're getting the right follow-up.",
       source: "Centers for Disease Control and Prevention",
-      sourceUrl: "https://www.cdc.gov/chronicdisease/about/index.htm",
+      sourceUrl: "https://www.cdc.gov/chronic-disease/about/index.html",
     };
   }
 
@@ -346,7 +346,7 @@ export function getInterstitial2(answers: QuizAnswers): Stat {
       headline: "The symptoms you mentioned are worth investigating.",
       detail: "Persistent fatigue, chest discomfort, and unexplained weight changes can all be early warning signs. A checkup or blood test can often pinpoint the cause.",
       source: "Centers for Disease Control and Prevention",
-      sourceUrl: "https://www.cdc.gov/prevention/about/index.html",
+      sourceUrl: "https://www.cdc.gov/chronic-disease/prevention/index.html",
     };
   }
 
@@ -379,7 +379,7 @@ export function getInterstitial3(answers: QuizAnswers): Stat {
       headline: `You're overdue on ${overdueCount} health checks and don't have a regular doctor.`,
       detail: "That's more common than you'd think, but it's exactly the kind of gap that lets serious conditions go undetected. Getting back on track is easier than it sounds.",
       source: "Centers for Disease Control and Prevention",
-      sourceUrl: "https://www.cdc.gov/prevention/about/index.html",
+      sourceUrl: "https://www.cdc.gov/chronic-disease/prevention/index.html",
     };
   }
 
@@ -390,7 +390,7 @@ export function getInterstitial3(answers: QuizAnswers): Stat {
       headline: `You're behind on ${overdueCount} recommended health checks.`,
       detail: "A single round of appointments could get you fully up to date. Most of these are covered by insurance at no cost to you.",
       source: "Centers for Disease Control and Prevention",
-      sourceUrl: "https://www.cdc.gov/prevention/about/index.html",
+      sourceUrl: "https://www.cdc.gov/chronic-disease/prevention/index.html",
     };
   }
 
@@ -419,6 +419,6 @@ export function getInterstitial3(answers: QuizAnswers): Stat {
     headline: "You're more on track than most people.",
     detail: "But even people who stay current on checkups can have blind spots. Let's make sure nothing is slipping through the cracks.",
     source: "Centers for Disease Control and Prevention",
-    sourceUrl: "https://www.cdc.gov/prevention/about/index.html",
+    sourceUrl: "https://www.cdc.gov/chronic-disease/prevention/index.html",
   };
 }

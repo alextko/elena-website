@@ -56,7 +56,7 @@ export function Teaser({ recommendations, onSignup }: TeaserProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="relative z-10 max-w-md w-full text-center"
+        className="relative z-10 max-w-md w-full text-center py-10 sm:py-0"
       >
         <h2 className="text-[clamp(1.6rem,5vw,2.2rem)] font-light text-white leading-tight tracking-tight mb-2">
           We found{" "}
@@ -111,9 +111,6 @@ export function Teaser({ recommendations, onSignup }: TeaserProps) {
           See My Results
         </button>
 
-        <p className="text-white/20 text-xs mt-4">
-          Free forever. No credit card required.
-        </p>
       </motion.div>
     </div>
   );

@@ -63,10 +63,6 @@ function reducer(state: QuizState, action: QuizAction): QuizState {
       if (prev === 9 && shouldSkipGenderStep(action.answers)) {
         prev = 8;
       }
-      // Skip back over interstitials
-      while (INTERSTITIAL_STEPS.has(prev) && prev > 0) {
-        prev = (prev - 1) as QuizStep;
-      }
       return { ...state, step: Math.max(prev, 0) as QuizStep, direction: -1 };
     }
     case "GO_TO_STEP":
@@ -240,7 +236,7 @@ function QuizContent() {
   }, [session, step, saveQuizResults]);
 
   function renderInterstitial(stat: { headline: string; detail: string; source: string; sourceUrl: string }) {
-    return <Interstitial headline={stat.headline} detail={stat.detail} source={stat.source} sourceUrl={stat.sourceUrl} onContinue={advance} />;
+    return <Interstitial headline={stat.headline} detail={stat.detail} source={stat.source} sourceUrl={stat.sourceUrl} onContinue={advance} onBack={goBack} />;
   }
 
   function renderStep() {

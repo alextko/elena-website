@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { ChevronLeft } from "lucide-react";
 
 interface InterstitialProps {
   headline: string;
@@ -8,15 +9,26 @@ interface InterstitialProps {
   source: string;
   sourceUrl: string;
   onContinue: () => void;
+  onBack?: () => void;
 }
 
-export function Interstitial({ headline, detail, source, sourceUrl, onContinue }: InterstitialProps) {
+export function Interstitial({ headline, detail, source, sourceUrl, onContinue, onBack }: InterstitialProps) {
   return (
     <div
       className="flex-1 flex flex-col items-center justify-center px-6 min-h-dvh relative"
       style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%, #2E6BB5 100%)" }}
     >
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_130%,rgba(244,176,132,0.2)_0%,rgba(232,149,109,0.1)_25%,transparent_60%)] pointer-events-none" />
+
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="absolute top-6 left-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors z-20"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+      )}
 
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
