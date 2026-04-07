@@ -1,13 +1,32 @@
 import mixpanel from 'mixpanel-browser';
 import { getStoredAttribution } from './attribution';
 
+/** Ensure Mixpanel is initialized before using it.
+ * analytics.ts owns init, but tracking-events.ts may run first.
+ * This guarantees the instance is ready. */
+function ensureInit() {
+  // @ts-expect-error — check internal state
+  if (mixpanel.__loaded) return;
+  const token = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN;
+  if (!token || typeof window === 'undefined') return;
+  mixpanel.init(token, {
+    track_pageview: false,
+    persistence: 'localStorage',
+    record_sessions_percent: 100,
+    record_mask_text_selector: '',
+  });
+  mixpanel.register({ platform: 'web' });
+}
+
 /** Returns the mixpanel instance from the npm package. */
 function getMixpanelAny(): any | null {
+  ensureInit();
   return mixpanel || null;
 }
 
 /** Returns the mixpanel instance (same as getMixpanelAny since we use the npm package). */
 function getMixpanelReal(): any | null {
+  ensureInit();
   return mixpanel || null;
 }
 
