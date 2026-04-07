@@ -225,8 +225,11 @@ export function ChatArea({
   const prevProfileIdRef = useRef(profileId);
 
   useEffect(() => {
-    const profileChanged = profileId !== prevProfileIdRef.current;
+    const prevId = prevProfileIdRef.current;
     prevProfileIdRef.current = profileId;
+    // Only treat as a real profile change if switching from one profile to another
+    // (not the initial null → value load which happens on every refresh)
+    const profileChanged = !!(prevId && profileId && prevId !== profileId);
 
     console.log("[chat-area] session effect:", { profileChanged, activeSessionId, isNewChat, profileId, sessionId: sessionIdRef.current, msgCount: messages.length, isLoading });
 
