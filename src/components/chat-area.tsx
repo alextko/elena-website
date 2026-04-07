@@ -733,8 +733,8 @@ export function ChatArea({
         },
       );
 
-      // Update session ref from poll result
-      if (result?.session_id) {
+      // Update session ref from poll result — but only if we haven't switched sessions
+      if (result?.session_id && (!sessionIdRef.current || sessionIdRef.current === result.session_id)) {
         sessionIdRef.current = result.session_id;
       }
     },
