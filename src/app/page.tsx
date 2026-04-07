@@ -624,7 +624,7 @@ function LandingPage() {
               {madlib ? (
                 <div
                   ref={madlibRef}
-                  className="text-[15px] max-md:text-[0.85rem] text-[#1C1C1E] leading-[2.8] h-full overflow-visible text-left"
+                  className="text-base max-md:text-[0.9rem] text-[#1C1C1E] leading-[2.6] h-full overflow-visible text-left"
                   style={{ wordBreak: "break-word" }}
                 >
                   {madlib.segments.map((seg, i) =>
@@ -637,7 +637,7 @@ function LandingPage() {
                         placeholder={seg.placeholder}
                         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSend(); } }}
                         onChange={() => setUserHasEdited(true)}
-                        className="inline-block border border-[#D1D1D6] rounded-lg px-3 py-1 mx-0.5 text-[15px] max-md:text-[0.85rem] text-[#1C1C1E] font-medium text-center bg-[#F9F9F9] min-w-[4rem] w-auto placeholder:text-[#C7C7CC] placeholder:font-normal focus:border-[#0F1B3D]/40 focus:shadow-[0_0_0_3px_rgba(15,27,61,0.06)] focus:outline-none transition-all align-middle"
+                        className="inline-block border border-[#D1D1D6] rounded-lg px-3 py-1 mx-0.5 text-base max-md:text-[0.9rem] text-[#1C1C1E] font-medium text-center bg-[#F9F9F9] min-w-[4rem] w-auto placeholder:text-[#C7C7CC] placeholder:font-normal focus:border-[#0F1B3D]/40 focus:shadow-[0_0_0_3px_rgba(15,27,61,0.06)] focus:outline-none transition-all align-middle"
                         style={{ width: seg.placeholder ? `${Math.max(seg.placeholder.length + 2, 6)}ch` : "6ch" }}
                       />
                     )
