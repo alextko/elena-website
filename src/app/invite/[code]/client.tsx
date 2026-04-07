@@ -230,6 +230,11 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
               </div>
               <h2 className="text-xl font-bold text-white">{actionResult.type === "success" ? "Connected!" : "Something went wrong"}</h2>
               <p className="text-white/50 text-sm">{actionResult.message}</p>
+              {actionResult.type === "success" && (
+                <p className="text-white/30 text-xs leading-relaxed mt-2">
+                  You can switch between profiles anytime by clicking your profile icon in the sidebar and selecting a linked profile.
+                </p>
+              )}
               {actionResult.type === "error" && (
                 <button onClick={() => setActionResult(null)} className="inline-block mt-2 rounded-full bg-white/95 px-6 py-3 text-sm font-semibold text-[#0F1B3D] hover:bg-white transition-colors">Try again</button>
               )}
