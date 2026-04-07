@@ -225,8 +225,11 @@ export function ChatArea({
   const prevProfileIdRef = useRef(profileId);
 
   useEffect(() => {
-    const profileChanged = profileId !== prevProfileIdRef.current;
+    const prevId = prevProfileIdRef.current;
     prevProfileIdRef.current = profileId;
+    // Only treat as a real profile change if switching from one profile to another
+    // (not the initial null → value load which happens on every refresh)
+    const profileChanged = !!(prevId && profileId && prevId !== profileId);
 
     console.log("[chat-area] session effect:", { profileChanged, activeSessionId, isNewChat, profileId, sessionId: sessionIdRef.current, msgCount: messages.length, isLoading });
 
@@ -326,6 +329,10 @@ export function ChatArea({
       // Set title from first user message
       const firstUser = data.find((m) => m.role === "user");
       if (firstUser) setChatTitle(firstUser.text.slice(0, 60));
+      // Set contextual follow-up suggestions based on conversation content
+      if (mapped.length > 0) {
+        setSuggestions(["What else can you help with?", "Tell me more", "What should I do next?"]);
+      }
     } catch {
       if (loadRequestRef.current === requestId) {
         setLoadError("Connection error. Tap to retry.");
@@ -1026,7 +1033,7 @@ export function ChatArea({
             ))}
           </div>
         )}
-        <div className="flex items-end gap-2 rounded-[28px] border border-[#E5E5EA] bg-white px-2 py-1.5 shadow-[0_1px_4px_rgba(0,0,0,0.06)] transition-all focus-within:shadow-[0_2px_8px_rgba(0,0,0,0.1)] focus-within:border-[#AEAEB2]">
+        <form autoComplete="off" data-lpignore="true" data-1p-ignore onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex items-end gap-2 rounded-[28px] border border-[#E5E5EA] bg-white px-2 py-1.5 shadow-[0_1px_4px_rgba(0,0,0,0.06)] transition-all focus-within:shadow-[0_2px_8px_rgba(0,0,0,0.1)] focus-within:border-[#AEAEB2]">
           <input
             ref={fileInputRef}
             type="file"
@@ -1052,6 +1059,10 @@ export function ChatArea({
             className="flex-1 resize-none bg-transparent text-sm leading-normal text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] py-2 max-h-32 overflow-y-auto"
             placeholder="Ask Elena anything..."
             rows={1}
+            autoComplete="off"
+            data-1p-ignore
+            data-lpignore="true"
+            data-form-type="other"
             value={input}
             onChange={(e) => {
               setInput(e.target.value);
@@ -1087,7 +1098,7 @@ export function ChatArea({
               <ArrowUp className="h-4 w-4 text-white" />
             )}
           </Button>
-        </div>
+        </form>
         <p className="mt-2 text-center text-[0.7rem] text-[#AEAEB2]">
           Elena can make mistakes. Always verify important health information.
         </p>
