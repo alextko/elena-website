@@ -110,14 +110,15 @@ function StreamingText({ content, onComplete }: { content: string; onComplete?: 
     return () => clearInterval(timer);
   }, [content, onComplete]);
 
+  const lines = displayed.split("\n");
   return (
     <>
-      {displayed.split("\n").map((line, i) => (
+      {lines.map((line, i) => (
         <p key={i} className={line === "" ? "h-3" : "mb-1"}>
           {renderMarkdown(line, !done)}
+          {!done && i === lines.length - 1 && <span className="inline-block w-[2px] h-[1em] bg-[#0F1B3D] animate-pulse ml-0.5 align-text-bottom" />}
         </p>
       ))}
-      {!done && <span className="inline-block w-[2px] h-[1em] bg-[#0F1B3D] animate-pulse ml-0.5 align-text-bottom" />}
     </>
   );
 }
