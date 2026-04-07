@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { OptionButton } from "./option-button";
 import { SubStepWrapper } from "./sub-step-wrapper";
 import type { QuizAnswers, Frequency } from "../lib/types";
@@ -8,6 +8,7 @@ import type { QuizAnswers, Frequency } from "../lib/types";
 interface GenderSpecificProps {
   answers: QuizAnswers;
   onSubmit: (data: Partial<QuizAnswers>) => void;
+  onRegisterBack?: (fn: (() => boolean) | null) => void;
 }
 
 const FREQUENCY_OPTIONS: { value: Frequency; label: string }[] = [
@@ -22,7 +23,7 @@ function parseAge(bucket?: string): number {
   return bucket ? map[bucket] ?? 30 : 30;
 }
 
-export function GenderSpecific({ answers, onSubmit }: GenderSpecificProps) {
+export function GenderSpecific({ answers, onSubmit, onRegisterBack }: GenderSpecificProps) {
   const age = parseAge(answers.age);
   const [subStep, setSubStep] = useState(0);
 
@@ -43,6 +44,15 @@ export function GenderSpecific({ answers, onSubmit }: GenderSpecificProps) {
   }
 
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    onRegisterBack?.(() => {
+      if (subStep > 0) { setSubStep(s => s - 1); return true; }
+      return false;
+    });
+    return () => onRegisterBack?.(null);
+  }, [subStep, onRegisterBack]);
+
   const current = questions[subStep];
   const selectedValue = current ? (answers[current.key] as string | undefined) : undefined;
 

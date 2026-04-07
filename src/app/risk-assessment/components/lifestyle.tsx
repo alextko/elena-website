@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { OptionButton } from "./option-button";
 import { SubStepWrapper } from "./sub-step-wrapper";
 import type { QuizAnswers } from "../lib/types";
@@ -8,6 +8,7 @@ import type { QuizAnswers } from "../lib/types";
 interface LifestyleProps {
   answers: QuizAnswers;
   onSubmit: (data: Partial<QuizAnswers>) => void;
+  onRegisterBack?: (fn: (() => boolean) | null) => void;
 }
 
 const QUESTIONS = [
@@ -50,9 +51,17 @@ const QUESTIONS = [
   },
 ];
 
-export function Lifestyle({ answers, onSubmit }: LifestyleProps) {
+export function Lifestyle({ answers, onSubmit, onRegisterBack }: LifestyleProps) {
   const [subStep, setSubStep] = useState(0);
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    onRegisterBack?.(() => {
+      if (subStep > 0) { setSubStep(s => s - 1); return true; }
+      return false;
+    });
+    return () => onRegisterBack?.(null);
+  }, [subStep, onRegisterBack]);
   const current = QUESTIONS[subStep];
   const selectedValue = answers[current.key];
 

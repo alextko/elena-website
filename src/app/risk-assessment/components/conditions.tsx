@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { StepLayout } from "./step-layout";
 import { OptionButton } from "./option-button";
 import { SubStepWrapper } from "./sub-step-wrapper";
@@ -10,6 +10,7 @@ interface ConditionsProps {
   answers: QuizAnswers;
   onSubmit: (data: Partial<QuizAnswers>) => void;
   onAdvance: () => void;
+  onRegisterBack?: (fn: (() => boolean) | null) => void;
 }
 
 const DIAGNOSED = [
@@ -37,10 +38,18 @@ function toggleList(list: string[], value: string, noneValue: string): string[] 
     : [...without, value];
 }
 
-export function Conditions({ answers, onSubmit, onAdvance }: ConditionsProps) {
+export function Conditions({ answers, onSubmit, onAdvance, onRegisterBack }: ConditionsProps) {
   const [subStep, setSubStep] = useState(0);
   const diagnosed = answers.diagnosedConditions;
   const symptoms = answers.recentSymptoms;
+
+  useEffect(() => {
+    onRegisterBack?.(() => {
+      if (subStep > 0) { setSubStep(s => s - 1); return true; }
+      return false;
+    });
+    return () => onRegisterBack?.(null);
+  }, [subStep, onRegisterBack]);
 
   const handleDiagnosedContinue = useCallback(() => {
     setSubStep(1);

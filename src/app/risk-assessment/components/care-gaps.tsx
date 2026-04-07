@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { OptionButton } from "./option-button";
 import { SubStepWrapper } from "./sub-step-wrapper";
 import type { QuizAnswers, Frequency } from "../lib/types";
@@ -8,6 +8,7 @@ import type { QuizAnswers, Frequency } from "../lib/types";
 interface CareGapsProps {
   answers: QuizAnswers;
   onSubmit: (data: Partial<QuizAnswers>) => void;
+  onRegisterBack?: (fn: (() => boolean) | null) => void;
 }
 
 const FREQUENCY_OPTIONS: { value: Frequency; label: string }[] = [
@@ -23,9 +24,17 @@ const QUESTIONS = [
   { key: "lastScreening" as const, question: "When was your last preventive screening?" },
 ];
 
-export function CareGaps({ answers, onSubmit }: CareGapsProps) {
+export function CareGaps({ answers, onSubmit, onRegisterBack }: CareGapsProps) {
   const [subStep, setSubStep] = useState(0);
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    onRegisterBack?.(() => {
+      if (subStep > 0) { setSubStep(s => s - 1); return true; }
+      return false;
+    });
+    return () => onRegisterBack?.(null);
+  }, [subStep, onRegisterBack]);
 
   const isFrequencyStep = subStep < QUESTIONS.length;
 

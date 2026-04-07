@@ -136,7 +136,15 @@ function QuizContent() {
     setTimeout(() => dispatch({ type: "NEXT_STEP", answers: newAnswers }), 400);
   }, [answers]);
 
+  // Sub-step components register a handler here; goBack checks it first so
+  // back navigates within a component's sub-steps before jumping global steps.
+  const subBackRef = useRef<null | (() => boolean)>(null);
+  const registerSubBack = useCallback((fn: (() => boolean) | null) => {
+    subBackRef.current = fn;
+  }, []);
+
   const goBack = useCallback(() => {
+    if (subBackRef.current?.()) return;
     dispatch({ type: "PREV_STEP", answers });
   }, [answers]);
 
@@ -253,6 +261,7 @@ function QuizContent() {
         return (
           <Lifestyle
             answers={answers}
+            onRegisterBack={registerSubBack}
             onSubmit={(data) => {
               setAnswer(data);
               if (data.sleep) advanceWithData(data);
@@ -260,13 +269,14 @@ function QuizContent() {
           />
         );
       case 5:
-        return <Conditions answers={answers} onSubmit={setAnswer} onAdvance={advance} />;
+        return <Conditions answers={answers} onSubmit={setAnswer} onAdvance={advance} onRegisterBack={registerSubBack} />;
       case 6:
         return renderInterstitial(getInterstitial2(answers));
       case 7:
         return (
           <CareGaps
             answers={answers}
+            onRegisterBack={registerSubBack}
             onSubmit={(data) => {
               setAnswer(data);
               if (data.hasPCP) advanceWithData(data);
@@ -279,6 +289,7 @@ function QuizContent() {
         return (
           <GenderSpecific
             answers={answers}
+            onRegisterBack={registerSubBack}
             onSubmit={(data) => {
               setAnswer(data);
               if (data.lastPap || data.lastMammogram || data.lastProstate) {
