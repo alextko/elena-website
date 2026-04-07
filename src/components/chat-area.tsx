@@ -239,11 +239,12 @@ export function ChatArea({
     // If the profile changed but we already have a session in progress (e.g.
     // initial query sent during onboarding), keep it. The session may have
     // messages already, or the query may still be loading.
-    if (profileChanged && !activeSessionId && sessionIdRef.current) {
-      console.log("[chat-area] profile changed, keeping existing session:", sessionIdRef.current);
+    const existingSession = sessionIdRef.current || activeSessionId;
+    if (profileChanged && existingSession) {
+      console.log("[chat-area] profile changed, keeping existing session:", existingSession);
       // The session was already created by the initial query — link it to the new profile
       if (profileId) {
-        apiFetch(`/chat/sessions/${sessionIdRef.current}/link-profile`, {
+        apiFetch(`/chat/sessions/${existingSession}/link-profile`, {
           method: "POST",
           body: JSON.stringify({ profile_id: profileId }),
         }).catch(() => {});
