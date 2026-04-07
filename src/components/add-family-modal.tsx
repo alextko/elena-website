@@ -114,8 +114,7 @@ export function AddFamilyModal({
     }
   }
 
-  async function handleSendInvite(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleGenerateInvite() {
     setError(null);
     setLoading(true);
 
@@ -123,14 +122,14 @@ export function AddFamilyModal({
       const res = await apiFetch("/family/invite", {
         method: "POST",
         body: JSON.stringify({
-          invitee_name: inviteeName,
-          relationship: inviteRelationship,
+          invitee_name: "",
+          relationship: "other",
         }),
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || "Failed to send invite");
+        throw new Error(data?.detail || "Failed to create invite");
       }
 
       const data = await res.json();
@@ -333,50 +332,19 @@ export function AddFamilyModal({
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleSendInvite} className="mt-4 space-y-4">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-[#0F1B3D]">
-                    Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={inviteeName}
-                    onChange={(e) => setInviteeName(e.target.value)}
-                    placeholder="Their name"
-                    className={inputClassName}
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-[#0F1B3D]">
-                    Relationship
-                  </label>
-                  <select
-                    required
-                    value={inviteRelationship}
-                    onChange={(e) => setInviteRelationship(e.target.value)}
-                    className={selectClassName}
-                  >
-                    <option value="" disabled>
-                      Select relationship
-                    </option>
-                    {RELATIONSHIP_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
+              <div className="mt-4 space-y-3">
+                <p className="text-sm text-[#0F1B3D]/70">
+                  Generate a link to share with your family member. They can create an account or log in to connect with you.
+                </p>
                 <button
-                  type="submit"
-                  disabled={loading || !inviteeName || !inviteRelationship}
+                  type="button"
+                  onClick={handleGenerateInvite}
+                  disabled={loading}
                   className={gradientButtonClassName}
                 >
-                  {loading ? "Sending..." : "Send invite"}
+                  {loading ? "Generating..." : "Generate invite link"}
                 </button>
-              </form>
+              </div>
             )}
           </>
         )}
