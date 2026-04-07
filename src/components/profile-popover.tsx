@@ -1078,30 +1078,38 @@ export function ProfilePopover({
                   </div>
                 </div>
 
-                {/* Plan summary */}
-                <div
-                  className={`rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden ${(subscription?.tier || "free") === "free" ? "cursor-pointer hover:bg-[#F7F6F2] transition-colors" : ""}`}
-                  onClick={(subscription?.tier || "free") === "free" ? () => { setOpen(false); setUpgradeOpen(true); } : undefined}
-                >
-                  <div className="flex items-center gap-3 px-3.5 py-3.5">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7F6F2]">
-                      <Sparkles className="h-[18px] w-[18px] text-[#0F1B3D]" />
+                {/* Plan summary / Upgrade */}
+                {(subscription?.tier || "free") === "free" ? (
+                  <button
+                    className="w-full rounded-2xl overflow-hidden shadow-[0_8px_20px_rgba(26,58,110,0.3)] cursor-pointer transition-opacity hover:opacity-95"
+                    onClick={() => { setOpen(false); setUpgradeOpen(true); }}
+                    style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 50%, #2E6BB5 100%)" }}
+                  >
+                    <div className="px-5 py-5 text-left">
+                      <p className="text-[20px] font-extrabold text-white tracking-tight">Upgrade to Elena Pro</p>
+                      <p className="text-[14px] text-white/60 mt-1 leading-5">Unlimited calls, searches, and bill analysis</p>
+                      <div className="mt-4 inline-flex items-center rounded-full bg-white/15 border border-white/20 px-5 py-2.5">
+                        <span className="text-[14px] font-semibold text-white">View plans</span>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[16px] font-semibold text-[#1C1C1E] capitalize">
-                        {subscription?.tier || "Free"} Plan
-                      </p>
-                      <p className="text-[13px] text-[#8E8E93] mt-px">
-                        {(subscription?.tier || "free") === "free"
-                          ? "Tap to upgrade"
-                          : subscription?.plan?.includes("annual") ? "Annual" : "Monthly"}
-                      </p>
+                  </button>
+                ) : (
+                  <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
+                    <div className="flex items-center gap-3 px-3.5 py-3.5">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7F6F2]">
+                        <Sparkles className="h-[18px] w-[18px] text-[#0F1B3D]" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[16px] font-semibold text-[#1C1C1E] capitalize">
+                          {subscription?.tier || "Free"} Plan
+                        </p>
+                        <p className="text-[13px] text-[#8E8E93] mt-px">
+                          {subscription?.plan?.includes("annual") ? "Annual" : "Monthly"}
+                        </p>
+                      </div>
                     </div>
-                    {(subscription?.tier || "free") === "free" && (
-                      <ChevronRight className="h-[18px] w-[18px] text-[#0F1B3D] shrink-0" />
-                    )}
                   </div>
-                </div>
+                )}
               </div>
             )}
 
