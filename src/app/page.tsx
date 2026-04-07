@@ -154,12 +154,82 @@ function StatsBar() {
   );
 }
 
-const SUGGESTIONS = [
-  { label: "Compare Prices", text: "Compare MRI prices near me" },
-  { label: "Dispute a Bill", text: "I want to dispute a medical bill" },
-  { label: "Find a Doctor", text: "Find an in-network doctor near me" },
-  { label: "Manage Family Care", text: "Help me manage my parents' healthcare from my phone" },
-  { label: "Find Insurance", text: "Help me find the right insurance plan" },
+const SUGGESTIONS: {
+  label: string;
+  text: string;
+  madlib?: { segments: { type: "text" | "blank"; value: string; placeholder?: string }[] };
+}[] = [
+  {
+    label: "Compare Prices",
+    text: "Compare MRI prices near me",
+    madlib: {
+      segments: [
+        { type: "text", value: "Find me the cheapest " },
+        { type: "blank", value: "", placeholder: "procedure" },
+        { type: "text", value: " near " },
+        { type: "blank", value: "", placeholder: "zip code" },
+        { type: "text", value: "." },
+      ],
+    },
+  },
+  {
+    label: "Dispute a Bill",
+    text: "I want to dispute a medical bill",
+    madlib: {
+      segments: [
+        { type: "text", value: "I got a " },
+        { type: "blank", value: "", placeholder: "$amount" },
+        { type: "text", value: " bill from " },
+        { type: "blank", value: "", placeholder: "provider" },
+        { type: "text", value: " for " },
+        { type: "blank", value: "", placeholder: "service" },
+        { type: "text", value: ". Help me dispute it." },
+      ],
+    },
+  },
+  {
+    label: "Find a Doctor",
+    text: "Find an in-network doctor near me",
+    madlib: {
+      segments: [
+        { type: "text", value: "Find me a " },
+        { type: "blank", value: "", placeholder: "specialty" },
+        { type: "text", value: " that takes " },
+        { type: "blank", value: "", placeholder: "insurance" },
+        { type: "text", value: " near " },
+        { type: "blank", value: "", placeholder: "zip code" },
+        { type: "text", value: "." },
+      ],
+    },
+  },
+  {
+    label: "Manage Family Care",
+    text: "Help me manage my parents' healthcare from my phone",
+    madlib: {
+      segments: [
+        { type: "text", value: "Help me manage " },
+        { type: "blank", value: "", placeholder: "family member" },
+        { type: "text", value: "'s healthcare. They need " },
+        { type: "blank", value: "", placeholder: "what they need" },
+        { type: "text", value: "." },
+      ],
+    },
+  },
+  {
+    label: "Find Insurance",
+    text: "Help me find the right insurance plan",
+    madlib: {
+      segments: [
+        { type: "text", value: "I'm looking for " },
+        { type: "blank", value: "", placeholder: "individual or family" },
+        { type: "text", value: " insurance in " },
+        { type: "blank", value: "", placeholder: "state" },
+        { type: "text", value: " with a budget of " },
+        { type: "blank", value: "", placeholder: "$/month" },
+        { type: "text", value: "." },
+      ],
+    },
+  },
 ];
 
 const TESTIMONIALS = [
@@ -351,7 +421,8 @@ function LandingPage() {
   const [inputFocused, setInputFocused] = useState(false);
   const { displayed: rotatingText, fullQuery } = useRotatingQuery(queries, userHasEdited || inputFocused);
   const [manualInput, setManualInput] = useState("");
-  const madlib = ref ? MADLIB_TEMPLATES[ref] : undefined;
+  const [chipMadlib, setChipMadlib] = useState<typeof SUGGESTIONS[0]["madlib"] | undefined>(undefined);
+  const madlib = ref ? MADLIB_TEMPLATES[ref] : chipMadlib;
   const input = userHasEdited ? manualInput : (queries ? rotatingText : (hero?.prefill || ""));
   // When sending mid-animation, use the full target query instead of partial text
   const madlibRef = useRef<HTMLDivElement>(null);
@@ -470,11 +541,18 @@ function LandingPage() {
     setAuthModalOpen(true);
   }, [sendQuery, ref, madlib]);
 
-  const handleChipClick = useCallback((text: string) => {
-    analytics.track("Suggested Prompt Clicked", { prompt_label: text });
-    setUserHasEdited(true);
-    setManualInput(text);
-    inputRef.current?.focus();
+  const handleChipClick = useCallback((suggestion: typeof SUGGESTIONS[number]) => {
+    analytics.track("Suggested Prompt Clicked", { prompt_label: suggestion.label });
+    if (suggestion.madlib) {
+      setChipMadlib(suggestion.madlib);
+      setUserHasEdited(false);
+      setManualInput("");
+    } else {
+      setChipMadlib(undefined);
+      setUserHasEdited(true);
+      setManualInput(suggestion.text);
+      inputRef.current?.focus();
+    }
   }, []);
 
   if (loading || session) {
@@ -629,8 +707,8 @@ function LandingPage() {
             {SUGGESTIONS.map((s) => (
               <button
                 key={s.label}
-                onClick={() => handleChipClick(s.text)}
-                className="bg-white/10 border border-white/20 rounded-[22px] px-[18px] py-2.5 max-md:px-3.5 max-md:py-2 text-sm max-md:text-xs font-normal text-white/90 whitespace-nowrap cursor-pointer transition-all hover:bg-white/[0.18] hover:border-white/[0.35] active:scale-[0.97]"
+                onClick={() => handleChipClick(s)}
+                className={`rounded-[22px] px-[18px] py-2.5 max-md:px-3.5 max-md:py-2 text-sm max-md:text-xs font-normal whitespace-nowrap cursor-pointer transition-all active:scale-[0.97] ${chipMadlib === s.madlib && s.madlib ? "bg-white/25 border border-white/40 text-white" : "bg-white/10 border border-white/20 text-white/90 hover:bg-white/[0.18] hover:border-white/[0.35]"}`}
               >
                 {s.label}
               </button>
