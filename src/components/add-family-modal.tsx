@@ -142,9 +142,11 @@ export function AddFamilyModal({
     }
   }
 
-  async function handleCopyCode() {
+  async function handleCopyLink() {
     if (!inviteCode) return;
-    await navigator.clipboard.writeText(inviteCode);
+    const userName = profileData?.firstName || "";
+    const shareUrl = `https://elena-health.com/invite/${inviteCode}?from=${encodeURIComponent(userName)}`;
+    await navigator.clipboard.writeText(shareUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -297,53 +299,35 @@ export function AddFamilyModal({
           <>
             {inviteCode ? (
               <div className="mt-4 space-y-4">
-                <p className="text-sm text-[#0F1B3D]">
-                  Share this code with your family member so they can connect
-                  with you:
+                <p className="text-sm text-[#0F1B3D]/70">
+                  Send this link to your family member so they can connect with you on Elena:
                 </p>
-                <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-3">
-                  <span className="flex-1 font-mono text-lg font-semibold tracking-wider text-[#0F1B3D]">
-                    {inviteCode}
+                <div className="flex items-center gap-2 rounded-xl bg-[#F5F7FB] px-4 py-3">
+                  <span className="flex-1 text-sm text-[#0F1B3D]/60 truncate">
+                    elena-health.com/invite/{inviteCode}
                   </span>
                   <button
                     type="button"
-                    onClick={handleCopyCode}
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-[#0F1B3D] hover:bg-gray-50 transition-colors"
+                    onClick={handleCopyLink}
+                    className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-[#0F1B3D] shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)] transition-all"
                   >
-                    {copied ? "Copied!" : "Copy"}
+                    {copied ? (
+                      <>
+                        <svg className="w-4 h-4 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                        Copy link
+                      </>
+                    )}
                   </button>
                 </div>
                 <button
                   type="button"
-                  onClick={async () => {
-                    const userName = profileData?.firstName || "";
-                    const shareUrl = `https://elena-health.com/invite/${inviteCode}?from=${encodeURIComponent(userName)}`;
-                    if (typeof navigator !== "undefined" && navigator.share) {
-                      try {
-                        await navigator.share({
-                          text: "Connect with me on Elena!",
-                          url: shareUrl,
-                        });
-                      } catch {
-                        // User cancelled or share failed — fall back to copy
-                        await navigator.clipboard.writeText(shareUrl);
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                      }
-                    } else {
-                      await navigator.clipboard.writeText(shareUrl);
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
-                    }
-                  }}
-                  className={gradientButtonClassName}
-                >
-                  Share invite link
-                </button>
-                <button
-                  type="button"
                   onClick={() => handleOpenChange(false)}
-                  className="w-full rounded-full border border-gray-200 bg-white py-2.5 px-4 text-sm font-medium text-[#0F1B3D] hover:bg-gray-50 transition-colors"
+                  className={gradientButtonClassName}
                 >
                   Done
                 </button>
