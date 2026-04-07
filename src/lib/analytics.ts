@@ -83,13 +83,16 @@ function init() {
 export function track(event: AnalyticsEvent, properties?: Record<string, unknown>) {
   init();
   if (disabled) return;
+  console.log(`[mp] track: ${event}`, properties || "", `distinct_id=${mixpanel.get_distinct_id?.() || "?"}`);
   mixpanel.track(event, properties);
 }
 
 export function identify(userId: string, traits?: Record<string, unknown>) {
   init();
   if (disabled) return;
+  const prevId = mixpanel.get_distinct_id?.() || "?";
   mixpanel.identify(userId);
+  console.log(`[mp] identify: ${prevId} → ${userId}`, traits || "");
   if (traits) {
     mixpanel.people.set(traits);
   }
@@ -98,6 +101,8 @@ export function identify(userId: string, traits?: Record<string, unknown>) {
 export function alias(userId: string) {
   init();
   if (disabled) return;
+  const anonId = mixpanel.get_distinct_id?.() || "?";
+  console.log(`[mp] alias: ${anonId} → ${userId}`);
   mixpanel.alias(userId);
 }
 
