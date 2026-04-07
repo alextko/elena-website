@@ -104,7 +104,8 @@ function ChatPageInner() {
   }, [loading, session, router]);
 
   const fetchSessions = useCallback(async () => {
-    setLoadingSessions(true);
+    // Only show loading spinner if we have no sessions at all
+    setSessions((prev) => { if (prev.length === 0) setLoadingSessions(true); return prev; });
     try {
       const res = await apiFetch("/chat/sessions");
       if (!res.ok) {
@@ -114,14 +115,19 @@ function ChatPageInner() {
         return;
       }
       const data: ChatSessionItem[] = await res.json();
-      // Deduplicate by ID (backend may return sessions created by welcome + chat)
-      const seen = new Set<string>();
-      const deduped = data.filter((s) => {
-        if (seen.has(s.id)) return false;
-        seen.add(s.id);
-        return true;
+      // Merge: keep optimistic sessions that aren't in the backend response yet
+      setSessions((prev) => {
+        const backendIds = new Set(data.map((s) => s.id));
+        const optimistic = prev.filter((s) => !backendIds.has(s.id));
+        const merged = [...data, ...optimistic];
+        // Deduplicate by ID
+        const seen = new Set<string>();
+        return merged.filter((s) => {
+          if (seen.has(s.id)) return false;
+          seen.add(s.id);
+          return true;
+        });
       });
-      setSessions(deduped);
     } catch {
       // Network error — still allow the user to start a new chat
       setIsNewChat(true);
