@@ -620,11 +620,11 @@ function LandingPage() {
 
           {/* Chat input bar */}
           <div className="flex flex-col bg-white/95 rounded-[20px] border border-white/30 max-w-[680px] w-full mx-auto mt-8 shadow-[0_4px_24px_rgba(0,0,0,0.1)] overflow-hidden">
-            <div className="px-5 pt-[18px] pb-3 relative h-[5.5rem] max-md:h-[6.5rem]">
+            <div className="px-5 pt-[18px] pb-3 relative h-[7rem] max-md:h-[7.5rem]">
               {madlib ? (
                 <div
                   ref={madlibRef}
-                  className="text-base max-md:text-[0.9rem] text-[#1C1C1E] leading-[2.6] h-full overflow-hidden text-left"
+                  className="text-[15px] max-md:text-[0.85rem] text-[#1C1C1E] leading-[2.8] h-full overflow-visible text-left"
                   style={{ wordBreak: "break-word" }}
                 >
                   {madlib.segments.map((seg, i) =>
@@ -637,7 +637,7 @@ function LandingPage() {
                         placeholder={seg.placeholder}
                         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSend(); } }}
                         onChange={() => setUserHasEdited(true)}
-                        className="inline-block border border-[#D1D1D6] rounded-lg px-3 py-1 mx-0.5 text-base max-md:text-[0.9rem] text-[#1C1C1E] font-medium text-center bg-[#F9F9F9] min-w-[4rem] w-auto placeholder:text-[#C7C7CC] placeholder:font-normal focus:border-[#0F1B3D]/40 focus:shadow-[0_0_0_3px_rgba(15,27,61,0.06)] focus:outline-none transition-all align-middle"
+                        className="inline-block border border-[#D1D1D6] rounded-lg px-3 py-1 mx-0.5 text-[15px] max-md:text-[0.85rem] text-[#1C1C1E] font-medium text-center bg-[#F9F9F9] min-w-[4rem] w-auto placeholder:text-[#C7C7CC] placeholder:font-normal focus:border-[#0F1B3D]/40 focus:shadow-[0_0_0_3px_rgba(15,27,61,0.06)] focus:outline-none transition-all align-middle"
                         style={{ width: seg.placeholder ? `${Math.max(seg.placeholder.length + 2, 6)}ch` : "6ch" }}
                       />
                     )
