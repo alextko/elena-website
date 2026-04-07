@@ -36,6 +36,14 @@ export default function ChatPage() {
 }
 
 function ChatPageInner() {
+  console.log("[chat-page] ChatPageInner RENDER");
+
+  // Detect unmount — if this fires, ChatArea loses all state
+  useEffect(() => {
+    console.log("[chat-page] ChatPageInner MOUNTED");
+    return () => console.log("[chat-page] ChatPageInner UNMOUNTED — all chat state lost!");
+  }, []);
+
   // Set browser chrome to white for chat page
   useEffect(() => {
     const meta = document.querySelector('meta[name="theme-color"]');
@@ -212,7 +220,10 @@ function ChatPageInner() {
     setIsNewChat(false);
   }, []);
 
+  console.log("[chat-page] render state:", { loading, hasSession: !!session, profileId, needsOnboarding, onboardingJustCompleted, loadingSessions, activeSessionId, isNewChat, sessionCount: sessions.length });
+
   if (loading) {
+    console.log("[chat-page] showing LOADING skeleton");
     return (
       <div className="flex h-dvh">
         <div className="w-64 bg-[#f5f7fb] flex-shrink-0 animate-pulse max-md:hidden">
