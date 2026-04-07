@@ -237,7 +237,13 @@ export function ChatArea({
     // initial query sent during onboarding), keep it. The session may have
     // messages already, or the query may still be loading.
     if (profileChanged && !activeSessionId && sessionIdRef.current) {
-      // The session was already created by the initial query — just keep it
+      // The session was already created by the initial query — link it to the new profile
+      if (profileId) {
+        apiFetch(`/chat/sessions/${sessionIdRef.current}/link-profile`, {
+          method: "POST",
+          body: JSON.stringify({ profile_id: profileId }),
+        }).catch(() => {});
+      }
       return;
     }
 
