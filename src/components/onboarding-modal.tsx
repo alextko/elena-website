@@ -46,6 +46,7 @@ export function OnboardingModal() {
 
   async function handleSkip() {
     setSaving(true);
+    analytics.track("Onboarding Completed", { fields_filled: [], skipped: true });
     analytics.track("Onboarding Skipped");
     // Still save the Google name if we have it
     await completeOnboarding({
