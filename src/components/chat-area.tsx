@@ -233,6 +233,14 @@ export function ChatArea({
       return;
     }
 
+    // If the profile changed but we already have messages (e.g. initial query
+    // sent during onboarding), keep them and reload from the existing session
+    // instead of wiping everything.
+    if (profileChanged && !activeSessionId && sessionIdRef.current && messages.length > 0) {
+      // The session was already created by the initial query — just keep it
+      return;
+    }
+
     cancel();
     setMessages([]);
     setSuggestions([]);
