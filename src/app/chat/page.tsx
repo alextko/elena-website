@@ -137,13 +137,17 @@ function ChatPageInner() {
     }
   }, [loading, session, fetchSessions]);
 
-  // Re-fetch sessions when profile switches (sessions are profile-scoped)
+  // Re-fetch sessions when profile switches or is first set (sessions are profile-scoped)
   const prevProfileId = useRef(profileId);
   useEffect(() => {
-    if (profileId && prevProfileId.current && profileId !== prevProfileId.current) {
-      setActiveSessionId(null);
-      setIsNewChat(true);
-      fetchSessions();
+    if (profileId && profileId !== prevProfileId.current) {
+      if (prevProfileId.current) {
+        // Profile switch — reset to new chat
+        setActiveSessionId(null);
+        setIsNewChat(true);
+      }
+      // Delay fetch slightly to let link-profile complete first
+      setTimeout(() => fetchSessions(), 1500);
     }
     prevProfileId.current = profileId;
   }, [profileId, fetchSessions]);
