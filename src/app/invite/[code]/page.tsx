@@ -64,7 +64,10 @@ function InvitePageInner() {
     let cancelled = false;
     async function fetchInvite() {
       try {
-        const res = await fetch(`${API_BASE}/family/invite/${code}`);
+        const url = `${API_BASE}/family/invite/${code}`;
+        console.log("[invite] code:", code, "url:", url);
+        const res = await fetch(url);
+        console.log("[invite] response:", res.status, res.statusText);
         if (!res.ok) {
           const data = await res.json().catch(() => null);
           setFetchError(data?.detail || "This invite link is not valid.");
