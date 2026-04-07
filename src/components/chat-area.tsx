@@ -55,11 +55,15 @@ type Message = {
   formRequest?: FormRequest | null;
 };
 
+// Link regex: [^)] for URL ensures we don't stop at an unrelated ")" elsewhere in text.
+// Only ONE outer capturing group so split() doesn't inject sub-group captures into the array.
+const LINK_PATTERN = /(\*\*.*?\*\*|\[[^\]]*\]\(https?:\/\/[^)\n]+\))/g;
+const LINK_MATCH_RE = /^\[([^\]]*)\]\((https?:\/\/[^)]+)\)$/;
+
 function renderMarkdown(text: string, streaming = false) {
   if (streaming) {
     // While streaming, strip link syntax to just show the display text
-    // This avoids partial "[text](http..." rendering mid-stream
-    const cleaned = text.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1");
+    const cleaned = text.replace(/\[([^\]]*)\]\(https?:\/\/[^)]*\)/g, "$1");
     const parts = cleaned.split(/(\*\*.*?\*\*)/g);
     return parts.map((part, i) => {
       if (part.startsWith("**") && part.endsWith("**")) {
@@ -68,12 +72,13 @@ function renderMarkdown(text: string, streaming = false) {
       return <span key={i}>{part}</span>;
     });
   }
-  const parts = text.split(/(\*\*.*?\*\*|\[.*?\]\(.*?\))/g);
+  const parts = text.split(LINK_PATTERN);
   return parts.map((part, i) => {
+    if (!part) return null;
     if (part.startsWith("**") && part.endsWith("**")) {
       return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>;
     }
-    const linkMatch = part.match(/^\[(.*?)\]\((.*?)\)$/);
+    const linkMatch = part.match(LINK_MATCH_RE);
     if (linkMatch) {
       return <a key={i} href={linkMatch[2]} target="_blank" rel="noopener noreferrer" className="text-[#2E6BB5] underline underline-offset-2">{linkMatch[1]}</a>;
     }
@@ -86,6 +91,9 @@ function StreamingText({ content, onComplete }: { content: string; onComplete?: 
   const [displayed, setDisplayed] = useState("");
   const [done, setDone] = useState(false);
   const indexRef = useRef(0);
+  // Use a ref for onComplete so changing the callback doesn't restart the animation
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
     indexRef.current = 0;
@@ -100,7 +108,7 @@ function StreamingText({ content, onComplete }: { content: string; onComplete?: 
       if (indexRef.current >= content.length) {
         setDisplayed(content);
         setDone(true);
-        onComplete?.();
+        onCompleteRef.current?.();
         clearInterval(timer);
       } else {
         setDisplayed(content.slice(0, indexRef.current));
@@ -108,7 +116,7 @@ function StreamingText({ content, onComplete }: { content: string; onComplete?: 
     }, 20);
 
     return () => clearInterval(timer);
-  }, [content, onComplete]);
+  }, [content]); // onComplete intentionally excluded — accessed via ref
 
   const lines = displayed.split("\n");
   return (
@@ -195,6 +203,8 @@ export function ChatArea({
 
   const [pendingFiles, setPendingFiles] = useState<{ file: File; key: string }[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const dragCounterRef = useRef(0);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState<"upgrade_required" | "limit_reached" | "feature_blocked" | "document_limit">("document_limit");
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>(undefined);
@@ -218,6 +228,15 @@ export function ChatArea({
   useEffect(() => {
     scrollEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, toolLabel, isLoading]);
+
+  // Persist messages to sessionStorage so they survive refresh and SPA navigation
+  useEffect(() => {
+    const sid = sessionIdRef.current;
+    if (!sid || messages.length === 0 || streamingId || isLoading) return;
+    try {
+      sessionStorage.setItem(`elena_msgs_${sid}`, JSON.stringify(messages));
+    } catch {}
+  }, [messages, streamingId, isLoading]);
 
   // Load session or welcome when activeSessionId, isNewChat, or profileId changes.
   // profileId is included so switching profiles forces a full session reload.
@@ -300,6 +319,19 @@ export function ChatArea({
   async function loadMessages(sessionId: string, requestId: number) {
     setLoadingMessages(true);
     setLoadError(null);
+
+    // Show cached messages instantly while the network request is in flight
+    try {
+      const cached = sessionStorage.getItem(`elena_msgs_${sessionId}`);
+      if (cached) {
+        const parsed: Message[] = JSON.parse(cached);
+        if (parsed.length > 0 && loadRequestRef.current === requestId) {
+          setMessages(parsed);
+          setLoadingMessages(false);
+        }
+      }
+    } catch {}
+
     try {
       const res = await apiFetch(`/chat/${sessionId}/messages`);
       // Ignore stale responses if the user switched sessions while this was in-flight
@@ -576,6 +608,20 @@ export function ChatArea({
     setUploading(false);
   }
 
+  function handleDragEnter(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current += 1;
+    if (dragCounterRef.current === 1) setIsDraggingOver(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current === 0) setIsDraggingOver(false);
+  }
+
   function handleDragOver(e: React.DragEvent) {
     e.preventDefault();
     e.stopPropagation();
@@ -584,6 +630,8 @@ export function ChatArea({
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     e.stopPropagation();
+    dragCounterRef.current = 0;
+    setIsDraggingOver(false);
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
       uploadFiles(files);
@@ -749,10 +797,24 @@ export function ChatArea({
   return (
     <div
       className="relative flex flex-1 flex-col min-w-0 h-dvh overflow-hidden bg-white"
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => e.preventDefault()}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
       <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} reason={upgradeReason} featureName={upgradeFeature} />
+
+      {/* Full-page drag-and-drop overlay */}
+      {isDraggingOver && (
+        <div className="pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[#0F1B3D]/[0.06] backdrop-blur-[1px]">
+          <div className="flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-[#0F1B3D]/30 bg-white/80 px-10 py-8 shadow-lg">
+            <Paperclip className="h-8 w-8 text-[#0F1B3D]/40" />
+            <p className="text-base font-semibold text-[#0F1B3D]/70">Drop files to upload</p>
+            <p className="text-sm text-[#0F1B3D]/40">Images, PDFs, and documents</p>
+          </div>
+        </div>
+      )}
+
       {/* Grain texture overlay */}
       <div
         className="pointer-events-none absolute inset-0 z-0 opacity-[0.08] mix-blend-overlay"
@@ -784,8 +846,8 @@ export function ChatArea({
       </div>
 
       {/* Messages */}
-      <div className="relative z-10 flex-1 min-h-0 overflow-y-auto overflow-x-hidden chat-selectable">
-        <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
+      <div className="relative z-10 flex-1 min-h-0 overflow-y-auto overflow-x-hidden chat-selectable flex flex-col">
+        <div className="mx-auto max-w-2xl px-4 py-8 space-y-6 flex-1 flex flex-col w-full">
           {/* Shimmer loading -- shown while waiting for sessions to resolve or messages to load */}
           {messages.length === 0 && !welcomeHeading && !loadError && !initialQuery && !localStorage.getItem("elena_pending_query") && (
             <div className="space-y-6 py-8 animate-pulse">
@@ -821,12 +883,30 @@ export function ChatArea({
 
           {/* Welcome state -- hidden when there's a pending query */}
           {messages.length === 0 && !loadingMessages && !loadError && welcomeHeading && !initialQuery && !localStorage.getItem("elena_pending_query") && (
-            <div className="flex flex-col items-start py-12">
-              <h2 className="text-2xl font-bold text-[#0F1B3D] mb-3">{welcomeHeading}</h2>
-              {welcomeMessage && (
-                <p className="text-[0.9rem] leading-relaxed text-[#0F1B3D]/60 max-w-md">
-                  {welcomeMessage}
-                </p>
+            <div className="flex-1 flex flex-col items-start justify-center gap-4 py-8">
+              <div>
+                <h2 className="text-2xl font-bold text-[#0F1B3D] mb-3">{welcomeHeading}</h2>
+                {welcomeMessage && (
+                  <p className="text-[0.9rem] leading-relaxed text-[#0F1B3D]/60 max-w-md">
+                    {welcomeMessage}
+                  </p>
+                )}
+              </div>
+              {!isLoading && !streamingId && suggestions.length > 0 && (
+                <div className="flex gap-1.5 flex-wrap">
+                  {suggestions.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => {
+                        analytics.track("Welcome Suggestion Clicked", { suggestion_text: s });
+                        handleSend(s);
+                      }}
+                      className="rounded-full border border-[#0F1B3D]/10 bg-[#f5f7fb] px-3 py-1.5 text-xs font-medium text-[#0F1B3D]/70 whitespace-nowrap shadow-[0_1px_4px_rgba(15,27,61,0.04)] transition-all hover:bg-[#0F1B3D]/[0.08] hover:-translate-y-px"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           )}
@@ -985,7 +1065,7 @@ export function ChatArea({
           )}
 
           {/* Suggestion chips — inline after last message, left-aligned with text */}
-          {!isLoading && !streamingId && suggestions.length > 0 && (
+          {messages.length > 0 && !isLoading && !streamingId && suggestions.length > 0 && (
             <div className="mt-3">
               <div className="flex gap-1.5 flex-wrap">
                 {suggestions.map((s) => (
@@ -1014,8 +1094,6 @@ export function ChatArea({
       {/* Input bar */}
       <div
         className="flex-shrink-0 relative z-10 mx-auto w-full max-w-2xl px-4 pb-6 pt-2"
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
       >
         {/* Pending file chips */}
         {pendingFiles.length > 0 && (
