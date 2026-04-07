@@ -201,9 +201,7 @@ const SUGGESTIONS: {
       segments: [
         { type: "text", value: "Help me manage " },
         { type: "blank", value: "", placeholder: "family member" },
-        { type: "text", value: "'s healthcare. They need " },
-        { type: "blank", value: "", placeholder: "what they need" },
-        { type: "text", value: "." },
+        { type: "text", value: "'s healthcare." },
       ],
     },
   },
