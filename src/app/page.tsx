@@ -619,7 +619,7 @@ function LandingPage() {
           </p>
 
           {/* Chat input bar */}
-          <div className="flex flex-col bg-white/95 rounded-[20px] border border-white/30 max-w-[680px] w-full mx-auto mt-8 shadow-[0_4px_24px_rgba(0,0,0,0.1)] overflow-hidden">
+          <div className="flex flex-col bg-white/95 rounded-[20px] border border-white/30 max-w-[680px] w-full mx-auto mt-8 shadow-[0_4px_24px_rgba(0,0,0,0.1)]">
             <div className="px-5 pt-[18px] pb-3 relative h-[7rem] max-md:h-[7.5rem]">
               {madlib ? (
                 <div
