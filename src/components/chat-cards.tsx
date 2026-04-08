@@ -1538,9 +1538,8 @@ export function BillAnalysisCard({ data }: { data: BillAnalysis }) {
   return (
     <div className="mt-3 max-w-md rounded-2xl bg-white elena-card-shadow overflow-hidden border border-[#E5E5EA]">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-[#E5E5EA] flex items-center gap-2">
-        <AlertTriangle className="h-4 w-4 text-[#0F1B3D]" />
-        <p className="text-[11px] font-bold uppercase tracking-wider text-[#0F1B3D]">
+      <div className="px-4 py-3 border-b border-[#E5E5EA]">
+        <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--elena-text-muted)]">
           Bill Analysis · {issueCount} Issue{issueCount !== 1 ? "s" : ""} Found
         </p>
       </div>
@@ -1556,7 +1555,11 @@ export function BillAnalysisCard({ data }: { data: BillAnalysis }) {
                 ? "DUPLICATE"
                 : "OVERCHARGE";
 
-          const badgeColor = "bg-[#F2F2F7] text-[#0F1B3D]/70";
+          const badgeColor = item.issue_type === "overcharge" || item.issue_type === "unnecessary"
+            ? "bg-red-50 text-red-600"
+            : item.issue_type === "above_average"
+              ? "bg-amber-50 text-amber-600"
+              : "bg-[#F2F2F7] text-[#0F1B3D]/70";
 
           return (
             <div key={i} className="rounded-xl border-[1.5px] border-[var(--elena-border-light)] px-3 py-2.5">
@@ -1574,7 +1577,7 @@ export function BillAnalysisCard({ data }: { data: BillAnalysis }) {
                 </span>
               </div>
               <div className="flex items-baseline gap-2 mt-1.5">
-                <span className="text-[14px] text-[#0F1B3D]/50 line-through">
+                <span className="text-[14px] text-red-400 line-through">
                   ${item.charged.toLocaleString()}
                 </span>
                 <span className="text-[14px] font-bold text-[var(--elena-text-primary)]">
@@ -1594,14 +1597,14 @@ export function BillAnalysisCard({ data }: { data: BillAnalysis }) {
       {/* Savings footer */}
       <div className="px-4 py-3 border-t border-[#E5E5EA] bg-white">
         <div className="flex items-baseline gap-3">
-          <span className="text-sm text-[#0F1B3D]/50 line-through">
+          <span className="text-sm text-red-400 line-through">
             ${totalCharged.toLocaleString()}
           </span>
           <span className="text-xl font-bold text-[#0F1B3D]">
             ${totalFair.toLocaleString()}
           </span>
           {savingsPct > 0 && (
-            <span className="rounded-full bg-[#F2F2F7] px-2 py-0.5 text-[0.65rem] font-semibold text-[#0F1B3D]">
+            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[0.65rem] font-semibold text-emerald-600">
               {savingsPct}% potential savings
             </span>
           )}
