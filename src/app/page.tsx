@@ -601,15 +601,15 @@ function LandingPage() {
 
         {/* Content wrapper — viewport-height centered for bills, inline for others */}
         <div className="min-h-[80dvh] flex flex-col items-center justify-center w-full shrink-0 pb-8" style={{ paddingTop: "max(6rem, 12vh)" }}>
-        <div className="relative z-[4] text-center max-w-[700px] w-full px-6">
-          <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[1.9rem] font-light leading-[1.15] tracking-tight text-white">
+        <div className="relative z-[4] text-center max-w-[700px] w-full px-6 max-md:px-5">
+          <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[1.6rem] font-light leading-[1.15] tracking-tight text-white">
             {hero ? (
               <>{hero.headline[0]}<br />{hero.headline[1]}</>
             ) : (
               <>What can I help you<br />with <em className="italic font-normal font-[family-name:var(--font-dm-serif)]">today?</em></>
             )}
           </h1>
-          <p className="text-[0.95rem] max-md:text-[0.8rem] font-light text-white/85 mt-4 tracking-wide">
+          <p className="text-[0.95rem] max-md:text-[0.75rem] font-light text-white/85 mt-4 max-md:mt-2.5 tracking-wide">
             {hero ? hero.subtitle : (<>
               <span className="hidden md:inline">Elena is your personal health assistant. She&apos;s like ChatGPT, but she can make calls and is an expert in navigating the healthcare system.</span>
               <span className="md:hidden">Elena is your personal health assistant. She&apos;s like ChatGPT, but she can make calls and navigate the healthcare system.</span>
@@ -617,8 +617,8 @@ function LandingPage() {
           </p>
 
           {/* Chat input bar */}
-          <div className="flex flex-col bg-white/95 rounded-[20px] border border-white/30 max-w-[580px] w-full mx-auto mt-8 shadow-[0_4px_24px_rgba(0,0,0,0.1)]">
-            <div className="px-5 pt-[18px] pb-3 relative min-h-[3.5rem]">
+          <div className="flex flex-col bg-white/95 rounded-[20px] max-md:rounded-[16px] border border-white/30 max-w-[580px] w-full mx-auto mt-8 max-md:mt-5 shadow-[0_4px_24px_rgba(0,0,0,0.1)]">
+            <div className="px-5 max-md:px-3.5 pt-[18px] max-md:pt-3.5 pb-3 max-md:pb-2 relative min-h-[3.5rem] max-md:min-h-[2.5rem]">
               {madlib ? (
                 <div
                   ref={madlibRef}
@@ -667,15 +667,15 @@ function LandingPage() {
                 </>
               )}
             </div>
-            <div className="flex items-center justify-between px-3 pb-3 pt-1">
-              <button className="w-9 h-9 rounded-full flex items-center justify-center text-[#AEAEB2] hover:text-[#8E8E93] hover:bg-black/[0.04] transition-all" aria-label="Attach document">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+            <div className="flex items-center justify-between px-3 max-md:px-2 pb-3 max-md:pb-2 pt-1">
+              <button className="w-9 h-9 max-md:w-7 max-md:h-7 rounded-full flex items-center justify-center text-[#AEAEB2] hover:text-[#8E8E93] hover:bg-black/[0.04] transition-all" aria-label="Attach document">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 max-md:w-4 max-md:h-4">
                   <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
                 </svg>
               </button>
               <button
                 onClick={handleSend}
-                className="w-10 h-10 rounded-full bg-[#0F1B3D] flex items-center justify-center cursor-pointer transition-colors hover:bg-[#1A3A6E]"
+                className="w-10 h-10 max-md:w-8 max-md:h-8 rounded-full bg-[#0F1B3D] flex items-center justify-center cursor-pointer transition-colors hover:bg-[#1A3A6E]"
                 aria-label="Send"
               >
                 <svg viewBox="0 0 20 20" fill="none" className="w-[18px] h-[18px]">
@@ -686,7 +686,7 @@ function LandingPage() {
           </div>
 
           {/* Suggestion chips */}
-          <div className="text-[11px] font-semibold uppercase tracking-[1.5px] text-white/40 text-center mt-7 mb-3.5">
+          <div className="text-[11px] max-md:text-[9px] font-semibold uppercase tracking-[1.5px] text-white/40 text-center mt-7 max-md:mt-4 mb-3.5 max-md:mb-2">
             Common problems Elena can solve
           </div>
           <div className="flex gap-2.5 justify-center flex-nowrap px-3 max-md:overflow-x-auto max-md:justify-start max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden max-md:[mask-image:linear-gradient(to_right,black_80%,transparent_100%)]">
@@ -694,7 +694,7 @@ function LandingPage() {
               <button
                 key={s.label}
                 onClick={() => handleChipClick(s)}
-                className={`rounded-[22px] px-[18px] py-2.5 max-md:px-3.5 max-md:py-2 text-sm max-md:text-xs font-normal whitespace-nowrap cursor-pointer transition-all active:scale-[0.97] ${chipMadlib === s.madlib && s.madlib ? "bg-white/25 border border-white/40 text-white" : "bg-white/10 border border-white/20 text-white/90 hover:bg-white/[0.18] hover:border-white/[0.35]"}`}
+                className={`rounded-[22px] px-[18px] py-2.5 max-md:px-3 max-md:py-1.5 text-sm max-md:text-[11px] font-normal whitespace-nowrap cursor-pointer transition-all active:scale-[0.97] ${chipMadlib === s.madlib && s.madlib ? "bg-white/25 border border-white/40 text-white" : "bg-white/10 border border-white/20 text-white/90 hover:bg-white/[0.18] hover:border-white/[0.35]"}`}
               >
                 {s.label}
               </button>
