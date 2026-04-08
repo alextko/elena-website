@@ -807,11 +807,8 @@ export function NegotiationCard({ data }: { data: NegotiationResult }) {
       : 0;
 
   return (
-    <div className="mt-3 rounded-2xl border border-[var(--elena-green)]/20 bg-[var(--elena-green-bg)] elena-card-shadow overflow-hidden">
-      <div className="px-4 py-3 border-b border-[var(--elena-green)]/10 flex items-center gap-2">
-        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--elena-green)]/20">
-          <Check className="h-3.5 w-3.5 text-[var(--elena-green-dark)]" />
-        </div>
+    <div className="mt-3 rounded-2xl border border-[#E5E5EA] bg-white elena-card-shadow overflow-hidden">
+      <div className="px-4 py-3 border-b border-[#E5E5EA] flex items-center gap-2">
         <div>
           <p className="text-sm font-bold text-[var(--elena-text-primary)]">
             {data.provider_name}
@@ -826,11 +823,11 @@ export function NegotiationCard({ data }: { data: NegotiationResult }) {
           <span className="text-xs text-[var(--elena-text-muted)] line-through">
             ${data.original_amount.toFixed(0)}
           </span>
-          <span className="text-lg font-bold text-[var(--elena-green-dark)]">
+          <span className="text-lg font-bold text-[#0F1B3D]">
             ${data.negotiated_amount.toFixed(0)}
           </span>
           {pct > 0 && (
-            <span className="rounded-full bg-[var(--elena-green)]/15 px-2 py-0.5 text-[0.65rem] font-semibold text-[var(--elena-green-dark)]">
+            <span className="rounded-full bg-[#F2F2F7] px-2 py-0.5 text-[0.65rem] font-semibold text-[#0F1B3D]">
               {pct}% saved
             </span>
           )}
@@ -873,11 +870,11 @@ const ACTIVE_PHASES = new Set([
   "needs_info",
 ]);
 
-function getBookingEmoji(phase: string) {
-  if (phase === "completed" || phase === "wrapping_up") return "✅";
+function getBookingLabel(phase: string) {
+  if (phase === "completed" || phase === "wrapping_up") return "Done";
   if (phase === "failed" || phase === "cancelled" || phase === "user_cancelled")
-    return "❌";
-  return "📞";
+    return "Ended";
+  return "Calling";
 }
 
 export function BookingStatusBubble({
@@ -888,14 +885,12 @@ export function BookingStatusBubble({
   onCancel?: () => void;
 }) {
   const isActive = ACTIVE_PHASES.has(status.phase);
-  const emoji = getBookingEmoji(status.phase);
+  const label = getBookingLabel(status.phase);
 
   return (
     <div className="flex items-start gap-3 animate-in fade-in duration-300">
-      <span
-        className={`text-2xl select-none ${isActive ? "animate-booking-shake" : ""}`}
-      >
-        {emoji}
+      <span className="text-xs font-semibold text-[#0F1B3D]/50 uppercase tracking-wider mt-0.5 shrink-0">
+        {label}
       </span>
       <div className="flex-1 min-w-0">
         <p className="text-sm text-[#0F1B3D]/70">{status.message}</p>
@@ -1411,7 +1406,7 @@ export function PriceComparisonCard({
       <div className="px-3 py-2 border-b border-[var(--elena-border-light)] flex items-center justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--elena-text-muted)]">
-            💰 Price Comparison · {label}
+            Price Comparison · {label}
           </p>
           <p className="text-[11px] text-[var(--elena-text-muted)]">
             {sorted.length} location{sorted.length !== 1 ? "s" : ""} found
@@ -1430,29 +1425,22 @@ export function PriceComparisonCard({
             <div
               key={doc.npi_number || i}
               ref={(el) => { if (el) cardRefs.current.set(i, el); }}
-              className={`rounded-xl px-3 py-3 cursor-pointer transition-all duration-150 ${isBest ? "border-l-4 border-l-[var(--elena-green)]" : ""}`}
+              className="rounded-xl px-3 py-3 cursor-pointer transition-all duration-150"
               style={{
-                borderWidth: isBest ? undefined : "1.5px",
+                borderWidth: "1.5px",
                 borderStyle: "solid",
                 borderColor: isSelected
                   ? "var(--elena-selected-border)"
-                  : isBest
-                    ? undefined
-                    : "var(--elena-border-light)",
-                borderTopColor: isBest ? "var(--elena-border-light)" : undefined,
-                borderRightColor: isBest ? "var(--elena-border-light)" : undefined,
-                borderBottomColor: isBest ? "var(--elena-border-light)" : undefined,
+                  : "var(--elena-border-light)",
                 backgroundColor: isSelected
                   ? "var(--elena-selected-bg)"
-                  : isBest
-                    ? "var(--elena-green-bg)"
-                    : "var(--elena-card-bg)",
+                  : "var(--elena-card-bg)",
               }}
               onClick={() => handleSelect(i)}
             >
               {isBest && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--elena-green)]/15 px-2 py-0.5 text-[0.6rem] font-bold text-[var(--elena-green-dark)] mb-2">
-                  <Check className="h-2.5 w-2.5" /> BEST PRICE
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#0F1B3D] px-2 py-0.5 text-[0.6rem] font-bold text-white mb-2">
+                  BEST PRICE
                 </span>
               )}
 
@@ -1486,7 +1474,7 @@ export function PriceComparisonCard({
                 <div className="shrink-0 text-right">
                   {price != null && (
                     <>
-                      <p className={`${isBest ? "text-[22px] font-bold text-[var(--elena-green-dark)]" : "text-[18px] font-bold text-[var(--elena-text-primary)]"}`}>
+                      <p className={`${isBest ? "text-[22px] font-bold text-[#0F1B3D]" : "text-[18px] font-bold text-[var(--elena-text-primary)]"}`}>
                         ${Math.round(price).toLocaleString()}
                       </p>
                       <p className="text-[10px] text-[var(--elena-text-muted)]">est. out-of-pocket</p>
@@ -1497,7 +1485,7 @@ export function PriceComparisonCard({
 
               {isBest && totalSavings > 0 && (
                 <div className="mt-2 flex items-center justify-between">
-                  <span className="rounded-full bg-[var(--elena-green)]/15 px-2.5 py-0.5 text-[0.65rem] font-semibold text-[var(--elena-green-dark)]">
+                  <span className="rounded-full bg-[#F2F2F7] px-2.5 py-0.5 text-[0.65rem] font-semibold text-[#0F1B3D]">
                     SAVES YOU ${totalSavings.toLocaleString()}
                   </span>
                   {onBookDoctor && (
@@ -1527,7 +1515,7 @@ export function PriceComparisonCard({
       </div>
 
       {totalSavings > 0 && (
-        <div className="border-t border-[var(--elena-border-light)] px-4 py-3 bg-[var(--elena-warm-bg)]">
+        <div className="border-t border-[#E5E5EA] px-4 py-3 bg-white">
           <p className="text-[13px] font-semibold text-[var(--elena-text-primary)]">
             Same procedure. Same quality. Save ${totalSavings.toLocaleString()} by choosing the right spot.
           </p>
@@ -1548,11 +1536,11 @@ export function BillAnalysisCard({ data }: { data: BillAnalysis }) {
   const savingsPct = totalCharged > 0 ? Math.round(((totalCharged - totalFair) / totalCharged) * 100) : 0;
 
   return (
-    <div className="mt-3 max-w-md rounded-2xl bg-white elena-card-shadow overflow-hidden border border-amber-200/60">
+    <div className="mt-3 max-w-md rounded-2xl bg-white elena-card-shadow overflow-hidden border border-[#E5E5EA]">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-amber-200/40 flex items-center gap-2 bg-amber-50/50">
-        <AlertTriangle className="h-4 w-4 text-amber-500" />
-        <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600">
+      <div className="px-4 py-3 border-b border-[#E5E5EA] flex items-center gap-2">
+        <AlertTriangle className="h-4 w-4 text-[#0F1B3D]" />
+        <p className="text-[11px] font-bold uppercase tracking-wider text-[#0F1B3D]">
           Bill Analysis · {issueCount} Issue{issueCount !== 1 ? "s" : ""} Found
         </p>
       </div>
@@ -1568,9 +1556,7 @@ export function BillAnalysisCard({ data }: { data: BillAnalysis }) {
                 ? "DUPLICATE"
                 : "OVERCHARGE";
 
-          const badgeColor = item.issue_type === "above_average"
-            ? "bg-amber-100 text-amber-700"
-            : "bg-red-100 text-red-700";
+          const badgeColor = "bg-[#F2F2F7] text-[#0F1B3D]/70";
 
           return (
             <div key={i} className="rounded-xl border-[1.5px] border-[var(--elena-border-light)] px-3 py-2.5">
@@ -1588,7 +1574,7 @@ export function BillAnalysisCard({ data }: { data: BillAnalysis }) {
                 </span>
               </div>
               <div className="flex items-baseline gap-2 mt-1.5">
-                <span className="text-[14px] text-red-400 line-through">
+                <span className="text-[14px] text-[#0F1B3D]/50 line-through">
                   ${item.charged.toLocaleString()}
                 </span>
                 <span className="text-[14px] font-bold text-[var(--elena-text-primary)]">
@@ -1606,16 +1592,16 @@ export function BillAnalysisCard({ data }: { data: BillAnalysis }) {
       </div>
 
       {/* Savings footer */}
-      <div className="px-4 py-3 border-t border-[var(--elena-green)]/10 bg-[var(--elena-green-bg)]">
+      <div className="px-4 py-3 border-t border-[#E5E5EA] bg-white">
         <div className="flex items-baseline gap-3">
-          <span className="text-sm text-[var(--elena-text-muted)] line-through">
+          <span className="text-sm text-[#0F1B3D]/50 line-through">
             ${totalCharged.toLocaleString()}
           </span>
-          <span className="text-xl font-bold text-[var(--elena-green-dark)]">
+          <span className="text-xl font-bold text-[#0F1B3D]">
             ${totalFair.toLocaleString()}
           </span>
           {savingsPct > 0 && (
-            <span className="rounded-full bg-[var(--elena-green)]/15 px-2 py-0.5 text-[0.65rem] font-semibold text-[var(--elena-green-dark)]">
+            <span className="rounded-full bg-[#F2F2F7] px-2 py-0.5 text-[0.65rem] font-semibold text-[#0F1B3D]">
               {savingsPct}% potential savings
             </span>
           )}
@@ -1658,10 +1644,9 @@ export function AppealScriptCard({ data }: { data: AppealScript }) {
   return (
     <div className="mt-3 max-w-md rounded-2xl bg-white elena-card-shadow overflow-hidden border border-[var(--elena-border-light)]">
       {/* Denial section */}
-      <div className="border-l-4 border-l-red-400 px-4 py-3 bg-red-50/50">
+      <div className="px-4 py-3 border-b border-[#E5E5EA]">
         <div className="flex items-center gap-2 mb-1">
-          <div className="h-2 w-2 rounded-full bg-red-400" />
-          <p className="text-[11px] font-bold uppercase tracking-wider text-red-600">Denial Reason</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#0F1B3D]">Denial Reason</p>
         </div>
         <p className="text-[13px] italic text-[var(--elena-text-primary)]">
           &ldquo;{data.denial_reason}&rdquo;
@@ -1707,9 +1692,9 @@ export function AppealScriptCard({ data }: { data: AppealScript }) {
 
       {/* Success rate banner */}
       {data.success_rate_note && (
-        <div className="px-4 py-2.5 bg-[var(--elena-green-bg)] border-t border-[var(--elena-green)]/10 flex items-center gap-2">
-          <Check className="h-3.5 w-3.5 text-[var(--elena-green-dark)]" />
-          <p className="text-[12px] font-semibold text-[var(--elena-green-dark)]">
+        <div className="px-4 py-2.5 bg-white border-t border-[#E5E5EA] flex items-center gap-2">
+          <Check className="h-3.5 w-3.5 text-[#0F1B3D]" />
+          <p className="text-[12px] font-semibold text-[#0F1B3D]">
             {data.success_rate_note}
           </p>
         </div>
@@ -1847,11 +1832,11 @@ export function AssistanceProgramsCard({
   };
 
   const typeBadgeColor: Record<string, string> = {
-    charity_care: "bg-blue-100 text-blue-700",
-    grant: "bg-purple-100 text-purple-700",
-    government: "bg-indigo-100 text-indigo-700",
-    sliding_scale: "bg-orange-100 text-orange-700",
-    payment_plan: "bg-gray-100 text-gray-600",
+    charity_care: "bg-[#F2F2F7] text-[#0F1B3D]/70",
+    grant: "bg-[#F2F2F7] text-[#0F1B3D]/70",
+    government: "bg-[#F2F2F7] text-[#0F1B3D]/70",
+    sliding_scale: "bg-[#F2F2F7] text-[#0F1B3D]/70",
+    payment_plan: "bg-[#F2F2F7] text-[#0F1B3D]/70",
   };
 
   function ProgramCard({ program, idx }: { program: typeof data.programs[0]; idx: number }) {
@@ -1885,7 +1870,7 @@ export function AssistanceProgramsCard({
         {/* Badges row */}
         <div className="flex items-center flex-wrap gap-1.5 mt-1.5">
           {program.is_501r && (
-            <span className="flex items-center gap-[3px] text-[11px] font-semibold text-[var(--elena-green)]">
+            <span className="flex items-center gap-[3px] text-[11px] font-semibold text-[#0F1B3D]/60">
               <Check className="h-3 w-3" /> 501(r) Nonprofit
             </span>
           )}
@@ -1906,8 +1891,8 @@ export function AssistanceProgramsCard({
               {program.max_benefit}
             </p>
           )}
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] font-bold ${isLikely ? "bg-[var(--elena-green-bg)] text-[var(--elena-green-dark)]" : "bg-amber-100 text-amber-700"}`}>
-            {isLikely ? "✓ LIKELY ELIGIBLE" : "⚠ MAY QUALIFY"}
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] font-bold ${isLikely ? "bg-[#0F1B3D] text-white" : "bg-[#F2F2F7] text-[#0F1B3D]/70"}`}>
+            {isLikely ? "LIKELY ELIGIBLE" : "MAY QUALIFY"}
           </span>
         </div>
 
@@ -1961,7 +1946,7 @@ export function AssistanceProgramsCard({
       <div className="p-3 space-y-3">
         {likelyPrograms.length > 0 && (
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--elena-green-dark)] mb-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#0F1B3D] mb-2">
               You Likely Qualify
             </p>
             <div className="flex flex-col gap-2">
@@ -1975,7 +1960,7 @@ export function AssistanceProgramsCard({
 
         {possiblePrograms.length > 0 && (
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-600 mb-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#8E8E93] mb-2">
               Worth Checking
             </p>
             <div className="flex flex-col gap-2">
@@ -1989,8 +1974,8 @@ export function AssistanceProgramsCard({
       </div>
 
       {data.total_potential_benefit && (
-        <div className="px-4 py-3 border-t border-[var(--elena-green)]/10 bg-[var(--elena-green-bg)]">
-          <p className="text-[13px] font-semibold text-[var(--elena-green-dark)]">
+        <div className="px-4 py-3 border-t border-[#E5E5EA] bg-white">
+          <p className="text-[13px] font-semibold text-[#0F1B3D]">
             Total potential benefit: {data.total_potential_benefit}
           </p>
         </div>
