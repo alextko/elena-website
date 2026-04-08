@@ -61,7 +61,7 @@ type Message = {
   webSources?: SourcePayload[] | null;
   negotiationResult?: NegotiationResult | null;
   bookingResult?: BookingResultPayload | null;
-  callResult?: { provider_name: string; summary: string; call_type: string } | null;
+  callResult?: { booking_id?: string; provider_name: string; summary: string; call_type: string } | null;
   formRequest?: FormRequest | null;
   billAnalysis?: BillAnalysis | null;
   appealScript?: AppealScript | null;
@@ -587,14 +587,17 @@ export function ChatArea({
         if (!res.ok) return;
         const msgs: ChatMessageItem[] = await res.json();
         // Look for a resolved escalation message we haven't shown yet
+        // Check both booking_result (appointment) and call_result (informational)
         const resolved = msgs.find(
           (m) => m.booking_result?.status === "confirmed" ||
-                 (m.booking_result?.booking_id === bid && m.booking_result?.status !== "escalated")
+                 (m.booking_result?.booking_id === bid && m.booking_result?.status !== "escalated") ||
+                 m.call_result?.booking_id === bid
         );
-        if (resolved && resolved.booking_result) {
+        if (resolved && (resolved.booking_result || resolved.call_result)) {
           // Check if we already have this message
           const alreadyShown = messages.some(
-            (m) => m.bookingResult?.status === "confirmed" && m.bookingResult?.booking_id === bid
+            (m) => (m.bookingResult?.status === "confirmed" && m.bookingResult?.booking_id === bid) ||
+                   (m.callResult?.provider_name && m.content === resolved.text)
           );
           if (!alreadyShown) {
             const newId = nextId();
@@ -606,6 +609,7 @@ export function ChatArea({
                 content: resolved.text || "",
                 isStreaming: true,
                 bookingResult: resolved.booking_result ?? undefined,
+                callResult: resolved.call_result ?? undefined,
               },
             ]);
             setStreamingId(newId);
