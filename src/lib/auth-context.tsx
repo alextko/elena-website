@@ -536,6 +536,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!res.ok) return null;
       const created: CareTodo = await res.json();
       setTodos((prev) => [...prev, created]);
+      // Also add to todayTodos if it's a daily habit or due today
+      const today = new Date().toISOString().split("T")[0];
+      if (created.frequency === "daily" || created.due_date === today || !created.due_date) {
+        setTodayTodos((prev) => [...prev, created]);
+      }
       return created;
     } catch {
       return null;
@@ -551,6 +556,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!res.ok) return;
       const updated: CareTodo = await res.json();
       setTodos((prev) => prev.map((t) => (t.id === id ? updated : t)));
+      setTodayTodos((prev) => prev.map((t) => (t.id === id ? updated : t)));
     } catch {
       // silent
     }
@@ -558,6 +564,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const deleteTodo = useCallback(async (id: string) => {
     setTodos((prev) => prev.filter((t) => t.id !== id));
+    setTodayTodos((prev) => prev.filter((t) => t.id !== id));
     try {
       await apiFetch(`/todos/${id}`, { method: "DELETE" });
     } catch {
