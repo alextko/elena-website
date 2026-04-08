@@ -2,10 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Search, X } from "lucide-react";
+import { Plus, Search, X, Bell } from "lucide-react";
 import * as analytics from "@/lib/analytics";
 import { ProfilePopover } from "@/components/profile-popover";
 import { useAuth } from "@/lib/auth-context";
+import { apiFetch } from "@/lib/apiFetch";
 import type { ChatSessionItem } from "@/lib/types";
 
 function groupByDate(sessions: ChatSessionItem[]): Record<string, ChatSessionItem[]> {
@@ -57,29 +58,124 @@ function SidebarProfile({ onBookMessage }: { onBookMessage?: (msg: string) => vo
   const email = user?.email || "";
 
   return (
-    <ProfilePopover onBookMessage={onBookMessage}>
-      <button className="flex w-full items-center gap-2.5 border-t border-[#0F1B3D]/[0.06] px-5 py-4 text-left hover:opacity-80 transition-opacity">
-        <div className="flex-shrink-0">
-          {profileData.profilePictureUrl ? (
-            <img
-              src={profileData.profilePictureUrl}
-              alt={displayName}
-              className="h-8 w-8 rounded-full object-cover"
-            />
-          ) : (
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-xs font-semibold text-[#0F1B3D]/50">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-[#0F1B3D] truncate">{displayName}</p>
-          <p className="truncate text-xs text-[#0F1B3D]/40">{email}</p>
-        </div>
+    <div className="flex items-center border-t border-[#0F1B3D]/[0.06]">
+      <ProfilePopover onBookMessage={onBookMessage}>
+        <button className="flex flex-1 items-center gap-2.5 px-5 py-4 text-left hover:opacity-80 transition-opacity">
+          <div className="flex-shrink-0">
+            {profileData.profilePictureUrl ? (
+              <img
+                src={profileData.profilePictureUrl}
+                alt={displayName}
+                className="h-8 w-8 rounded-full object-cover"
+              />
+            ) : (
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-xs font-semibold text-[#0F1B3D]/50">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-[#0F1B3D] truncate">{displayName}</p>
+            <p className="truncate text-xs text-[#0F1B3D]/40">{email}</p>
+          </div>
+        </button>
+      </ProfilePopover>
+      <NotificationBell />
+    </div>
+  );
+}
+
+function NotificationBell() {
+  const [notifications, setNotifications] = useState<{ id: string; message: string; status: string; created_at: string }[]>([]);
+  const [open, setOpen] = useState(false);
+  const [lastReadAt, setLastReadAt] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem("elena_notifications_read_at") || "";
+  });
+  const bellRef = useRef<HTMLDivElement>(null);
+
+  // Fetch notifications on mount and every 30 seconds
+  useEffect(() => {
+    async function fetchNotifications() {
+      try {
+        const res = await apiFetch("/chat/notifications");
+        if (res.ok) {
+          const data = await res.json();
+          setNotifications(data);
+        }
+      } catch {}
+    }
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const unreadCount = notifications.filter((n) => !lastReadAt || n.created_at > lastReadAt).length;
+
+  function markAllRead() {
+    const now = new Date().toISOString();
+    setLastReadAt(now);
+    localStorage.setItem("elena_notifications_read_at", now);
+  }
+
+  return (
+    <div ref={bellRef} className="relative flex-shrink-0 pr-4">
+      <button
+        onClick={() => { setOpen(!open); if (!open && unreadCount > 0) markAllRead(); }}
+        className="relative flex h-9 w-9 items-center justify-center rounded-full hover:bg-[#0F1B3D]/[0.04] transition-colors"
+      >
+        <Bell className="h-[18px] w-[18px] text-[#0F1B3D]/50" />
+        {unreadCount > 0 && (
+          <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
       </button>
-    </ProfilePopover>
+      {open && (
+        <div className="absolute bottom-full right-0 mb-2 w-72 rounded-2xl bg-white border border-[#E5E5EA] shadow-[0_8px_24px_rgba(0,0,0,0.12)] overflow-hidden z-50">
+          <div className="px-4 py-3 border-b border-[#E5E5EA]">
+            <p className="text-[13px] font-bold text-[#0F1B3D]">Notifications</p>
+          </div>
+          <div className="max-h-64 overflow-y-auto">
+            {notifications.length === 0 ? (
+              <div className="px-4 py-6 text-center">
+                <p className="text-[13px] text-[#8E8E93]">No notifications yet</p>
+              </div>
+            ) : (
+              notifications.map((n) => (
+                <div key={n.id} className="px-4 py-3 border-b border-[#E5E5EA] last:border-b-0">
+                  <div className="flex items-start gap-2">
+                    <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ${n.status === "confirmed" ? "bg-emerald-500" : n.status === "failed" ? "bg-red-400" : "bg-blue-400"}`}>
+                      {n.status === "confirmed" ? "✓" : n.status === "failed" ? "✕" : "ℹ"}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] text-[#1C1C1E] leading-[1.4]">{n.message}</p>
+                      <p className="text-[11px] text-[#AEAEB2] mt-1">
+                        {new Date(n.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
