@@ -94,19 +94,22 @@ function NotificationBell() {
   const bellRef = useRef<HTMLDivElement>(null);
 
   // Fetch notifications on mount and every 30 seconds
+  const [notifLoaded, setNotifLoaded] = useState(false);
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const res = await apiFetch("/chat/notifications");
+      if (res.ok) {
+        setNotifications(await res.json());
+      }
+    } catch {}
+    setNotifLoaded(true);
+  }, []);
+
   useEffect(() => {
-    async function fetchNotifications() {
-      try {
-        const res = await apiFetch("/chat/notifications");
-        if (res.ok) {
-          setNotifications(await res.json());
-        }
-      } catch {}
-    }
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchNotifications]);
 
   // Close on outside click
   useEffect(() => {
@@ -152,7 +155,7 @@ function NotificationBell() {
           <div className="max-h-[50vh] md:max-h-64 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="px-4 py-6 text-center">
-                <p className="text-[13px] text-[#8E8E93]">No notifications yet</p>
+                <p className="text-[13px] text-[#8E8E93]">{notifLoaded ? "No new notifications" : "Loading..."}</p>
               </div>
             ) : (
               notifications.map((n) => (
