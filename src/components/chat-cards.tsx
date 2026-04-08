@@ -10,6 +10,10 @@ import {
   ChevronUp,
   Check,
   Navigation,
+  AlertTriangle,
+  Copy,
+  Send,
+  Clock,
 } from "lucide-react";
 import type {
   DoctorResult,
@@ -20,6 +24,10 @@ import type {
   BookingStatusResponse,
   BookingResultPayload,
   FormRequest,
+  BillAnalysis,
+  AppealScript,
+  AppealStatus,
+  AssistanceResult,
 } from "@/lib/types";
 import { apiFetch } from "@/lib/apiFetch";
 
@@ -1338,6 +1346,655 @@ export function FormRequestCard({
           Skip
         </button>
       </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────
+//  Price Comparison Card
+// ────────────────────────────────────────────────────────────────
+
+export function PriceComparisonCard({
+  doctors,
+  label,
+  onBookDoctor,
+}: {
+  doctors: DoctorResult[];
+  label: string;
+  onBookDoctor?: (doctor: DoctorResult) => void;
+}) {
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+  const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
+  const sorted = [...doctors].sort(
+    (a, b) => (a.estimated_oop ?? a.negotiated_rate ?? Infinity) - (b.estimated_oop ?? b.negotiated_rate ?? Infinity)
+  );
+
+  const cheapest = sorted[0]?.estimated_oop ?? sorted[0]?.negotiated_rate ?? 0;
+  const mostExpensive = sorted[sorted.length - 1]?.estimated_oop ?? sorted[sorted.length - 1]?.negotiated_rate ?? 0;
+  const totalSavings = mostExpensive - cheapest;
+
+  const mapItems: MapItem[] = sorted
+    .map((d, i) => ({
+      lat: d.latitude ?? 0,
+      lng: d.longitude ?? 0,
+      label: d.name,
+      sublabel: d.specialty,
+      index: i,
+    }))
+    .filter((m) => m.lat !== 0 && m.lng !== 0);
+
+  const hasMap = mapItems.length > 0;
+
+  const handleSelect = (idx: number) => {
+    setSelectedIdx((prev) => (prev === idx ? null : idx));
+  };
+
+  useEffect(() => {
+    if (selectedIdx !== null) {
+      const el = cardRefs.current.get(selectedIdx);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [selectedIdx]);
+
+  const { containerRef, height } = useInlineMap({
+    items: mapItems,
+    height: 180,
+    selectedIndex: selectedIdx,
+    onSelect: handleSelect,
+  });
+
+  return (
+    <div className="mt-3 max-w-md rounded-2xl bg-white elena-card-shadow overflow-hidden border border-[var(--elena-border-light)]">
+      {hasMap && <InlineMapView containerRef={containerRef} height={height} />}
+
+      <div className="px-3 py-2 border-b border-[var(--elena-border-light)] flex items-center justify-between">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--elena-text-muted)]">
+            💰 Price Comparison · {label}
+          </p>
+          <p className="text-[11px] text-[var(--elena-text-muted)]">
+            {sorted.length} location{sorted.length !== 1 ? "s" : ""} found
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2.5 p-3">
+        {sorted.map((doc, i) => {
+          const isBest = i === 0;
+          const isSelected = selectedIdx === i;
+          const dist = formatDistance(doc.distance_km);
+          const price = doc.estimated_oop ?? doc.negotiated_rate ?? null;
+
+          return (
+            <div
+              key={doc.npi_number || i}
+              ref={(el) => { if (el) cardRefs.current.set(i, el); }}
+              className={`rounded-xl px-3 py-3 cursor-pointer transition-all duration-150 ${isBest ? "border-l-4 border-l-[var(--elena-green)]" : ""}`}
+              style={{
+                borderWidth: isBest ? undefined : "1.5px",
+                borderStyle: "solid",
+                borderColor: isSelected
+                  ? "var(--elena-selected-border)"
+                  : isBest
+                    ? undefined
+                    : "var(--elena-border-light)",
+                borderTopColor: isBest ? "var(--elena-border-light)" : undefined,
+                borderRightColor: isBest ? "var(--elena-border-light)" : undefined,
+                borderBottomColor: isBest ? "var(--elena-border-light)" : undefined,
+                backgroundColor: isSelected
+                  ? "var(--elena-selected-bg)"
+                  : isBest
+                    ? "var(--elena-green-bg)"
+                    : "var(--elena-card-bg)",
+              }}
+              onClick={() => handleSelect(i)}
+            >
+              {isBest && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--elena-green)]/15 px-2 py-0.5 text-[0.6rem] font-bold text-[var(--elena-green-dark)] mb-2">
+                  <Check className="h-2.5 w-2.5" /> BEST PRICE
+                </span>
+              )}
+
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[15px] font-bold text-[var(--elena-text-primary)] truncate">
+                    {doc.name}
+                  </p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {doc.facility_type && <FacilityBadge type={doc.facility_type} />}
+                    {dist && (
+                      <span className="text-[11px] text-[var(--elena-text-muted)]">{dist}</span>
+                    )}
+                    {doc.healthgrades_rating != null && (
+                      <span className="flex items-center gap-[3px] shrink-0">
+                        <Star className="h-3 w-3 text-[var(--elena-gold)] fill-[var(--elena-gold)]" />
+                        <span className="text-xs font-bold text-[var(--elena-gold)]">
+                          {doc.healthgrades_rating.toFixed(1)}
+                        </span>
+                        {doc.google_review_count != null && (
+                          <span className="text-[11px] text-[var(--elena-text-muted)]">
+                            ({doc.google_review_count})
+                          </span>
+                        )}
+                      </span>
+                    )}
+                    {doc.in_network && <InNetworkBadge />}
+                  </div>
+                </div>
+
+                <div className="shrink-0 text-right">
+                  {price != null && (
+                    <>
+                      <p className={`${isBest ? "text-[22px] font-bold text-[var(--elena-green-dark)]" : "text-[18px] font-bold text-[var(--elena-text-primary)]"}`}>
+                        ${Math.round(price).toLocaleString()}
+                      </p>
+                      <p className="text-[10px] text-[var(--elena-text-muted)]">est. out-of-pocket</p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {isBest && totalSavings > 0 && (
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="rounded-full bg-[var(--elena-green)]/15 px-2.5 py-0.5 text-[0.65rem] font-semibold text-[var(--elena-green-dark)]">
+                    SAVES YOU ${totalSavings.toLocaleString()}
+                  </span>
+                  {onBookDoctor && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onBookDoctor(doc); }}
+                      className="rounded-lg bg-[#4A6CF7] px-3.5 py-1.5 text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
+                    >
+                      Book
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {!isBest && onBookDoctor && (
+                <div className="mt-2 flex justify-end">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onBookDoctor(doc); }}
+                    className="rounded-lg bg-[#4A6CF7] px-3.5 py-1.5 text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
+                  >
+                    Book
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {totalSavings > 0 && (
+        <div className="border-t border-[var(--elena-border-light)] px-4 py-3 bg-[var(--elena-warm-bg)]">
+          <p className="text-[13px] font-semibold text-[var(--elena-text-primary)]">
+            Same procedure. Same quality. Save ${totalSavings.toLocaleString()} by choosing the right spot.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────
+//  Bill Analysis Card
+// ────────────────────────────────────────────────────────────────
+
+export function BillAnalysisCard({ data }: { data: BillAnalysis }) {
+  const issueCount = data.items.length;
+  const totalCharged = data.total_charged;
+  const totalFair = data.total_fair;
+  const savingsPct = totalCharged > 0 ? Math.round(((totalCharged - totalFair) / totalCharged) * 100) : 0;
+
+  return (
+    <div className="mt-3 max-w-md rounded-2xl bg-white elena-card-shadow overflow-hidden border border-amber-200/60">
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-amber-200/40 flex items-center gap-2 bg-amber-50/50">
+        <AlertTriangle className="h-4 w-4 text-amber-500" />
+        <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600">
+          Bill Analysis · {issueCount} Issue{issueCount !== 1 ? "s" : ""} Found
+        </p>
+      </div>
+
+      {/* Line items */}
+      <div className="flex flex-col gap-2 p-3">
+        {data.items.map((item, i) => {
+          const badge = item.issue_type === "unnecessary"
+            ? "SHOULDN'T BE BILLED"
+            : item.issue_type === "above_average"
+              ? "ABOVE AVERAGE"
+              : item.issue_type === "duplicate"
+                ? "DUPLICATE"
+                : "OVERCHARGE";
+
+          const badgeColor = item.issue_type === "above_average"
+            ? "bg-amber-100 text-amber-700"
+            : "bg-red-100 text-red-700";
+
+          return (
+            <div key={i} className="rounded-xl border-[1.5px] border-[var(--elena-border-light)] px-3 py-2.5">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-semibold text-[var(--elena-text-primary)]">
+                    {item.description}
+                  </p>
+                  {item.code && (
+                    <p className="text-[11px] text-[var(--elena-text-muted)]">CPT {item.code}</p>
+                  )}
+                </div>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] font-bold ${badgeColor}`}>
+                  {badge}
+                </span>
+              </div>
+              <div className="flex items-baseline gap-2 mt-1.5">
+                <span className="text-[14px] text-red-400 line-through">
+                  ${item.charged.toLocaleString()}
+                </span>
+                <span className="text-[14px] font-bold text-[var(--elena-text-primary)]">
+                  → ${item.fair_price.toLocaleString()}
+                </span>
+              </div>
+              {item.explanation && (
+                <p className="text-[11px] text-[var(--elena-text-muted)] italic mt-1">
+                  {item.explanation}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Savings footer */}
+      <div className="px-4 py-3 border-t border-[var(--elena-green)]/10 bg-[var(--elena-green-bg)]">
+        <div className="flex items-baseline gap-3">
+          <span className="text-sm text-[var(--elena-text-muted)] line-through">
+            ${totalCharged.toLocaleString()}
+          </span>
+          <span className="text-xl font-bold text-[var(--elena-green-dark)]">
+            ${totalFair.toLocaleString()}
+          </span>
+          {savingsPct > 0 && (
+            <span className="rounded-full bg-[var(--elena-green)]/15 px-2 py-0.5 text-[0.65rem] font-semibold text-[var(--elena-green-dark)]">
+              {savingsPct}% potential savings
+            </span>
+          )}
+        </div>
+        {data.next_steps && data.next_steps.length > 0 && (
+          <div className="mt-2.5">
+            <p className="text-xs font-semibold text-[var(--elena-text-secondary)] mb-1">Next Steps</p>
+            <ol className="list-decimal list-inside space-y-0.5">
+              {data.next_steps.map((step, i) => (
+                <li key={i} className="text-xs text-[var(--elena-text-primary)]">{step}</li>
+              ))}
+            </ol>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────
+//  Appeal Script Card
+// ────────────────────────────────────────────────────────────────
+
+export function AppealScriptCard({ data }: { data: AppealScript }) {
+  const [expanded, setExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const lines = data.appeal_text.split("\n");
+  const previewLines = expanded ? lines : lines.slice(0, 10);
+  const hasMore = lines.length > 10;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(data.appeal_text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
+
+  return (
+    <div className="mt-3 max-w-md rounded-2xl bg-white elena-card-shadow overflow-hidden border border-[var(--elena-border-light)]">
+      {/* Denial section */}
+      <div className="border-l-4 border-l-red-400 px-4 py-3 bg-red-50/50">
+        <div className="flex items-center gap-2 mb-1">
+          <div className="h-2 w-2 rounded-full bg-red-400" />
+          <p className="text-[11px] font-bold uppercase tracking-wider text-red-600">Denial Reason</p>
+        </div>
+        <p className="text-[13px] italic text-[var(--elena-text-primary)]">
+          &ldquo;{data.denial_reason}&rdquo;
+        </p>
+        <p className="text-[11px] text-[var(--elena-text-muted)] mt-1">
+          {data.insurer}{data.denial_code ? ` · Denial code ${data.denial_code}` : ""}
+        </p>
+      </div>
+
+      {/* Appeal letter section */}
+      <div className="px-4 py-3">
+        <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--elena-navy)] mb-2">
+          Your Appeal Letter
+        </p>
+        <div className="text-[13px] text-[var(--elena-text-primary)] leading-relaxed whitespace-pre-wrap">
+          {previewLines.join("\n")}
+          {!expanded && hasMore && "..."}
+        </div>
+        {hasMore && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="mt-1.5 text-[12px] font-semibold text-[#4A6CF7] hover:underline"
+          >
+            {expanded ? "Show less ▴" : "Show full letter ▾"}
+          </button>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex gap-2 mt-3">
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-1.5 rounded-lg border border-[var(--elena-border)] px-3 py-2 text-[13px] font-semibold text-[var(--elena-text-primary)] hover:bg-[var(--elena-warm-bg)] transition-colors"
+          >
+            <Copy className="h-3.5 w-3.5" />
+            {copied ? "Copied!" : "Copy"}
+          </button>
+          <button className="flex items-center gap-1.5 rounded-lg bg-[#4A6CF7] px-3.5 py-2 text-[13px] font-semibold text-white hover:opacity-90 transition-opacity">
+            <Send className="h-3.5 w-3.5" />
+            Send via Elena
+          </button>
+        </div>
+      </div>
+
+      {/* Success rate banner */}
+      {data.success_rate_note && (
+        <div className="px-4 py-2.5 bg-[var(--elena-green-bg)] border-t border-[var(--elena-green)]/10 flex items-center gap-2">
+          <Check className="h-3.5 w-3.5 text-[var(--elena-green-dark)]" />
+          <p className="text-[12px] font-semibold text-[var(--elena-green-dark)]">
+            {data.success_rate_note}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────
+//  Appeal Tracker Card
+// ────────────────────────────────────────────────────────────────
+
+export function AppealTrackerCard({ data }: { data: AppealStatus }) {
+  const progress = data.days_elapsed != null && data.days_total != null
+    ? Math.min(100, Math.round((data.days_elapsed / data.days_total) * 100))
+    : null;
+
+  return (
+    <div className="mt-3 max-w-md rounded-2xl bg-white elena-card-shadow overflow-hidden border border-[var(--elena-border-light)]">
+      <div className="px-4 py-3 border-b border-[var(--elena-border-light)]">
+        <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--elena-navy)]">
+          Appeal Status
+        </p>
+      </div>
+
+      <div className="px-4 py-3">
+        <div className="relative">
+          {data.steps.map((step, i) => {
+            const isLast = i === data.steps.length - 1;
+            return (
+              <div key={i} className="flex gap-3 pb-4 last:pb-0">
+                {/* Timeline dot + line */}
+                <div className="flex flex-col items-center">
+                  {step.status === "completed" ? (
+                    <div className="h-3 w-3 rounded-full bg-[var(--elena-navy)] shrink-0" />
+                  ) : step.status === "current" ? (
+                    <div className="h-3 w-3 rounded-full bg-[var(--elena-green)] shrink-0 animate-thinking-pulse" />
+                  ) : (
+                    <div className="h-3 w-3 rounded-full border-2 border-[var(--elena-border)] shrink-0" />
+                  )}
+                  {!isLast && (
+                    <div className="w-[2px] flex-1 bg-[var(--elena-border-light)] mt-1" />
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0 -mt-0.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className={`text-[13px] ${step.status === "pending" ? "text-[var(--elena-text-muted)]" : "font-semibold text-[var(--elena-text-primary)]"}`}>
+                      {step.label}
+                    </p>
+                    {step.date && (
+                      <span className="text-[11px] text-[var(--elena-text-muted)] shrink-0">
+                        {step.date}
+                      </span>
+                    )}
+                  </div>
+                  {step.detail && (
+                    <p className="text-[11px] text-[var(--elena-text-muted)] italic mt-0.5">
+                      {step.detail}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      {progress != null && data.deadline_date && (
+        <div className="px-4 py-2.5 border-t border-[var(--elena-border-light)] bg-[var(--elena-warm-bg)]">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] font-semibold text-[var(--elena-text-secondary)]">
+              <Clock className="h-3 w-3 inline mr-1" />
+              Day {data.days_elapsed} of {data.days_total}
+            </span>
+            <span className="text-[11px] text-[var(--elena-text-muted)]">
+              Response due {data.deadline_date}
+            </span>
+          </div>
+          <div className="h-2 rounded-full bg-[var(--elena-border-light)]">
+            <div
+              className="h-2 rounded-full bg-[var(--elena-navy)] transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────
+//  Assistance Programs Card (charity care + financial resources)
+// ────────────────────────────────────────────────────────────────
+
+export function AssistanceProgramsCard({
+  data,
+  onCall,
+}: {
+  data: AssistanceResult;
+  onCall?: (program: { name: string; phone: string }) => void;
+}) {
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+
+  const likelyPrograms = data.programs.filter((p) => p.eligibility === "likely");
+  const possiblePrograms = data.programs.filter((p) => p.eligibility === "possible");
+
+  const mapItems: MapItem[] = data.programs
+    .map((p, i) => ({
+      lat: p.latitude ?? 0,
+      lng: p.longitude ?? 0,
+      label: p.name,
+      sublabel: p.program_name,
+      index: i,
+    }))
+    .filter((m) => m.lat !== 0 && m.lng !== 0);
+
+  const hasMap = mapItems.length > 0;
+
+  const { containerRef, height } = useInlineMap({
+    items: mapItems,
+    height: 160,
+    selectedIndex: selectedIdx,
+    onSelect: (idx) => setSelectedIdx((prev) => (prev === idx ? null : idx)),
+  });
+
+  const typeLabel: Record<string, string> = {
+    charity_care: "CHARITY CARE",
+    grant: "GRANT",
+    government: "GOVERNMENT",
+    sliding_scale: "SLIDING SCALE",
+    payment_plan: "PAYMENT PLAN",
+  };
+
+  const typeBadgeColor: Record<string, string> = {
+    charity_care: "bg-blue-100 text-blue-700",
+    grant: "bg-purple-100 text-purple-700",
+    government: "bg-indigo-100 text-indigo-700",
+    sliding_scale: "bg-orange-100 text-orange-700",
+    payment_plan: "bg-gray-100 text-gray-600",
+  };
+
+  function ProgramCard({ program, idx }: { program: typeof data.programs[0]; idx: number }) {
+    const isSelected = selectedIdx === idx;
+    const dist = formatDistance(program.distance_km);
+    const isLikely = program.eligibility === "likely";
+
+    return (
+      <div
+        className="rounded-xl border-[1.5px] px-3 py-2.5 cursor-pointer transition-all duration-150"
+        style={{
+          borderColor: isSelected ? "var(--elena-selected-border)" : "var(--elena-border-light)",
+          backgroundColor: isSelected ? "var(--elena-selected-bg)" : "var(--elena-card-bg)",
+        }}
+        onClick={() => setSelectedIdx((prev) => (prev === idx ? null : idx))}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <p className="text-[14px] font-bold text-[var(--elena-text-primary)] truncate">
+              {program.name}
+            </p>
+            <p className="text-[12px] text-[var(--elena-text-muted)] truncate">
+              {program.program_name}
+            </p>
+          </div>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[0.55rem] font-bold ${typeBadgeColor[program.type] || "bg-gray-100 text-gray-600"}`}>
+            {typeLabel[program.type] || program.type.toUpperCase()}
+          </span>
+        </div>
+
+        {/* Badges row */}
+        <div className="flex items-center flex-wrap gap-1.5 mt-1.5">
+          {program.is_501r && (
+            <span className="flex items-center gap-[3px] text-[11px] font-semibold text-[var(--elena-green)]">
+              <Check className="h-3 w-3" /> 501(r) Nonprofit
+            </span>
+          )}
+          {dist && (
+            <span className="text-[11px] text-[var(--elena-text-muted)]">{dist}</span>
+          )}
+        </div>
+
+        {/* Eligibility detail */}
+        <p className="text-[11px] text-[var(--elena-text-muted)] mt-1">
+          {program.eligibility_detail}
+        </p>
+
+        {/* Benefit + eligibility badge */}
+        <div className="flex items-center justify-between gap-2 mt-2">
+          {program.max_benefit && (
+            <p className="text-[15px] font-bold text-[var(--elena-text-primary)]">
+              {program.max_benefit}
+            </p>
+          )}
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] font-bold ${isLikely ? "bg-[var(--elena-green-bg)] text-[var(--elena-green-dark)]" : "bg-amber-100 text-amber-700"}`}>
+            {isLikely ? "✓ LIKELY ELIGIBLE" : "⚠ MAY QUALIFY"}
+          </span>
+        </div>
+
+        {/* Action buttons */}
+        {(program.phone || program.apply_url) && (
+          <div className="flex gap-2 mt-2">
+            {program.phone && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCall?.({ name: program.name, phone: program.phone! });
+                }}
+                className="flex items-center gap-1 rounded-lg border border-[var(--elena-border)] px-2.5 py-1.5 text-[12px] font-semibold text-[var(--elena-text-primary)] hover:bg-[var(--elena-warm-bg)] transition-colors"
+              >
+                <Phone className="h-3 w-3" /> Call
+              </button>
+            )}
+            {program.apply_url && (
+              <a
+                href={program.apply_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-1 rounded-lg bg-[#4A6CF7] px-2.5 py-1.5 text-[12px] font-semibold text-white hover:opacity-90 transition-opacity"
+              >
+                <ExternalLink className="h-3 w-3" /> Apply
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 max-w-md rounded-2xl bg-white elena-card-shadow overflow-hidden border border-[var(--elena-border-light)]">
+      {hasMap && <InlineMapView containerRef={containerRef} height={height} />}
+
+      <div className="px-3 py-2 border-b border-[var(--elena-border-light)]">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--elena-text-muted)]">
+          Assistance Programs · {data.programs.length} Found
+        </p>
+      </div>
+
+      {data.user_context && (
+        <div className="px-3 py-2 bg-[var(--elena-warm-bg)] border-b border-[var(--elena-border-light)]">
+          <p className="text-[11px] text-[var(--elena-text-secondary)]">{data.user_context}</p>
+        </div>
+      )}
+
+      <div className="p-3 space-y-3">
+        {likelyPrograms.length > 0 && (
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--elena-green-dark)] mb-2">
+              You Likely Qualify
+            </p>
+            <div className="flex flex-col gap-2">
+              {likelyPrograms.map((p) => {
+                const idx = data.programs.indexOf(p);
+                return <ProgramCard key={idx} program={p} idx={idx} />;
+              })}
+            </div>
+          </div>
+        )}
+
+        {possiblePrograms.length > 0 && (
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-600 mb-2">
+              Worth Checking
+            </p>
+            <div className="flex flex-col gap-2">
+              {possiblePrograms.map((p) => {
+                const idx = data.programs.indexOf(p);
+                return <ProgramCard key={idx} program={p} idx={idx} />;
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {data.total_potential_benefit && (
+        <div className="px-4 py-3 border-t border-[var(--elena-green)]/10 bg-[var(--elena-green-bg)]">
+          <p className="text-[13px] font-semibold text-[var(--elena-green-dark)]">
+            Total potential benefit: {data.total_potential_benefit}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
