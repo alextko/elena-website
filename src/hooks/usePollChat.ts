@@ -1,7 +1,7 @@
 import { useRef, useCallback } from "react";
 import { apiFetch } from "@/lib/apiFetch";
 import type { ChatResponse, PollResponse } from "@/lib/types";
-import { DEMO_MODE, matchDemoResponse } from "@/lib/demo-responses";
+import { matchDemoResponse } from "@/lib/demo-responses";
 
 interface PollChatParams {
   message: string;
@@ -19,7 +19,7 @@ function log(msg: string, ...args: unknown[]) {
   console.log(`[poll] ${msg}`, ...args);
 }
 
-export function usePollChat() {
+export function usePollChat(demoMode = false) {
   const activeRequestRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const cancelledRef = useRef(false);
@@ -47,7 +47,7 @@ export function usePollChat() {
       let pollCount = 0;
 
       // Demo mode: intercept and return hardcoded response
-      if (DEMO_MODE) {
+      if (demoMode) {
         const demoMatch = matchDemoResponse(params.message);
         log("DEMO CHECK", { message: params.message.slice(0, 50), match: demoMatch?.name ?? "none" });
         if (demoMatch) {
@@ -210,7 +210,7 @@ export function usePollChat() {
       activeRequestRef.current = null;
       return { session_id: sessionId };
     },
-    [],
+    [demoMode],
   );
 
   const cancel = useCallback(() => {

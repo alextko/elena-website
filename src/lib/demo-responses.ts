@@ -14,8 +14,6 @@ import type {
   AssistanceResult,
 } from "@/lib/types";
 
-export const DEMO_MODE = true;
-
 // Partial of the Message type from chat-area — only the card fields
 type DemoCardFields = {
   doctorResults?: DoctorResult[] | null;
@@ -488,7 +486,6 @@ const DEMO_ENTRIES: DemoEntry[] = [
 // ─────────────────────────────────────────────────────────────────
 
 export function matchDemoResponse(userMessage: string): DemoEntry | null {
-  if (!DEMO_MODE) return null;
   const lower = userMessage.toLowerCase();
   for (const entry of DEMO_ENTRIES) {
     if (entry.matchKeywords.every((kw) => lower.includes(kw.toLowerCase()))) {

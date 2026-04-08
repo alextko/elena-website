@@ -192,6 +192,7 @@ export function ChatArea({
   bookMessage,
   onBookMessageConsumed,
   isNewChat,
+  demoMode = false,
 }: {
   onToggleSidebar: () => void;
   sidebarOpen: boolean;
@@ -201,6 +202,7 @@ export function ChatArea({
   bookMessage?: string | null;
   onBookMessageConsumed?: () => void;
   isNewChat?: boolean;
+  demoMode?: boolean;
 }) {
   const { profileId, profileData, profiles, refreshInsurance } = useAuth();
   const [input, setInput] = useState("");
@@ -229,7 +231,7 @@ export function ChatArea({
   const hasCreatedSessionRef = useRef(false);
   const initialQuerySentRef = useRef(false);
   const scrollEndRef = useRef<HTMLDivElement>(null);
-  const { sendAndPoll, cancel } = usePollChat();
+  const { sendAndPoll, cancel } = usePollChat(demoMode);
   const booking = useBookingPoll();
   const msgIdCounter = useRef(0);
 
