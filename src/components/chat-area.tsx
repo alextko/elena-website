@@ -209,6 +209,8 @@ export function ChatArea({
   const { profileId, profileData, profiles, refreshInsurance } = useAuth();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const messagesRef = useRef<Message[]>([]);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [toolLabel, setToolLabel] = useState<string | null>(null);
@@ -595,16 +597,15 @@ export function ChatArea({
         const msgs: ChatMessageItem[] = await res.json();
         // Look for a resolved escalation message we haven't shown yet
         // Check both booking_result (appointment) and call_result (informational)
+        // Only match messages for THIS specific booking
         const resolved = msgs.find(
-          (m) => m.booking_result?.status === "confirmed" ||
-                 (m.booking_result?.booking_id === bid && m.booking_result?.status !== "escalated") ||
-                 m.call_result?.booking_id === bid
+          (m) => (m.booking_result?.booking_id === bid && m.booking_result?.status !== "escalated") ||
+                 (m.call_result?.booking_id === bid)
         );
         if (resolved && (resolved.booking_result || resolved.call_result)) {
-          // Check if we already have this message
-          const alreadyShown = messages.some(
-            (m) => (m.bookingResult?.status === "confirmed" && m.bookingResult?.booking_id === bid) ||
-                   (m.callResult?.provider_name && m.content === resolved.text)
+          // Check if we already injected this into the UI
+          const alreadyShown = messagesRef.current.some(
+            (m) => m.bookingResult?.booking_id === bid && m.bookingResult?.status !== "escalated"
           );
           if (!alreadyShown) {
             const newId = nextId();
