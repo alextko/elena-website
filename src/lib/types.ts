@@ -108,6 +108,8 @@ export interface SubscriptionResponse {
   status: string;
   current_period_end?: string | null;
   cancel_at_period_end: boolean;
+  calls_remaining?: number | null;    // phone calls remaining this period
+  documents_remaining?: number | null; // document uploads remaining
 }
 
 // --- Structured result payloads ---

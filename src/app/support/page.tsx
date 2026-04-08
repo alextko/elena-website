@@ -28,7 +28,7 @@ const FAQS = [
   },
   {
     q: "How much does Elena cost?",
-    a: "Elena offers a free tier with basic features. Premium plans unlock additional capabilities like unlimited phone calls, bill negotiation, and advanced document analysis. You can view pricing from within the app.",
+    a: "Elena is free to use with a limited number of phone calls and document uploads each month. Paid plans unlock unlimited calls, uploads, family profiles, and more. You can view pricing from within the app.",
   },
   {
     q: "Can Elena help manage care for my family?",
