@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
       { source: "/lp/calls", destination: "/?ref=calls" },
       { source: "/lp/caregiver", destination: "/?ref=caregiver" },
       { source: "/lp/meds", destination: "/?ref=meds" },
+      { source: "/lp/fertility", destination: "/?ref=fertility" },
       { source: "/lp/quiz", destination: "/risk-assessment" },
     ];
   },

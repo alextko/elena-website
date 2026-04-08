@@ -270,6 +270,11 @@ const HERO_COPY: Record<string, { headline: [string, string]; subtitle: string; 
     subtitle: "Stop calling pharmacy after pharmacy. Tell Elena what you need and she'll find it in stock near you.",
     prefill: "find my medication in stock near me",
   },
+  fertility: {
+    headline: ["Navigate fertility", "without the stress."],
+    subtitle: "Elena compares IVF clinic prices, handles insurance approvals, and manages your entire fertility journey so you can focus on what matters.",
+    prefill: "help me compare IVF clinics and costs near me",
+  },
 };
 
 const DEFAULT_HERO = {
@@ -317,6 +322,15 @@ const MADLIB_TEMPLATES: Record<string, { segments: { type: "text" | "blank"; val
       { type: "text", value: " in stock near me." },
     ],
   },
+  fertility: {
+    segments: [
+      { type: "text", value: "Compare " },
+      { type: "blank", value: "", placeholder: "IVF, IUI, egg freezing" },
+      { type: "text", value: " costs near " },
+      { type: "blank", value: "", placeholder: "zip code" },
+      { type: "text", value: ". Check if my insurance covers it." },
+    ],
+  },
 };
 
 const ROTATING_QUERIES: Record<string, string[]> = {
@@ -345,6 +359,15 @@ const ROTATING_QUERIES: Record<string, string[]> = {
     "compare GoodRx vs insurance price for Lipitor",
     "which pharmacy near me has the cheapest generics?",
     "find affordable insulin near me",
+  ],
+  fertility: [
+    "compare IVF clinic prices near me",
+    "does my insurance cover egg freezing?",
+    "find a fertility specialist that takes Blue Cross",
+    "how much does IUI cost out of pocket?",
+    "help me understand my fertility benefits",
+    "compare embryo transfer costs at clinics near me",
+    "what fertility medications does my plan cover?",
   ],
 };
 
@@ -423,6 +446,7 @@ function LandingPage() {
     "/lp/calls": "calls",
     "/lp/caregiver": "caregiver",
     "/lp/meds": "meds",
+    "/lp/fertility": "fertility",
   };
   const ref = searchParams.get("ref") || searchParams.get("utm_content") || LP_PATH_MAP[pathname] || null;
   const hero = (ref && HERO_COPY[ref]) || null;
