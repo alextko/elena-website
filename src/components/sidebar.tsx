@@ -87,10 +87,12 @@ function SidebarProfile({ onBookMessage }: { onBookMessage?: (msg: string) => vo
 function NotificationBell() {
   const [notifications, setNotifications] = useState<{ id: string; message: string; status: string; created_at: string }[]>([]);
   const [open, setOpen] = useState(false);
-  // Read status is stored on the backend for cross-platform sync
   const bellRef = useRef<HTMLDivElement>(null);
+  const [lastSeenAt, setLastSeenAt] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem("elena_notif_seen") || "";
+  });
 
-  // Fetch notifications on mount and every 30 seconds
   const [notifLoaded, setNotifLoaded] = useState(false);
   const fetchNotifications = useCallback(async () => {
     try {
@@ -110,11 +112,12 @@ function NotificationBell() {
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
-  // Close on outside click
+  // Close on outside click and mark as seen
   useEffect(() => {
     if (!open) return;
     function handleClick(e: MouseEvent) {
       if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
+        markSeen();
         setOpen(false);
       }
     }
@@ -122,18 +125,26 @@ function NotificationBell() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
-  const notifCount = notifications.length;
+  const unseenCount = notifications.filter((n) => !lastSeenAt || n.created_at > lastSeenAt).length;
+
+  function markSeen() {
+    if (notifications.length > 0) {
+      const newest = notifications[0].created_at;
+      setLastSeenAt(newest);
+      localStorage.setItem("elena_notif_seen", newest);
+    }
+  }
 
   return (
     <div ref={bellRef} className="relative flex-shrink-0">
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => { if (!open) { /* opening */ } else { markSeen(); } setOpen(!open); }}
         className="relative flex h-7 w-7 items-center justify-center rounded-full hover:bg-[#0F1B3D]/[0.06] transition-colors"
       >
         <Bell className="h-4 w-4 text-[#0F1B3D]/40" />
-        {notifCount > 0 && (
+        {unseenCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-bold text-white">
-            {notifCount > 9 ? "9+" : notifCount}
+            {unseenCount > 9 ? "9+" : unseenCount}
           </span>
         )}
       </button>
