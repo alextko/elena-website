@@ -1,6 +1,7 @@
 import { useRef, useCallback } from "react";
 import { apiFetch } from "@/lib/apiFetch";
 import type { ChatResponse, PollResponse } from "@/lib/types";
+import { DEMO_MODE, matchDemoResponse } from "@/lib/demo-responses";
 
 interface PollChatParams {
   message: string;
@@ -44,6 +45,32 @@ export function usePollChat() {
       let sessionId: string | null = params.session_id;
       let hitPaywall = false;
       let pollCount = 0;
+
+      // Demo mode: intercept and return hardcoded response
+      if (DEMO_MODE) {
+        const demoMatch = matchDemoResponse(params.message);
+        log("DEMO CHECK", { message: params.message.slice(0, 50), match: demoMatch?.name ?? "none" });
+        if (demoMatch) {
+          // Simulate tool progress
+          onToolProgress(demoMatch.toolLabel);
+          await new Promise((r) => setTimeout(r, demoMatch.delay));
+          onToolProgress(null);
+          // Build a fake ChatResponse
+          const fakeResponse: ChatResponse = {
+            reply: demoMatch.reply,
+            session_id: params.session_id || "demo-session",
+            suggestions: demoMatch.suggestions,
+            doctor_results: demoMatch.cardFields.doctorResults ?? null,
+            bill_analysis: demoMatch.cardFields.billAnalysis ?? null,
+            appeal_script: demoMatch.cardFields.appealScript ?? null,
+            appeal_status: demoMatch.cardFields.appealStatus ?? null,
+            assistance_result: demoMatch.cardFields.assistanceResult ?? null,
+            price_comparison_label: demoMatch.cardFields.priceComparisonLabel ?? null,
+          };
+          onDone(fakeResponse);
+          return { session_id: params.session_id };
+        }
+      }
 
       // POST /chat/send to get a chat_request_id
       const sendRequest = async (): Promise<boolean> => {

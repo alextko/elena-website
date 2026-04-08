@@ -31,6 +31,11 @@ export interface ChatResponse {
   upgrade_url?: string | null;
   gated_feature?: string | null;
   form_request?: FormRequest | null;
+  bill_analysis?: BillAnalysis | null;
+  appeal_script?: AppealScript | null;
+  appeal_status?: AppealStatus | null;
+  assistance_result?: AssistanceResult | null;
+  price_comparison_label?: string | null;
 }
 
 // --- Session History (api_chat.py:480-485) ---
@@ -57,6 +62,10 @@ export interface ChatMessageItem {
   negotiation_result?: NegotiationResult | null;
   web_sources?: SourcePayload[] | null;
   form_request?: FormRequest | null;
+  appeal_script?: AppealScript | null;
+  appeal_status?: AppealStatus | null;
+  assistance_result?: AssistanceResult | null;
+  price_comparison_label?: string | null;
 }
 
 // --- Welcome (api_chat.py:275-279) ---
@@ -169,9 +178,72 @@ export interface BookingResult {
   reason_for_visit?: string | null;
 }
 
+export interface BillAnalysisItem {
+  description: string;
+  code?: string;
+  charged: number;
+  fair_price: number;
+  potential_savings: number;
+  issue_type?: "overcharge" | "above_average" | "duplicate" | "unnecessary";
+  explanation?: string;
+}
+
 export interface BillAnalysis {
-  items: { description: string; charged: number; fair_price: number; potential_savings: number }[];
+  items: BillAnalysisItem[];
+  total_charged: number;
+  total_fair: number;
   total_potential_savings: number;
+  next_steps?: string[];
+}
+
+// --- Appeal / Prior Auth ---
+
+export interface AppealScript {
+  denial_reason: string;
+  denial_code?: string;
+  insurer: string;
+  procedure: string;
+  appeal_text: string;
+  legal_citations: string[];
+  success_rate_note?: string;
+}
+
+export interface AppealStatusStep {
+  label: string;
+  date?: string;
+  detail?: string;
+  status: "completed" | "current" | "pending";
+}
+
+export interface AppealStatus {
+  steps: AppealStatusStep[];
+  days_elapsed?: number;
+  days_total?: number;
+  deadline_date?: string;
+}
+
+// --- Assistance Programs (charity care + financial resources) ---
+
+export interface AssistanceProgram {
+  name: string;
+  program_name: string;
+  type: "charity_care" | "grant" | "government" | "sliding_scale" | "payment_plan";
+  covers: string;
+  eligibility: "likely" | "possible" | "unlikely";
+  eligibility_detail: string;
+  max_benefit?: string;
+  latitude?: number;
+  longitude?: number;
+  distance_km?: number;
+  phone?: string;
+  apply_url?: string;
+  is_501r?: boolean;
+}
+
+export interface AssistanceResult {
+  programs: AssistanceProgram[];
+  user_context?: string;
+  total_potential_benefit?: string;
 }
 
 export interface NegotiationResult {

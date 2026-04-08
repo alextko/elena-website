@@ -21,6 +21,11 @@ import {
   AddToCalendarCard,
   BookingQuestionCard,
   FormRequestCard,
+  PriceComparisonCard,
+  BillAnalysisCard,
+  AppealScriptCard,
+  AppealTrackerCard,
+  AssistanceProgramsCard,
 } from "@/components/chat-cards";
 import type {
   ChatMessageItem,
@@ -33,6 +38,10 @@ import type {
   NegotiationResult,
   BookingResultPayload,
   FormRequest,
+  BillAnalysis,
+  AppealScript,
+  AppealStatus,
+  AssistanceResult,
 } from "@/lib/types";
 
 type Attachment = {
@@ -53,6 +62,11 @@ type Message = {
   negotiationResult?: NegotiationResult | null;
   bookingResult?: BookingResultPayload | null;
   formRequest?: FormRequest | null;
+  billAnalysis?: BillAnalysis | null;
+  appealScript?: AppealScript | null;
+  appealStatus?: AppealStatus | null;
+  assistanceResult?: AssistanceResult | null;
+  priceComparisonLabel?: string | null;
 };
 
 // Link regex: [^)] for URL ensures we don't stop at an unrelated ")" elsewhere in text.
@@ -356,6 +370,11 @@ export function ChatArea({
           bookingResult: m.booking_result ?? undefined,
           webSources: m.web_sources,
           formRequest: m.form_request,
+          billAnalysis: m.bill_analysis,
+          appealScript: m.appeal_script,
+          appealStatus: m.appeal_status,
+          assistanceResult: m.assistance_result,
+          priceComparisonLabel: m.price_comparison_label,
         }));
       setMessages(mapped);
       // Empty session — show welcome screen rather than leaving the page blank
@@ -769,6 +788,11 @@ export function ChatArea({
               webSources: chatResult.web_sources,
               negotiationResult: undefined,
               formRequest: chatResult.form_request,
+              billAnalysis: chatResult.bill_analysis,
+              appealScript: chatResult.appeal_script,
+              appealStatus: chatResult.appeal_status,
+              assistanceResult: chatResult.assistance_result,
+              priceComparisonLabel: chatResult.price_comparison_label,
             },
           ]);
           setStreamingId(assistantId);
@@ -1014,16 +1038,39 @@ export function ChatArea({
                         onCall={(loc) => handleSend(`Call ${loc.name} at ${loc.phone_number}`)}
                       />
                     ) : !msg.formRequest && msg.doctorResults && msg.doctorResults.length > 0 ? (
-                      <DoctorResultsCard
-                        doctors={msg.doctorResults}
-                        onBookDoctor={(doc) => handleSend(`Book an appointment with ${doc.name}`)}
-                      />
+                      msg.priceComparisonLabel ? (
+                        <PriceComparisonCard
+                          doctors={msg.doctorResults}
+                          label={msg.priceComparisonLabel}
+                          onBookDoctor={(doc) => handleSend(`Book an appointment with ${doc.name}`)}
+                        />
+                      ) : (
+                        <DoctorResultsCard
+                          doctors={msg.doctorResults}
+                          onBookDoctor={(doc) => handleSend(`Book an appointment with ${doc.name}`)}
+                        />
+                      )
                     ) : null}
                     {msg.reviewResults && (
                       <ReviewsCard data={msg.reviewResults} />
                     )}
                     {msg.negotiationResult && (
                       <NegotiationCard data={msg.negotiationResult} />
+                    )}
+                    {msg.billAnalysis && (
+                      <BillAnalysisCard data={msg.billAnalysis} />
+                    )}
+                    {msg.appealScript && (
+                      <AppealScriptCard data={msg.appealScript} />
+                    )}
+                    {msg.appealStatus && (
+                      <AppealTrackerCard data={msg.appealStatus} />
+                    )}
+                    {msg.assistanceResult && (
+                      <AssistanceProgramsCard
+                        data={msg.assistanceResult}
+                        onCall={({ name, phone }) => handleSend(`Call ${name} at ${phone}`)}
+                      />
                     )}
                     {msg.bookingResult && msg.bookingResult.status === "confirmed" && (
                       <>
