@@ -130,6 +130,7 @@ function NotificationBell() {
     const now = new Date().toISOString();
     setLastReadAt(now);
     localStorage.setItem("elena_notifications_read_at", now);
+    setNotifications([]);
   }
 
   return (
