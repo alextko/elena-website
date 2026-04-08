@@ -155,7 +155,7 @@ function NotificationBell() {
           <div className="max-h-[50vh] md:max-h-64 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="px-4 py-6 text-center">
-                <p className="text-[13px] text-[#8E8E93]">{notifLoaded ? "No new notifications" : "Loading..."}</p>
+                <p className="text-[13px] text-[#8E8E93]">{notifLoaded ? "No notifications" : "Loading..."}</p>
               </div>
             ) : (
               notifications.map((n) => (
