@@ -18,6 +18,7 @@ import {
   SourcesFooter,
   BookingStatusBubble,
   AppointmentConfirmationCard,
+  CallUpdateCard,
   AddToCalendarCard,
   BookingQuestionCard,
   FormRequestCard,
@@ -1092,8 +1093,11 @@ export function ChatArea({
                         <AddToCalendarCard result={msg.bookingResult} />
                       </>
                     )}
-                    {msg.bookingResult && msg.bookingResult.status !== "confirmed" && msg.bookingResult.status !== "escalated" && (
-                      <AppointmentConfirmationCard result={msg.bookingResult} />
+                    {msg.bookingResult && msg.bookingResult.status === "failed" && (
+                      <CallUpdateCard result={msg.bookingResult} onAction={handleSend} />
+                    )}
+                    {msg.bookingResult && !["confirmed", "failed", "escalated"].includes(msg.bookingResult.status) && (
+                      <CallUpdateCard result={msg.bookingResult} onAction={handleSend} />
                     )}
                     {msg.callResult && (
                       <div className="mt-3 max-w-md rounded-2xl border border-emerald-200 bg-emerald-50 p-4">

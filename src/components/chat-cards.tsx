@@ -1000,6 +1000,86 @@ export function AppointmentConfirmationCard({
 }
 
 // ────────────────────────────────────────────────────────────────
+//  Call Update Card
+// ────────────────────────────────────────────────────────────────
+
+export function CallUpdateCard({
+  result,
+  onAction,
+}: {
+  result: BookingResultPayload;
+  onAction?: (text: string) => void;
+}) {
+  const isConfirmed = result.status === "confirmed";
+  const isFailed = result.status === "failed";
+
+  const statusIcon = isConfirmed ? "✓" : isFailed ? "✕" : "ℹ";
+  const statusColor = isConfirmed
+    ? "bg-emerald-500"
+    : isFailed
+      ? "bg-red-400"
+      : "bg-blue-400";
+  const headerText = isConfirmed ? "CALL COMPLETED" : "CALL UPDATE";
+  const headerColor = isConfirmed ? "text-emerald-600" : isFailed ? "text-red-500" : "text-blue-500";
+
+  return (
+    <div className="mt-3 max-w-md rounded-2xl border border-[#0F1B3D]/[0.08] bg-white p-4 shadow-[0_4px_16px_rgba(15,27,61,0.10)]">
+      {/* Header */}
+      <div className="flex items-center gap-2.5 mb-3">
+        <div className={`flex h-6 w-6 items-center justify-center rounded-full ${statusColor} text-white text-xs font-bold`}>
+          {statusIcon}
+        </div>
+        <span className={`text-[11px] font-bold uppercase tracking-wider ${headerColor}`}>
+          {headerText}
+        </span>
+      </div>
+
+      {/* Provider */}
+      {result.provider_name && (
+        <p className="text-[15px] font-semibold text-[#0F1B3D]">
+          {result.provider_name}
+        </p>
+      )}
+      {result.provider_specialty && (
+        <p className="text-[13px] text-[#0F1B3D]/50">{result.provider_specialty}</p>
+      )}
+
+      {/* Message */}
+      {result.transcript_summary && (
+        <p className="mt-2 text-[14px] leading-[1.6] text-[#1C1C1E]">
+          {result.transcript_summary}
+        </p>
+      )}
+
+      {/* Date/time for confirmed */}
+      {isConfirmed && result.confirmed_date && (
+        <p className="mt-2 text-[13px] font-semibold text-emerald-600">
+          {formatBookingDate(result.confirmed_date, result.confirmed_time)}
+        </p>
+      )}
+
+      {/* Action buttons for failed */}
+      {isFailed && onAction && (
+        <div className="flex gap-2 mt-3">
+          <button
+            onClick={() => onAction("Find me another provider")}
+            className="flex-1 rounded-xl border border-[#0F1B3D]/10 bg-[#0F1B3D]/[0.03] px-3 py-2 text-[13px] font-medium text-[#0F1B3D]/70 hover:bg-[#0F1B3D]/[0.06] transition-colors"
+          >
+            Find another provider
+          </button>
+          <button
+            onClick={() => onAction("Try calling again")}
+            className="flex-1 rounded-xl border border-[#0F1B3D]/10 bg-[#0F1B3D]/[0.03] px-3 py-2 text-[13px] font-medium text-[#0F1B3D]/70 hover:bg-[#0F1B3D]/[0.06] transition-colors"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────
 //  Add to Calendar Card
 // ────────────────────────────────────────────────────────────────
 
