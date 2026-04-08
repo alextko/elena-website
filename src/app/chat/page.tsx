@@ -72,6 +72,9 @@ function ChatPageInner() {
   const [bookMessage, setBookMessage] = useState<string | null>(null);
   const [isNewChat, setIsNewChat] = useState(false);
   const [showProfileTooltip, setShowProfileTooltip] = useState(false);
+  const [demoMode] = useState(() =>
+    typeof window !== "undefined" && sessionStorage.getItem("elena_demo_mode") === "true"
+  );
   const sessionsFetchedRef = useRef(false);
 
   // Read pending query from landing page (set before auth redirect)
@@ -310,6 +313,7 @@ function ChatPageInner() {
           bookMessage={bookMessage}
           onBookMessageConsumed={() => setBookMessage(null)}
           isNewChat={isNewChat}
+          demoMode={demoMode}
         />
       </ChatErrorBoundary>
     </div>
