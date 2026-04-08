@@ -600,7 +600,7 @@ function LandingPage() {
         </div>
 
         {/* Content wrapper — viewport-height centered for bills, inline for others */}
-        <div className="min-h-[80dvh] flex flex-col items-center justify-center w-full shrink-0 max-md:pt-20 max-md:pb-8">
+        <div className="min-h-[80dvh] flex flex-col items-center justify-center w-full shrink-0 pt-24 pb-8">
         <div className="relative z-[4] text-center max-w-[700px] w-full px-6">
           <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[1.9rem] font-light leading-[1.15] tracking-tight text-white">
             {hero ? (
@@ -617,8 +617,8 @@ function LandingPage() {
           </p>
 
           {/* Chat input bar */}
-          <div className="flex flex-col bg-white/95 rounded-[20px] border border-white/30 max-w-[680px] w-full mx-auto mt-8 shadow-[0_4px_24px_rgba(0,0,0,0.1)]">
-            <div className="px-5 pt-[18px] pb-3 relative h-[7rem] max-md:h-[7.5rem]">
+          <div className="flex flex-col bg-white/95 rounded-[20px] border border-white/30 max-w-[580px] w-full mx-auto mt-8 shadow-[0_4px_24px_rgba(0,0,0,0.1)]">
+            <div className="px-5 pt-[18px] pb-3 relative min-h-[3.5rem]">
               {madlib ? (
                 <div
                   ref={madlibRef}
