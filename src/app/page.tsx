@@ -266,9 +266,9 @@ const HERO_COPY: Record<string, { headline: [string, string]; subtitle: string; 
     prefill: "I want to understand my health risks based on my family history",
   },
   meds: {
-    headline: ["Find the cheapest", "pharmacy for your meds."],
-    subtitle: "Elena compares prices across pharmacies near you and finds the best deal, with or without insurance.",
-    prefill: "find the cheapest pharmacy for my prescription",
+    headline: ["Find your medications", "in stock today."],
+    subtitle: "Stop calling pharmacy after pharmacy. Tell Elena what you need and she'll find it in stock near you.",
+    prefill: "find my medication in stock near me",
   },
 };
 
