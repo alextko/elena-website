@@ -265,6 +265,11 @@ const HERO_COPY: Record<string, { headline: [string, string]; subtitle: string; 
     subtitle: "Take our assessment, learn your risks, and get the right tests on the way.",
     prefill: "I want to understand my health risks based on my family history",
   },
+  meds: {
+    headline: ["Find the cheapest", "pharmacy for your meds."],
+    subtitle: "Elena compares prices across pharmacies near you and finds the best deal, with or without insurance.",
+    prefill: "find the cheapest pharmacy for my prescription",
+  },
 };
 
 const DEFAULT_HERO = {
@@ -303,6 +308,15 @@ const MADLIB_TEMPLATES: Record<string, { segments: { type: "text" | "blank"; val
       { type: "text", value: "." },
     ],
   },
+  meds: {
+    segments: [
+      { type: "text", value: "Find the cheapest " },
+      { type: "blank", value: "", placeholder: "medication" },
+      { type: "text", value: " near " },
+      { type: "blank", value: "", placeholder: "zip code" },
+      { type: "text", value: "." },
+    ],
+  },
 };
 
 const ROTATING_QUERIES: Record<string, string[]> = {
@@ -322,6 +336,15 @@ const ROTATING_QUERIES: Record<string, string[]> = {
     "call Blue Cross and check if my MRI is covered",
     "call my provider and negotiate my outstanding balance",
     "call Cigna and get my prior authorization status",
+  ],
+  meds: [
+    "find the cheapest Ozempic near me",
+    "compare pharmacy prices for Adderall",
+    "where can I get Eliquis the cheapest?",
+    "find the best price on my Humira prescription",
+    "compare GoodRx vs insurance price for Lipitor",
+    "which pharmacy near me has the cheapest generics?",
+    "find affordable insulin near me",
   ],
 };
 
@@ -399,6 +422,7 @@ function LandingPage() {
     "/lp/bills": "bills",
     "/lp/calls": "calls",
     "/lp/caregiver": "caregiver",
+    "/lp/meds": "meds",
   };
   const ref = searchParams.get("ref") || searchParams.get("utm_content") || LP_PATH_MAP[pathname] || null;
   const hero = (ref && HERO_COPY[ref]) || null;
