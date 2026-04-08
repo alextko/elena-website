@@ -843,14 +843,10 @@ export function ProfilePopover({
 
                       const items: GamePlanItem[] = [...dayVisits, ...dayHabits, ...dayTodos];
 
-                      // Sort: visits first, then uncompleted before completed, then by sort order
+                      // Sort: visits first, then by sort order (don't reorder on completion)
                       items.sort((a, b) => {
-                        // Visits always first
                         if (a.type === "visit" && b.type !== "visit") return -1;
                         if (a.type !== "visit" && b.type === "visit") return 1;
-                        const aCompleted = a.type === "habit" ? a.completed : a.type === "todo" ? a.todo.status === "completed" : false;
-                        const bCompleted = b.type === "habit" ? b.completed : b.type === "todo" ? b.todo.status === "completed" : false;
-                        if (aCompleted !== bCompleted) return aCompleted ? 1 : -1;
                         return a.sortOrder - b.sortOrder;
                       });
 
