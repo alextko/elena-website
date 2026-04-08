@@ -96,7 +96,9 @@ function NotificationBell() {
     try {
       const res = await apiFetch("/chat/notifications");
       if (res.ok) {
-        setNotifications(await res.json());
+        const data = await res.json();
+        const items = Array.isArray(data) ? data : (data?.notifications || []);
+        setNotifications(items);
       }
     } catch {}
     setNotifLoaded(true);
