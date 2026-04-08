@@ -90,10 +90,7 @@ function SidebarProfile({ onBookMessage }: { onBookMessage?: (msg: string) => vo
 function NotificationBell() {
   const [notifications, setNotifications] = useState<{ id: string; message: string; status: string; created_at: string }[]>([]);
   const [open, setOpen] = useState(false);
-  const [lastReadAt, setLastReadAt] = useState<string>(() => {
-    if (typeof window === "undefined") return "";
-    return localStorage.getItem("elena_notifications_read_at") || "";
-  });
+  // Read status is stored on the backend for cross-platform sync
   const bellRef = useRef<HTMLDivElement>(null);
 
   // Fetch notifications on mount and every 30 seconds
@@ -102,11 +99,7 @@ function NotificationBell() {
       try {
         const res = await apiFetch("/chat/notifications");
         if (res.ok) {
-          const data = await res.json();
-          // Only show notifications newer than last read
-          const readAt = localStorage.getItem("elena_notifications_read_at") || "";
-          const unread = data.filter((n: { created_at: string }) => !readAt || n.created_at > readAt);
-          setNotifications(unread);
+          setNotifications(await res.json());
         }
       } catch {}
     }
@@ -131,10 +124,8 @@ function NotificationBell() {
   const unreadCount = notifications.length;
 
   function markAllRead() {
-    const now = new Date().toISOString();
-    setLastReadAt(now);
-    localStorage.setItem("elena_notifications_read_at", now);
     setNotifications([]);
+    apiFetch("/chat/notifications/read", { method: "POST" }).catch(() => {});
   }
 
   return (
