@@ -66,6 +66,7 @@ export interface ChatMessageItem {
   appeal_status?: AppealStatus | null;
   assistance_result?: AssistanceResult | null;
   price_comparison_label?: string | null;
+  call_result?: { provider_name: string; summary: string; call_type: string } | null;
 }
 
 // --- Welcome (api_chat.py:275-279) ---

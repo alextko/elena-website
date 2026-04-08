@@ -61,6 +61,7 @@ type Message = {
   webSources?: SourcePayload[] | null;
   negotiationResult?: NegotiationResult | null;
   bookingResult?: BookingResultPayload | null;
+  callResult?: { provider_name: string; summary: string; call_type: string } | null;
   formRequest?: FormRequest | null;
   billAnalysis?: BillAnalysis | null;
   appealScript?: AppealScript | null;
@@ -370,6 +371,7 @@ export function ChatArea({
           reviewResults: m.review_results,
           negotiationResult: m.negotiation_result,
           bookingResult: m.booking_result ?? undefined,
+          callResult: m.call_result ?? undefined,
           webSources: m.web_sources,
           formRequest: m.form_request,
           billAnalysis: m.bill_analysis,
@@ -1082,6 +1084,18 @@ export function ChatArea({
                     )}
                     {msg.bookingResult && msg.bookingResult.status !== "confirmed" && msg.bookingResult.status !== "escalated" && (
                       <AppointmentConfirmationCard result={msg.bookingResult} />
+                    )}
+                    {msg.callResult && (
+                      <div className="mt-3 max-w-md rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center">
+                            <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                          </div>
+                          <span className="text-sm font-bold text-emerald-800">Call Completed</span>
+                        </div>
+                        <p className="text-sm font-semibold text-[#0F1B3D] mb-1">Just got off the phone with {msg.callResult.provider_name}</p>
+                        <p className="text-[13px] text-[#0F1B3D]/70 leading-relaxed">{msg.callResult.summary}</p>
+                      </div>
                     )}
                     {msg.webSources && msg.webSources.length > 0 && (
                       <SourcesFooter sources={msg.webSources} />
