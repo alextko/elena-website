@@ -360,7 +360,7 @@ export function ChatArea({
       }
       const data: ChatMessageItem[] = await res.json();
       if (loadRequestRef.current !== requestId) return;
-      const mapped: Message[] = data
+      const raw: Message[] = data
         .filter((m) => m.role === "user" || m.role === "assistant")
         .map((m) => ({
           id: nextId(),
@@ -380,6 +380,12 @@ export function ChatArea({
           assistanceResult: m.assistance_result,
           priceComparisonLabel: m.price_comparison_label,
         }));
+      // Deduplicate consecutive identical user messages (from retries after errors)
+      const mapped = raw.filter((m, i) => {
+        if (i === 0 || m.role !== "user") return true;
+        const prev = raw[i - 1];
+        return !(prev.role === "user" && prev.content === m.content);
+      });
       setMessages(mapped);
       // Empty session — show welcome screen rather than leaving the page blank
       if (mapped.length === 0) {
