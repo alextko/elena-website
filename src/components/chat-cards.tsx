@@ -1340,10 +1340,15 @@ export function FormRequestCard({
 
   if (submitted) {
     return (
-      <div className="mt-3 rounded-2xl border border-[#E5E5EA] bg-white p-4">
-        <div className="flex items-center gap-2">
-          <Check className="h-4 w-4 text-[#0F1B3D]/50" />
-          <p className="text-[14px] font-medium text-[#0F1B3D]/70">Information submitted</p>
+      <div className="mt-3 rounded-2xl bg-gradient-to-br from-emerald-50 to-white border border-emerald-100 p-4 shadow-[0_2px_8px_rgba(16,185,129,0.08)]">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 shadow-[0_2px_6px_rgba(16,185,129,0.3)]">
+            <Check className="h-4 w-4 text-white" strokeWidth={3} />
+          </div>
+          <div>
+            <p className="text-[14px] font-semibold text-[#0F1B3D]">Information saved</p>
+            <p className="text-[12px] text-[#0F1B3D]/40 mt-0.5">Your details have been updated</p>
+          </div>
         </div>
       </div>
     );
