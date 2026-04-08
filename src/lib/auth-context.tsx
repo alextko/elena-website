@@ -114,7 +114,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const res = await apiFetch("/auth/me");
-      if (!res.ok) return;
+      if (!res.ok) {
+        console.warn("[auth] /auth/me failed with status", res.status);
+        profileFetchedRef.current = false; // allow retry
+        setProfileChecked(true); // unblock UI even on failure
+        return;
+      }
       const data: MeResponse = await res.json();
 
       console.log("[auth] /auth/me response:", { has_profile: data.has_profile, profile_id: data.profile_id, email: data.email });
@@ -231,9 +236,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           profilePictureUrl: null,
         });
       }
-    } catch {
+    } catch (e) {
       // Network error — profile data is optional
+      console.warn("[auth] fetchProfile error:", e);
       profileFetchedRef.current = false; // allow retry
+      setProfileChecked(true); // unblock UI even on error
     }
   }, []);
 
