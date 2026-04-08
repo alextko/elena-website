@@ -1842,7 +1842,6 @@ export function AssistanceProgramsCard({
   function ProgramCard({ program, idx }: { program: typeof data.programs[0]; idx: number }) {
     const isSelected = selectedIdx === idx;
     const dist = formatDistance(program.distance_km);
-    const isLikely = program.eligibility === "likely";
 
     return (
       <div
@@ -1853,76 +1852,67 @@ export function AssistanceProgramsCard({
         }}
         onClick={() => setSelectedIdx((prev) => (prev === idx ? null : idx))}
       >
+        {/* Top row: info left, action right */}
         <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <p className="text-[14px] font-bold text-[var(--elena-text-primary)] truncate">
+          <div className="flex-1 min-w-0 mr-2">
+            <p className="text-[15px] font-bold text-[var(--elena-text-primary)] truncate">
               {program.name}
             </p>
-            <p className="text-[12px] text-[var(--elena-text-muted)] truncate">
+            <p className="text-xs text-[var(--elena-text-muted)] mt-px truncate">
               {program.program_name}
             </p>
-          </div>
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[0.55rem] font-bold ${typeBadgeColor[program.type] || "bg-gray-100 text-gray-600"}`}>
-            {typeLabel[program.type] || program.type.toUpperCase()}
-          </span>
-        </div>
-
-        {/* Badges row */}
-        <div className="flex items-center flex-wrap gap-1.5 mt-1.5">
-          {program.is_501r && (
-            <span className="flex items-center gap-[3px] text-[11px] font-semibold text-[#0F1B3D]/60">
-              <Check className="h-3 w-3" /> 501(r) Nonprofit
-            </span>
-          )}
-          {dist && (
-            <span className="text-[11px] text-[var(--elena-text-muted)]">{dist}</span>
-          )}
-        </div>
-
-        {/* Eligibility detail */}
-        <p className="text-[11px] text-[var(--elena-text-muted)] mt-1">
-          {program.eligibility_detail}
-        </p>
-
-        {/* Benefit + eligibility badge */}
-        <div className="flex items-center justify-between gap-2 mt-2">
-          {program.max_benefit && (
-            <p className="text-[15px] font-bold text-[var(--elena-text-primary)]">
-              {program.max_benefit}
+            <p className="text-[13px] text-[var(--elena-text-secondary)] mt-px truncate">
+              {typeLabel[program.type] || program.type}
             </p>
-          )}
-          <span className="shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] font-bold bg-[#F2F2F7] text-[#0F1B3D]/60">
-            {isLikely ? "LIKELY ELIGIBLE" : "MAY QUALIFY"}
-          </span>
+          </div>
+
+          {program.apply_url ? (
+            <a
+              href={program.apply_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="shrink-0 rounded-xl bg-[#0F1B3D] px-3.5 py-1.5 text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
+            >
+              Apply
+            </a>
+          ) : program.phone ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onCall?.({ name: program.name, phone: program.phone! });
+              }}
+              className="shrink-0 rounded-xl bg-[#0F1B3D] px-3.5 py-1.5 text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
+            >
+              Call
+            </button>
+          ) : null}
         </div>
 
-        {/* Action links */}
-        {(program.phone || program.apply_url) && (
-          <div className="flex gap-3 mt-2">
-            {program.phone && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCall?.({ name: program.name, phone: program.phone! });
-                }}
-                className="text-[12px] font-medium text-[#0F1B3D]/50 underline hover:text-[#0F1B3D] transition-colors"
-              >
-                Call
-              </button>
+        {/* Bottom row: badges left, benefit right */}
+        <div className="flex items-end justify-between gap-2 mt-1">
+          <div className="flex items-center flex-wrap gap-1.5 flex-1 min-w-0">
+            {program.is_501r && (
+              <span className="flex items-center gap-[3px] text-[11px] font-semibold text-[var(--elena-text-secondary)]">
+                <Check className="h-3 w-3" /> 501(r) Nonprofit
+              </span>
             )}
-            {program.apply_url && (
-              <a
-                href={program.apply_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="text-[12px] font-medium text-[#0F1B3D]/50 underline hover:text-[#0F1B3D] transition-colors"
-              >
-                Apply
-              </a>
+            {dist && (
+              <span className="text-[11px] text-[var(--elena-text-muted)]">{dist}</span>
             )}
+            <span className="text-[11px] text-[var(--elena-text-muted)]">
+              {program.eligibility === "likely" ? "Likely eligible" : "May qualify"}
+            </span>
           </div>
-        )}
+
+          {program.max_benefit && (
+            <div className="shrink-0 text-right">
+              <p className="text-[17px] font-bold text-[var(--elena-text-primary)]">
+                {program.max_benefit}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -1937,40 +1927,11 @@ export function AssistanceProgramsCard({
         </p>
       </div>
 
-      {data.user_context && (
-        <div className="px-3 py-2 bg-[var(--elena-warm-bg)] border-b border-[var(--elena-border-light)]">
-          <p className="text-[11px] text-[var(--elena-text-secondary)]">{data.user_context}</p>
-        </div>
-      )}
-
-      <div className="p-3 space-y-3">
-        {likelyPrograms.length > 0 && (
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#0F1B3D] mb-2">
-              You Likely Qualify
-            </p>
-            <div className="flex flex-col gap-2">
-              {likelyPrograms.map((p) => {
-                const idx = data.programs.indexOf(p);
-                return <ProgramCard key={idx} program={p} idx={idx} />;
-              })}
-            </div>
-          </div>
-        )}
-
-        {possiblePrograms.length > 0 && (
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#8E8E93] mb-2">
-              Worth Checking
-            </p>
-            <div className="flex flex-col gap-2">
-              {possiblePrograms.map((p) => {
-                const idx = data.programs.indexOf(p);
-                return <ProgramCard key={idx} program={p} idx={idx} />;
-              })}
-            </div>
-          </div>
-        )}
+      {/* Program cards */}
+      <div className="flex flex-col gap-2.5 p-3">
+        {data.programs.map((p, idx) => (
+          <ProgramCard key={idx} program={p} idx={idx} />
+        ))}
       </div>
 
       {data.total_potential_benefit && (
