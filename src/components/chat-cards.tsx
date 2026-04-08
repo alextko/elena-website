@@ -941,15 +941,15 @@ export function AppointmentConfirmationCard({
       : "NEW APPOINTMENT CREATED";
 
   const dotColor = isCancellation
-    ? "border-red-400"
+    ? "border-[#8E8E93]"
     : isReschedule
-      ? "border-amber-500"
+      ? "border-[#8E8E93]"
       : "border-[#0F1B3D]";
 
   const titleColor = isCancellation
-    ? "text-red-500"
+    ? "text-[#8E8E93]"
     : isReschedule
-      ? "text-amber-600"
+      ? "text-[#0F1B3D]/70"
       : "text-[#0F1B3D]";
 
   return (
@@ -1260,10 +1260,10 @@ export function FormRequestCard({
 
   if (submitted) {
     return (
-      <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 animate-in fade-in duration-300">
+      <div className="mt-3 rounded-2xl border border-[#E5E5EA] bg-white p-4">
         <div className="flex items-center gap-2">
-          <Check className="h-5 w-5 text-emerald-500" />
-          <p className="text-[14px] font-semibold text-emerald-700">Information submitted</p>
+          <Check className="h-4 w-4 text-[#0F1B3D]/50" />
+          <p className="text-[14px] font-medium text-[#0F1B3D]/70">Information submitted</p>
         </div>
       </div>
     );
@@ -1891,23 +1891,23 @@ export function AssistanceProgramsCard({
               {program.max_benefit}
             </p>
           )}
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] font-bold ${isLikely ? "bg-[#0F1B3D] text-white" : "bg-[#F2F2F7] text-[#0F1B3D]/70"}`}>
+          <span className="shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] font-bold bg-[#F2F2F7] text-[#0F1B3D]/60">
             {isLikely ? "LIKELY ELIGIBLE" : "MAY QUALIFY"}
           </span>
         </div>
 
-        {/* Action buttons */}
+        {/* Action links */}
         {(program.phone || program.apply_url) && (
-          <div className="flex gap-2 mt-2">
+          <div className="flex gap-3 mt-2">
             {program.phone && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onCall?.({ name: program.name, phone: program.phone! });
                 }}
-                className="flex items-center gap-1 rounded-xl border border-[var(--elena-border)] px-2.5 py-1.5 text-[12px] font-semibold text-[var(--elena-text-primary)] hover:bg-[var(--elena-warm-bg)] transition-colors"
+                className="text-[12px] font-medium text-[#0F1B3D]/50 underline hover:text-[#0F1B3D] transition-colors"
               >
-                <Phone className="h-3 w-3" /> Call
+                Call
               </button>
             )}
             {program.apply_url && (
@@ -1916,9 +1916,9 @@ export function AssistanceProgramsCard({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="flex items-center gap-1 rounded-xl bg-[#0F1B3D] px-2.5 py-1.5 text-[12px] font-semibold text-white hover:opacity-90 transition-opacity"
+                className="text-[12px] font-medium text-[#0F1B3D]/50 underline hover:text-[#0F1B3D] transition-colors"
               >
-                <ExternalLink className="h-3 w-3" /> Apply
+                Apply
               </a>
             )}
           </div>
