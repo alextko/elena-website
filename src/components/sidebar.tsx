@@ -103,7 +103,10 @@ function NotificationBell() {
         const res = await apiFetch("/chat/notifications");
         if (res.ok) {
           const data = await res.json();
-          setNotifications(data);
+          // Only show notifications newer than last read
+          const readAt = localStorage.getItem("elena_notifications_read_at") || "";
+          const unread = data.filter((n: { created_at: string }) => !readAt || n.created_at > readAt);
+          setNotifications(unread);
         }
       } catch {}
     }
@@ -117,6 +120,7 @@ function NotificationBell() {
     if (!open) return;
     function handleClick(e: MouseEvent) {
       if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
+        markAllRead();
         setOpen(false);
       }
     }
@@ -124,7 +128,7 @@ function NotificationBell() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
-  const unreadCount = notifications.filter((n) => !lastReadAt || n.created_at > lastReadAt).length;
+  const unreadCount = notifications.length;
 
   function markAllRead() {
     const now = new Date().toISOString();
@@ -136,7 +140,7 @@ function NotificationBell() {
   return (
     <div ref={bellRef} className="relative flex-shrink-0 pr-4">
       <button
-        onClick={() => { setOpen(!open); if (!open && unreadCount > 0) markAllRead(); }}
+        onClick={() => { if (open) { markAllRead(); } setOpen(!open); }}
         className="relative flex h-9 w-9 items-center justify-center rounded-full hover:bg-[#0F1B3D]/[0.04] transition-colors"
       >
         <Bell className="h-[18px] w-[18px] text-[#0F1B3D]/50" />
