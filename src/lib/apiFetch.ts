@@ -60,6 +60,15 @@ export async function apiFetch(
     try {
       const res = await fetch(url, { ...options, headers });
 
+      // On 403 with a stale profile ID, clear it and retry without the header
+      if (res.status === 403 && attempt === 0 && typeof window !== "undefined" && localStorage.getItem("elena_active_profile_id")) {
+        console.warn("[apiFetch] 403 with stale profile ID, clearing and retrying");
+        localStorage.removeItem("elena_active_profile_id");
+        headers.delete("X-Profile-Id");
+        const retryRes = await fetch(url, { ...options, headers });
+        return retryRes;
+      }
+
       // On 401, try refreshing the Supabase token once and retry
       if (res.status === 401 && token && attempt === 0) {
         const { data, error } = await supabase.auth.refreshSession();
