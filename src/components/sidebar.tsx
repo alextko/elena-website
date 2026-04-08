@@ -58,32 +58,29 @@ function SidebarProfile({ onBookMessage }: { onBookMessage?: (msg: string) => vo
   const email = user?.email || "";
 
   return (
-    <div className="flex items-center border-t border-[#0F1B3D]/[0.06]">
-      <ProfilePopover onBookMessage={onBookMessage}>
-        <button className="flex flex-1 items-center gap-2.5 px-5 py-4 text-left hover:opacity-80 transition-opacity">
-          <div className="flex-shrink-0">
-            {profileData.profilePictureUrl ? (
-              <img
-                src={profileData.profilePictureUrl}
-                alt={displayName}
-                className="h-8 w-8 rounded-full object-cover"
-              />
-            ) : (
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-xs font-semibold text-[#0F1B3D]/50">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-[#0F1B3D] truncate">{displayName}</p>
-            <p className="truncate text-xs text-[#0F1B3D]/40">{email}</p>
-          </div>
-        </button>
-      </ProfilePopover>
-      <NotificationBell />
-    </div>
+    <ProfilePopover onBookMessage={onBookMessage}>
+      <button className="flex w-full items-center gap-2.5 border-t border-[#0F1B3D]/[0.06] px-5 py-4 text-left hover:opacity-80 transition-opacity">
+        <div className="flex-shrink-0">
+          {profileData.profilePictureUrl ? (
+            <img
+              src={profileData.profilePictureUrl}
+              alt={displayName}
+              className="h-8 w-8 rounded-full object-cover"
+            />
+          ) : (
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-xs font-semibold text-[#0F1B3D]/50">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-[#0F1B3D] truncate">{displayName}</p>
+          <p className="truncate text-xs text-[#0F1B3D]/40">{email}</p>
+        </div>
+      </button>
+    </ProfilePopover>
   );
 }
 
@@ -132,20 +129,20 @@ function NotificationBell() {
   }
 
   return (
-    <div ref={bellRef} className="relative flex-shrink-0 pr-4">
+    <div ref={bellRef} className="relative flex-shrink-0">
       <button
         onClick={() => { if (open) { markAllRead(); } setOpen(!open); }}
-        className="relative flex h-9 w-9 items-center justify-center rounded-full hover:bg-[#0F1B3D]/[0.04] transition-colors"
+        className="relative flex h-7 w-7 items-center justify-center rounded-full hover:bg-[#0F1B3D]/[0.06] transition-colors"
       >
-        <Bell className="h-[18px] w-[18px] text-[#0F1B3D]/50" />
+        <Bell className="h-4 w-4 text-[#0F1B3D]/40" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+          <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-bold text-white">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
       {open && (
-        <div className="fixed bottom-20 left-4 w-64 max-w-[calc(100vw-2rem)] rounded-2xl bg-white border border-[#E5E5EA] shadow-[0_8px_24px_rgba(0,0,0,0.12)] overflow-hidden z-[999]">
+        <div className="absolute top-full left-0 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-2xl bg-white border border-[#E5E5EA] shadow-[0_8px_24px_rgba(0,0,0,0.12)] overflow-hidden z-[999]">
           <div className="px-4 py-3 border-b border-[#E5E5EA] flex items-center justify-between">
             <p className="text-[13px] font-bold text-[#0F1B3D]">Notifications</p>
             <button onClick={() => setOpen(false)} className="text-[#AEAEB2] hover:text-[#0F1B3D] transition-colors">
@@ -227,7 +224,8 @@ export function Sidebar({
             style={{ transform: "scale(1.1)" }}
           />
         </div>
-        <span className="text-lg font-extrabold text-[#0F1B3D]">elena</span>
+        <span className="text-lg font-extrabold text-[#0F1B3D] flex-1">elena</span>
+        <NotificationBell />
       </div>
 
       {/* Search + New Chat */}
