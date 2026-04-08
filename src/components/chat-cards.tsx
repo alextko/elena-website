@@ -278,7 +278,7 @@ function useInlineMap({
     markerEls.current.forEach((el, key) => {
       const inner = (el as HTMLDivElement & { _inner?: HTMLDivElement })._inner;
       if (inner) {
-        inner.style.background = key === selectedKey ? "#4A6CF7" : "#FF3B30";
+        inner.style.background = key === selectedKey ? "#0F1B3D" : "#FF3B30";
       }
     });
 
@@ -493,7 +493,7 @@ export function DoctorResultsCard({
                       e.stopPropagation();
                       onBookDoctor(doc);
                     }}
-                    className="shrink-0 rounded-lg bg-[#4A6CF7] px-3.5 py-1.5 text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
+                    className="shrink-0 rounded-xl bg-[#0F1B3D] px-3.5 py-1.5 text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
                   >
                     Book
                   </button>
@@ -1503,7 +1503,7 @@ export function PriceComparisonCard({
                   {onBookDoctor && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onBookDoctor(doc); }}
-                      className="rounded-lg bg-[#4A6CF7] px-3.5 py-1.5 text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
+                      className="rounded-xl bg-[#0F1B3D] px-3.5 py-1.5 text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
                     >
                       Book
                     </button>
@@ -1515,7 +1515,7 @@ export function PriceComparisonCard({
                 <div className="mt-2 flex justify-end">
                   <button
                     onClick={(e) => { e.stopPropagation(); onBookDoctor(doc); }}
-                    className="rounded-lg bg-[#4A6CF7] px-3.5 py-1.5 text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
+                    className="rounded-xl bg-[#0F1B3D] px-3.5 py-1.5 text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
                   >
                     Book
                   </button>
@@ -1683,7 +1683,7 @@ export function AppealScriptCard({ data }: { data: AppealScript }) {
         {hasMore && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="mt-1.5 text-[12px] font-semibold text-[#4A6CF7] hover:underline"
+            className="mt-1.5 text-[12px] font-semibold text-[var(--elena-navy)] hover:underline"
           >
             {expanded ? "Show less ▴" : "Show full letter ▾"}
           </button>
@@ -1693,12 +1693,12 @@ export function AppealScriptCard({ data }: { data: AppealScript }) {
         <div className="flex gap-2 mt-3">
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1.5 rounded-lg border border-[var(--elena-border)] px-3 py-2 text-[13px] font-semibold text-[var(--elena-text-primary)] hover:bg-[var(--elena-warm-bg)] transition-colors"
+            className="flex items-center gap-1.5 rounded-xl border border-[var(--elena-border)] px-3 py-2 text-[13px] font-semibold text-[var(--elena-text-primary)] hover:bg-[var(--elena-warm-bg)] transition-colors"
           >
             <Copy className="h-3.5 w-3.5" />
             {copied ? "Copied!" : "Copy"}
           </button>
-          <button className="flex items-center gap-1.5 rounded-lg bg-[#4A6CF7] px-3.5 py-2 text-[13px] font-semibold text-white hover:opacity-90 transition-opacity">
+          <button className="flex items-center gap-1.5 rounded-xl bg-[#0F1B3D] px-3.5 py-2 text-[13px] font-semibold text-white hover:opacity-90 transition-opacity">
             <Send className="h-3.5 w-3.5" />
             Send via Elena
           </button>
@@ -1920,7 +1920,7 @@ export function AssistanceProgramsCard({
                   e.stopPropagation();
                   onCall?.({ name: program.name, phone: program.phone! });
                 }}
-                className="flex items-center gap-1 rounded-lg border border-[var(--elena-border)] px-2.5 py-1.5 text-[12px] font-semibold text-[var(--elena-text-primary)] hover:bg-[var(--elena-warm-bg)] transition-colors"
+                className="flex items-center gap-1 rounded-xl border border-[var(--elena-border)] px-2.5 py-1.5 text-[12px] font-semibold text-[var(--elena-text-primary)] hover:bg-[var(--elena-warm-bg)] transition-colors"
               >
                 <Phone className="h-3 w-3" /> Call
               </button>
@@ -1931,7 +1931,7 @@ export function AssistanceProgramsCard({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="flex items-center gap-1 rounded-lg bg-[#4A6CF7] px-2.5 py-1.5 text-[12px] font-semibold text-white hover:opacity-90 transition-opacity"
+                className="flex items-center gap-1 rounded-xl bg-[#0F1B3D] px-2.5 py-1.5 text-[12px] font-semibold text-white hover:opacity-90 transition-opacity"
               >
                 <ExternalLink className="h-3 w-3" /> Apply
               </a>
