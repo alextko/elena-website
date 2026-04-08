@@ -151,7 +151,7 @@ function NotificationBell() {
         )}
       </button>
       {open && (
-        <div className="fixed bottom-16 left-4 right-4 max-md:left-2 max-md:right-2 md:absolute md:bottom-full md:left-0 md:right-auto md:mb-2 w-auto md:w-72 max-w-sm rounded-2xl bg-white border border-[#E5E5EA] shadow-[0_8px_24px_rgba(0,0,0,0.12)] overflow-hidden z-50">
+        <div className="fixed bottom-20 left-4 w-64 max-w-[calc(100vw-2rem)] rounded-2xl bg-white border border-[#E5E5EA] shadow-[0_8px_24px_rgba(0,0,0,0.12)] overflow-hidden z-[999]">
           <div className="px-4 py-3 border-b border-[#E5E5EA] flex items-center justify-between">
             <p className="text-[13px] font-bold text-[#0F1B3D]">Notifications</p>
             <button onClick={() => setOpen(false)} className="text-[#AEAEB2] hover:text-[#0F1B3D] transition-colors">
