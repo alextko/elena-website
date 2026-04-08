@@ -1080,19 +1080,17 @@ export function ProfilePopover({
                     </div>
                   </button>
                 ) : (
-                  <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
-                    <div className="flex items-center gap-3 px-3.5 py-3.5">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7F6F2]">
-                        <Sparkles className="h-[18px] w-[18px] text-[#0F1B3D]" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[16px] font-semibold text-[#1C1C1E] capitalize">
-                          {subscription?.tier || "Free"} Plan
-                        </p>
-                        <p className="text-[13px] text-[#8E8E93] mt-px">
-                          {subscription?.plan?.includes("annual") ? "Annual" : "Monthly"}
-                        </p>
-                      </div>
+                  <div
+                    className="rounded-2xl overflow-hidden shadow-[0_8px_20px_rgba(26,58,110,0.3)]"
+                    style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 50%, #2E6BB5 100%)" }}
+                  >
+                    <div className="px-5 py-5 text-left">
+                      <p className="text-[20px] font-extrabold text-white tracking-tight">
+                        Elena {subscription?.tier === "standard" ? "Standard" : "Pro"}
+                      </p>
+                      <p className="text-[14px] text-white/60 mt-1">
+                        {subscription?.plan?.includes("annual") ? "Annual plan" : "Monthly plan"}
+                      </p>
                     </div>
                   </div>
                 )}
