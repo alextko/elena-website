@@ -115,7 +115,6 @@ function NotificationBell() {
     if (!open) return;
     function handleClick(e: MouseEvent) {
       if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
-        markAllRead();
         setOpen(false);
       }
     }
@@ -123,23 +122,18 @@ function NotificationBell() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
-  const unreadCount = notifications.length;
-
-  function markAllRead() {
-    setNotifications([]);
-    apiFetch("/chat/notifications/read", { method: "POST" }).catch(() => {});
-  }
+  const notifCount = notifications.length;
 
   return (
     <div ref={bellRef} className="relative flex-shrink-0">
       <button
-        onClick={() => { if (open) { markAllRead(); } setOpen(!open); }}
+        onClick={() => setOpen(!open)}
         className="relative flex h-7 w-7 items-center justify-center rounded-full hover:bg-[#0F1B3D]/[0.06] transition-colors"
       >
         <Bell className="h-4 w-4 text-[#0F1B3D]/40" />
-        {unreadCount > 0 && (
+        {notifCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-bold text-white">
-            {unreadCount > 9 ? "9+" : unreadCount}
+            {notifCount > 9 ? "9+" : notifCount}
           </span>
         )}
       </button>
