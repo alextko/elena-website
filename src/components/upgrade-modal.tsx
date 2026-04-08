@@ -80,18 +80,22 @@ export function UpgradeModal({
 
   const featureLabel = featureName?.replace(/_/g, " ") || "this feature";
 
+  const isFreeUser = currentTier === "free";
+
   const title = isStandardLimitReached
     ? "Monthly limit reached"
     : reason === "feature_blocked"
     ? "Feature not available"
     : reason === "document_limit"
     ? "Document limit reached"
+    : isFreeUser && reason === "upgrade_required"
+    ? "Free limit reached"
     : "Upgrade your plan";
 
   const featureDescriptions: Record<string, string> = {
-    call_provider: "Upgrade to have Elena make phone calls on your behalf.",
+    call_provider: "You've used your free calls. Upgrade for more calls each month.",
     search_provider_rates: "Upgrade to search and compare provider pricing.",
-    upload_document: "Free accounts can upload up to 2 documents.",
+    upload_document: "You've reached the free document limit. Upgrade for unlimited uploads.",
     analyze_bill: "Upgrade to get AI-powered bill analysis and savings.",
   };
 
@@ -100,7 +104,7 @@ export function UpgradeModal({
     : reason === "feature_blocked"
     ? `${featureLabel.charAt(0).toUpperCase() + featureLabel.slice(1)} is available on paid plans.`
     : reason === "document_limit"
-    ? "Free accounts can upload up to 2 documents."
+    ? "You've reached the free document limit. Upgrade for unlimited uploads."
     : featureName && featureDescriptions[featureName]
     ? featureDescriptions[featureName]
     : "Unlock the full power of Elena.";
