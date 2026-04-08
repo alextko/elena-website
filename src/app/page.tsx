@@ -310,11 +310,11 @@ const MADLIB_TEMPLATES: Record<string, { segments: { type: "text" | "blank"; val
   },
   meds: {
     segments: [
-      { type: "text", value: "Find the cheapest " },
+      { type: "text", value: "Find " },
       { type: "blank", value: "", placeholder: "medication" },
-      { type: "text", value: " near " },
-      { type: "blank", value: "", placeholder: "zip code" },
-      { type: "text", value: "." },
+      { type: "text", value: " " },
+      { type: "blank", value: "", placeholder: "dosage" },
+      { type: "text", value: " in stock near me." },
     ],
   },
 };
