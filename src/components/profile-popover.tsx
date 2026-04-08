@@ -272,6 +272,8 @@ export function ProfilePopover({
     if (open && !profileDetailsLoaded) fetchProfileDetails();
     // Refresh ALL data every time the popover opens (agent may have created visits, todos, etc.)
     if (open && profileDetailsLoaded) {
+      // Reset to today's date on every open (uses local timezone)
+      setSelectedDay(new Date().toLocaleDateString("en-CA"));
       refreshTodos();
       refreshVisits();
       refreshDoctors();
