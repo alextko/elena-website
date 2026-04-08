@@ -1439,7 +1439,7 @@ export function PriceComparisonCard({
               onClick={() => handleSelect(i)}
             >
               {isBest && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#0F1B3D] px-2 py-0.5 text-[0.6rem] font-bold text-white mb-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2 py-0.5 text-[0.6rem] font-bold text-white mb-2">
                   BEST PRICE
                 </span>
               )}
@@ -1474,7 +1474,7 @@ export function PriceComparisonCard({
                 <div className="shrink-0 text-right">
                   {price != null && (
                     <>
-                      <p className={`${isBest ? "text-[22px] font-bold text-[#0F1B3D]" : "text-[18px] font-bold text-[var(--elena-text-primary)]"}`}>
+                      <p className={`${isBest ? "text-[22px] font-bold text-emerald-600" : "text-[18px] font-bold text-[var(--elena-text-primary)]"}`}>
                         ${Math.round(price).toLocaleString()}
                       </p>
                       <p className="text-[10px] text-[var(--elena-text-muted)]">est. out-of-pocket</p>
@@ -1485,7 +1485,7 @@ export function PriceComparisonCard({
 
               {isBest && totalSavings > 0 && (
                 <div className="mt-2 flex items-center justify-between">
-                  <span className="rounded-full bg-[#F2F2F7] px-2.5 py-0.5 text-[0.65rem] font-semibold text-[#0F1B3D]">
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[0.65rem] font-semibold text-emerald-600">
                     SAVES YOU ${totalSavings.toLocaleString()}
                   </span>
                   {onBookDoctor && (
@@ -1647,9 +1647,9 @@ export function AppealScriptCard({ data }: { data: AppealScript }) {
   return (
     <div className="mt-3 max-w-md rounded-2xl bg-white elena-card-shadow overflow-hidden border border-[var(--elena-border-light)]">
       {/* Denial section */}
-      <div className="px-4 py-3 border-b border-[#E5E5EA]">
+      <div className="px-4 py-3 border-b border-[#E5E5EA] bg-red-50/50">
         <div className="flex items-center gap-2 mb-1">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-[#0F1B3D]">Denial Reason</p>
+          <span className="rounded-full bg-red-100 px-2 py-0.5 text-[0.6rem] font-bold text-red-600">DENIED</span>
         </div>
         <p className="text-[13px] italic text-[var(--elena-text-primary)]">
           &ldquo;{data.denial_reason}&rdquo;
