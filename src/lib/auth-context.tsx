@@ -820,11 +820,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     analytics.reset();
     await supabase.auth.signOut();
+    // Clear all account-scoped localStorage to prevent stale data on re-login
+    localStorage.removeItem("elena_active_profile_id");
+    localStorage.removeItem("elena_onboarding_done");
+    localStorage.removeItem("elena_pending_query");
     setSession(null);
     setUser(null);
     setProfileId(null);
     setProfiles([]);
     setProfileData(null);
+    setNeedsOnboarding(false);
+    setProfileChecked(false);
     setDoctors([]);
     setCareVisits([]);
     setSubscription(null);
