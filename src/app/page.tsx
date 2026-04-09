@@ -375,6 +375,15 @@ const MADLIB_TEMPLATES: Record<string, { segments: { type: "text" | "blank"; val
       { type: "text", value: "." },
     ],
   },
+  caregiver: {
+    segments: [
+      { type: "text", value: "Help me manage " },
+      { type: "blank", value: "", placeholder: "my mom, my dad" },
+      { type: "text", value: "'s " },
+      { type: "blank", value: "", placeholder: "medications, appointments, insurance" },
+      { type: "text", value: "." },
+    ],
+  },
 };
 
 const ROTATING_QUERIES: Record<string, string[]> = {
@@ -541,8 +550,9 @@ function LandingPage() {
   const [inputFocused, setInputFocused] = useState(false);
   const { displayed: rotatingText, fullQuery } = useRotatingQuery(queries, userHasEdited || inputFocused);
   const [manualInput, setManualInput] = useState("");
-  const [chipMadlib, setChipMadlib] = useState<typeof SUGGESTIONS[0]["madlib"] | undefined>(undefined);
-  const madlib = ref ? MADLIB_TEMPLATES[ref] : chipMadlib;
+  const [chipMadlib, setChipMadlib] = useState<typeof SUGGESTIONS[0]["madlib"] | null | undefined>(undefined);
+  // undefined = no chip clicked (use LP template); null = chip clicked with no madlib (plain input); object = chip madlib
+  const madlib = chipMadlib === undefined ? (ref ? MADLIB_TEMPLATES[ref] : undefined) : (chipMadlib ?? undefined);
   const input = userHasEdited ? manualInput : (queries ? rotatingText : (hero?.prefill || ""));
   // When sending mid-animation, use the full target query instead of partial text
   const madlibRef = useRef<HTMLDivElement>(null);
@@ -685,7 +695,7 @@ function LandingPage() {
       setUserHasEdited(false);
       setManualInput("");
     } else {
-      setChipMadlib(undefined);
+      setChipMadlib(null);
       setUserHasEdited(true);
       setManualInput(suggestion.text);
       inputRef.current?.focus();
