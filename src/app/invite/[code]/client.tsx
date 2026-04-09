@@ -20,7 +20,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://elena-backend-prod
 
 export default function InviteClient({ code, fromName }: { code: string; fromName: string | null }) {
   const router = useRouter();
-  const { session, loading: authLoading } = useAuth();
+  const { session, loading: authLoading, profileId } = useAuth();
 
   const [invite, setInvite] = useState<InvitePreview | null>(null);
   const [loadingInvite, setLoadingInvite] = useState(true);
@@ -65,8 +65,9 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
   }, [code]);
 
   // Auto-accept after signup/login if pending invite matches
+  // Wait for profileId — new signups won't have a profile until onboarding completes
   useEffect(() => {
-    if (authLoading || !session || !invite || autoAcceptAttempted.current) return;
+    if (authLoading || !session || !profileId || !invite || autoAcceptAttempted.current) return;
     if (invite.status !== "pending" || invite.expired) return;
 
     const pendingCode = localStorage.getItem("elena_pending_invite");
@@ -75,7 +76,7 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
       localStorage.removeItem("elena_pending_invite");
       handleAccept();
     }
-  }, [authLoading, session, invite, code]);
+  }, [authLoading, session, profileId, invite, code]);
 
   const handleAccept = useCallback(async () => {
     setAccepting(true);
@@ -126,6 +127,16 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
   const isLoading = loadingInvite || authLoading;
   const isExpiredOrUsed = invite && (invite.status !== "pending" || invite.expired);
   const isLoggedIn = !!session;
+  const hasProfile = !!profileId;
+
+  // New signup without a profile: redirect to /chat for onboarding
+  // The pending invite in localStorage will auto-accept after profile creation
+  useEffect(() => {
+    if (isLoggedIn && !hasProfile && !authLoading) {
+      localStorage.setItem("elena_pending_invite", code);
+      window.location.href = "/chat";
+    }
+  }, [isLoggedIn, hasProfile, authLoading, code]);
 
   const inviterDisplay = invite?.inviter_name || fromName || "Someone";
   const relationshipDisplay = invite?.relationship

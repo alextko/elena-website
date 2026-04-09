@@ -716,6 +716,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("elena_onboarding_done", "1");
         // Mark onboarding complete on backend
         await apiFetch("/auth/complete-onboarding", { method: "POST" }).catch(() => {});
+        // Accept pending invite if one exists (from invite link signup flow)
+        const pendingInvite = localStorage.getItem("elena_pending_invite");
+        if (pendingInvite) {
+          localStorage.removeItem("elena_pending_invite");
+          apiFetch(`/family/invite/${pendingInvite}/accept`, { method: "POST" }).catch(() => {});
+        }
       } else {
         const errText = await createRes.text().catch(() => "");
         console.error("[onboarding] POST /profile failed:", createRes.status, errText);
