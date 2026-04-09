@@ -174,7 +174,7 @@ function useInlineMap({
         container: containerRef.current,
         style: "mapbox://styles/mapbox/standard",
         bounds,
-        fitBoundsOptions: { padding: 50, maxZoom: 14 },
+        fitBoundsOptions: { padding: 50, maxZoom: items.length === 1 ? 12 : 14 },
         attributionControl: false,
         dragRotate: false,
         pitchWithRotate: false,
