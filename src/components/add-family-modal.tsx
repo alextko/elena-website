@@ -163,17 +163,17 @@ export function AddFamilyModal({
         </DialogHeader>
 
         {/* Tabs */}
-        <div className="mt-4 flex rounded-xl bg-[#F2F2F7] p-1">
+        <div className="mt-4 flex rounded-lg bg-gray-100 p-1">
           <button
             type="button"
             onClick={() => {
               setActiveTab("manage");
               setError(null);
             }}
-            className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${
+            className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors ${
               activeTab === "manage"
-                ? "bg-white text-[#0F1B3D] shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
-                : "text-[#8E8E93] hover:text-[#0F1B3D]"
+                ? "bg-white text-[#0F1B3D] shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
             }`}
           >
             Manage their profile
@@ -184,10 +184,10 @@ export function AddFamilyModal({
               setActiveTab("invite");
               setError(null);
             }}
-            className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${
+            className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors ${
               activeTab === "invite"
-                ? "bg-white text-[#0F1B3D] shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
-                : "text-[#8E8E93] hover:text-[#0F1B3D]"
+                ? "bg-white text-[#0F1B3D] shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
             }`}
           >
             Invite to connect
