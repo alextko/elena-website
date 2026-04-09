@@ -854,9 +854,11 @@ export function ProfilePopover({
 
                       if (items.length === 0 && profileDetailsLoaded) {
                         return (
-                          <div className="rounded-[14px] px-[14px] py-8 text-center" style={{ background: "rgba(255,255,255,0.3)" }}>
-                            <p className="text-[15px] font-semibold" style={{ color: "#5C1A2A" }}>All caught up!</p>
-                            <p className="text-[13px] mt-1" style={{ color: "#7A3040" }}>Your health tasks will appear here.</p>
+                          <div className="rounded-[14px] px-[14px] py-[10px]" style={{ background: "rgba(255,255,255,0.3)" }}>
+                            <div className="flex items-center gap-3 py-[10px]">
+                              <div className="w-8 h-8 rounded-full border-2 flex-shrink-0 flex items-center justify-center" style={{ borderColor: "#7A3040", background: "transparent" }} />
+                              <p className="text-[15px] font-semibold" style={{ color: "#7A3040" }}>All caught up!</p>
+                            </div>
                           </div>
                         );
                       }
