@@ -257,7 +257,7 @@ const HERO_COPY: Record<string, { headline: [string, string]; subtitle: string; 
   },
   caregiver: {
     headline: ["Manage their health", "from your phone."],
-    subtitle: "Insurance, doctors, meds, and bills for the people you care for — all in one place.",
+    subtitle: "Juggling appointments, insurance, and medications for a loved one is exhausting. Elena handles the logistics so you can focus on being there for them.",
     prefill: "Help me manage my parents' healthcare from my phone",
   },
   risk_assessment: {
@@ -272,8 +272,23 @@ const HERO_COPY: Record<string, { headline: [string, string]; subtitle: string; 
   },
   fertility: {
     headline: ["Navigate fertility", "without the stress."],
-    subtitle: "Elena compares IVF clinic prices, handles insurance approvals, and manages your entire fertility journey so you can focus on what matters.",
+    subtitle: "Elena compares IVF clinic prices, checks your insurance coverage, handles prior authorizations, and tracks your entire fertility journey so you can focus on what matters.",
     prefill: "help me compare IVF clinics and costs near me",
+  },
+  chronic: {
+    headline: ["Take control of", "your condition."],
+    subtitle: "Living with diabetes, autoimmune disease, thyroid disorders, or mental health conditions means constant doctor visits, medications, and insurance battles. Elena manages it all for you.",
+    prefill: "help me manage my diabetes care and find the cheapest insulin near me",
+  },
+  insurance: {
+    headline: ["Find the right plan.", "Stop overpaying."],
+    subtitle: "Marketplace plans, employer options, Medicare, Medicaid. Elena compares plans based on your doctors, medications, and expected needs so you pick the one that actually saves you money.",
+    prefill: "help me find the best health insurance plan for my situation",
+  },
+  care_now: {
+    headline: ["Need care today?", "Elena finds it."],
+    subtitle: "Urgent care, same-day appointments, telehealth, or an ER alternative. Elena finds available providers near you right now and tells you what it'll cost before you go.",
+    prefill: "find me a doctor who can see me today near me",
   },
 };
 
@@ -331,6 +346,35 @@ const MADLIB_TEMPLATES: Record<string, { segments: { type: "text" | "blank"; val
       { type: "text", value: ". Check if my insurance covers it." },
     ],
   },
+  chronic: {
+    segments: [
+      { type: "text", value: "I have " },
+      { type: "blank", value: "", placeholder: "condition" },
+      { type: "text", value: ". Find me the cheapest " },
+      { type: "blank", value: "", placeholder: "medication" },
+      { type: "text", value: " and a specialist near me." },
+    ],
+  },
+  insurance: {
+    segments: [
+      { type: "text", value: "I need " },
+      { type: "blank", value: "", placeholder: "individual, family, Medicare" },
+      { type: "text", value: " coverage. I take " },
+      { type: "blank", value: "", placeholder: "medications" },
+      { type: "text", value: " and see " },
+      { type: "blank", value: "", placeholder: "doctors" },
+      { type: "text", value: "." },
+    ],
+  },
+  care_now: {
+    segments: [
+      { type: "text", value: "I need to see a " },
+      { type: "blank", value: "", placeholder: "doctor type" },
+      { type: "text", value: " today near " },
+      { type: "blank", value: "", placeholder: "zip code" },
+      { type: "text", value: "." },
+    ],
+  },
 };
 
 const ROTATING_QUERIES: Record<string, string[]> = {
@@ -368,6 +412,42 @@ const ROTATING_QUERIES: Record<string, string[]> = {
     "help me understand my fertility benefits",
     "compare embryo transfer costs at clinics near me",
     "what fertility medications does my plan cover?",
+  ],
+  caregiver: [
+    "help me manage my mom's medications and refills",
+    "find a geriatrician near my parents that takes Medicare",
+    "my dad got a bill for $3,200, can you help dispute it?",
+    "schedule my mom's annual checkup with her PCP",
+    "which of my dad's prescriptions have cheaper alternatives?",
+    "call my mom's insurance about her denied claim",
+    "help me keep track of my parents' upcoming appointments",
+  ],
+  chronic: [
+    "find the cheapest insulin near me",
+    "help me find an endocrinologist that takes my insurance",
+    "compare prices for my Humira prescription",
+    "find a therapist near me that takes Blue Cross",
+    "what blood tests should I get for my thyroid this year?",
+    "help me find a rheumatologist for my autoimmune condition",
+    "is there a generic alternative to my antidepressant?",
+  ],
+  insurance: [
+    "compare marketplace plans that cover my medications",
+    "which plans have the lowest out-of-pocket for a family of 4?",
+    "does this plan cover my current doctors?",
+    "help me understand the difference between HMO and PPO",
+    "I'm turning 65, walk me through Medicare options",
+    "which plan has the best mental health coverage?",
+    "compare deductibles across Silver plans in my area",
+  ],
+  care_now: [
+    "find urgent care open right now near me",
+    "I need a same-day appointment with a doctor",
+    "is it cheaper to go to urgent care or the ER for this?",
+    "find a telehealth doctor I can see in the next hour",
+    "where can I get an X-ray today without a referral?",
+    "find a walk-in clinic near me that takes Aetna",
+    "I need a prescription refill today, who can help?",
   ],
 };
 
@@ -447,6 +527,9 @@ function LandingPage() {
     "/lp/caregiver": "caregiver",
     "/lp/meds": "meds",
     "/lp/fertility": "fertility",
+    "/lp/chronic": "chronic",
+    "/lp/insurance": "insurance",
+    "/lp/care-now": "care_now",
   };
   const ref = searchParams.get("ref") || searchParams.get("utm_content") || LP_PATH_MAP[pathname] || null;
   const hero = (ref && HERO_COPY[ref]) || null;
