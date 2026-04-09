@@ -88,10 +88,7 @@ function NotificationBell() {
   const [notifications, setNotifications] = useState<{ id: string; message: string; status: string; created_at: string }[]>([]);
   const [open, setOpen] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
-  const [lastSeenAt, setLastSeenAt] = useState<string>(() => {
-    if (typeof window === "undefined") return "";
-    return localStorage.getItem("elena_notif_seen") || "";
-  });
+  const [lastSeenAt, setLastSeenAt] = useState<string>("");
 
   const [notifLoaded, setNotifLoaded] = useState(false);
   const fetchNotifications = useCallback(async () => {
@@ -101,6 +98,7 @@ function NotificationBell() {
         const data = await res.json();
         const items = Array.isArray(data) ? data : (data?.notifications || []);
         setNotifications(items);
+        if (data?.last_seen_at) setLastSeenAt(data.last_seen_at);
       }
     } catch {}
     setNotifLoaded(true);
@@ -131,7 +129,7 @@ function NotificationBell() {
     if (notifications.length > 0) {
       const newest = notifications[0].created_at;
       setLastSeenAt(newest);
-      localStorage.setItem("elena_notif_seen", newest);
+      apiFetch("/chat/notifications/seen", { method: "POST" }).catch(() => {});
     }
   }
 
