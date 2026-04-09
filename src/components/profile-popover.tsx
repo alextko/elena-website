@@ -207,6 +207,16 @@ export function ProfilePopover({
     setConfirmUnlink(null);
   }
 
+  // Reset personal data cache when profile changes
+  const prevPersonalProfileRef = useRef(profileId);
+  if (profileId !== prevPersonalProfileRef.current) {
+    prevPersonalProfileRef.current = profileId;
+    personalDataLoadedRef.current = false;
+    setPersonalInfo(null);
+    setHealthData(null);
+    setPersonalDocuments([]);
+  }
+
   async function fetchPersonalData() {
     if (personalDataLoadedRef.current || !profileId) return;
     personalDataLoadedRef.current = true;
