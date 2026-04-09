@@ -726,6 +726,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               // Re-fetch profile to pick up the new linked account
               profileFetchedRef.current = false;
               await fetchProfile();
+              // Store flag for the chat page to show a toast
+              localStorage.setItem("elena_invite_accepted", "1");
             }
           } catch {}
         }

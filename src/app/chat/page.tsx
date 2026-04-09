@@ -69,6 +69,7 @@ function ChatPageInner() {
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [pendingQuery, setPendingQuery] = useState<string | null>(null);
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+  const [inviteAccepted, setInviteAccepted] = useState(false);
   const [bookMessage, setBookMessage] = useState<string | null>(null);
   const [isNewChat, setIsNewChat] = useState(false);
   const [showProfileTooltip, setShowProfileTooltip] = useState(false);
@@ -76,6 +77,16 @@ function ChatPageInner() {
     typeof window !== "undefined" && sessionStorage.getItem("elena_demo_mode") === "true"
   );
   const sessionsFetchedRef = useRef(false);
+
+  // Check if an invite was just accepted
+  useEffect(() => {
+    const accepted = localStorage.getItem("elena_invite_accepted");
+    if (accepted) {
+      localStorage.removeItem("elena_invite_accepted");
+      setInviteAccepted(true);
+      setTimeout(() => setInviteAccepted(false), 6000);
+    }
+  }, []);
 
   // Read pending query from landing page (set before auth redirect)
   // Start the chat immediately so it processes in the background during onboarding
@@ -274,6 +285,18 @@ function ChatPageInner() {
           <button
             onClick={() => setCheckoutSuccess(false)}
             className="ml-3 text-white/70 hover:text-white"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+      {/* Invite accepted banner */}
+      {inviteAccepted && (
+        <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-center bg-[#0F1B3D] px-4 py-3 text-sm text-white">
+          <span>Account linked! Click your name in the sidebar to switch profiles.</span>
+          <button
+            onClick={() => setInviteAccepted(false)}
+            className="ml-3 text-white/50 hover:text-white"
           >
             Dismiss
           </button>
