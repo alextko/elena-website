@@ -247,7 +247,7 @@ const INSURERS = [
 const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; subtitle: string; prefill: string }> = {
   bills: {
     headline: ["Never get a", "surprise bill again."],
-    accent: "never",
+    accent: "again",
     subtitle: "Elena helps you compare prices using real, insurance-negotiated rates. Never overpay again.",
     prefill: "find the cheapest MRI near me",
   },
