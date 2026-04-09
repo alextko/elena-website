@@ -4,6 +4,115 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import ReactDOM from "react-dom";
 
 /* ================================================================
+   PERSONA CONTEXT — all sub-components read demo data from here
+   ================================================================ */
+const PersonaContext = React.createContext<string | null>(null);
+
+type PersonaDemoData = {
+  todos: { title: string; subtitle: string }[];
+  visits: {
+    slot1: { type: string; date: string; doctor: string; location: string; future: boolean; badge: string; summary: string; stars: number; labs: { name: string; value: string; low: boolean }[] | null; notes: { keyPoints: string[]; actionItems: string[] } | null };
+    slot2: { type: string; date: string; doctor: string; summary: string; stars: number };
+    slot3: { type: string; date: string; doctor: string; location: string; summary: string; stars: number; labs: { name: string; value: string; low: boolean }[] | null; notes: { keyPoints: string[]; actionItems: string[] } | null };
+    monthMarker: string;
+  };
+  phone: { calling: string; type: string; doctor: string; dateTime: string; reason: string };
+};
+
+const PERSONA_DEMO: Record<string, PersonaDemoData> = {
+  caregiver: {
+    todos: [
+      { title: "Mom's cardiology follow-up", subtitle: "Due this week" },
+      { title: "Refill Dad's blood pressure meds", subtitle: "Due today" },
+      { title: "Schedule Mom's PT session", subtitle: "Due next week" },
+    ],
+    visits: {
+      slot1: { type: "Neurology", date: "Apr 14, 2026", doctor: "Dr. Robert Kim", location: "Eastside Neurology Associates", future: true, badge: "Booked", summary: "", stars: 0, labs: null, notes: null },
+      slot2: { type: "Cardiology", date: "Mar 20, 2026", doctor: "Dr. Linda Hayes", summary: "Echocardiogram stable. Continue current medications. Follow up in 6 months.", stars: 5 },
+      slot3: { type: "Primary Care", date: "Jan 15, 2026", doctor: "Dr. Maria Santos", location: "Community Health Partners", summary: "Annual wellness visit. Blood pressure well controlled. Adjusted cholesterol medication.", stars: 4, labs: [{ name: "LDL Cholesterol", value: "142 mg/dL", low: false }, { name: "Blood Pressure", value: "128/82", low: false }, { name: "A1C", value: "6.1%", low: false }, { name: "Creatinine", value: "1.2 mg/dL", low: false }], notes: { keyPoints: ["Blood pressure well controlled on current meds", "LDL slightly elevated, switched to Rosuvastatin", "A1C borderline, monitoring closely", "Kidney function stable"], actionItems: ["Switch to Rosuvastatin 10mg daily", "Schedule follow-up labs in 3 months", "Continue blood pressure monitoring at home"] } },
+      monthMarker: "JAN 2026",
+    },
+    phone: { calling: "Eastside Neurology Associates", type: "Neurology", doctor: "Dr. Robert Kim", dateTime: "Monday, Apr 14, 2026 at 10:00 AM", reason: "Cognitive assessment follow-up" },
+  },
+  fertility: {
+    todos: [
+      { title: "Take prenatal vitamins", subtitle: "Daily \u00b7 Morning" },
+      { title: "IVF consultation follow-up", subtitle: "Due this week" },
+      { title: "Pick up fertility medications", subtitle: "Due today" },
+    ],
+    visits: {
+      slot1: { type: "IVF Egg Retrieval", date: "Apr 18, 2026", doctor: "Dr. Amy Walsh", location: "Pacific Fertility Center", future: true, badge: "Scheduled", summary: "", stars: 0, labs: null, notes: null },
+      slot2: { type: "Fertility Monitoring", date: "Mar 22, 2026", doctor: "Dr. Amy Walsh", summary: "Follicle check looks good. 8 follicles measuring 14-18mm. Trigger shot tonight.", stars: 5 },
+      slot3: { type: "Initial Fertility Consult", date: "Jan 8, 2026", doctor: "Dr. Amy Walsh", location: "Pacific Fertility Center", summary: "AMH and FSH levels reviewed. Discussed IVF protocol options. Starting stimulation next cycle.", stars: 5, labs: [{ name: "AMH", value: "2.4 ng/mL", low: false }, { name: "FSH", value: "7.2 mIU/mL", low: false }, { name: "Estradiol", value: "45 pg/mL", low: false }, { name: "TSH", value: "1.8 mIU/L", low: false }], notes: { keyPoints: ["AMH and FSH within normal range for age", "Antral follicle count: 12 total", "Recommended IVF with ICSI protocol", "Insurance pre-authorization submitted"], actionItems: ["Start prenatal vitamins immediately", "Schedule baseline ultrasound for Day 3", "Begin stimulation medications on Day 3", "Pick up Gonal-F and Menopur from specialty pharmacy"] } },
+      monthMarker: "JAN 2026",
+    },
+    phone: { calling: "Pacific Fertility Center", type: "IVF Egg Retrieval", doctor: "Dr. Amy Walsh", dateTime: "Saturday, Apr 18, 2026 at 7:00 AM", reason: "Egg retrieval procedure" },
+  },
+  chronic: {
+    todos: [
+      { title: "Check blood sugar", subtitle: "Daily \u00b7 Morning & Evening" },
+      { title: "Endocrinologist follow-up", subtitle: "Due this week" },
+      { title: "Refill Metformin", subtitle: "Due today" },
+    ],
+    visits: {
+      slot1: { type: "Endocrinology", date: "Apr 12, 2026", doctor: "Dr. Priya Patel", location: "Metro Endocrine Associates", future: true, badge: "Booked", summary: "", stars: 0, labs: null, notes: null },
+      slot2: { type: "Rheumatology", date: "Mar 8, 2026", doctor: "Dr. Karen Liu", summary: "Autoimmune markers stable. Humira working well. Continue current treatment plan.", stars: 5 },
+      slot3: { type: "Endocrinology", date: "Jan 5, 2026", doctor: "Dr. Priya Patel", location: "Metro Endocrine Associates", summary: "A1C improved to 6.8%. Adjusted Metformin dosage. Thyroid stable on Levothyroxine.", stars: 4, labs: [{ name: "A1C", value: "6.8%", low: false }, { name: "Fasting Glucose", value: "132 mg/dL", low: false }, { name: "TSH", value: "2.4 mIU/L", low: false }, { name: "CRP", value: "0.8 mg/L", low: false }], notes: { keyPoints: ["A1C improved from 7.4% to 6.8%", "Increased Metformin to 1000mg twice daily", "Thyroid stable on current Levothyroxine dose", "Inflammation markers normal"], actionItems: ["Increase Metformin to 1000mg twice daily", "Continue blood sugar monitoring 2x daily", "Schedule follow-up A1C in 3 months", "Refill Levothyroxine 75mcg"] } },
+      monthMarker: "JAN 2026",
+    },
+    phone: { calling: "Metro Endocrine Associates", type: "Endocrinology", doctor: "Dr. Priya Patel", dateTime: "Wednesday, Apr 12, 2026 at 3:00 PM", reason: "A1C follow-up and medication review" },
+  },
+  insurance: {
+    todos: [
+      { title: "Compare marketplace plans", subtitle: "Open enrollment ends soon" },
+      { title: "Verify doctors are in-network", subtitle: "Due this week" },
+      { title: "Review prescription coverage", subtitle: "Due today" },
+    ],
+    visits: {
+      slot1: { type: "Primary Care", date: "Apr 8, 2026", doctor: "Dr. Sarah Chen", location: "Bay Area Family Medicine", future: true, badge: "Booked", summary: "", stars: 0, labs: null, notes: null },
+      slot2: { type: "Primary Care", date: "Mar 15, 2026", doctor: "Dr. Sarah Chen", summary: "Vitamin D recheck, level improved to 32 ng/mL. Continue supplementation.", stars: 5 },
+      slot3: { type: "Annual Physical", date: "Jan 10, 2026", doctor: "Dr. Sarah Chen", location: "Bay Area Family Medicine", summary: "Vitamin D deficiency diagnosed. Started supplementation. All other labs normal.", stars: 4, labs: [{ name: "Vitamin D", value: "18 ng/mL", low: true }, { name: "TSH", value: "2.1 mIU/L", low: false }, { name: "Cholesterol", value: "185 mg/dL", low: false }, { name: "A1C", value: "5.2%", low: false }], notes: { keyPoints: ["Vitamin D deficiency diagnosed, level at 18 ng/mL", "Started Vitamin D3 2000 IU daily", "Thyroid stable, TSH 2.1", "Cholesterol and A1C normal"], actionItems: ["Take Vitamin D3 2000 IU daily with food", "Schedule follow-up blood work in 3 months", "Continue Levothyroxine 50 mcg every morning"] } },
+      monthMarker: "JAN 2026",
+    },
+    phone: { calling: "Bay Area Family Medicine", type: "Primary Care", doctor: "Dr. Sarah Chen", dateTime: "Wednesday, Apr 8, 2026 at 10:30 AM", reason: "Annual physical" },
+  },
+  care_now: {
+    todos: [
+      { title: "Follow up with PCP", subtitle: "Within 3 days" },
+      { title: "Pick up antibiotics", subtitle: "Due today" },
+      { title: "Schedule follow-up X-ray", subtitle: "Due next week" },
+    ],
+    visits: {
+      slot1: { type: "Urgent Care", date: "Apr 9, 2026", doctor: "Dr. Michael Torres", location: "CityMD Urgent Care", future: true, badge: "Walk-in", summary: "", stars: 0, labs: null, notes: null },
+      slot2: { type: "Telehealth", date: "Mar 28, 2026", doctor: "Dr. Jennifer Lee", summary: "Prescribed Z-pack for sinus infection. Follow up if symptoms persist after 5 days.", stars: 4 },
+      slot3: { type: "Primary Care", date: "Jan 10, 2026", doctor: "Dr. Sarah Chen", location: "Bay Area Family Medicine", summary: "Annual physical. All labs normal. Updated vaccinations.", stars: 5, labs: [{ name: "CBC", value: "Normal", low: false }, { name: "CMP", value: "Normal", low: false }, { name: "Cholesterol", value: "185 mg/dL", low: false }, { name: "A1C", value: "5.2%", low: false }], notes: { keyPoints: ["All labs within normal range", "Updated Tdap and flu vaccinations", "Blood pressure 118/76, healthy", "BMI stable at 23.4"], actionItems: ["Schedule next annual physical in 12 months", "Continue regular exercise routine", "No medication changes needed"] } },
+      monthMarker: "JAN 2026",
+    },
+    phone: { calling: "CityMD Urgent Care", type: "Urgent Care", doctor: "Dr. Michael Torres", dateTime: "Today at 4:30 PM", reason: "Ankle pain, possible sprain" },
+  },
+};
+
+const DEFAULT_DEMO: PersonaDemoData = {
+  todos: [
+    { title: "Take Vitamin D3", subtitle: "Daily \u00b7 Morning" },
+    { title: "Schedule dermatology follow-up", subtitle: "Due this week" },
+    { title: "Refill prescription", subtitle: "Due today" },
+  ],
+  visits: {
+    slot1: { type: "Dermatology", date: "Apr 10, 2026", doctor: "Dr. James Park", location: "Westside Dermatology Clinic", future: true, badge: "Booked", summary: "", stars: 0, labs: null, notes: null },
+    slot2: { type: "Primary Care", date: "Mar 15, 2026", doctor: "Dr. Sarah Chen", summary: "Vitamin D recheck, level improved to 32 ng/mL. Continue supplementation.", stars: 5 },
+    slot3: { type: "Annual Physical", date: "Jan 10, 2026", doctor: "Dr. Sarah Chen", location: "Bay Area Family Medicine", summary: "Vitamin D deficiency diagnosed. Started supplementation. Thyroid stable.", stars: 4, labs: [{ name: "Vitamin D", value: "18 ng/mL", low: true }, { name: "TSH", value: "2.1 mIU/L", low: false }, { name: "Cholesterol", value: "185 mg/dL", low: false }, { name: "A1C", value: "5.2%", low: false }], notes: { keyPoints: ["Vitamin D deficiency diagnosed, level at 18 ng/mL", "Started Vitamin D3 2000 IU daily", "Thyroid stable, TSH 2.1", "Cholesterol and A1C normal"], actionItems: ["Take Vitamin D3 2000 IU daily with food", "Schedule follow-up blood work in 3 months", "Continue Levothyroxine 50 mcg every morning"] } },
+    monthMarker: "JAN 2026",
+  },
+  phone: { calling: "Park Dermatology Associates", type: "Dermatology", doctor: "Dr. James Park", dateTime: "Thursday, Apr 10, 2026 at 2:00 PM", reason: "Skin check follow-up" },
+};
+
+function usePersonaDemo(): PersonaDemoData {
+  const persona = React.useContext(PersonaContext);
+  return (persona && PERSONA_DEMO[persona]) || DEFAULT_DEMO;
+}
+
+/* ================================================================
    VISIT DATA  (used by the timeline modal)
    ================================================================ */
 interface Lab {
@@ -186,15 +295,12 @@ function SpotlightRow({
    1. GAME PLAN
    ================================================================ */
 function GamePlanCard() {
+  const demo = usePersonaDemo();
   const [done, setDone] = useState([false, false, false]);
   const cardRef = useRef<HTMLDivElement>(null);
   const autoPlayed = useRef(false);
 
-  const todos = [
-    { title: "Take Vitamin D3", subtitle: "Daily \u00b7 Morning" },
-    { title: "Schedule dermatology follow-up", subtitle: "Due this week" },
-    { title: "Refill prescription", subtitle: "Due today" },
-  ];
+  const todos = demo.todos;
 
   const allDone = done.every(Boolean);
 
@@ -357,6 +463,8 @@ function GamePlanCard() {
    2. VISIT TIMELINE + MODAL
    ================================================================ */
 function VisitTimeline() {
+  const demo = usePersonaDemo();
+  const v = demo.visits;
   const [modalVisit, setModalVisit] = useState<string | null>(null);
   const [closing, setClosing] = useState(false);
 
@@ -404,7 +512,12 @@ function VisitTimeline() {
     return () => clearInterval(interval);
   }, []);
 
-  const visit = modalVisit ? visitData[modalVisit] : null;
+  const personaVisitData: Record<string, Visit> = {
+    slot1: { type: v.slot1.type, date: v.slot1.date, doctor: v.slot1.doctor, location: v.slot1.location, future: v.slot1.future, stars: v.slot1.stars, summary: v.slot1.summary, labs: v.slot1.labs, notes: v.slot1.notes },
+    slot2: { type: v.slot2.type, date: v.slot2.date, doctor: v.slot2.doctor, location: "", future: false, stars: v.slot2.stars, summary: v.slot2.summary, labs: null, notes: null },
+    slot3: { type: v.slot3.type, date: v.slot3.date, doctor: v.slot3.doctor, location: v.slot3.location, future: false, stars: v.slot3.stars, summary: v.slot3.summary, labs: v.slot3.labs, notes: v.slot3.notes },
+  };
+  const visit = modalVisit ? personaVisitData[modalVisit] : null;
 
   return (
     <>
@@ -438,7 +551,7 @@ function VisitTimeline() {
             <div
               className="bg-white rounded-[14px] ml-[10px] mb-4 p-[14px] cursor-pointer transition-all duration-150 ease-out hover:-translate-y-[2px]"
               style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}
-              onClick={() => openModal("dermatology")}
+              onClick={() => openModal("slot1")}
             >
               <div className="flex justify-between items-start">
                 <div>
@@ -446,26 +559,26 @@ function VisitTimeline() {
                     className="text-xs font-semibold"
                     style={{ color: "#6B9BD2" }}
                   >
-                    Apr 10, 2026
+                    {v.slot1.date}
                   </div>
                   <div
                     className="text-base font-bold mt-[2px]"
                     style={{ color: "#0F1B3D" }}
                   >
-                    Dermatology
+                    {v.slot1.type}
                   </div>
                   <div
                     className="text-[13px] mt-[1px]"
                     style={{ color: "#8E8E93" }}
                   >
-                    Dr. James Park
+                    {v.slot1.doctor}
                   </div>
                 </div>
                 <span
                   className="text-[11px] font-bold px-2 py-[2px] rounded-[10px] flex-shrink-0"
                   style={{ background: "#C47A5A", color: "#FFFFFF" }}
                 >
-                  Booked
+                  {v.slot1.badge}
                 </span>
               </div>
             </div>
@@ -483,32 +596,31 @@ function VisitTimeline() {
             <div
               className="bg-white rounded-[14px] ml-[10px] mb-4 p-[14px] cursor-pointer transition-all duration-150 ease-out hover:-translate-y-[2px]"
               style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}
-              onClick={() => openModal("primary-care")}
+              onClick={() => openModal("slot2")}
             >
               <div
                 className="text-xs font-semibold"
                 style={{ color: "#6B9BD2" }}
               >
-                Mar 15, 2026
+                {v.slot2.date}
               </div>
               <div
                 className="text-base font-bold mt-[2px]"
                 style={{ color: "#0F1B3D" }}
               >
-                Primary Care
+                {v.slot2.type}
               </div>
               <div
                 className="text-[13px] mt-[1px]"
                 style={{ color: "#8E8E93" }}
               >
-                Dr. Sarah Chen
+                {v.slot2.doctor}
               </div>
               <div
                 className="text-[13px] leading-[18px] mt-[6px]"
                 style={{ color: "#8E8E93" }}
               >
-                Vitamin D recheck, level improved to 32 ng/mL. Continue
-                supplementation.
+                {v.slot2.summary}
               </div>
               <div className="flex gap-[2px] mt-[6px]">
                 {[1, 2, 3, 4, 5].map((s) => (
@@ -541,7 +653,7 @@ function VisitTimeline() {
                 className="inline-block w-[10px] h-[2px] rounded-[1px]"
                 style={{ background: "#6B9BD2" }}
               />
-              JAN 2026
+              {v.monthMarker}
             </div>
           </div>
 
@@ -558,19 +670,19 @@ function VisitTimeline() {
               ref={annualCardRef}
               className="bg-white rounded-[14px] ml-[10px] p-[14px] cursor-pointer transition-all duration-150 ease-out hover:-translate-y-[2px]"
               style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}
-              onClick={() => openModal("annual-physical")}
+              onClick={() => openModal("slot3")}
             >
               <div
                 className="text-xs font-semibold"
                 style={{ color: "#6B9BD2" }}
               >
-                Jan 10, 2026
+                {v.slot3.date}
               </div>
               <div
                 className="text-base font-bold mt-[2px]"
                 style={{ color: "#0F1B3D" }}
               >
-                Annual Physical
+                {v.slot3.type}
               </div>
               <div
                 className="text-[13px] mt-[1px]"
@@ -824,6 +936,8 @@ function VisitTimeline() {
    3. PHONE CALLING AGENT
    ================================================================ */
 function PhoneCallingCard() {
+  const demo = usePersonaDemo();
+  const p = demo.phone;
   return (
     <div className="rounded-[22px] p-5" style={{ background: "#F7F6F2", boxShadow: "0 12px 40px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.05)" }}>
       <div className="flex items-center gap-2 py-3">
@@ -839,7 +953,7 @@ function PhoneCallingCard() {
           className="text-[15px] leading-[22px] font-medium"
           style={{ color: "#0F1B3D" }}
         >
-          Calling Park Dermatology Associates...
+          Calling {p.calling}...
         </span>
       </div>
       <div
@@ -869,22 +983,22 @@ function PhoneCallingCard() {
             className="text-base font-bold"
             style={{ color: "#0F1B3D" }}
           >
-            Dermatology
+            {p.type}
           </div>
           <div className="text-sm mt-[2px]" style={{ color: "#8E8E93" }}>
-            Dr. James Park
+            {p.doctor}
           </div>
           <div
             className="text-[13px] font-semibold mt-[6px]"
             style={{ color: "#0F1B3D" }}
           >
-            Thursday, Apr 10, 2026 at 2:00 PM
+            {p.dateTime}
           </div>
           <div
             className="text-[13px] mt-[2px]"
             style={{ color: "#AEAEB2" }}
           >
-            Skin check follow-up
+            {p.reason}
           </div>
         </div>
       </div>
@@ -1499,6 +1613,7 @@ const DEFAULT_SPOTLIGHT_COPY = {
 export default function Spotlights({ persona }: { persona?: string | null }) {
   const copy = (persona && SPOTLIGHT_COPY[persona]) || DEFAULT_SPOTLIGHT_COPY;
   return (
+    <PersonaContext.Provider value={persona ?? null}>
     <section
       id="features"
       className="relative z-10"
@@ -1555,5 +1670,6 @@ export default function Spotlights({ persona }: { persona?: string | null }) {
         <FamilyProfiles />
       </SpotlightRow>
     </section>
+    </PersonaContext.Provider>
   );
 }
