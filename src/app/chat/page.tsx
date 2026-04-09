@@ -160,17 +160,19 @@ function ChatPageInner() {
     }
   }, [loading, session, fetchSessions]);
 
-  // Re-fetch sessions when profile switches (sessions are profile-scoped)
+  // Re-fetch sessions when profile changes (sessions are profile-scoped)
   const prevProfileId = useRef(profileId);
   useEffect(() => {
-    if (profileId && prevProfileId.current && profileId !== prevProfileId.current) {
-      setActiveSessionId(null);
-      setIsNewChat(true);
+    if (profileId && profileId !== prevProfileId.current) {
+      // Profile changed (either first load or explicit switch) — re-fetch sessions
+      // to ensure we show the correct profile's conversations
+      if (prevProfileId.current) {
+        // Explicit switch — reset active session
+        setActiveSessionId(null);
+        setIsNewChat(true);
+      }
       fetchSessions();
     }
-    // When profile is first created (null → value), don't reset chat or re-fetch
-    // immediately — the optimistic session from handleSessionCreated is enough.
-    // The delayed fetch in handleSessionCreated (4s) will pick it up.
     prevProfileId.current = profileId;
   }, [profileId, fetchSessions]);
 
