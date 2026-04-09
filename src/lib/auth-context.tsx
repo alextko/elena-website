@@ -138,10 +138,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           plan_type: "free",
         });
         analytics.track("Signup Completed", { method: provider });
-        // Fire ad pixel events (TikTok, Reddit, Meta) via trackSignup
-        import('@/lib/tracking-events').then(({ trackSignup }) => {
-          trackSignup(provider, currentSessionForProvider?.user?.id, data.email || undefined);
-        });
+        // Ad pixel CompleteRegistration fires after onboarding completes (in completeOnboarding),
+        // not here — firing here would count users who sign up but never finish onboarding.
         console.log("[auth] No profile found, showing onboarding");
         // Pull name from Google/Apple OAuth metadata if available
         // Read directly from Supabase session (not React state, which may be stale)
@@ -731,6 +729,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           } catch {}
         }
+        // Fire ad pixel CompleteRegistration now that onboarding is actually done
+        const { data: { session: pixelSession } } = await supabase.auth.getSession();
+        const pixelProvider = pixelSession?.user?.app_metadata?.provider || "email";
+        import('@/lib/tracking-events').then(({ trackSignup }) => {
+          trackSignup(pixelProvider, pixelSession?.user?.id, profileData?.email || undefined);
+        });
       } else {
         const errText = await createRes.text().catch(() => "");
         console.error("[onboarding] POST /profile failed:", createRes.status, errText);

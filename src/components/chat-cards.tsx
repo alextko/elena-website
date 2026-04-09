@@ -1713,7 +1713,7 @@ export function BillAnalysisCard({ data }: { data: BillAnalysis }) {
 //  Appeal Script Card
 // ────────────────────────────────────────────────────────────────
 
-export function AppealScriptCard({ data }: { data: AppealScript }) {
+export function AppealScriptCard({ data, onSend }: { data: AppealScript; onSend?: () => void }) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -1771,7 +1771,10 @@ export function AppealScriptCard({ data }: { data: AppealScript }) {
             <Copy className="h-3.5 w-3.5" />
             {copied ? "Copied!" : "Copy"}
           </button>
-          <button className="flex items-center gap-1.5 rounded-xl bg-[#0F1B3D] px-3.5 py-2 text-[13px] font-semibold text-white hover:opacity-90 transition-opacity">
+          <button
+            onClick={onSend}
+            className="flex items-center gap-1.5 rounded-xl bg-[#0F1B3D] px-3.5 py-2 text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
+          >
             <Send className="h-3.5 w-3.5" />
             Send via Elena
           </button>

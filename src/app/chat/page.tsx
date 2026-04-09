@@ -68,6 +68,16 @@ function ChatPageInner() {
   });
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [pendingQuery, setPendingQuery] = useState<string | null>(null);
+  const [pendingDocName, setPendingDocName] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      const doc = localStorage.getItem("elena_pending_doc");
+      if (doc) {
+        localStorage.removeItem("elena_pending_doc");
+        return doc;
+      }
+    }
+    return null;
+  });
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
   const [inviteAccepted, setInviteAccepted] = useState(false);
   const [bookMessage, setBookMessage] = useState<string | null>(null);
@@ -88,7 +98,7 @@ function ChatPageInner() {
     }
   }, []);
 
-  // Read pending query from landing page (set before auth redirect)
+  // Read pending query and document from landing page (set before auth redirect)
   // Start the chat immediately so it processes in the background during onboarding
   useEffect(() => {
     const q = localStorage.getItem("elena_pending_query");
@@ -115,9 +125,15 @@ function ChatPageInner() {
     if (searchParams.get("checkout") === "success") {
       analytics.track("Checkout Completed");
       setCheckoutSuccess(true);
-      refreshSubscription();
-      // Fire conversion events to Mixpanel, TikTok, Reddit
-      trackSubscription('pro', 0, 'USD'); // value filled by backend via Stripe webhook
+      // Verify subscription is real before firing ad pixel events
+      apiFetch("/web/subscription").then(async (res) => {
+        if (!res.ok) return;
+        const sub = await res.json();
+        refreshSubscription();
+        if (sub.tier !== "free" && sub.status === "active") {
+          trackSubscription(sub.plan || sub.tier, sub.price || 29, "USD");
+        }
+      }).catch(() => {});
       // Clean URL without reload
       window.history.replaceState({}, "", "/chat");
       // Auto-dismiss after 4 seconds
@@ -335,6 +351,7 @@ function ChatPageInner() {
           activeSessionId={activeSessionId}
           onSessionCreated={handleSessionCreated}
           initialQuery={pendingQuery}
+          initialDocName={pendingDocName}
           bookMessage={bookMessage}
           onBookMessageConsumed={() => setBookMessage(null)}
           isNewChat={isNewChat}

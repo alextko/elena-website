@@ -1,7 +1,8 @@
 import { useRef, useCallback } from "react";
 import { apiFetch } from "@/lib/apiFetch";
+import { supabase } from "@/lib/supabase";
 import type { ChatResponse, PollResponse } from "@/lib/types";
-import { matchDemoResponse } from "@/lib/demo-responses";
+import { matchDemoResponse, getDocumentDemoResponse, type DemoCardFields } from "@/lib/demo-responses";
 
 interface PollChatParams {
   message: string;
@@ -17,6 +18,48 @@ const POLL_INTERVAL_MS = 300; // Brief pause between polls
 
 function log(msg: string, ...args: unknown[]) {
   console.log(`[poll] ${msg}`, ...args);
+}
+
+/**
+ * Persist a demo exchange (user + assistant messages) to Supabase so the
+ * real agent sees them as conversation history on followup messages.
+ */
+function persistDemoToSupabase(
+  sessionId: string,
+  userMessage: string,
+  assistantReply: string,
+  cardFields: DemoCardFields,
+) {
+  const metadata: Record<string, unknown> = {};
+  if (cardFields.billAnalysis) metadata.bill_analysis = cardFields.billAnalysis;
+  if (cardFields.assistanceResult) metadata.assistance_result = cardFields.assistanceResult;
+  if (cardFields.appealScript) metadata.appeal_script = cardFields.appealScript;
+  if (cardFields.appealStatus) metadata.appeal_status = cardFields.appealStatus;
+  if (cardFields.doctorResults) metadata.doctor_results = cardFields.doctorResults;
+  if (cardFields.priceComparisonLabel) metadata.price_comparison_label = cardFields.priceComparisonLabel;
+
+  // Fire-and-forget: insert user message, then assistant message
+  supabase
+    .from("chat_messages")
+    .insert({
+      session_id: sessionId,
+      role: "user",
+      content: [{ text: userMessage, type: "text" }],
+    })
+    .then(({ error }) => {
+      if (error) log("demo persist user msg failed", error);
+      // Insert assistant message after user message to preserve ordering
+      return supabase.from("chat_messages").insert({
+        session_id: sessionId,
+        role: "assistant",
+        content: [{ text: assistantReply, type: "text" }],
+        metadata: Object.keys(metadata).length > 0 ? metadata : null,
+      });
+    })
+    .then((res) => {
+      if (res && "error" in res && res.error) log("demo persist assistant msg failed", res.error);
+      else log("demo messages persisted to Supabase", { sessionId });
+    });
 }
 
 export function usePollChat(demoMode = false) {
@@ -46,16 +89,25 @@ export function usePollChat(demoMode = false) {
       let hitPaywall = false;
       let pollCount = 0;
 
-      // Demo mode: intercept and return hardcoded response
-      if (demoMode) {
-        const demoMatch = matchDemoResponse(params.message);
-        log("DEMO CHECK", { message: params.message.slice(0, 50), match: demoMatch?.name ?? "none" });
+      // Demo mode: check sessionStorage directly as safety net —
+      // the demoMode prop can be lost during navigation.
+      const isDemoActive = demoMode ||
+        (typeof window !== "undefined" && sessionStorage.getItem("elena_demo_mode") === "true");
+
+      if (isDemoActive) {
+        const hasDocuments = params.document_keys && params.document_keys.length > 0;
+        // Text match first (passing hasDocuments so entries that require a doc are skipped
+        // when none is attached), then document fallback (bill analysis)
+        const demoMatch = matchDemoResponse(params.message, !!hasDocuments)
+          || (hasDocuments ? getDocumentDemoResponse() : null);
+
         if (demoMatch) {
-          // Simulate tool progress
+          log("DEMO INTERCEPT", { message: params.message.slice(0, 50), hasDocuments, match: demoMatch.name });
+
           onToolProgress(demoMatch.toolLabel);
           await new Promise((r) => setTimeout(r, demoMatch.delay));
           onToolProgress(null);
-          // Build a fake ChatResponse
+
           const fakeResponse: ChatResponse = {
             reply: demoMatch.reply,
             session_id: params.session_id || "demo-session",
@@ -68,8 +120,24 @@ export function usePollChat(demoMode = false) {
             price_comparison_label: demoMatch.cardFields.priceComparisonLabel ?? null,
           };
           onDone(fakeResponse);
+
+          // Persist both messages to Supabase so the real agent has context
+          // for any followup messages the user sends after this demo response.
+          if (params.session_id) {
+            persistDemoToSupabase(
+              params.session_id,
+              params.message,
+              demoMatch.reply,
+              demoMatch.cardFields,
+            );
+          }
+
           return { session_id: params.session_id };
         }
+
+        // No demo match — fall through to real backend.
+        // The agent will see any previously persisted demo messages as history.
+        log("DEMO PASSTHROUGH", { message: params.message.slice(0, 50) });
       }
 
       // POST /chat/send to get a chat_request_id

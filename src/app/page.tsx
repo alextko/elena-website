@@ -517,6 +517,9 @@ function LandingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const [demoMode] = useState(() =>
+    typeof window !== "undefined" && sessionStorage.getItem("elena_demo_mode") === "true"
+  );
 
   // Support both ?ref=bills (direct) and /lp/bills (rewrite).
   // Rewrites keep the browser URL as /lp/bills but serve /?ref=bills internally.
@@ -538,7 +541,7 @@ function LandingPage() {
   const [inputFocused, setInputFocused] = useState(false);
   const { displayed: rotatingText, fullQuery } = useRotatingQuery(queries, userHasEdited || inputFocused);
   const [manualInput, setManualInput] = useState("");
-  const [chipMadlib, setChipMadlib] = useState<typeof SUGGESTIONS[0]["madlib"] | undefined>(SUGGESTIONS[0].madlib);
+  const [chipMadlib, setChipMadlib] = useState<typeof SUGGESTIONS[0]["madlib"] | undefined>(undefined);
   const madlib = ref ? MADLIB_TEMPLATES[ref] : chipMadlib;
   const input = userHasEdited ? manualInput : (queries ? rotatingText : (hero?.prefill || ""));
   // When sending mid-animation, use the full target query instead of partial text
@@ -560,18 +563,22 @@ function LandingPage() {
   const setInput = useCallback((val: string) => { setUserHasEdited(true); setManualInput(val); }, []);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authDefaultMode, setAuthDefaultMode] = useState<"signin" | "signup">("signup");
+  const [pendingDocFile, setPendingDocFile] = useState<File | null>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const landingDragCounter = useRef(0);
+  const landingFileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const heroRef = useRef<HTMLElement>(null);
   const blobRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const hasTrackedPageView = useRef(false);
 
-  // Authenticated → go to /chat
+  // Authenticated → go to /chat (skip in demo mode so user can interact with landing page)
   useEffect(() => {
-    if (!loading && session) {
+    if (!loading && session && !demoMode) {
       router.replace("/chat");
     }
-  }, [loading, session, router]);
+  }, [loading, session, router, demoMode]);
 
   // ViewContent pixel event for landing pages
   useEffect(() => {
@@ -646,17 +653,30 @@ function LandingPage() {
       analytics.track("Hero Input Submitted", { query_length: query.length });
       analytics.track("Message Sent", {
         is_first_message: true,
-        has_attachment: false,
+        has_attachment: !!pendingDocFile,
         message_length: query.length,
-        authenticated: false,
+        authenticated: !!session,
         source: "landing_page",
         landing_variant: ref || "homepage",
       });
       localStorage.setItem("elena_pending_query", query);
     }
+    // In demo mode with an attached file but no text query, use a default query
+    if (!query && pendingDocFile && demoMode) {
+      localStorage.setItem("elena_pending_query", "Help me understand this bill");
+    }
+    // Store pending doc name for the chat page
+    if (pendingDocFile) {
+      localStorage.setItem("elena_pending_doc", pendingDocFile.name);
+    }
+    // Demo mode + authenticated: skip auth modal, go straight to chat
+    if (demoMode && session) {
+      router.push("/chat");
+      return;
+    }
     setAuthDefaultMode("signup");
     setAuthModalOpen(true);
-  }, [sendQuery, ref, madlib]);
+  }, [sendQuery, ref, madlib, demoMode, session, pendingDocFile, router]);
 
   const handleChipClick = useCallback((suggestion: typeof SUGGESTIONS[number]) => {
     analytics.track("Suggested Prompt Clicked", { prompt_label: suggestion.label });
@@ -672,7 +692,7 @@ function LandingPage() {
     }
   }, []);
 
-  if (loading || session) {
+  if (loading || (session && !demoMode)) {
     return (
       <div className="flex h-dvh items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#0F1B3D] border-t-transparent" />
@@ -748,8 +768,24 @@ function LandingPage() {
           </p>
 
           {/* Chat input bar */}
-          <div className="flex flex-col bg-white/95 rounded-[20px] max-md:rounded-[16px] border border-white/30 max-w-[580px] w-full mx-auto mt-8 max-md:mt-5 shadow-[0_4px_24px_rgba(0,0,0,0.1)]">
-            <div className="px-5 max-md:px-3.5 pt-[18px] max-md:pt-3.5 pb-3 max-md:pb-2 relative min-h-[3.5rem] max-md:min-h-[2.5rem]">
+          <div
+            className={`flex flex-col bg-white/95 rounded-[20px] max-md:rounded-[16px] border max-w-[580px] w-full mx-auto mt-8 max-md:mt-5 shadow-[0_4px_24px_rgba(0,0,0,0.1)] transition-all ${isDraggingOver ? "border-[#2E6BB5] ring-2 ring-[#2E6BB5]/30" : "border-white/30"}`}
+            onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); landingDragCounter.current++; setIsDraggingOver(true); }}
+            onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); landingDragCounter.current--; if (landingDragCounter.current <= 0) { landingDragCounter.current = 0; setIsDraggingOver(false); } }}
+            onDragOver={(e) => { e.preventDefault(); }}
+            onDrop={(e) => {
+              e.preventDefault(); e.stopPropagation();
+              landingDragCounter.current = 0; setIsDraggingOver(false);
+              const file = e.dataTransfer.files?.[0];
+              if (file) setPendingDocFile(file);
+            }}
+          >
+            {isDraggingOver && (
+              <div className="flex items-center justify-center py-6 text-sm font-medium text-[#2E6BB5]">
+                Drop file here
+              </div>
+            )}
+            <div className={`px-5 max-md:px-3.5 pt-[18px] max-md:pt-3.5 pb-3 max-md:pb-2 relative min-h-[3.5rem] max-md:min-h-[2.5rem] ${isDraggingOver ? "hidden" : ""}`}>
               {madlib ? (
                 <div
                   ref={madlibRef}
@@ -798,8 +834,37 @@ function LandingPage() {
                 </>
               )}
             </div>
+            {/* Pending file chip */}
+            {pendingDocFile && (
+              <div className="flex items-center gap-1.5 px-5 max-md:px-3.5 pb-1">
+                <span className="inline-flex items-center gap-1.5 bg-[#0F1B3D]/[0.08] px-3 py-1 rounded-full text-xs text-[#0F1B3D]/70">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+                  </svg>
+                  <span className="max-w-[140px] truncate">{pendingDocFile.name}</span>
+                  <button onClick={() => setPendingDocFile(null)} className="ml-0.5 text-[#0F1B3D]/40 hover:text-[#0F1B3D]/70">
+                    <svg viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z" /></svg>
+                  </button>
+                </span>
+              </div>
+            )}
             <div className="flex items-center justify-between px-3 max-md:px-2 pb-3 max-md:pb-2 pt-1">
-              <button className="w-9 h-9 max-md:w-7 max-md:h-7 rounded-full flex items-center justify-center text-[#AEAEB2] hover:text-[#8E8E93] hover:bg-black/[0.04] transition-all" aria-label="Attach document">
+              <input
+                ref={landingFileInputRef}
+                type="file"
+                className="hidden"
+                accept=".pdf,image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) setPendingDocFile(file);
+                  e.target.value = "";
+                }}
+              />
+              <button
+                onClick={() => landingFileInputRef.current?.click()}
+                className="w-9 h-9 max-md:w-7 max-md:h-7 rounded-full flex items-center justify-center text-[#AEAEB2] hover:text-[#8E8E93] hover:bg-black/[0.04] transition-all"
+                aria-label="Attach document"
+              >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 max-md:w-4 max-md:h-4">
                   <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
                 </svg>
