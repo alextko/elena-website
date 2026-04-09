@@ -167,8 +167,8 @@ function NotificationBell() {
               notifications.map((n) => (
                 <div key={n.id} className="px-4 py-3 border-b border-[#E5E5EA] last:border-b-0">
                   <div className="flex items-start gap-2">
-                    <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ${n.status === "confirmed" ? "bg-emerald-500" : n.status === "failed" ? "bg-red-400" : "bg-blue-400"}`}>
-                      {n.status === "confirmed" ? "✓" : n.status === "failed" ? "✕" : "ℹ"}
+                    <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ${n.status === "confirmed" ? "bg-emerald-500" : n.status === "failed" ? "bg-red-400" : n.status === "linked" ? "bg-indigo-500" : "bg-blue-400"}`}>
+                      {n.status === "confirmed" ? "✓" : n.status === "failed" ? "✕" : n.status === "linked" ? "🔗" : "ℹ"}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[13px] text-[#1C1C1E] leading-[1.4]">{n.message}</p>
