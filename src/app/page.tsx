@@ -295,7 +295,7 @@ const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; s
   },
   care_now: {
     headline: ["Need care today?", "Elena finds it."],
-    accent: "today",
+    accent: "finds it",
     subtitle: "Urgent care, same-day appointments, telehealth, or an ER alternative. Elena finds available providers near you right now and tells you what it'll cost before you go.",
     prefill: "find me a doctor who can see me today near me",
   },
