@@ -648,23 +648,23 @@ function LandingPage() {
   const [chipMadlib, setChipMadlib] = useState<typeof SUGGESTIONS[0]["madlib"] | null | undefined>(undefined);
   // undefined = no chip clicked (use LP template); null = chip clicked with no madlib (plain input); object = chip madlib
   const madlib = chipMadlib === undefined ? (ref ? MADLIB_TEMPLATES[ref] : undefined) : (chipMadlib ?? undefined);
-  const input = userHasEdited ? manualInput : (queries ? rotatingText : (hero?.prefill || ""));
-  // When sending mid-animation, use the full target query instead of partial text
-  const madlibRef = useRef<HTMLDivElement>(null);
-  const getMadlibText = () => {
-    if (!madlibRef.current || !madlib) return "";
-    const inputs = madlibRef.current.querySelectorAll("input");
-    let inputIdx = 0;
-    return madlib.segments.map((seg) => {
-      if (seg.type === "text") return seg.value;
-      const val = inputs[inputIdx]?.value || seg.placeholder || "";
-      inputIdx++;
-      return val;
-    }).join("").trim();
-  };
-  const sendQuery = madlib
-    ? getMadlibText()
-    : (userHasEdited ? manualInput : (queries ? fullQuery : (hero?.prefill || "")));
+
+  // When a madlib is active and user hasn't edited, pre-fill the textarea with the madlib template text
+  const madlibToText = useCallback((m: typeof madlib) => {
+    if (!m) return "";
+    return m.segments.map((seg) => seg.type === "text" ? seg.value : (seg.placeholder || "___")).join("").trim();
+  }, []);
+
+  // Initialize input with madlib text when madlib changes
+  useEffect(() => {
+    if (madlib) {
+      setManualInput(madlibToText(madlib));
+      setUserHasEdited(false);
+    }
+  }, [madlib, madlibToText]);
+
+  const input = userHasEdited ? manualInput : (madlib ? madlibToText(madlib) : (queries ? rotatingText : (hero?.prefill || "")));
+  const sendQuery = userHasEdited ? manualInput : (madlib ? madlibToText(madlib) : (queries ? fullQuery : (hero?.prefill || "")));
   const setInput = useCallback((val: string) => { setUserHasEdited(true); setManualInput(val); }, []);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authDefaultMode, setAuthDefaultMode] = useState<"signin" | "signup">("signup");
@@ -750,10 +750,7 @@ function LandingPage() {
   }, []);
 
   const handleSend = useCallback(() => {
-    // Read madlib inputs at send time (not render time) so user input is captured
-    const query = madlib
-      ? getMadlibText().trim()
-      : sendQuery.trim();
+    const query = sendQuery.trim();
     if (query) {
       analytics.track("Hero Input Submitted", { query_length: query.length });
       analytics.track("Message Sent", {
@@ -902,52 +899,26 @@ function LandingPage() {
               </div>
             )}
             <div className={`px-5 max-md:px-3.5 pt-[18px] max-md:pt-3.5 pb-3 max-md:pb-2 relative min-h-[3.5rem] max-md:min-h-[2.5rem] ${isDraggingOver ? "hidden" : ""}`}>
-              {madlib ? (
-                <div
-                  ref={madlibRef}
-                  className="text-base max-md:text-[0.9rem] text-[#1C1C1E] leading-[2.6] h-full overflow-visible text-left"
-                  style={{ wordBreak: "break-word" }}
-                >
-                  {madlib.segments.map((seg, i) =>
-                    seg.type === "text" ? (
-                      <span key={i} className="align-middle">{seg.value}</span>
-                    ) : (
-                      <input
-                        key={i}
-                        type="text"
-                        placeholder={seg.placeholder}
-                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSend(); } }}
-                        onChange={() => setUserHasEdited(true)}
-                        className="inline-block border border-[#D1D1D6] rounded-lg px-3 py-1 mx-0.5 text-base max-md:text-[0.9rem] text-[#1C1C1E] font-medium text-center bg-[#F9F9F9] min-w-[4rem] w-auto placeholder:text-[#C7C7CC] placeholder:font-normal focus:border-[#0F1B3D]/40 focus:shadow-[0_0_0_3px_rgba(15,27,61,0.06)] focus:outline-none transition-all align-middle"
-                        style={{ width: seg.placeholder ? `${Math.max(seg.placeholder.length + 2, 6)}ch` : "6ch" }}
-                      />
-                    )
-                  )}
-                </div>
-              ) : (
-                <>
-                  <textarea
-                    ref={inputRef}
-                    value={input}
-                    onFocus={() => setInputFocused(true)}
-                    onBlur={() => setInputFocused(false)}
-                    onChange={(e) => {
-                      setUserHasEdited(true);
-                      setManualInput(e.target.value);
-                      e.target.style.height = "auto";
-                      e.target.style.height = `${e.target.scrollHeight}px`;
-                    }}
-                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                    placeholder="Ask Elena anything..."
-                    rows={1}
-                    className={`w-full border-none outline-none bg-transparent text-base max-md:text-sm text-[#1C1C1E] placeholder:text-[#AEAEB2] resize-none max-h-32 overflow-y-auto ${queries && !userHasEdited && !inputFocused ? "caret-transparent" : ""}`}
-                  />
-                  {queries && !userHasEdited && !inputFocused && (
-                    <span className="pointer-events-none absolute top-[18px] left-5 text-base max-md:text-sm text-transparent whitespace-pre" aria-hidden>
-                      {input}<span className="animate-[cursor-blink_1s_step-end_infinite] text-[#1C1C1E]">|</span>
-                    </span>
-                  )}
-                </>
+              <textarea
+                ref={inputRef}
+                value={input}
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setInputFocused(false)}
+                onChange={(e) => {
+                  setUserHasEdited(true);
+                  setManualInput(e.target.value);
+                  e.target.style.height = "auto";
+                  e.target.style.height = `${e.target.scrollHeight}px`;
+                }}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                placeholder="Ask Elena anything..."
+                rows={1}
+                className={`w-full border-none outline-none bg-transparent text-base max-md:text-sm text-[#1C1C1E] placeholder:text-[#AEAEB2] resize-none max-h-32 overflow-y-auto ${queries && !userHasEdited && !inputFocused && !madlib ? "caret-transparent" : ""}`}
+              />
+              {queries && !userHasEdited && !inputFocused && !madlib && (
+                <span className="pointer-events-none absolute top-[18px] left-5 text-base max-md:text-sm text-transparent whitespace-pre" aria-hidden>
+                  {input}<span className="animate-[cursor-blink_1s_step-end_infinite] text-[#1C1C1E]">|</span>
+                </span>
               )}
             </div>
             {/* Pending file chip */}
