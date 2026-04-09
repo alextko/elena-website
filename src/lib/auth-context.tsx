@@ -720,7 +720,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const pendingInvite = localStorage.getItem("elena_pending_invite");
         if (pendingInvite) {
           localStorage.removeItem("elena_pending_invite");
-          apiFetch(`/family/invite/${pendingInvite}/accept`, { method: "POST" }).catch(() => {});
+          try {
+            const acceptRes = await apiFetch(`/family/invite/${pendingInvite}/accept`, { method: "POST" });
+            if (acceptRes.ok) {
+              // Re-fetch profile to pick up the new linked account
+              profileFetchedRef.current = false;
+              await fetchProfile();
+            }
+          } catch {}
         }
       } else {
         const errText = await createRes.text().catch(() => "");
