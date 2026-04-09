@@ -67,6 +67,7 @@ export interface ChatMessageItem {
   assistance_result?: AssistanceResult | null;
   price_comparison_label?: string | null;
   call_result?: { booking_id?: string; provider_name: string; summary: string; call_type: string } | null;
+  invite_accepted?: { accepter_name: string } | null;
 }
 
 // --- Welcome (api_chat.py:275-279) ---

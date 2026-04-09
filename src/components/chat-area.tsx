@@ -69,6 +69,7 @@ type Message = {
   appealStatus?: AppealStatus | null;
   assistanceResult?: AssistanceResult | null;
   priceComparisonLabel?: string | null;
+  inviteAccepted?: { accepter_name: string; message: string } | null;
 };
 
 // Link regex: [^)] for URL ensures we don't stop at an unrelated ")" elsewhere in text.
@@ -382,6 +383,7 @@ export function ChatArea({
           appealStatus: m.appeal_status,
           assistanceResult: m.assistance_result,
           priceComparisonLabel: m.price_comparison_label,
+          inviteAccepted: m.invite_accepted ? { accepter_name: m.invite_accepted.accepter_name, message: m.text } : undefined,
         }));
       // Deduplicate consecutive identical user messages (from retries after errors)
       const mapped = raw.filter((m, i) => {
@@ -1110,6 +1112,18 @@ export function ChatArea({
                         </div>
                         <p className="text-sm font-semibold text-[#0F1B3D] mb-1">Just got off the phone with {msg.callResult.provider_name}</p>
                         <p className="text-[13px] text-[#0F1B3D]/70 leading-relaxed">{msg.callResult.summary}</p>
+                      </div>
+                    )}
+                    {msg.inviteAccepted && (
+                      <div className="mt-3 max-w-md rounded-2xl border border-indigo-200 bg-indigo-50 p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-7 h-7 rounded-full bg-indigo-500 flex items-center justify-center">
+                            <span className="text-xs">🔗</span>
+                          </div>
+                          <span className="text-sm font-bold text-indigo-800 tracking-wide">ACCOUNT LINKED</span>
+                        </div>
+                        <p className="text-sm font-semibold text-[#0F1B3D] mb-1">{msg.inviteAccepted.accepter_name}</p>
+                        <p className="text-[13px] text-[#0F1B3D]/70 leading-relaxed">{msg.inviteAccepted.message}</p>
                       </div>
                     )}
                     {msg.webSources && msg.webSources.length > 0 && (
