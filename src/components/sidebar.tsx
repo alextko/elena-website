@@ -85,6 +85,7 @@ function SidebarProfile({ onBookMessage }: { onBookMessage?: (msg: string) => vo
 }
 
 function NotificationBell() {
+  const { profileId } = useAuth();
   const [notifications, setNotifications] = useState<{ id: string; message: string; status: string; created_at: string }[]>([]);
   const [open, setOpen] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
@@ -104,11 +105,14 @@ function NotificationBell() {
     setNotifLoaded(true);
   }, []);
 
+  // Re-fetch when profile changes and on interval
   useEffect(() => {
+    setNotifications([]);
+    setNotifLoaded(false);
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
-  }, [fetchNotifications]);
+  }, [fetchNotifications, profileId]);
 
   // Close on outside click and mark as seen
   useEffect(() => {
