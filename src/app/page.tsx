@@ -16,6 +16,39 @@ const STATS = [
   { value: 90, suffix: "%", label: "want help navigating the system" },
 ];
 
+const PERSONA_STATS: Record<string, typeof STATS> = {
+  caregiver: [
+    { value: 53, suffix: "M", label: "Americans are unpaid caregivers" },
+    { value: 24, suffix: "hrs", label: "per week spent on caregiving tasks" },
+    { value: 78, suffix: "%", label: "of caregivers manage insurance and bills" },
+    { value: 40, suffix: "%", label: "of caregivers report high emotional stress" },
+  ],
+  fertility: [
+    { value: 23, suffix: "K", label: "average cost of one IVF cycle" },
+    { value: 42, suffix: "%", label: "of employers now cover fertility treatment" },
+    { value: 61, suffix: "%", label: "say cost is the biggest barrier to treatment" },
+    { value: 3, suffix: "x", label: "price variation between clinics for the same procedure" },
+  ],
+  chronic: [
+    { value: 60, suffix: "%", label: "of adults live with a chronic condition" },
+    { value: 90, suffix: "%", label: "of healthcare spending goes to chronic disease" },
+    { value: 47, suffix: "%", label: "skip medications due to cost" },
+    { value: 4, suffix: "+", label: "specialists the average chronic patient sees" },
+  ],
+  insurance: [
+    { value: 49, suffix: "%", label: "chose the wrong plan for their needs" },
+    { value: 2, suffix: "K", label: "average overspend on the wrong insurance plan" },
+    { value: 73, suffix: "%", label: "don't understand their insurance benefits" },
+    { value: 12, suffix: "M", label: "Americans are uninsured and don't know their options" },
+  ],
+  care_now: [
+    { value: 5, suffix: "x", label: "more expensive to go to the ER vs urgent care" },
+    { value: 27, suffix: "%", label: "of ER visits could be handled at urgent care" },
+    { value: 145, suffix: "min", label: "average ER wait time in the U.S." },
+    { value: 82, suffix: "%", label: "don't know which providers are in-network nearby" },
+  ],
+};
+
 function CountUp({ target, suffix, active }: { target: number; suffix: string; active: boolean }) {
   const [count, setCount] = useState(0);
   const hasRun = useRef(false);
@@ -49,7 +82,7 @@ function CountUp({ target, suffix, active }: { target: number; suffix: string; a
   );
 }
 
-function StatsBar() {
+function StatsBar({ persona }: { persona?: string | null }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -99,7 +132,7 @@ function StatsBar() {
 
         {/* Stats grid */}
         <div className="grid grid-cols-4 gap-6 max-md:grid-cols-2 max-md:gap-x-6 max-md:gap-y-10 max-sm:grid-cols-1 max-sm:gap-8">
-          {STATS.map((stat, i) => {
+          {(persona && PERSONA_STATS[persona] ? PERSONA_STATS[persona] : STATS).map((stat, i) => {
             const accents = ["#F4B084", "#93B5E1", "#FFFFFF", "#F4B084"];
             const delays = [0, 150, 300, 450];
             return (
@@ -228,6 +261,59 @@ const TESTIMONIALS = [
   { name: "Doriam", text: <><span className="font-bold">Doriam</span> found the best price for her blood work and cardiology appointments.</>, logo: "/images/insurers/uhc.svg", logoAlt: "UnitedHealthcare" },
   { name: "Andy", text: <><span className="font-bold">Andy</span> figured out the best insurance plan for him and his family.</>, logo: "/images/insurers/medicare.svg", logoAlt: "Medicare" },
 ];
+
+const PERSONA_TESTIMONIALS: Record<string, typeof TESTIMONIALS> = {
+  caregiver: [
+    { name: "Lisa", text: <><span className="font-bold">Lisa</span> manages her mom&apos;s <span className="font-bold">12 medications</span> and all her appointments from one app.</>, logo: "/images/insurers/medicare.svg", logoAlt: "Medicare" },
+    { name: "David", text: <><span className="font-bold">David</span> had Elena call his dad&apos;s insurance and got a <span className="font-bold">$3,200</span> bill reduced to <span className="font-bold">$800</span>.</>, logo: "/images/insurers/uhc.svg", logoAlt: "UnitedHealthcare" },
+    { name: "Karen", text: <><span className="font-bold">Karen</span> keeps track of her parents&apos; doctors, prescriptions, and upcoming visits without a single spreadsheet.</>, logo: "/images/insurers/bcbs.svg", logoAlt: "Blue Cross" },
+    { name: "Michael", text: <><span className="font-bold">Michael</span> found a geriatrician for his mom that takes Medicare and is <span className="font-bold">5 minutes</span> from her house.</>, logo: "/images/insurers/medicare.svg", logoAlt: "Medicare" },
+    { name: "Sarah", text: <><span className="font-bold">Sarah</span> got her dad&apos;s denied physical therapy claim overturned after Elena called Humana.</>, logo: "/images/insurers/humana.svg", logoAlt: "Humana" },
+    { name: "James", text: <><span className="font-bold">James</span> saved <span className="font-bold">$400/month</span> by switching his parents to better Medicare Advantage plans.</>, logo: "/images/insurers/medicare.svg", logoAlt: "Medicare" },
+    { name: "Amy", text: <><span className="font-bold">Amy</span> coordinates care across <span className="font-bold">4 specialists</span> for her husband without missing a single follow-up.</>, logo: "/images/insurers/aetna.svg", logoAlt: "Aetna" },
+    { name: "Tom", text: <><span className="font-bold">Tom</span> set up medication reminders for his mom and hasn&apos;t missed a refill in <span className="font-bold">6 months</span>.</>, logo: "/images/insurers/kaiser.svg", logoAlt: "Kaiser Permanente" },
+  ],
+  fertility: [
+    { name: "Jessica", text: <><span className="font-bold">Jessica</span> compared IVF costs at <span className="font-bold">5 clinics</span> and saved <span className="font-bold">$8,000</span> on her first cycle.</>, logo: "/images/insurers/bcbs.svg", logoAlt: "Blue Cross" },
+    { name: "Rachel", text: <><span className="font-bold">Rachel</span> got her egg freezing pre-authorized after Elena called Aetna <span className="font-bold">3 times</span>.</>, logo: "/images/insurers/aetna.svg", logoAlt: "Aetna" },
+    { name: "Priya", text: <><span className="font-bold">Priya</span> found out her plan covers <span className="font-bold">3 IUI cycles</span> she didn&apos;t know about.</>, logo: "/images/insurers/cigna.svg", logoAlt: "Cigna" },
+    { name: "Megan", text: <><span className="font-bold">Megan</span> tracks her fertility medications, appointments, and lab results all in one place.</>, logo: "/images/insurers/uhc.svg", logoAlt: "UnitedHealthcare" },
+    { name: "Lauren", text: <><span className="font-bold">Lauren</span> saved <span className="font-bold">$2,100</span> on fertility meds by comparing pharmacy prices through Elena.</>, logo: "/images/insurers/oscar.svg", logoAlt: "Oscar" },
+    { name: "Nina", text: <><span className="font-bold">Nina</span> got her denied IVF claim appealed and <span className="font-bold">$12,000</span> reimbursed.</>, logo: "/images/insurers/bcbs.svg", logoAlt: "Blue Cross" },
+    { name: "Emily", text: <><span className="font-bold">Emily</span> found a fertility specialist with a <span className="font-bold">62% success rate</span> that takes her insurance.</>, logo: "/images/insurers/humana.svg", logoAlt: "Humana" },
+    { name: "Aisha", text: <><span className="font-bold">Aisha</span> navigated her entire IVF journey without a single surprise bill.</>, logo: "/images/insurers/aetna.svg", logoAlt: "Aetna" },
+  ],
+  chronic: [
+    { name: "Marcus", text: <><span className="font-bold">Marcus</span> found insulin for <span className="font-bold">$35/month</span> instead of the <span className="font-bold">$300</span> his pharmacy quoted.</>, logo: "/images/insurers/uhc.svg", logoAlt: "UnitedHealthcare" },
+    { name: "Jen", text: <><span className="font-bold">Jen</span> got her Humira prior authorization approved in <span className="font-bold">48 hours</span> after weeks of waiting.</>, logo: "/images/insurers/cigna.svg", logoAlt: "Cigna" },
+    { name: "Chris", text: <><span className="font-bold">Chris</span> tracks his A1C, blood pressure meds, and endocrinologist visits all in one place.</>, logo: "/images/insurers/kaiser.svg", logoAlt: "Kaiser Permanente" },
+    { name: "Diana", text: <><span className="font-bold">Diana</span> found a rheumatologist that takes her insurance and has <span className="font-bold">next-week</span> availability.</>, logo: "/images/insurers/bcbs.svg", logoAlt: "Blue Cross" },
+    { name: "Robert", text: <><span className="font-bold">Robert</span> saved <span className="font-bold">$180/month</span> by switching to a generic his doctor didn&apos;t know about.</>, logo: "/images/insurers/humana.svg", logoAlt: "Humana" },
+    { name: "Tanya", text: <><span className="font-bold">Tanya</span> manages her thyroid medication, lab work, and follow-ups without missing a beat.</>, logo: "/images/insurers/aetna.svg", logoAlt: "Aetna" },
+    { name: "Alex", text: <><span className="font-bold">Alex</span> found a therapist taking new patients with <span className="font-bold">$20 copays</span> through his plan.</>, logo: "/images/insurers/oscar.svg", logoAlt: "Oscar" },
+    { name: "Maria", text: <><span className="font-bold">Maria</span> got her autoimmune specialist referral pushed through after Elena called her PCP.</>, logo: "/images/insurers/uhc.svg", logoAlt: "UnitedHealthcare" },
+  ],
+  insurance: [
+    { name: "Kevin", text: <><span className="font-bold">Kevin</span> found a plan that covers all <span className="font-bold">3 of his medications</span> and saves <span className="font-bold">$200/month</span>.</>, logo: "/images/insurers/bcbs.svg", logoAlt: "Blue Cross" },
+    { name: "Sara", text: <><span className="font-bold">Sara</span> compared <span className="font-bold">12 marketplace plans</span> in minutes and picked one that keeps her doctors.</>, logo: "/images/insurers/oscar.svg", logoAlt: "Oscar" },
+    { name: "Dan", text: <><span className="font-bold">Dan</span> turned 65 and Elena walked him through every Medicare option without a single confusing brochure.</>, logo: "/images/insurers/medicare.svg", logoAlt: "Medicare" },
+    { name: "Linda", text: <><span className="font-bold">Linda</span> found out her employer&apos;s HSA plan would save her family <span className="font-bold">$3,400/year</span>.</>, logo: "/images/insurers/aetna.svg", logoAlt: "Aetna" },
+    { name: "Jason", text: <><span className="font-bold">Jason</span> switched from a PPO to an HMO and saved <span className="font-bold">$150/month</span> without losing his doctors.</>, logo: "/images/insurers/kaiser.svg", logoAlt: "Kaiser Permanente" },
+    { name: "Pam", text: <><span className="font-bold">Pam</span> found a Silver plan with <span className="font-bold">$0 deductible</span> she didn&apos;t know she qualified for.</>, logo: "/images/insurers/cigna.svg", logoAlt: "Cigna" },
+    { name: "Tony", text: <><span className="font-bold">Tony</span> compared dental and vision add-ons and found bundled savings of <span className="font-bold">$60/month</span>.</>, logo: "/images/insurers/humana.svg", logoAlt: "Humana" },
+    { name: "Grace", text: <><span className="font-bold">Grace</span> got COBRA alternatives that cost <span className="font-bold">half the price</span> with better coverage.</>, logo: "/images/insurers/uhc.svg", logoAlt: "UnitedHealthcare" },
+  ],
+  care_now: [
+    { name: "Mike", text: <><span className="font-bold">Mike</span> found an urgent care open at <span className="font-bold">9 PM</span> that takes his insurance and is <span className="font-bold">2 miles</span> away.</>, logo: "/images/insurers/uhc.svg", logoAlt: "UnitedHealthcare" },
+    { name: "Jess", text: <><span className="font-bold">Jess</span> skipped the ER and saved <span className="font-bold">$1,800</span> by going to an urgent care Elena found.</>, logo: "/images/insurers/bcbs.svg", logoAlt: "Blue Cross" },
+    { name: "Omar", text: <><span className="font-bold">Omar</span> got a same-day telehealth appointment in <span className="font-bold">15 minutes</span> through Elena.</>, logo: "/images/insurers/aetna.svg", logoAlt: "Aetna" },
+    { name: "Katie", text: <><span className="font-bold">Katie</span> needed an X-ray and Elena found a walk-in clinic with <span className="font-bold">no wait</span> and <span className="font-bold">$45 copay</span>.</>, logo: "/images/insurers/cigna.svg", logoAlt: "Cigna" },
+    { name: "Brian", text: <><span className="font-bold">Brian</span> got a prescription refill the same day after his pharmacy was out of stock.</>, logo: "/images/insurers/oscar.svg", logoAlt: "Oscar" },
+    { name: "Anita", text: <><span className="font-bold">Anita</span> found a pediatrician with Saturday hours when her kid got sick on a weekend.</>, logo: "/images/insurers/humana.svg", logoAlt: "Humana" },
+    { name: "Derek", text: <><span className="font-bold">Derek</span> avoided a <span className="font-bold">$3,000</span> ER visit by finding an in-network urgent care open late.</>, logo: "/images/insurers/kaiser.svg", logoAlt: "Kaiser Permanente" },
+    { name: "Sophie", text: <><span className="font-bold">Sophie</span> got antibiotics prescribed via telehealth and picked them up an hour later.</>, logo: "/images/insurers/uhc.svg", logoAlt: "UnitedHealthcare" },
+  ],
+};
 
 const INSURERS = [
   { src: "/images/insurers/bcbs.svg", alt: "Blue Cross Blue Shield" },
@@ -938,7 +1024,7 @@ function LandingPage() {
             <div className="flex w-max animate-[scroll-left_140s_linear_infinite] max-md:animate-[scroll-left_90s_linear_infinite] will-change-transform [backface-visibility:hidden] mb-28">
               {[0, 1].map((set) => (
                 <div key={set} className="flex gap-3 pr-3 shrink-0">
-                  {TESTIMONIALS.map((card) => (
+                  {(ref && PERSONA_TESTIMONIALS[ref] ? PERSONA_TESTIMONIALS[ref] : TESTIMONIALS).map((card) => (
                     <div key={`${set}-${card.name}`} className="bg-white/[0.12] backdrop-blur-xl border border-white/[0.18] rounded-2xl px-6 pt-5 pb-4 w-[310px] h-[130px] shrink-0 shadow-[0_4px_16px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.15)] flex flex-col">
                       <p className="text-[0.88rem] text-white/90 leading-relaxed flex-1">{card.text}</p>
                       <img src={card.logo} alt={card.logoAlt} className="h-6 mt-auto pt-2 self-start brightness-0 invert opacity-60" />
@@ -971,7 +1057,7 @@ function LandingPage() {
       </section>
 
       {/* STATS BAR */}
-      <StatsBar />
+      <StatsBar persona={ref} />
 
       {/* MANIFESTO */}
       <section className="relative z-10 py-[120px] px-8 bg-[#F7F6F2] max-md:py-20 max-md:px-5">
@@ -1002,7 +1088,7 @@ function LandingPage() {
       </section>
 
       {/* SPOTLIGHTS */}
-      <Spotlights />
+      <Spotlights persona={ref} />
 
       {/* FOOTER */}
       <footer className="relative z-10 pt-20 pb-10 px-8 text-white overflow-hidden" style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%, #2E6BB5 100%)" }}>

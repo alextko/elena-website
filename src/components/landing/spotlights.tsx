@@ -1444,7 +1444,60 @@ function FamilyProfiles() {
 /* ================================================================
    MAIN EXPORT
    ================================================================ */
-export default function Spotlights() {
+const SPOTLIGHT_COPY: Record<string, { gamePlan: [string, string]; visits: [string, string]; phone: [string, string]; insurance: [string, string]; pricing: [string, string]; family: [string, string] }> = {
+  caregiver: {
+    gamePlan: ["Their health, your game plan", "Elena tracks medications, refills, and follow-ups for the people you care for. Check things off as you go."],
+    visits: ["Every appointment, all in one place", "Track visits, lab results, and documents for your loved ones. Never miss a follow-up again."],
+    phone: ["Elena makes the calls so you don't have to", "Sitting on hold with your parent's insurance is exhausting. Elena handles the calls, disputes, and follow-ups for you."],
+    insurance: ["Master their insurance", "Elena knows their deductible, copays, and what's covered. She makes sure your loved ones get every benefit they're entitled to."],
+    pricing: ["Find the best price for their care", "The same procedure can cost wildly different amounts. Elena checks their insurance and finds the most affordable option."],
+    family: ["Every family member, one app", "Switch between your parents, your partner, your kids. Elena knows everyone's doctors, medications, and history."],
+  },
+  fertility: {
+    gamePlan: ["Your fertility game plan", "Elena tracks your cycle, medications, upcoming appointments, and lab work. Stay on top of every step of your journey."],
+    visits: ["Your fertility journey, documented", "Every consultation, ultrasound, lab result, and procedure on a single timeline. Nothing gets lost."],
+    phone: ["Elena handles the insurance fights", "Prior authorizations, claim denials, coverage questions. Elena calls your insurance so you can focus on your treatment."],
+    insurance: ["Know exactly what's covered", "Elena breaks down your fertility benefits, coverage limits, lifetime maximums, and what you'll pay out of pocket."],
+    pricing: ["Compare clinic costs side by side", "IVF prices vary by thousands between clinics. Elena compares costs, success rates, and insurance acceptance to find your best option."],
+    family: ["Your whole family, one app", "Manage healthcare for your partner and family. Switch between profiles in one tap and Elena knows everyone's history."],
+  },
+  chronic: {
+    gamePlan: ["Stay on top of your condition", "Elena tracks your medications, lab work, specialist visits, and daily health tasks. Nothing falls through the cracks."],
+    visits: ["All your specialists, one timeline", "Endocrinologist, rheumatologist, therapist, PCP. Every visit, lab result, and note in one place."],
+    phone: ["Elena fights for your coverage", "Prior authorizations, denied claims, referral runarounds. Elena calls your insurance and pushes things through."],
+    insurance: ["Understand your coverage", "Elena knows your formulary, your copay tiers, and which specialists are in-network. She finds the cheapest path for every medication and visit."],
+    pricing: ["Find affordable care and medications", "The same medication or lab test can cost 10x more depending on where you go. Elena finds the best price with your insurance."],
+    family: ["Your whole family, one app", "Manage healthcare for your parents, your partner, your kids. Switch between profiles in one tap and Elena knows everyone's history."],
+  },
+  insurance: {
+    gamePlan: ["Your insurance action plan", "Elena builds a checklist: compare plans, verify your doctors are in-network, check medication coverage, and estimate total costs."],
+    visits: ["Track your care across plans", "Switching plans? Elena keeps your full medical history, visit records, and documents so nothing gets lost in the transition."],
+    phone: ["Elena calls to verify everything", "Is your doctor in-network? Is your medication covered? Elena calls the insurance company to confirm before you commit."],
+    insurance: ["Compare plans like a pro", "Elena breaks down deductibles, copays, out-of-pocket maximums, and formularies. She shows you what you'll actually pay, not what the brochure says."],
+    pricing: ["See what you'll really pay", "Elena estimates your total annual cost based on your doctors, medications, and expected visits. No surprises after you enroll."],
+    family: ["Cover your whole family", "Comparing plans for a family? Elena checks that everyone's doctors and medications are covered and finds the best plan for all of you."],
+  },
+  care_now: {
+    gamePlan: ["Your health game plan", "After your visit, Elena tracks follow-ups, prescriptions, and next steps so nothing falls through the cracks."],
+    visits: ["Your care, every detail", "Every visit, lab result, and document on a single timeline. Tap any visit to see the full picture."],
+    phone: ["Elena books it for you", "Found a provider? Elena calls to check availability, confirm your insurance, and book the appointment. You just show up."],
+    insurance: ["Know before you go", "Elena checks your insurance, tells you your copay, and confirms the provider is in-network before you walk in."],
+    pricing: ["ER vs urgent care vs telehealth", "Elena compares your options, shows you wait times and costs, and helps you pick the smartest choice for your situation."],
+    family: ["Your whole family, one app", "Need care for your kid or your parent? Switch profiles and Elena finds providers that work for them too."],
+  },
+};
+
+const DEFAULT_SPOTLIGHT_COPY = {
+  gamePlan: ["Your health game plan", "Elena builds a personalized daily plan: medications, follow-ups, screenings. Check things off as you go."] as [string, string],
+  visits: ["Your care, every detail", "Every visit, lab result, and document on a single timeline. Tap any visit to see the full picture."] as [string, string],
+  phone: ["She actually calls for you", "No hold music. No phone tag. Elena calls the doctor's office, checks availability, confirms your insurance, and books it. You just get the confirmation."] as [string, string],
+  insurance: ["Navigate healthcare like a pro", "Elena knows your deductible, your copays, what's in-network, and what's not. She finds the cheapest option for every procedure and makes sure you never leave money on the table."] as [string, string],
+  pricing: ["Elena finds the best price", "The same MRI can cost $180 or $2,400 depending on where you go. Elena checks your insurance and finds the best deal."] as [string, string],
+  family: ["Your whole family, one app", "Manage healthcare for your parents, your partner, your kids. Switch between profiles in one tap and Elena knows everyone's history."] as [string, string],
+};
+
+export default function Spotlights({ persona }: { persona?: string | null }) {
+  const copy = (persona && SPOTLIGHT_COPY[persona]) || DEFAULT_SPOTLIGHT_COPY;
   return (
     <section
       id="features"
@@ -1453,8 +1506,8 @@ export default function Spotlights() {
     >
       {/* 1. Game Plan */}
       <SpotlightRow
-        title="Your health game plan"
-        description="Elena builds a personalized daily plan: medications, follow-ups, screenings. Check things off as you go."
+        title={copy.gamePlan[0]}
+        description={copy.gamePlan[1]}
       >
         <GamePlanCard />
       </SpotlightRow>
@@ -1462,16 +1515,16 @@ export default function Spotlights() {
       {/* 2. Visit Timeline */}
       <SpotlightRow
         reverse
-        title="Your care, every detail"
-        description="Every visit, lab result, and document on a single timeline. Tap any visit to see the full picture."
+        title={copy.visits[0]}
+        description={copy.visits[1]}
       >
         <VisitTimeline />
       </SpotlightRow>
 
       {/* 3. Phone Calling Agent */}
       <SpotlightRow
-        title="She actually calls for you"
-        description="No hold music. No phone tag. Elena calls the doctor's office, checks availability, confirms your insurance, and books it. You just get the confirmation."
+        title={copy.phone[0]}
+        description={copy.phone[1]}
       >
         <PhoneCallingCard />
       </SpotlightRow>
@@ -1479,16 +1532,16 @@ export default function Spotlights() {
       {/* 4. Insurance Cards */}
       <SpotlightRow
         reverse
-        title="Navigate healthcare like a pro"
-        description="Elena knows your deductible, your copays, what's in-network, and what's not. She finds the cheapest option for every procedure and makes sure you never leave money on the table."
+        title={copy.insurance[0]}
+        description={copy.insurance[1]}
       >
         <InsuranceCarousel />
       </SpotlightRow>
 
       {/* 5. MRI Pricing Chat */}
       <SpotlightRow
-        title="Elena finds the best price"
-        description="The same MRI can cost $180 or $2,400 depending on where you go. Elena checks your insurance and finds the best deal."
+        title={copy.pricing[0]}
+        description={copy.pricing[1]}
       >
         <MriPricingChat />
       </SpotlightRow>
@@ -1496,8 +1549,8 @@ export default function Spotlights() {
       {/* 6. Family Profiles */}
       <SpotlightRow
         reverse
-        title="Your whole family, one app"
-        description="Manage healthcare for your parents, your partner, your kids. Switch between profiles in one tap and Elena knows everyone's history."
+        title={copy.family[0]}
+        description={copy.family[1]}
       >
         <FamilyProfiles />
       </SpotlightRow>
