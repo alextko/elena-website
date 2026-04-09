@@ -15,7 +15,7 @@ import type {
 } from "@/lib/types";
 
 // Partial of the Message type from chat-area — only the card fields
-type DemoCardFields = {
+export type DemoCardFields = {
   doctorResults?: DoctorResult[] | null;
   billAnalysis?: BillAnalysis | null;
   appealScript?: AppealScript | null;
@@ -27,6 +27,7 @@ type DemoCardFields = {
 interface DemoEntry {
   name: string;
   matchKeywords: string[];
+  requiresDocument?: boolean;
   delay: number;
   toolLabel: string;
   reply: string;
@@ -283,6 +284,18 @@ const APPEAL_STATUS_DATA: AppealStatus = {
   ],
 };
 
+// Tracker state after Elena submits the appeal
+const APPEAL_STATUS_SUBMITTED: AppealStatus = {
+  steps: [
+    { label: "Denial Received", date: "Apr 1", status: "completed" },
+    { label: "Appeal Drafted", date: "Apr 7", status: "completed" },
+    { label: "Appeal Submitted", date: "Apr 9", status: "completed", detail: "Sent via Elena to UnitedHealthcare" },
+    { label: "Under Review", status: "current", detail: "UHC has 30 days to respond (by May 9)" },
+    { label: "Decision", status: "pending" },
+    { label: "External Review (if denied again)", status: "pending" },
+  ],
+};
+
 // ─────────────────────────────────────────────────────────────────
 //  RECORDING 5: Blood Test (price comparison)
 //  Query: "I haven't had bloodwork done in like 3 years and I know
@@ -298,7 +311,7 @@ const BLOODWORK_DOCTORS: DoctorResult[] = [
     latitude: 41.4089,
     longitude: -75.6624,
     distance_km: 1.3,
-    estimated_oop: 45,
+    estimated_oop: 0,
     facility_type: "freestanding",
     in_network: true,
     healthgrades_rating: 4.2,
@@ -350,7 +363,7 @@ const COLONOSCOPY_DOCTORS: DoctorResult[] = [
     latitude: 37.7749,
     longitude: -122.4194,
     distance_km: 3.4,
-    estimated_oop: 950,
+    estimated_oop: 0,
     facility_type: "freestanding",
     in_network: true,
     healthgrades_rating: 4.8,
@@ -453,31 +466,66 @@ const DEMO_ENTRIES: DemoEntry[] = [
       appealStatus: APPEAL_STATUS_DATA,
     },
   },
-  // RECORDING 5: Blood test
+  // RECORDING 5: Blood test (requires insurance card)
   {
     name: "blood_test",
     matchKeywords: ["bloodwork"],
+    requiresDocument: true,
     delay: 3000,
     toolLabel: "Searching for labs near you...",
-    reply: "You're smart to get back on track with bloodwork. I found 3 options near you that take your insurance. Heads up — the exact same blood panel ranges from $45 at Quest to $350 at the hospital lab. I'd recommend Quest or LabCorp for routine bloodwork.",
+    reply: "You're smart to get back on track with bloodwork. I found 3 options near you that take your insurance. Heads up — Quest Diagnostics is fully covered under your plan (you'd pay $0), while the hospital lab would cost $350. I'd recommend Quest or LabCorp for routine bloodwork.",
     suggestions: ["Book at Quest Diagnostics", "What does a blood panel check for?", "Do I need to fast before?"],
     cardFields: {
       doctorResults: BLOODWORK_DOCTORS,
       priceComparisonLabel: "Comprehensive Blood Panel",
     },
   },
-  // RECORDING 6: Colonoscopy
+  // RECORDING 6: Colonoscopy (requires insurance card)
   {
     name: "colonoscopy",
     matchKeywords: ["colonoscopy"],
+    requiresDocument: true,
     delay: 3000,
     toolLabel: "Comparing prices near you...",
-    reply: "Good news — colonoscopy screenings are typically covered as preventive care, so you may pay much less than you think. But prices vary a LOT by location. I found 3 in-network options near you — the same exact procedure ranges from $950 to $3,200 depending on where you go.",
-    suggestions: ["Book the cheapest one", "Are any of these highly rated?", "What should I know before a colonoscopy?"],
+    reply: "Good news — colonoscopy screenings are typically covered as preventive care. Bay Endoscopy Center is fully covered under your plan ($0 out of pocket), while the same procedure runs up to $3,200 at Stanford. I found 3 in-network options near you.",
+    suggestions: ["Book the cheapest one", "Are any of these highly rated?", "What should I know before the procedure?"],
     cardFields: {
       doctorResults: COLONOSCOPY_DOCTORS,
       priceComparisonLabel: "Screening Colonoscopy",
     },
+  },
+  // ── Appeal follow-up chain ──────────────────────────────────────
+  // FOLLOWUP 4a: User clicks "Send it for me" → Elena submits the appeal
+  {
+    name: "appeal_send",
+    matchKeywords: ["send it for me"],
+    delay: 3000,
+    toolLabel: "Submitting your appeal to UnitedHealthcare...",
+    reply: "Done — I just submitted your appeal to UnitedHealthcare's appeals department. They're required to respond within 30 days under federal law. I'll keep tracking the status and notify you the moment I hear anything back. You don't need to do anything else for now.",
+    suggestions: ["What happens if they deny it again?", "How long does this usually take?", "Thanks, that's all for now"],
+    cardFields: {
+      appealStatus: APPEAL_STATUS_SUBMITTED,
+    },
+  },
+  // FOLLOWUP 4b: User asks about next denial
+  {
+    name: "appeal_external_review",
+    matchKeywords: ["deny it again"],
+    delay: 2000,
+    toolLabel: "Looking up your options...",
+    reply: "If UnitedHealthcare denies your appeal, you have the right to an external review — that means an independent third party (not UHC) reviews your case. External reviews overturn the insurer about 40-60% of the time. I'd handle the whole process for you: filing the request, submitting your medical records, and tracking the decision. But honestly, with the clinical evidence in your case, I think the internal appeal has a strong shot.",
+    suggestions: ["Good to know, thanks", "What medical records would they need?", "How long does external review take?"],
+    cardFields: {},
+  },
+  // FOLLOWUP 4c: User asks about timeline
+  {
+    name: "appeal_timeline",
+    matchKeywords: ["how long"],
+    delay: 1500,
+    toolLabel: "",
+    reply: "UnitedHealthcare has 30 days from today to make a decision on your internal appeal — so by May 9th at the latest. Most decisions come back in 2-3 weeks. If they deny it and you escalate to external review, that adds another 45 days. I'll ping you the moment anything changes so you don't have to keep checking.",
+    suggestions: ["Sounds good", "Can you remind me when the deadline is?", "What else can Elena help with?"],
+    cardFields: {},
   },
 ];
 
@@ -485,12 +533,29 @@ const DEMO_ENTRIES: DemoEntry[] = [
 //  Matcher function
 // ─────────────────────────────────────────────────────────────────
 
-export function matchDemoResponse(userMessage: string): DemoEntry | null {
+export function matchDemoResponse(userMessage: string, hasDocuments = false): DemoEntry | null {
   const lower = userMessage.toLowerCase();
   for (const entry of DEMO_ENTRIES) {
     if (entry.matchKeywords.every((kw) => lower.includes(kw.toLowerCase()))) {
+      // Skip entries that require a document when none is attached
+      if (entry.requiresDocument && !hasDocuments) continue;
       return entry;
     }
   }
   return null;
+}
+
+/** Returns the bill analysis demo response for document uploads */
+export function getDocumentDemoResponse(): DemoEntry {
+  return {
+    name: "document_bill_analysis",
+    matchKeywords: [],
+    delay: 4000,
+    toolLabel: "Analyzing your bill...",
+    reply: "I went through every line on your bill. A few things jump out — the biggest one is a $23,625 \"trauma activation\" fee. That charge is often reduced or removed entirely if a full trauma team wasn't actually called. Your CT scans are also billed at 4–6x the national average. In total, I found about $34,700 in charges that look higher than they should be. Here's the full breakdown:",
+    suggestions: ["Request an itemized bill", "Can you help me dispute this?", "Is there any way to get this reduced?"],
+    cardFields: {
+      billAnalysis: BILL_ANALYSIS_DATA,
+    },
+  };
 }

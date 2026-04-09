@@ -192,6 +192,7 @@ export function ChatArea({
   activeSessionId,
   onSessionCreated,
   initialQuery,
+  initialDocName,
   bookMessage,
   onBookMessageConsumed,
   isNewChat,
@@ -202,6 +203,7 @@ export function ChatArea({
   activeSessionId: string | null;
   onSessionCreated: (id: string, firstMessage?: string) => void;
   initialQuery?: string | null;
+  initialDocName?: string | null;
   bookMessage?: string | null;
   onBookMessageConsumed?: () => void;
   isNewChat?: boolean;
@@ -504,6 +506,15 @@ export function ChatArea({
   const handleSendRef = useRef<(text?: string) => Promise<void>>(undefined);
   const initialQuerySending = useRef(false);
 
+  const initialDocRef = useRef<string | null>(initialDocName ?? null);
+
+  // Sync ref when prop arrives late (useState initializer in parent runs after first render)
+  useEffect(() => {
+    if (initialDocName && !initialDocRef.current) {
+      initialDocRef.current = initialDocName;
+    }
+  }, [initialDocName]);
+
   useEffect(() => {
     console.log("[chat-area] auto-send check:", {
       hasInitialQuery: !!initialQuery,
@@ -661,6 +672,13 @@ export function ChatArea({
     const supported = files.filter(isFileSupported);
     if (supported.length === 0) return;
 
+    // Demo mode: skip S3 upload, use fake keys (check sessionStorage directly as safety net)
+    if (demoMode || (typeof window !== "undefined" && sessionStorage.getItem("elena_demo_mode") === "true")) {
+      const fakeUploads = supported.map((file) => ({ file, key: `demo-doc-${file.name}` }));
+      setPendingFiles((prev) => [...prev, ...fakeUploads]);
+      return;
+    }
+
     const sid = sessionIdRef.current || "pending";
     setUploading(true);
 
@@ -740,6 +758,15 @@ export function ChatArea({
       const sentFiles = pendingFiles.map((f) => ({ name: f.file.name, key: f.key }));
       const docKeys = pendingFiles.map((f) => f.key);
       setPendingFiles([]);
+
+      // Inject initial doc from landing page as a fake attachment (check sessionStorage directly)
+      const isDemoActive = demoMode || (typeof window !== "undefined" && sessionStorage.getItem("elena_demo_mode") === "true");
+      if (initialDocRef.current && isDemoActive) {
+        const docName = initialDocRef.current;
+        initialDocRef.current = null;
+        sentFiles.push({ name: docName, key: `demo-doc-${docName}` });
+        docKeys.push(`demo-doc-${docName}`);
+      }
 
       // Promote welcome into the message list so it persists as first message
       const welcomeMsg: typeof messages[number] | null =
@@ -1079,7 +1106,7 @@ export function ChatArea({
                       <BillAnalysisCard data={msg.billAnalysis} />
                     )}
                     {msg.appealScript && (
-                      <AppealScriptCard data={msg.appealScript} />
+                      <AppealScriptCard data={msg.appealScript} onSend={() => handleSend("Send it for me")} />
                     )}
                     {msg.appealStatus && (
                       <AppealTrackerCard data={msg.appealStatus} />
