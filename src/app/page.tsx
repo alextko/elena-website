@@ -653,10 +653,16 @@ function LandingPage() {
   const madlibRef = useRef<HTMLDivElement>(null);
   const getMadlibText = () => {
     if (!madlibRef.current || !madlib) return "";
+    const textSpans = madlibRef.current.querySelectorAll("[data-madlib-text]");
     const inputs = madlibRef.current.querySelectorAll("input");
+    let textIdx = 0;
     let inputIdx = 0;
     return madlib.segments.map((seg) => {
-      if (seg.type === "text") return seg.value;
+      if (seg.type === "text") {
+        const span = textSpans[textIdx];
+        textIdx++;
+        return span?.textContent ?? seg.value;
+      }
       const val = inputs[inputIdx]?.value || seg.placeholder || "";
       inputIdx++;
       return val;
@@ -910,7 +916,15 @@ function LandingPage() {
                 >
                   {madlib.segments.map((seg, i) =>
                     seg.type === "text" ? (
-                      <span key={i} className="align-middle">{seg.value}</span>
+                      <span
+                        key={i}
+                        contentEditable
+                        suppressContentEditableWarning
+                        data-madlib-text
+                        onInput={() => setUserHasEdited(true)}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSend(); } }}
+                        className="align-middle outline-none"
+                      >{seg.value}</span>
                     ) : (
                       <input
                         key={i}
