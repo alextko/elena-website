@@ -246,56 +246,56 @@ const INSURERS = [
 
 const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; subtitle: string; prefill: string }> = {
   bills: {
-    headline: ["Never get a", "surprise bill "],
-    accent: "again.",
+    headline: ["Never get a", "surprise bill again."],
+    accent: "never",
     subtitle: "Elena helps you compare prices using real, insurance-negotiated rates. Never overpay again.",
     prefill: "find the cheapest MRI near me",
   },
   calls: {
-    headline: ["Elena calls your", "insurance "],
-    accent: "for you.",
+    headline: ["Elena calls your", "insurance for you."],
+    accent: "for you",
     subtitle: "No more hold music. No more transfers. Elena sits on hold, talks to your insurer, and reports back.",
     prefill: "Call my insurance company for me",
   },
   caregiver: {
-    headline: ["Manage their health", "from "],
-    accent: "your phone.",
+    headline: ["Manage their health", "from your phone."],
+    accent: "from your phone",
     subtitle: "Juggling appointments, insurance, and medications for a loved one is exhausting. Elena handles the logistics so you can focus on being there for them.",
     prefill: "Help me manage my parents' healthcare from my phone",
   },
   risk_assessment: {
-    headline: ["Know your risk", "before it's "],
-    accent: "too late.",
+    headline: ["Know your risk", "before it's too late."],
+    accent: "too late",
     subtitle: "Take our assessment, learn your risks, and get the right tests on the way.",
     prefill: "I want to understand my health risks based on my family history",
   },
   meds: {
-    headline: ["Find your medications", "in stock "],
-    accent: "today.",
+    headline: ["Find your medications", "in stock today."],
+    accent: "today",
     subtitle: "Stop calling pharmacy after pharmacy. Tell Elena what you need and she'll find it in stock near you.",
     prefill: "find my medication in stock near me",
   },
   fertility: {
-    headline: ["Navigate fertility", "without the "],
-    accent: "stress.",
+    headline: ["Navigate fertility", "without the stress."],
+    accent: "without the stress",
     subtitle: "Elena compares IVF clinic prices, checks your insurance coverage, handles prior authorizations, and tracks your entire fertility journey so you can focus on what matters.",
     prefill: "help me compare IVF clinics and costs near me",
   },
   chronic: {
-    headline: ["Take control of", "your "],
-    accent: "condition.",
+    headline: ["Take control of", "your condition."],
+    accent: "your condition",
     subtitle: "Living with diabetes, autoimmune disease, thyroid disorders, or mental health conditions means constant doctor visits, medications, and insurance battles. Elena manages it all for you.",
     prefill: "help me manage my diabetes care and find the cheapest insulin near me",
   },
   insurance: {
-    headline: ["Find the right plan.", "Stop "],
-    accent: "overpaying.",
+    headline: ["Find the right plan.", "Stop overpaying."],
+    accent: "overpaying",
     subtitle: "Marketplace plans, employer options, Medicare, Medicaid. Elena compares plans based on your doctors, medications, and expected needs so you pick the one that actually saves you money.",
     prefill: "help me find the best health insurance plan for my situation",
   },
   care_now: {
-    headline: ["Need care today?", "Elena "],
-    accent: "finds it.",
+    headline: ["Need care today?", "Elena finds it."],
+    accent: "today",
     subtitle: "Urgent care, same-day appointments, telehealth, or an ER alternative. Elena finds available providers near you right now and tells you what it'll cost before you go.",
     prefill: "find me a doctor who can see me today near me",
   },
@@ -774,7 +774,18 @@ function LandingPage() {
         <div className="relative z-[4] text-center max-w-[700px] w-full px-6 max-md:px-5">
           <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[1.6rem] font-light leading-[1.15] tracking-tight text-white">
             {hero ? (
-              <>{hero.headline[0]}<br />{hero.headline[1]}{hero.accent && <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">{hero.accent}</em>}</>
+              <>
+                {hero.headline[0]}<br />
+                {hero.accent ? (() => {
+                  const line = hero.headline[1];
+                  const idx = line.toLowerCase().indexOf(hero.accent.toLowerCase());
+                  if (idx === -1) return line;
+                  const before = line.slice(0, idx);
+                  const match = line.slice(idx, idx + hero.accent.length);
+                  const after = line.slice(idx + hero.accent.length);
+                  return <>{before}<em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">{match}</em>{after}</>;
+                })() : hero.headline[1]}
+              </>
             ) : (
               <>What can I help you<br />with <em className="italic font-normal font-[family-name:var(--font-dm-serif)]">today?</em></>
             )}
