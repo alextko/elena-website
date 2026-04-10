@@ -456,11 +456,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [fetchProfile]);
 
-  // Eagerly re-fetch all profile data when profileId changes (after a profile switch)
+  // Eagerly fetch profile details as soon as profileId is available (and on profile switch)
   const prevProfileIdForFetch = useRef<string | null>(null);
   useEffect(() => {
-    if (profileId && prevProfileIdForFetch.current !== null && profileId !== prevProfileIdForFetch.current) {
-      // profileDetailsLoaded was set to false in switchProfile, so fetchProfileDetails will run
+    if (profileId && profileId !== prevProfileIdForFetch.current) {
+      // profileDetailsLoaded was set to false in switchProfile (or is false on initial load),
+      // so fetchProfileDetails will run
       fetchProfileDetails();
     }
     prevProfileIdForFetch.current = profileId;
