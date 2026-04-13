@@ -103,8 +103,8 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
       >
         {/* Backdrop - always visible but lighter during popover steps */}
         <div
-          className={`absolute inset-0 transition-colors duration-300 ${step >= 3 && step <= 6 ? "bg-black/60" : "bg-black/45"}`}
-          style={{ pointerEvents: "auto", zIndex: step >= 3 && step <= 6 ? 355 : 301 }}
+          className={`absolute inset-0 transition-colors duration-300 ${step >= 3 && step <= 6 ? "bg-black/55" : "bg-black/45"}`}
+          style={{ pointerEvents: "auto", zIndex: step >= 3 && step <= 6 ? 390 : 301 }}
           data-tour-backdrop
           onClick={(e) => e.stopPropagation()}
         />
@@ -169,16 +169,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
               <TourButton onClick={() => { trackStep(1, "care_context"); handleCareSubmit(); }} label="Continue" />
             </TourCard>}
 
-            {step === 2 && <TourCard onNext={() => { trackStep(2, "profile_button"); next(); }}>
-              <div className="text-center">
-                <div className="text-[32px] mb-3">📋</div>
-                <h3 className="text-[20px] font-bold text-[#0F1B3D] mb-2">Your health profile</h3>
-                <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
-                  Click your name at the bottom of the sidebar to open your profile. This is where your doctors, medications, insurance, and appointments live.
-                </p>
-              </div>
-              <TourButton onClick={() => { trackStep(2, "profile_button"); next(); }} label="Show me" />
-            </TourCard>}
+            {step === 2 && <ProfileButtonSpotlight onNext={() => { trackStep(2, "profile_button"); next(); }} />}
 
             {step === 3 && <TourCard onNext={() => { trackStep(3, "health_tab"); next(); }} position="overlay">
               <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Health</h3>
@@ -199,7 +190,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
             {step === 5 && <TourCard onNext={() => { trackStep(5, "insurance_tab"); next(); }} position="overlay">
               <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Insurance</h3>
               <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
-                Add your insurance cards here. Elena uses them to check coverage, find in-network doctors, and estimate costs before you go.
+                Your insurance cards are stored here. Elena uses them to check coverage, find in-network doctors, and estimate your costs.
               </p>
               <TourNextLink onClick={() => { trackStep(5, "insurance_tab"); next(); }} />
             </TourCard>}
@@ -207,7 +198,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
             {step === 6 && <TourCard onNext={() => { trackStep(6, "family_switcher"); next(); }} position="overlay">
               <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Family profiles</h3>
               <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
-                Managing care for someone else? Add family members here. Each person gets their own separate profile with their own health data, doctors, and insurance.
+                This is where you can add family members. Each person gets their own profile with separate health data, doctors, and insurance.
               </p>
               <TourNextLink onClick={() => { trackStep(6, "family_switcher"); next(); }} />
             </TourCard>}
@@ -248,8 +239,8 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
 function TourCard({ children, onNext, position = "center" }: { children: React.ReactNode; onNext: () => void; position?: "center" | "overlay" }) {
   return (
     <div
-      className="relative z-[360] max-w-sm w-full mx-6"
-      style={{ pointerEvents: "auto" }}
+      className={`max-w-sm w-full mx-6 ${position === "overlay" ? "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" : "relative"}`}
+      style={{ pointerEvents: "auto", zIndex: 400 }}
     >
       <div className="rounded-2xl bg-white p-7 shadow-[0_8px_30px_rgba(15,27,61,0.15)]">
         {children}
@@ -279,5 +270,56 @@ function TourNextLink({ onClick }: { onClick: () => void }) {
     >
       Next <ChevronRight className="w-4 h-4" />
     </button>
+  );
+}
+
+function ProfileButtonSpotlight({ onNext }: { onNext: () => void }) {
+  const [rect, setRect] = useState<DOMRect | null>(null);
+
+  useEffect(() => {
+    const el = document.querySelector('[data-tour="profile-button"]');
+    if (el) setRect(el.getBoundingClientRect());
+  }, []);
+
+  const pad = 6;
+
+  return (
+    <>
+      {/* Spotlight cutout on the profile button */}
+      {rect && (
+        <div
+          style={{
+            position: "fixed",
+            left: rect.left - pad,
+            top: rect.top - pad,
+            width: rect.width + pad * 2,
+            height: rect.height + pad * 2,
+            borderRadius: 14,
+            boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.5)",
+            zIndex: 305,
+            pointerEvents: "none",
+          }}
+        />
+      )}
+      {/* Tooltip positioned above the profile button */}
+      <div
+        className="z-[360] max-w-xs"
+        style={{
+          pointerEvents: "auto",
+          position: "fixed",
+          left: rect ? rect.left : 16,
+          bottom: rect ? (window.innerHeight - rect.top + pad + 12) : 100,
+        }}
+      >
+        <div className="rounded-2xl bg-white p-5 shadow-[0_8px_30px_rgba(15,27,61,0.15)]">
+          <div className="absolute -bottom-1.5 left-8 w-3 h-3 bg-white rotate-45" />
+          <h3 className="text-[17px] font-bold text-[#0F1B3D] mb-1.5">Your health profile</h3>
+          <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
+            This is where your doctors, medications, insurance, and appointments live.
+          </p>
+          <TourNextLink onClick={onNext} />
+        </div>
+      </div>
+    </>
   );
 }
