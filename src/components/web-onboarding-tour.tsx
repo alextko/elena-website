@@ -158,16 +158,20 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
   if (phase === "profile") {
     const currentStep = PROFILE_STEPS[profileStep];
     return createPortal(
-      <div className="fixed inset-0 z-[99999] flex items-center justify-center font-[family-name:var(--font-inter)]">
-        <div className="absolute inset-0 bg-black/50" />
-        <SkipButton onClick={skipTour} />
-        <div className="relative z-10 max-w-sm w-full mx-6" style={{ pointerEvents: "auto" }}>
-          <div className="rounded-2xl bg-white p-7 shadow-[0_8px_30px_rgba(15,27,61,0.15)]">
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[99999] font-[family-name:var(--font-inter)]" style={{ pointerEvents: "auto" }}>
+        <div className="max-w-sm w-full mx-auto">
+          <div className="rounded-2xl bg-white p-6 shadow-[0_8px_30px_rgba(15,27,61,0.2)] border border-[#E5E5EA]">
             <div className="text-center">
-              <h3 className="text-[20px] font-extrabold text-[#0F1B3D] mb-2">{currentStep.title}</h3>
-              <p className="text-[15px] text-[#5a6a82] font-light leading-relaxed">{currentStep.body}</p>
+              <h3 className="text-[18px] font-extrabold text-[#0F1B3D] mb-1.5">{currentStep.title}</h3>
+              <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">{currentStep.body}</p>
             </div>
-            <GradientButton onClick={nextProfile} label={profileStep >= PROFILE_STEPS.length - 1 ? "Got it" : "Next"} />
+            <div className="flex gap-3 mt-4">
+              <button onClick={skipTour} className="flex-1 py-3 rounded-xl text-[14px] font-medium text-[#8E8E93] hover:text-[#0F1B3D] transition-colors">Skip</button>
+              <button onClick={nextProfile} className="flex-1 py-3 rounded-xl text-white font-semibold text-[14px] hover:opacity-90"
+                style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%)" }}>
+                {profileStep >= PROFILE_STEPS.length - 1 ? "Got it" : "Next"}
+              </button>
+            </div>
           </div>
         </div>
       </div>,
