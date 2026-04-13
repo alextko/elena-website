@@ -20,113 +20,106 @@ const CARE_OPTIONS = [
   { id: "other", label: "Someone else", icon: HelpCircle },
 ];
 
-const joyrideStyles: any = {
-  options: { primaryColor: "#0F1B3D", zIndex: 99999, arrowColor: "#fff", backgroundColor: "#fff", textColor: "#0F1B3D", overlayColor: "rgba(0,0,0,0.45)" },
-  tooltip: { borderRadius: 20, padding: "28px 32px", boxShadow: "0 8px 30px rgba(15,27,61,0.15)", maxWidth: 360 },
-  tooltipTitle: { fontSize: 20, fontWeight: 800, color: "#0F1B3D", marginBottom: 6, textAlign: "center" as const },
-  tooltipContent: { fontSize: 15, fontWeight: 300, color: "#5a6a82", lineHeight: 1.65, padding: "6px 0 0", textAlign: "center" as const },
-  tooltipFooter: { marginTop: 20, justifyContent: "center" },
-  buttonNext: { background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%)", borderRadius: 14, fontSize: 15, fontWeight: 600, padding: "12px 32px", border: "none" },
-  buttonBack: { color: "#8E8E93", fontSize: 14, fontWeight: 500, marginRight: 12 },
-  buttonSkip: { color: "#AEAEB2", fontSize: 13, fontWeight: 400 },
-  buttonClose: { display: "none" },
-  spotlight: { borderRadius: 14 },
-  beacon: { display: "none" },
-};
-
-const TOUR_STEPS: any[] = [
+// Only the profile button step uses Joyride (targets main DOM)
+const JOYRIDE_STEPS: any[] = [
   { target: "[data-tour='profile-button']", placement: "top", disableBeacon: true, skipBeacon: true, title: "Your health profile", content: "This is where your doctors, medications, insurance, and appointments live.", locale: { next: "Show me" } },
-  { target: "[data-tour='tab-health']", placement: "right", disableBeacon: true, skipBeacon: true, title: "Health", content: "Your game plan, doctors, medications, and to-dos. Elena automatically adds and updates everything here." },
-  { target: "[data-tour='tab-insurance']", placement: "right", disableBeacon: true, skipBeacon: true, title: "Insurance", content: "Your insurance cards are stored here. Elena uses them to check coverage, find in-network doctors, and estimate your costs." },
-  { target: "[data-tour='profile-switcher']", placement: "right", disableBeacon: true, skipBeacon: true, title: "Family profiles", content: "This is where you can add family members. Each person gets their own profile with separate health data." },
 ];
 
+// Profile popover steps use custom overlay cards (can't target portal DOM)
+const PROFILE_STEPS = [
+  { id: "health", title: "Health", body: "Your game plan, doctors, medications, and to-dos. As you use Elena, she automatically adds and updates everything here.", tab: "health" as const },
+  { id: "visits", title: "Visits", body: "Your full visit timeline. Past and upcoming appointments, visit notes, and documents are all tracked here.", tab: "visits" as const },
+  { id: "insurance", title: "Insurance", body: "Your insurance cards are stored here. Elena uses them to check coverage, find in-network doctors, and estimate your costs.", tab: "insurance" as const },
+  { id: "family", title: "Family profiles", body: "This is where you can add family members. Each person gets their own profile with separate health data.", tab: "health" as const, showSwitcher: true },
+];
+
+type Phase = "care" | "joyride" | "profile" | "chat" | "done";
+
 export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover }: WebOnboardingTourProps) {
-  const [phase, setPhase] = useState<"care" | "tour" | "done">("care");
+  const [phase, setPhase] = useState<Phase>("care");
+  const [profileStep, setProfileStep] = useState(0);
   const [careSelections, setCareSelections] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
   const finishedRef = useRef(false);
+  const guardRef = useRef(false);
 
-  const { controls, state, on, Tour } = useJoyride({
-    steps: TOUR_STEPS,
+  const { controls, on, Tour } = useJoyride({
+    steps: JOYRIDE_STEPS,
     continuous: true,
   } as any);
 
   useEffect(() => { setMounted(true); analytics.track("Web Tour Started" as any); }, []);
 
-  // Subscribe to joyride events
+  // Joyride event: after profile button step, open popover
   useEffect(() => {
-    const unsubAfter = on(EVENTS.STEP_AFTER, (data: any) => {
-      console.log("[tour] step:after", data);
-      const nextIdx = data.index + 1;
-      analytics.track("Web Tour Step Viewed" as any, { step: nextIdx, step_name: TOUR_STEPS[nextIdx]?.title });
-
-      // Control profile popover for next step
-      if (nextIdx === 1) onProfilePopover(true, "health", false);
-      else if (nextIdx === 2) onProfilePopover(true, "insurance", false);
-      else if (nextIdx === 3) onProfilePopover(true, "health", true);
+    const unsub = on(EVENTS.STEP_AFTER, () => {
+      onProfilePopover(true, "health", false);
+      setPhase("profile");
+      setProfileStep(0);
     });
+    return unsub;
+  }, [on, onProfilePopover]);
 
-    const unsubEnd = on(EVENTS.TOUR_END, () => {
-      console.log("[tour] tour:end");
-      if (finishedRef.current) return;
-      finishedRef.current = true;
-      analytics.track("Web Tour Completed" as any);
-      localStorage.setItem("elena_web_tour_done", "true");
+  // Profile popover tab control
+  useEffect(() => {
+    if (phase !== "profile") return;
+    const step = PROFILE_STEPS[profileStep];
+    if (step) {
+      onProfilePopover(true, step.tab, !!step.showSwitcher);
+    }
+  }, [phase, profileStep, onProfilePopover]);
+
+  const nextProfile = useCallback(() => {
+    if (guardRef.current) return;
+    guardRef.current = true;
+    setTimeout(() => { guardRef.current = false; }, 300);
+
+    analytics.track("Web Tour Step Viewed" as any, { step: profileStep + 2, step_name: PROFILE_STEPS[profileStep]?.title });
+
+    if (profileStep >= PROFILE_STEPS.length - 1) {
       onProfilePopover(false, undefined, false);
-      setPhase("done");
-      onShowPaywall();
-      onComplete();
-    });
+      setPhase("chat");
+      return;
+    }
+    setProfileStep((s) => s + 1);
+  }, [profileStep, onProfilePopover]);
 
-    const unsubStatus = on(EVENTS.TOUR_STATUS, (data: any) => {
-      console.log("[tour] status:", data.status);
-      if (data.status === STATUS.SKIPPED) {
-        if (finishedRef.current) return;
-        finishedRef.current = true;
-        analytics.track("Web Tour Skipped" as any);
-        localStorage.setItem("elena_web_tour_done", "true");
-        onProfilePopover(false, undefined, false);
-        setPhase("done");
-        onComplete();
-      }
-    });
+  const finishTour = useCallback(() => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    analytics.track("Web Tour Completed" as any);
+    localStorage.setItem("elena_web_tour_done", "true");
+    onProfilePopover(false, undefined, false);
+    setPhase("done");
+    onShowPaywall();
+    onComplete();
+  }, [onComplete, onShowPaywall, onProfilePopover]);
 
-    const unsubError = on(EVENTS.TARGET_NOT_FOUND, (data: any) => {
-      console.warn("[tour] target not found:", data);
-    });
-
-    return () => { unsubAfter(); unsubEnd(); unsubStatus(); unsubError(); };
-  }, [on, onComplete, onShowPaywall, onProfilePopover]);
-
-  const handleSkip = useCallback(() => {
+  const skipTour = useCallback(() => {
     if (finishedRef.current) return;
     finishedRef.current = true;
     analytics.track("Web Tour Skipped" as any);
     localStorage.setItem("elena_web_tour_done", "true");
     onProfilePopover(false, undefined, false);
+    controls.stop();
     setPhase("done");
     onComplete();
-  }, [onComplete, onProfilePopover]);
+  }, [onComplete, onProfilePopover, controls]);
 
-  const startTour = useCallback(() => {
+  const startJoyride = useCallback(() => {
     if (careSelections.length > 0) analytics.track("Web Tour Care Context" as any, { care_for: careSelections });
-    setPhase("tour");
-    // Start the tour after a brief delay for DOM targets to be ready
-    setTimeout(() => {
-      console.log("[tour] calling controls.start()");
-      controls.start();
-    }, 300);
+    setPhase("joyride");
+    setTimeout(() => controls.start(), 300);
   }, [careSelections, controls]);
 
   if (!mounted || phase === "done") return null;
 
-  // Phase 1: Care context
+  // ── Phase: Care context ──
   if (phase === "care") {
     return createPortal(
       <div className="fixed inset-0 z-[99999] flex items-center justify-center font-[family-name:var(--font-inter)]">
         <div className="absolute inset-0 bg-black/45" />
-        <button onClick={handleSkip} className="absolute top-4 right-4 z-10 flex items-center gap-1 text-white/60 text-sm hover:text-white transition-colors">Skip tour <X className="w-4 h-4" /></button>
+        <SkipButton onClick={skipTour} />
         <div className="relative z-10 max-w-sm w-full mx-6">
           <div className="rounded-2xl bg-white p-7 shadow-[0_8px_30px_rgba(15,27,61,0.15)]">
             <div className="text-center mb-5">
@@ -148,8 +141,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
                 );
               })}
             </div>
-            <button onClick={startTour} className="w-full mt-5 py-3.5 rounded-xl text-white font-semibold text-[15px] hover:opacity-90"
-              style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%)" }}>Continue</button>
+            <GradientButton onClick={startJoyride} label="Continue" />
           </div>
         </div>
       </div>,
@@ -157,7 +149,73 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
     );
   }
 
-  // Phase 2: Tour is rendered by the hook's Tour element
-  console.log("[tour] phase=tour, Tour element:", !!Tour);
-  return Tour;
+  // ── Phase: Joyride (profile button spotlight) ──
+  if (phase === "joyride") {
+    return Tour;
+  }
+
+  // ── Phase: Profile walkthrough (custom cards over popover) ──
+  if (phase === "profile") {
+    const currentStep = PROFILE_STEPS[profileStep];
+    return createPortal(
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center font-[family-name:var(--font-inter)]" style={{ pointerEvents: "none" }}>
+        <SkipButton onClick={skipTour} />
+        <div className="max-w-sm w-full mx-6" style={{ pointerEvents: "auto" }}>
+          <div className="rounded-2xl bg-white p-7 shadow-[0_8px_30px_rgba(15,27,61,0.15)]">
+            <div className="text-center">
+              <h3 className="text-[20px] font-extrabold text-[#0F1B3D] mb-2">{currentStep.title}</h3>
+              <p className="text-[15px] text-[#5a6a82] font-light leading-relaxed">{currentStep.body}</p>
+            </div>
+            <GradientButton onClick={nextProfile} label={profileStep >= PROFILE_STEPS.length - 1 ? "Got it" : "Next"} />
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  }
+
+  // ── Phase: Chat explanation ──
+  if (phase === "chat") {
+    return createPortal(
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center font-[family-name:var(--font-inter)]">
+        <div className="absolute inset-0 bg-black/40" />
+        <SkipButton onClick={skipTour} />
+        <div className="relative z-10 max-w-sm w-full mx-6">
+          <div className="rounded-2xl bg-white p-7 shadow-[0_8px_30px_rgba(15,27,61,0.15)]">
+            <div className="text-center">
+              <div className="text-[32px] mb-3">💬</div>
+              <h2 className="text-[20px] font-extrabold text-[#0F1B3D] mb-2">Chat with Elena</h2>
+              <p className="text-[15px] text-[#5a6a82] font-light leading-relaxed">
+                Ask Elena anything about your health, insurance, or appointments. She can make calls, compare prices, and manage your care.
+              </p>
+              <p className="text-[13px] text-[#8E8E93] font-light mt-3">Your conversations are saved in the sidebar.</p>
+            </div>
+            <GradientButton onClick={finishTour} label="Finish" />
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  }
+
+  return null;
+}
+
+// ── Shared components ───────────────────────────────────────────
+
+function SkipButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="absolute top-4 right-4 z-10 flex items-center gap-1 text-white/60 text-sm hover:text-white transition-colors" style={{ pointerEvents: "auto" }}>
+      Skip tour <X className="w-4 h-4" />
+    </button>
+  );
+}
+
+function GradientButton({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button onClick={onClick} className="w-full mt-5 py-3.5 rounded-xl text-white font-semibold text-[15px] transition-opacity hover:opacity-90"
+      style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%)" }}>
+      {label}
+    </button>
+  );
 }
