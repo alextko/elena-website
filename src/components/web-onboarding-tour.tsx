@@ -90,8 +90,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
         className="fixed inset-0 z-[300] font-[family-name:var(--font-inter)]"
         style={{ pointerEvents: "none" }}
       >
-        {/* Backdrop */}
-        <div className="absolute inset-0 bg-black/40" style={{ pointerEvents: "auto" }} onClick={(e) => e.stopPropagation()} />
+        {/* Backdrop - hidden during profile popover steps (popover has its own backdrop) */}
+        {(step <= 1 || step >= 6) && (
+          <div className="absolute inset-0 bg-black/40" style={{ pointerEvents: "auto" }} onClick={(e) => e.stopPropagation()} />
+        )}
 
         {/* Skip button */}
         <button
@@ -153,7 +155,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
               <TourButton onClick={() => { trackStep(1, "care_context"); handleCareSubmit(); }} label="Continue" />
             </TourCard>}
 
-            {step === 2 && <TourCard onNext={() => { trackStep(2, "profile"); next(); }} position="right">
+            {step === 2 && <TourCard onNext={() => { trackStep(2, "profile"); next(); }} position="bottom">
               <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Your health profile</h3>
               <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
                 This is where all your health data lives. Doctors, medications, to-dos, and appointments.
@@ -161,7 +163,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
               <TourNextLink onClick={() => { trackStep(2, "profile"); next(); }} />
             </TourCard>}
 
-            {step === 3 && <TourCard onNext={() => { trackStep(3, "health_data"); next(); }} position="right">
+            {step === 3 && <TourCard onNext={() => { trackStep(3, "health_data"); next(); }} position="bottom">
               <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">It gets smarter over time</h3>
               <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
                 As you use Elena, she automatically adds doctors, medications, and to-dos to your profile. You can also add them yourself.
@@ -169,7 +171,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
               <TourNextLink onClick={() => { trackStep(3, "health_data"); next(); }} />
             </TourCard>}
 
-            {step === 4 && <TourCard onNext={() => { trackStep(4, "insurance"); next(); }} position="right">
+            {step === 4 && <TourCard onNext={() => { trackStep(4, "insurance"); next(); }} position="bottom">
               <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Add your insurance</h3>
               <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
                 Upload your insurance card here. Elena uses it to check coverage, find in-network doctors, and estimate your costs.
@@ -177,7 +179,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
               <TourNextLink onClick={() => { trackStep(4, "insurance"); next(); }} />
             </TourCard>}
 
-            {step === 5 && <TourCard onNext={() => { trackStep(5, "family"); next(); }} position="right">
+            {step === 5 && <TourCard onNext={() => { trackStep(5, "family"); next(); }} position="bottom">
               <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Manage your family</h3>
               <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
                 Managing care for a parent, partner, or child? Add them here. Each person gets their own profile with separate health data.
@@ -226,10 +228,16 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
 
 // ─── Shared sub-components ──────────────────────────────────────
 
-function TourCard({ children, onNext, position = "center" }: { children: React.ReactNode; onNext: () => void; position?: "center" | "right" }) {
+function TourCard({ children, onNext, position = "center" }: { children: React.ReactNode; onNext: () => void; position?: "center" | "right" | "bottom" }) {
+  const posClass = position === "bottom"
+    ? "fixed bottom-16 left-1/2 -translate-x-1/2 max-md:bottom-20 max-md:left-4 max-md:right-4 max-md:translate-x-0"
+    : position === "right"
+    ? "ml-auto mr-[calc(50%-180px)] max-md:mx-6"
+    : "";
+
   return (
     <div
-      className={`relative z-[310] max-w-sm w-full mx-6 ${position === "right" ? "ml-auto mr-[calc(50%-180px)] max-md:mx-6" : ""}`}
+      className={`relative z-[360] max-w-sm w-full mx-6 ${posClass}`}
       style={{ pointerEvents: "auto" }}
     >
       <div className="rounded-2xl bg-white p-7 shadow-[0_8px_30px_rgba(15,27,61,0.15)]">
