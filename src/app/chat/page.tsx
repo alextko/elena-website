@@ -67,7 +67,16 @@ function ChatPageInner() {
     }
     return [];
   });
-  const [loadingSessions, setLoadingSessions] = useState(true);
+  // If we have cached sessions, don't block on network fetch
+  const [loadingSessions, setLoadingSessions] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("elena_sessions");
+        if (cached && JSON.parse(cached).length > 0) return false;
+      } catch {}
+    }
+    return true;
+  });
   const [pendingQuery, setPendingQuery] = useState<string | null>(null);
   const [pendingDocName, setPendingDocName] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
@@ -188,18 +197,17 @@ function ChatPageInner() {
     }
   }, [loading, session, fetchSessions]);
 
-  // Re-fetch sessions when profile changes (sessions are profile-scoped)
+  // Re-fetch sessions when profile SWITCHES (not on initial load — that's handled above)
   const prevProfileId = useRef(profileId);
   useEffect(() => {
     if (profileId && profileId !== prevProfileId.current) {
-      // Profile changed (either first load or explicit switch) — re-fetch sessions
-      // to ensure we show the correct profile's conversations
       if (prevProfileId.current) {
-        // Explicit switch — reset active session
+        // Explicit switch — reset active session and re-fetch
         setActiveSessionId(null);
         setIsNewChat(true);
+        fetchSessions();
       }
-      fetchSessions();
+      // Initial null → value: skip — the session fetch above already handles it
     }
     prevProfileId.current = profileId;
   }, [profileId, fetchSessions]);

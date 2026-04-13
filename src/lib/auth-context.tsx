@@ -112,6 +112,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (profileFetchedRef.current) return;
     profileFetchedRef.current = true;
 
+    // Restore cached /auth/me immediately so profileId is available while we refresh
+    try {
+      const cached = sessionStorage.getItem("elena_me_cache");
+      if (cached) {
+        const data: MeResponse = JSON.parse(cached);
+        if (data.has_profile && data.profile_id) {
+          setProfileChecked(true);
+          setProfiles(data.profiles || []);
+          const savedProfileId = localStorage.getItem("elena_active_profile_id");
+          const savedProfile = savedProfileId
+            ? (data.profiles || []).find((p) => p.id === savedProfileId)
+            : null;
+          const activeProfile = savedProfile
+            || (data.profiles || []).find((p) => p.is_primary)
+            || null;
+          setProfileId(activeProfile?.id || data.profile_id);
+          if (activeProfile) {
+            setProfileData({
+              firstName: activeProfile.first_name,
+              lastName: activeProfile.last_name,
+              email: data.email || "",
+              profilePictureUrl: activeProfile.profile_picture_url || null,
+            });
+          }
+        }
+      }
+    } catch {}
+
     try {
       const res = await apiFetch("/auth/me");
       if (!res.ok) {
@@ -121,6 +149,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       const data: MeResponse = await res.json();
+      // Cache for instant restore on next page load
+      try { sessionStorage.setItem("elena_me_cache", JSON.stringify(data)); } catch {}
 
       console.log("[auth] /auth/me response:", { has_profile: data.has_profile, profile_id: data.profile_id, email: data.email });
 
@@ -449,6 +479,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setHabitCompletions({});
         setProfileDetailsLoaded(false);
         profileFetchedRef.current = false;
+        try { sessionStorage.removeItem("elena_me_cache"); } catch {}
       }
       // TOKEN_REFRESHED, USER_UPDATED, etc. — do nothing, just keep the session
     });
