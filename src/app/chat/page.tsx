@@ -234,6 +234,7 @@ function ChatPageInner() {
   }, [onboardingJustCompleted, isNewChat, activeSessionId]);
 
   const [tourPopoverOpen, setTourPopoverOpen] = useState(false);
+  const [tourPopoverShowSwitcher, setTourPopoverShowSwitcher] = useState(false);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [tourPopoverTab, setTourPopoverTab] = useState<"health" | "visits" | "insurance">("health");
 
@@ -319,7 +320,7 @@ function ChatPageInner() {
         <WebOnboardingTour
           onComplete={() => { setShowTour(false); setTourPopoverOpen(false); }}
           onShowPaywall={() => setUpgradeModalOpen(true)}
-          onProfilePopover={(open, tab) => { setTourPopoverOpen(open); if (tab) setTourPopoverTab(tab); }}
+          onProfilePopover={(open, tab, showSwitcher) => { setTourPopoverOpen(open); if (tab) setTourPopoverTab(tab); setTourPopoverShowSwitcher(!!showSwitcher); }}
         />
       )}
       {/* Checkout success banner */}
@@ -372,6 +373,7 @@ function ChatPageInner() {
             profilePopoverOpen={tourPopoverOpen || undefined}
             onProfilePopoverChange={(open) => { if (!showTour) setTourPopoverOpen(open); }}
             profilePopoverTab={tourPopoverTab}
+            profileShowSwitcher={tourPopoverShowSwitcher}
           />
         </div>
       </div>

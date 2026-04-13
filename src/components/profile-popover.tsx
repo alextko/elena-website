@@ -133,12 +133,14 @@ export function ProfilePopover({
   externalOpen,
   onExternalOpenChange,
   initialTab,
+  showSwitcher,
 }: {
   children: React.ReactNode;
   onBookMessage?: (message: string) => void;
   externalOpen?: boolean;
   onExternalOpenChange?: (open: boolean) => void;
   initialTab?: "health" | "visits" | "insurance";
+  showSwitcher?: boolean;
 }) {
   const {
     user, profileId, profiles, switchProfile, profileData, doctors, careVisits,
@@ -161,6 +163,11 @@ export function ProfilePopover({
   useEffect(() => {
     if (initialTab) setActiveTab(initialTab);
   }, [initialTab]);
+
+  // Open/close switcher from tour
+  useEffect(() => {
+    if (showSwitcher !== undefined) setSwitcherOpen(showSwitcher);
+  }, [showSwitcher]);
   const [selectedDay, setSelectedDay] = useState<string>(new Date().toLocaleDateString("en-CA")); // YYYY-MM-DD local time
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);

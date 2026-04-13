@@ -8,7 +8,7 @@ import * as analytics from "@/lib/analytics";
 interface WebOnboardingTourProps {
   onComplete: () => void;
   onShowPaywall: () => void;
-  onProfilePopover: (open: boolean, tab?: "health" | "visits" | "insurance") => void;
+  onProfilePopover: (open: boolean, tab?: "health" | "visits" | "insurance", showSwitcher?: boolean) => void;
 }
 
 const CARE_OPTIONS = [
@@ -19,8 +19,8 @@ const CARE_OPTIONS = [
   { id: "other", label: "Someone else", icon: HelpCircle },
 ];
 
-const TOTAL_STEPS = 8;
-type TourStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+const TOTAL_STEPS = 9;
+type TourStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover }: WebOnboardingTourProps) {
   const [step, setStep] = useState<TourStep>(0);
@@ -72,8 +72,8 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
 
   // Step 7: open the real paywall and end the tour
   useEffect(() => {
-    if (step === 7) {
-      trackStep(7, "paywall");
+    if (step === 8) {
+      trackStep(8, "paywall");
       onShowPaywall();
       finish();
     }
@@ -83,10 +83,11 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
   // Step 2: spotlight the profile button (popover closed)
   // Steps 3-6: popover open with tour cards on top
   useEffect(() => {
-    if (step === 3 || step === 4) onProfilePopover(true, "health");
-    else if (step === 5) onProfilePopover(true, "insurance");
-    else if (step === 6) onProfilePopover(true, "health");
-    else onProfilePopover(false);
+    if (step === 3) onProfilePopover(true, "health", false);
+    else if (step === 4) onProfilePopover(true, "visits", false);
+    else if (step === 5) onProfilePopover(true, "insurance", false);
+    else if (step === 6) onProfilePopover(true, "health", true);
+    else onProfilePopover(false, undefined, false);
   }, [step, onProfilePopover]);
 
   if (!visible) return null;
@@ -104,6 +105,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
         <div
           className={`absolute inset-0 transition-colors duration-300 ${step >= 3 && step <= 6 ? "bg-black/60" : "bg-black/45"}`}
           style={{ pointerEvents: "auto", zIndex: step >= 3 && step <= 6 ? 355 : 301 }}
+          data-tour-backdrop
           onClick={(e) => e.stopPropagation()}
         />
 
@@ -178,39 +180,50 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
               <TourButton onClick={() => { trackStep(2, "profile_button"); next(); }} label="Show me" />
             </TourCard>}
 
-            {step === 3 && <TourCard onNext={() => { trackStep(3, "health_data"); next(); }} position="overlay">
-              <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Health data and to-dos</h3>
+            {step === 3 && <TourCard onNext={() => { trackStep(3, "health_tab"); next(); }} position="overlay">
+              <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Health</h3>
               <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
-                As you use Elena, she automatically adds doctors, medications, and to-dos here. You can also add them yourself anytime.
+                Your game plan, doctors, medications, and to-dos live here. As you use Elena, she automatically adds and updates everything.
               </p>
-              <TourNextLink onClick={() => { trackStep(3, "health_data"); next(); }} />
+              <TourNextLink onClick={() => { trackStep(3, "health_tab"); next(); }} />
             </TourCard>}
 
-            {step === 4 && <TourCard onNext={() => { trackStep(4, "health_data_2"); next(); }} position="overlay">
-              <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">It gets smarter over time</h3>
+            {step === 4 && <TourCard onNext={() => { trackStep(4, "visits_tab"); next(); }} position="overlay">
+              <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Visits</h3>
               <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
-                Every time Elena books an appointment, finds a doctor, or manages a prescription, it shows up here automatically.
+                Your full visit timeline. Past and upcoming appointments, visit notes, and documents are all tracked here.
               </p>
-              <TourNextLink onClick={() => { trackStep(4, "health_data_2"); next(); }} />
+              <TourNextLink onClick={() => { trackStep(4, "visits_tab"); next(); }} />
             </TourCard>}
 
-            {step === 5 && <TourCard onNext={() => { trackStep(5, "insurance"); next(); }} position="overlay">
-              <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Add your insurance</h3>
+            {step === 5 && <TourCard onNext={() => { trackStep(5, "insurance_tab"); next(); }} position="overlay">
+              <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Insurance</h3>
               <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
-                Upload your insurance card here. Elena uses it to check coverage, find in-network doctors, and estimate your costs.
+                Add your insurance cards here. Elena uses them to check coverage, find in-network doctors, and estimate costs before you go.
               </p>
-              <TourNextLink onClick={() => { trackStep(5, "insurance"); next(); }} />
+              <TourNextLink onClick={() => { trackStep(5, "insurance_tab"); next(); }} />
             </TourCard>}
 
-            {step === 6 && <TourCard onNext={() => { trackStep(6, "family"); next(); }} position="overlay">
-              <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Manage your family</h3>
+            {step === 6 && <TourCard onNext={() => { trackStep(6, "family_switcher"); next(); }} position="overlay">
+              <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Family profiles</h3>
               <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
-                Managing care for a parent, partner, or child? Click your name in the profile to add family members. Each person gets their own profile.
+                Managing care for someone else? Add family members here. Each person gets their own separate profile with their own health data, doctors, and insurance.
               </p>
-              <TourNextLink onClick={() => { trackStep(6, "family"); next(); }} />
+              <TourNextLink onClick={() => { trackStep(6, "family_switcher"); next(); }} />
             </TourCard>}
 
-            {step === 7 && null}
+            {step === 7 && <TourCard onNext={() => { trackStep(7, "chat"); next(); }}>
+              <div className="text-center">
+                <div className="text-[32px] mb-3">💬</div>
+                <h2 className="text-[20px] font-bold text-[#0F1B3D] mb-2">Chat with Elena</h2>
+                <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
+                  Ask anything about your health, insurance, or appointments. Elena can make calls, compare prices, and manage your care. Your conversations are saved in the sidebar.
+                </p>
+              </div>
+              <TourButton onClick={() => { trackStep(7, "chat"); next(); }} label="Got it" />
+            </TourCard>}
+
+            {step === 8 && null}
           </motion.div>
         </AnimatePresence>
 
