@@ -70,6 +70,15 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
     setTimeout(() => { advancingRef.current = false; }, 500);
   }, [careSelections, next]);
 
+  // Step 7: open the real paywall and end the tour
+  useEffect(() => {
+    if (step === 7) {
+      trackStep(7, "paywall");
+      onShowPaywall();
+      finish();
+    }
+  }, [step, trackStep, onShowPaywall, finish]);
+
   // Control profile popover based on step
   // Step 2: spotlight the profile button (popover closed)
   // Steps 3-6: popover open with tour cards on top
@@ -201,26 +210,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
               <TourNextLink onClick={() => { trackStep(6, "family"); next(); }} />
             </TourCard>}
 
-            {step === 7 && <TourCard onNext={() => { trackStep(7, "chat"); finish(); }}>
-              <div className="text-center">
-                <div className="text-[40px] mb-3">💬</div>
-                <h2 className="text-[22px] font-extrabold text-[#0F1B3D] mb-2">Chat with Elena</h2>
-                <p className="text-[15px] text-[#5a6a82] font-light leading-relaxed">
-                  Ask anything about your health, insurance, or appointments. Elena can make calls, compare prices, and manage your care.
-                </p>
-                <p className="text-[13px] text-[#8E8E93] font-light mt-3">
-                  Your conversations are saved in the sidebar.
-                </p>
-              </div>
-              <TourButton onClick={() => { trackStep(7, "chat"); onShowPaywall(); finish(); }} label="See Elena Pro" />
-              <button
-                onClick={() => { trackStep(7, "chat"); finish(); }}
-                className="w-full mt-2 py-3 text-[14px] font-medium text-[#8E8E93] hover:text-[#0F1B3D] transition-colors"
-                style={{ pointerEvents: "auto" }}
-              >
-                Start using Elena
-              </button>
-            </TourCard>}
+            {step === 7 && null}
           </motion.div>
         </AnimatePresence>
 

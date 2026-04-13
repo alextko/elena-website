@@ -10,6 +10,7 @@ import { ChatArea } from "@/components/chat-area";
 import { ChatErrorBoundary } from "@/components/error-boundary";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import { WebOnboardingTour } from "@/components/web-onboarding-tour";
+import { UpgradeModal } from "@/components/upgrade-modal";
 import type { ChatSessionItem } from "@/lib/types";
 import { trackSubscription } from "@/lib/tracking-events";
 
@@ -233,6 +234,7 @@ function ChatPageInner() {
   }, [onboardingJustCompleted, isNewChat, activeSessionId]);
 
   const [tourPopoverOpen, setTourPopoverOpen] = useState(false);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [tourPopoverTab, setTourPopoverTab] = useState<"health" | "visits" | "insurance">("health");
 
   // Show onboarding tour after onboarding completes (replaces simple tooltip)
@@ -312,10 +314,11 @@ function ChatPageInner() {
   return (
     <div className="flex h-dvh overflow-hidden relative">
       <OnboardingModal />
+      <UpgradeModal open={upgradeModalOpen} onOpenChange={setUpgradeModalOpen} />
       {showTour && (
         <WebOnboardingTour
           onComplete={() => { setShowTour(false); setTourPopoverOpen(false); }}
-          onShowPaywall={() => {}}
+          onShowPaywall={() => setUpgradeModalOpen(true)}
           onProfilePopover={(open, tab) => { setTourPopoverOpen(open); if (tab) setTourPopoverTab(tab); }}
         />
       )}
