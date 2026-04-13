@@ -59,13 +59,20 @@ function JoyrideTour({ onStepChange, onFinish, onSkip }: { onStepChange: (idx: n
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    console.log("[joyride-tour] loading module...");
     import("react-joyride").then((mod) => {
+      console.log("[joyride-tour] module loaded, keys:", Object.keys(mod));
+      console.log("[joyride-tour] Joyride type:", typeof mod.Joyride);
       setJoyrideComp(() => mod.Joyride);
       JOYRIDE_STATUS = mod.STATUS;
       JOYRIDE_EVENTS = mod.EVENTS;
       JOYRIDE_ACTIONS = mod.ACTIONS;
-      // Delay to ensure DOM targets exist
-      setTimeout(() => setReady(true), 200);
+      setTimeout(() => {
+        console.log("[joyride-tour] ready, target exists:", !!document.querySelector("[data-tour='profile-button']"));
+        setReady(true);
+      }, 500);
+    }).catch((err) => {
+      console.error("[joyride-tour] failed to load:", err);
     });
   }, []);
 
@@ -89,7 +96,9 @@ function JoyrideTour({ onStepChange, onFinish, onSkip }: { onStepChange: (idx: n
     }
   }, [onStepChange, onFinish, onSkip]);
 
+  console.log("[joyride-tour] render:", { hasComp: !!JoyrideComp, ready });
   if (!JoyrideComp || !ready) return null;
+  console.log("[joyride-tour] rendering Joyride component");
 
   return (
     <JoyrideComp
@@ -186,5 +195,6 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
   }
 
   // Phase 2: Joyride tour
+  console.log("[tour] rendering JoyrideTour phase");
   return <JoyrideTour onStepChange={handleStepChange} onFinish={handleFinish} onSkip={handleSkip} />;
 }
