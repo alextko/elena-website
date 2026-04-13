@@ -3,8 +3,17 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { X, ChevronRight, Heart, Users, User, Baby, HelpCircle } from "lucide-react";
 import * as analytics from "@/lib/analytics";
-import { Joyride as JoyrideComponent } from "react-joyride";
-const Joyride = JoyrideComponent as any;
+
+// Lazy-load Joyride on client only
+function useJoyrideComponent() {
+  const [Component, setComponent] = useState<any>(null);
+  useEffect(() => {
+    import("react-joyride").then((mod: any) => {
+      setComponent(() => mod.Joyride || mod.default || mod);
+    });
+  }, []);
+  return Component;
+}
 
 interface WebOnboardingTourProps {
   onComplete: () => void;
@@ -139,6 +148,7 @@ const TOUR_STEPS: any[] = [
 ];
 
 export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover }: WebOnboardingTourProps) {
+  const JoyrideComponent = useJoyrideComponent();
   const [run, setRun] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [showCareContext, setShowCareContext] = useState(true);
@@ -149,13 +159,14 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
     analytics.track("Web Tour Started" as any);
   }, []);
 
-  // Start joyride after care context step
+  // Start joyride after care context step - delay to let Joyride mount
   const startJoyride = useCallback(() => {
-    setShowCareContext(false);
     if (careSelections.length > 0) {
       analytics.track("Web Tour Care Context" as any, { care_for: careSelections });
     }
-    setRun(true);
+    setShowCareContext(false);
+    // Delay run to next tick so Joyride component renders first
+    setTimeout(() => setRun(true), 100);
   }, [careSelections]);
 
   const finish = useCallback(() => {
@@ -271,8 +282,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
     );
   }
 
+  if (!JoyrideComponent) return null;
+
   return (
-    <Joyride
+    <JoyrideComponent
       steps={TOUR_STEPS}
       run={run}
       stepIndex={stepIndex}
@@ -294,5 +307,5 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
         last: "Finish",
       }}
     />
-  );
+  ) as any;
 }
