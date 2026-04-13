@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronRight, Heart, Users, User, Baby, HelpCircle } from "lucide-react";
 import * as analytics from "@/lib/analytics";
@@ -103,8 +104,8 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
       >
         {/* Backdrop - always visible but lighter during popover steps */}
         <div
-          className={`absolute inset-0 transition-colors duration-300 ${step >= 3 && step <= 6 ? "bg-black/55" : "bg-black/45"}`}
-          style={{ pointerEvents: "auto", zIndex: step >= 3 && step <= 6 ? 390 : 301 }}
+          className={`absolute inset-0 transition-colors duration-300 ${step === 2 ? "bg-transparent" : step >= 3 && step <= 6 ? "bg-black/55" : "bg-black/45"}`}
+          style={{ pointerEvents: step === 2 ? "none" : "auto", zIndex: step >= 3 && step <= 6 ? 390 : 301 }}
           data-tour-backdrop
           onClick={(e) => e.stopPropagation()}
         />
@@ -237,16 +238,29 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
 // ─── Shared sub-components ──────────────────────────────────────
 
 function TourCard({ children, onNext, position = "center" }: { children: React.ReactNode; onNext: () => void; position?: "center" | "overlay" }) {
-  return (
+  const card = (
     <div
-      className={`max-w-sm w-full mx-6 ${position === "overlay" ? "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" : "relative"}`}
-      style={{ pointerEvents: "auto", zIndex: 400 }}
+      className={position === "overlay"
+        ? "fixed inset-0 flex items-center justify-center"
+        : "relative flex items-center justify-center"
+      }
+      style={{ pointerEvents: "none", zIndex: 99999 }}
     >
-      <div className="rounded-2xl bg-white p-7 shadow-[0_8px_30px_rgba(15,27,61,0.15)]">
-        {children}
+      <div
+        className="max-w-sm w-full mx-6"
+        style={{ pointerEvents: "auto" }}
+      >
+        <div className="rounded-2xl bg-white p-7 shadow-[0_8px_30px_rgba(15,27,61,0.15)]">
+          {children}
+        </div>
       </div>
     </div>
   );
+
+  if (position === "overlay" && typeof document !== "undefined") {
+    return createPortal(card, document.body);
+  }
+  return card;
 }
 
 function TourButton({ onClick, label }: { onClick: () => void; label: string }) {
