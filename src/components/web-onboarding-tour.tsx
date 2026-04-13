@@ -183,33 +183,37 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
 
   // Control profile popover based on Joyride step
   const handleJoyrideCallback = useCallback((data: any) => {
-    const { status, index, action, type } = data;
+    const { status, index, action, type, lifecycle } = data;
 
-    if (type === "step:after") {
-      const nextIndex = index + (action === "prev" ? -1 : 1);
+    console.log("[tour] callback", { status, index, action, type, lifecycle });
+
+    // Advance step after user clicks Next/Back
+    if (type === "step:after" || (action === "next" && lifecycle === "complete")) {
+      const nextIndex = action === "prev" ? index - 1 : index + 1;
+
+      if (nextIndex >= TOUR_STEPS.length) {
+        finish();
+        return;
+      }
+
       setStepIndex(nextIndex);
       analytics.track("Web Tour Step Viewed" as any, { step: nextIndex, step_name: TOUR_STEPS[nextIndex]?.title });
 
       // Control popover based on which step we're going to
       if (nextIndex === 1) {
-        // Profile button step - close popover
         onProfilePopover(false, undefined, false);
       } else if (nextIndex === 2) {
-        // Health tab
         onProfilePopover(true, "health", false);
       } else if (nextIndex === 3) {
-        // Insurance tab
         onProfilePopover(true, "insurance", false);
       } else if (nextIndex === 4) {
-        // Family switcher
         onProfilePopover(true, "health", true);
       } else if (nextIndex >= 5) {
-        // Chat step - close popover
         onProfilePopover(false, undefined, false);
       }
     }
 
-    if (status === "finished") {
+    if (status === "finished" || status === "ready" && action === "close") {
       finish();
     } else if (status === "skipped") {
       skip();
