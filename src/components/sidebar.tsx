@@ -333,7 +333,7 @@ export function Sidebar({
       )}
 
       {/* Profile — pinned to bottom, never scrolls */}
-      <div className="flex-shrink-0 relative z-10 shadow-[0_-4px_12px_rgba(15,27,61,0.06)] bg-[#f5f7fb] max-md:bg-white">
+      <div className="flex-shrink-0 relative z-10 shadow-[0_-4px_12px_rgba(15,27,61,0.06)] bg-[#f5f7fb] max-md:bg-white" data-tour="profile-button">
         <SidebarProfile onBookMessage={onBookMessage} />
       </div>
     </div>

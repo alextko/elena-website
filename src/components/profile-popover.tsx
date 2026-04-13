@@ -485,7 +485,7 @@ export function ProfilePopover({
                   </span>
                 )}
               </button>
-              <div ref={switcherRef} className="min-w-0 flex-1 relative">
+              <div ref={switcherRef} className="min-w-0 flex-1 relative" data-tour="profile-switcher">
                 <button
                   onClick={() => setSwitcherOpen(!switcherOpen)}
                   className="flex items-center gap-1 hover:opacity-70 transition-opacity cursor-pointer"
@@ -592,9 +592,9 @@ export function ProfilePopover({
 
             {/* Tab pills */}
             <div className="flex gap-1.5 mt-1 mb-4">
-              <TabPill label="Health" active={activeTab === "health"} onClick={() => setActiveTab("health")} />
+              <div data-tour="tab-health"><TabPill label="Health" active={activeTab === "health"} onClick={() => setActiveTab("health")} /></div>
               <TabPill label="Visits" active={activeTab === "visits"} onClick={() => setActiveTab("visits")} />
-              <TabPill label="Insurance" active={activeTab === "insurance"} onClick={() => setActiveTab("insurance")} />
+              <div data-tour="tab-insurance"><TabPill label="Insurance" active={activeTab === "insurance"} onClick={() => setActiveTab("insurance")} /></div>
             </div>
 
             {/* ═══════════ HEALTH TAB ═══════════ */}

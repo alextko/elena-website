@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/sidebar";
 import { ChatArea } from "@/components/chat-area";
 import { ChatErrorBoundary } from "@/components/error-boundary";
 import { OnboardingModal } from "@/components/onboarding-modal";
+import { WebOnboardingTour } from "@/components/web-onboarding-tour";
 import type { ChatSessionItem } from "@/lib/types";
 import { trackSubscription } from "@/lib/tracking-events";
 
@@ -223,12 +224,15 @@ function ChatPageInner() {
     }
   }, [onboardingJustCompleted, isNewChat, activeSessionId]);
 
-  // Show profile tooltip after onboarding, auto-dismiss after 8 seconds
+  // Show onboarding tour after onboarding completes (replaces simple tooltip)
+  const [showTour, setShowTour] = useState(false);
   useEffect(() => {
     if (onboardingJustCompleted) {
-      const showTimer = setTimeout(() => setShowProfileTooltip(true), 1500);
-      const hideTimer = setTimeout(() => setShowProfileTooltip(false), 9500);
-      return () => { clearTimeout(showTimer); clearTimeout(hideTimer); };
+      const tourDone = localStorage.getItem("elena_web_tour_done");
+      if (!tourDone) {
+        const timer = setTimeout(() => setShowTour(true), 1000);
+        return () => clearTimeout(timer);
+      }
     }
   }, [onboardingJustCompleted]);
 
@@ -294,6 +298,14 @@ function ChatPageInner() {
   return (
     <div className="flex h-dvh overflow-hidden relative">
       <OnboardingModal />
+      {showTour && (
+        <WebOnboardingTour
+          onComplete={() => setShowTour(false)}
+          onShowPaywall={() => {
+            // TODO: integrate Superwall or upgrade modal when available on web
+          }}
+        />
+      )}
       {/* Checkout success banner */}
       {checkoutSuccess && (
         <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-center bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white animate-in slide-in-from-top duration-300">
