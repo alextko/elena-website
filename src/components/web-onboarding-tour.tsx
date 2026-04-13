@@ -282,7 +282,12 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
     );
   }
 
-  if (!JoyrideComponent) return null;
+  console.log("[tour] render state:", { showCareContext, run, stepIndex, hasJoyride: !!JoyrideComponent });
+
+  if (!JoyrideComponent) {
+    console.log("[tour] Joyride not loaded yet");
+    return null;
+  }
 
   return (
     <JoyrideComponent
