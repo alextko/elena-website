@@ -225,16 +225,19 @@ function ChatPageInner() {
   }, [onboardingJustCompleted, isNewChat, activeSessionId]);
 
   // Show onboarding tour after onboarding completes (replaces simple tooltip)
+  // Also supports ?tour=1 URL param for testing
   const [showTour, setShowTour] = useState(false);
   useEffect(() => {
-    if (onboardingJustCompleted) {
+    const forceTour = searchParams.get("tour") === "1";
+    if (onboardingJustCompleted || forceTour) {
       const tourDone = localStorage.getItem("elena_web_tour_done");
-      if (!tourDone) {
+      if (!tourDone || forceTour) {
+        if (forceTour) localStorage.removeItem("elena_web_tour_done");
         const timer = setTimeout(() => setShowTour(true), 1000);
         return () => clearTimeout(timer);
       }
     }
-  }, [onboardingJustCompleted]);
+  }, [onboardingJustCompleted, searchParams]);
 
   // Persist active session so refresh/navigation restores it
   useEffect(() => {
