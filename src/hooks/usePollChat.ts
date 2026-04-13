@@ -37,6 +37,8 @@ function persistDemoToSupabase(
   if (cardFields.appealStatus) metadata.appeal_status = cardFields.appealStatus;
   if (cardFields.doctorResults) metadata.doctor_results = cardFields.doctorResults;
   if (cardFields.priceComparisonLabel) metadata.price_comparison_label = cardFields.priceComparisonLabel;
+  if (cardFields.formRequest) metadata.form_request = cardFields.formRequest;
+  if (cardFields.insurancePlanComparison) metadata.insurance_plan_comparison = cardFields.insurancePlanComparison;
 
   // Fire-and-forget: insert user message, then assistant message
   supabase
@@ -118,6 +120,8 @@ export function usePollChat(demoMode = false) {
             appeal_status: demoMatch.cardFields.appealStatus ?? null,
             assistance_result: demoMatch.cardFields.assistanceResult ?? null,
             price_comparison_label: demoMatch.cardFields.priceComparisonLabel ?? null,
+            form_request: demoMatch.cardFields.formRequest ?? null,
+            insurance_plan_comparison: demoMatch.cardFields.insurancePlanComparison ?? null,
           };
           onDone(fakeResponse);
 

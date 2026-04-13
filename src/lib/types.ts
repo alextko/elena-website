@@ -36,6 +36,7 @@ export interface ChatResponse {
   appeal_status?: AppealStatus | null;
   assistance_result?: AssistanceResult | null;
   price_comparison_label?: string | null;
+  insurance_plan_comparison?: InsurancePlanComparison | null;
 }
 
 // --- Session History (api_chat.py:480-485) ---
@@ -68,6 +69,7 @@ export interface ChatMessageItem {
   price_comparison_label?: string | null;
   call_result?: { booking_id?: string; provider_name: string; summary: string; call_type: string } | null;
   invite_accepted?: { accepter_name: string } | null;
+  insurance_plan_comparison?: InsurancePlanComparison | null;
 }
 
 // --- Welcome (api_chat.py:275-279) ---
@@ -248,6 +250,29 @@ export interface AssistanceResult {
   programs: AssistanceProgram[];
   user_context?: string;
   total_potential_benefit?: string;
+}
+
+// --- Insurance Plan Comparison ---
+
+export interface InsurancePlan {
+  name: string;
+  tier: "Bronze" | "Silver" | "Gold" | "Platinum";
+  monthly_premium: number;
+  deductible: number;
+  estimated_yearly_cost: number;
+  doctor_in_network: boolean;
+  doctor_name?: string;
+  medication_covered: boolean;
+  medication_name?: string;
+  prior_auth_required: boolean;
+  recommended: boolean;
+  recommendation_reason?: string;
+}
+
+export interface InsurancePlanComparison {
+  plans: InsurancePlan[];
+  user_context: string;
+  recommendation_summary: string;
 }
 
 export interface NegotiationResult {

@@ -27,6 +27,7 @@ import {
   AppealScriptCard,
   AppealTrackerCard,
   AssistanceProgramsCard,
+  InsurancePlanComparisonCard,
 } from "@/components/chat-cards";
 import type {
   ChatMessageItem,
@@ -70,6 +71,7 @@ type Message = {
   assistanceResult?: AssistanceResult | null;
   priceComparisonLabel?: string | null;
   inviteAccepted?: { accepter_name: string; message: string } | null;
+  insurancePlanComparison?: import("@/lib/types").InsurancePlanComparison | null;
 };
 
 // Link regex: [^)] for URL ensures we don't stop at an unrelated ")" elsewhere in text.
@@ -386,6 +388,7 @@ export function ChatArea({
           assistanceResult: m.assistance_result,
           priceComparisonLabel: m.price_comparison_label,
           inviteAccepted: m.invite_accepted ? { accepter_name: m.invite_accepted.accepter_name, message: m.text } : undefined,
+          insurancePlanComparison: m.insurance_plan_comparison,
         }));
       // Deduplicate consecutive identical user messages (from retries after errors)
       const mapped = raw.filter((m, i) => {
@@ -838,6 +841,7 @@ export function ChatArea({
               appealStatus: chatResult.appeal_status,
               assistanceResult: chatResult.assistance_result,
               priceComparisonLabel: chatResult.price_comparison_label,
+              insurancePlanComparison: chatResult.insurance_plan_comparison,
             },
           ]);
           setStreamingId(assistantId);
@@ -1116,6 +1120,9 @@ export function ChatArea({
                         data={msg.assistanceResult}
                         onCall={({ name, phone }) => handleSend(`Call ${name} at ${phone}`)}
                       />
+                    )}
+                    {msg.insurancePlanComparison && (
+                      <InsurancePlanComparisonCard data={msg.insurancePlanComparison} />
                     )}
                     {msg.bookingResult && msg.bookingResult.status === "confirmed" && (
                       <>

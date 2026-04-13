@@ -14,6 +14,7 @@ import {
   Copy,
   Send,
   Clock,
+  X,
 } from "lucide-react";
 import type {
   DoctorResult,
@@ -28,6 +29,8 @@ import type {
   AppealScript,
   AppealStatus,
   AssistanceResult,
+  InsurancePlanComparison,
+  InsurancePlan,
 } from "@/lib/types";
 import { apiFetch } from "@/lib/apiFetch";
 
@@ -2030,6 +2033,122 @@ export function AssistanceProgramsCard({
           <p className="text-[13px] font-semibold text-[#0F1B3D]">
             Total potential benefit: {data.total_potential_benefit}
           </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  InsurancePlanComparisonCard
+// ─────────────────────────────────────────────────────────────────
+
+const TIER_COLORS: Record<string, string> = {
+  Bronze: "bg-amber-100 text-amber-800",
+  Silver: "bg-gray-100 text-gray-700",
+  Gold: "bg-yellow-100 text-yellow-800",
+  Platinum: "bg-indigo-100 text-indigo-800",
+};
+
+export function InsurancePlanComparisonCard({ data }: { data: InsurancePlanComparison }) {
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+
+  return (
+    <div className="mt-3 max-w-md rounded-2xl bg-white elena-card-shadow overflow-hidden border border-[var(--elena-border-light)]">
+      <div className="px-3 py-2 border-b border-[var(--elena-border-light)]">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--elena-text-muted)]">
+          Plan Comparison &middot; {data.plans.length} Plans
+        </p>
+        <p className="text-[11px] text-[var(--elena-text-muted)] mt-0.5">{data.user_context}</p>
+      </div>
+
+      <div className="flex flex-col gap-2.5 p-3">
+        {data.plans.map((plan, i) => {
+          const isRecommended = plan.recommended;
+          const isSelected = selectedIdx === i;
+
+          return (
+            <div
+              key={plan.name}
+              className="rounded-xl px-3 py-3 cursor-pointer transition-all duration-150"
+              style={{
+                borderWidth: "1.5px",
+                borderStyle: "solid",
+                borderColor: isSelected
+                  ? "var(--elena-selected-border)"
+                  : isRecommended
+                  ? "var(--elena-green)"
+                  : "var(--elena-border-light)",
+                backgroundColor: isSelected
+                  ? "var(--elena-selected-bg)"
+                  : isRecommended
+                  ? "var(--elena-green-bg)"
+                  : "var(--elena-card-bg)",
+              }}
+              onClick={() => setSelectedIdx((prev) => (prev === i ? null : i))}
+            >
+              {isRecommended && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2 py-0.5 text-[0.6rem] font-bold text-white mb-2">
+                  BEST FIT
+                </span>
+              )}
+
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[15px] font-bold text-[var(--elena-text-primary)] truncate">{plan.name}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className={`rounded-full px-2 py-0.5 text-[0.6rem] font-semibold ${TIER_COLORS[plan.tier] || "bg-gray-100 text-gray-700"}`}>
+                      {plan.tier}
+                    </span>
+                    <span className="text-[11px] text-[var(--elena-text-muted)]">
+                      ${plan.deductible.toLocaleString()} deductible
+                    </span>
+                  </div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className={isRecommended ? "text-[22px] font-bold text-emerald-600" : "text-[18px] font-bold text-[var(--elena-text-primary)]"}>
+                    ${plan.monthly_premium}/mo
+                  </p>
+                  <p className="text-[10px] text-[var(--elena-text-muted)]">
+                    ~${plan.estimated_yearly_cost.toLocaleString()}/yr total
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 mt-2 flex-wrap">
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium">
+                  {plan.doctor_in_network ? (
+                    <Check className="h-3 w-3 text-emerald-500" />
+                  ) : (
+                    <X className="h-3 w-3 text-red-400" />
+                  )}
+                  <span className={plan.doctor_in_network ? "text-emerald-700" : "text-red-500"}>
+                    {plan.doctor_name || "Doctor"} {plan.doctor_in_network ? "in-network" : "out-of-network"}
+                  </span>
+                </span>
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium">
+                  {plan.medication_covered ? (
+                    <Check className="h-3 w-3 text-emerald-500" />
+                  ) : (
+                    <X className="h-3 w-3 text-red-400" />
+                  )}
+                  <span className={plan.medication_covered ? "text-emerald-700" : "text-red-500"}>
+                    {plan.medication_name || "Medication"} {plan.medication_covered ? "covered" : "not covered"}
+                  </span>
+                </span>
+              </div>
+
+              {isRecommended && plan.recommendation_reason && (
+                <p className="mt-2 text-[12px] text-emerald-700 font-medium">{plan.recommendation_reason}</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {data.recommendation_summary && (
+        <div className="border-t border-[var(--elena-border-light)] px-4 py-3 bg-[var(--elena-warm-bg)]">
+          <p className="text-[13px] font-semibold text-[var(--elena-text-primary)]">{data.recommendation_summary}</p>
         </div>
       )}
     </div>

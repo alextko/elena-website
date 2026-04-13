@@ -12,6 +12,8 @@ import type {
   AppealScript,
   AppealStatus,
   AssistanceResult,
+  FormRequest,
+  InsurancePlanComparison,
 } from "@/lib/types";
 
 // Partial of the Message type from chat-area — only the card fields
@@ -22,6 +24,8 @@ export type DemoCardFields = {
   appealStatus?: AppealStatus | null;
   assistanceResult?: AssistanceResult | null;
   priceComparisonLabel?: string | null;
+  formRequest?: FormRequest | null;
+  insurancePlanComparison?: InsurancePlanComparison | null;
 };
 
 interface DemoEntry {
@@ -525,6 +529,136 @@ const DEMO_ENTRIES: DemoEntry[] = [
     toolLabel: "",
     reply: "UnitedHealthcare has 30 days from today to make a decision on your internal appeal — so by May 9th at the latest. Most decisions come back in 2-3 weeks. If they deny it and you escalate to external review, that adds another 45 days. I'll ping you the moment anything changes so you don't have to keep checking.",
     suggestions: ["Sounds good", "Can you remind me when the deadline is?", "What else can Elena help with?"],
+    cardFields: {},
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  //  RECORDING 7: Insurance Plan Selection (multi-turn)
+  //  Query: "I'm switching jobs and need new insurance. I want to keep
+  //          my doctor and not get screwed on costs."
+  // ─────────────────────────────────────────────────────────────────
+
+  // TURN 1: User asks about switching insurance
+  {
+    name: "insurance_switch",
+    matchKeywords: ["switching", "insurance"],
+    delay: 2000,
+    toolLabel: "",
+    reply: "Got it. Switching jobs is one of the most important times to get your insurance right. Let me ask a few quick questions so I can compare plans that actually work for your situation.",
+    suggestions: [],
+    cardFields: {
+      formRequest: {
+        form_id: "insurance_plan_selection",
+        title: "A few quick questions",
+        description: "This helps me find the right plan for you.",
+        fields: [
+          { key: "doctor_name", label: "Who is your doctor?", type: "text", placeholder: "e.g. Dr. Patel", required: true },
+          { key: "visit_reason", label: "What do you see them for?", type: "text", placeholder: "e.g. asthma, annual checkup", required: true },
+          { key: "medications", label: "Current medications", type: "text", placeholder: "e.g. Advair, Singulair" },
+          { key: "cost_preference", label: "Cost preference", type: "select", placeholder: "Choose one...", required: true, options: ["Lower monthly cost", "Avoid surprise costs"] },
+        ],
+        save_to: "none",
+      },
+    },
+  },
+  // Alt match for Turn 1
+  {
+    name: "insurance_switch_alt",
+    matchKeywords: ["new", "insurance", "doctor"],
+    delay: 2000,
+    toolLabel: "",
+    reply: "Got it. Switching jobs is one of the most important times to get your insurance right. Let me ask a few quick questions so I can compare plans that actually work for your situation.",
+    suggestions: [],
+    cardFields: {
+      formRequest: {
+        form_id: "insurance_plan_selection",
+        title: "A few quick questions",
+        description: "This helps me find the right plan for you.",
+        fields: [
+          { key: "doctor_name", label: "Who is your doctor?", type: "text", placeholder: "e.g. Dr. Patel", required: true },
+          { key: "visit_reason", label: "What do you see them for?", type: "text", placeholder: "e.g. asthma, annual checkup", required: true },
+          { key: "medications", label: "Current medications", type: "text", placeholder: "e.g. Advair, Singulair" },
+          { key: "cost_preference", label: "Cost preference", type: "select", placeholder: "Choose one...", required: true, options: ["Lower monthly cost", "Avoid surprise costs"] },
+        ],
+        save_to: "none",
+      },
+    },
+  },
+  // TURN 2: After form submission
+  {
+    name: "insurance_plans",
+    matchKeywords: ["form submitted", "insurance_plan_selection"],
+    delay: 4000,
+    toolLabel: "Checking 47 plans in your area...",
+    reply: "I compared 47 plans available to you. Your doctor is only in-network on 2 of them, and your medication is fully covered on just 1 without prior authorization.\n\nYou should choose the **Silver Plus 1500**. It's $95/month more than the cheapest option, but it saves you about $1,760 per year when you factor in your doctor visits and medication.",
+    suggestions: ["Why not the cheaper one?", "Are you sure my doctor takes this?", "Help me enroll"],
+    cardFields: {
+      insurancePlanComparison: {
+        plans: [
+          {
+            name: "Bronze Basic 3000",
+            tier: "Bronze",
+            monthly_premium: 245,
+            deductible: 3000,
+            estimated_yearly_cost: 5840,
+            doctor_in_network: false,
+            doctor_name: "Dr. Patel",
+            medication_covered: false,
+            medication_name: "Advair",
+            prior_auth_required: false,
+            recommended: false,
+          },
+          {
+            name: "Silver Plus 1500",
+            tier: "Silver",
+            monthly_premium: 340,
+            deductible: 1500,
+            estimated_yearly_cost: 4080,
+            doctor_in_network: true,
+            doctor_name: "Dr. Patel",
+            medication_covered: true,
+            medication_name: "Advair",
+            prior_auth_required: false,
+            recommended: true,
+            recommendation_reason: "Dr. Patel in-network, Advair covered, lowest total cost",
+          },
+          {
+            name: "Gold Premium 500",
+            tier: "Gold",
+            monthly_premium: 520,
+            deductible: 500,
+            estimated_yearly_cost: 6240,
+            doctor_in_network: true,
+            doctor_name: "Dr. Patel",
+            medication_covered: true,
+            medication_name: "Advair",
+            prior_auth_required: false,
+            recommended: false,
+          },
+        ],
+        user_context: "Based on Dr. Patel, Advair, and your preference to avoid surprise costs",
+        recommendation_summary: "Silver Plus saves you ~$1,760/yr vs. Bronze and ~$2,160/yr vs. Gold when you factor in Dr. Patel visits and Advair coverage.",
+      },
+    },
+  },
+  // TURN 3: User asks about the cheaper option
+  {
+    name: "insurance_why_cheaper",
+    matchKeywords: ["cheaper"],
+    delay: 2000,
+    toolLabel: "",
+    reply: "Good question. The Bronze Basic plan looks cheaper at $245/month, but here's the catch:\n\n**Dr. Patel is out-of-network** on that plan. Every visit would cost you ~$350 instead of a $30 copay. And **Advair isn't on their formulary**, so you'd pay full price at ~$380/month.\n\nOver a year:\n\n**Bronze**: $245/mo premium + ~$4,200 in out-of-network visits + $4,560 for Advair = **~$11,700/yr**\n\n**Silver Plus**: $340/mo premium + ~$120 in copays + $0 for Advair = **~$4,200/yr**\n\nThe \"cheaper\" plan would actually cost you **$7,500 more per year**.",
+    suggestions: ["Are you sure my doctor takes this?", "Help me enroll", "Compare one more option"],
+    cardFields: {},
+  },
+  // TURN 4: User asks about doctor verification
+  {
+    name: "insurance_verify_doctor",
+    matchKeywords: ["sure", "doctor"],
+    delay: 2000,
+    toolLabel: "",
+    reply: "Yes. I verified that Dr. Anita Patel (Internal Medicine) is in-network for Silver Plus 1500 through Mount Sinai Health System. Her network status was last confirmed in the current provider directory.\n\nThat said, directories can sometimes be out of date. Want me to call the office to double-check before you enroll?",
+    suggestions: ["Yes, call to verify", "Help me enroll", "Compare one more option"],
     cardFields: {},
   },
 ];
