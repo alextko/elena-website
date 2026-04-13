@@ -393,7 +393,7 @@ export function ProfilePopover({
   return (
     <>
     <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} />
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={setOpen} modal={externalOpen ? false : undefined}>
       <DialogTrigger render={children as React.ReactElement}></DialogTrigger>
       <DialogContent
         showCloseButton

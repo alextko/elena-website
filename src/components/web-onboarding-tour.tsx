@@ -35,10 +35,10 @@ const joyrideStyles: any = {
 };
 
 const TOUR_STEPS: any[] = [
-  { target: "[data-tour='profile-button']", placement: "top", disableBeacon: true, title: "Your health profile", content: "This is where your doctors, medications, insurance, and appointments live.", locale: { next: "Show me" } },
-  { target: "[data-tour='tab-health']", placement: "right", disableBeacon: true, title: "Health", content: "Your game plan, doctors, medications, and to-dos. Elena automatically adds and updates everything here." },
-  { target: "[data-tour='tab-insurance']", placement: "right", disableBeacon: true, title: "Insurance", content: "Your insurance cards are stored here. Elena uses them to check coverage, find in-network doctors, and estimate your costs." },
-  { target: "[data-tour='profile-switcher']", placement: "right", disableBeacon: true, title: "Family profiles", content: "This is where you can add family members. Each person gets their own profile with separate health data." },
+  { target: "[data-tour='profile-button']", placement: "top", disableBeacon: true, skipBeacon: true, title: "Your health profile", content: "This is where your doctors, medications, insurance, and appointments live.", locale: { next: "Show me" } },
+  { target: "[data-tour='tab-health']", placement: "right", disableBeacon: true, skipBeacon: true, title: "Health", content: "Your game plan, doctors, medications, and to-dos. Elena automatically adds and updates everything here." },
+  { target: "[data-tour='tab-insurance']", placement: "right", disableBeacon: true, skipBeacon: true, title: "Insurance", content: "Your insurance cards are stored here. Elena uses them to check coverage, find in-network doctors, and estimate your costs." },
+  { target: "[data-tour='profile-switcher']", placement: "right", disableBeacon: true, skipBeacon: true, title: "Family profiles", content: "This is where you can add family members. Each person gets their own profile with separate health data." },
 ];
 
 export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover }: WebOnboardingTourProps) {
