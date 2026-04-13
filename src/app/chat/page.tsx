@@ -224,6 +224,9 @@ function ChatPageInner() {
     }
   }, [onboardingJustCompleted, isNewChat, activeSessionId]);
 
+  const [tourPopoverOpen, setTourPopoverOpen] = useState(false);
+  const [tourPopoverTab, setTourPopoverTab] = useState<"health" | "visits" | "insurance">("health");
+
   // Show onboarding tour after onboarding completes (replaces simple tooltip)
   // Also supports ?tour=1 URL param for testing
   const [showTour, setShowTour] = useState(false);
@@ -303,10 +306,9 @@ function ChatPageInner() {
       <OnboardingModal />
       {showTour && (
         <WebOnboardingTour
-          onComplete={() => setShowTour(false)}
-          onShowPaywall={() => {
-            // TODO: integrate Superwall or upgrade modal when available on web
-          }}
+          onComplete={() => { setShowTour(false); setTourPopoverOpen(false); }}
+          onShowPaywall={() => {}}
+          onProfilePopover={(open, tab) => { setTourPopoverOpen(open); if (tab) setTourPopoverTab(tab); }}
         />
       )}
       {/* Checkout success banner */}
@@ -356,6 +358,9 @@ function ChatPageInner() {
             loadingSessions={loadingSessions}
             showProfileTooltip={showProfileTooltip}
             onDismissProfileTooltip={() => setShowProfileTooltip(false)}
+            profilePopoverOpen={tourPopoverOpen || undefined}
+            onProfilePopoverChange={(open) => { if (!showTour) setTourPopoverOpen(open); }}
+            profilePopoverTab={tourPopoverTab}
           />
         </div>
       </div>

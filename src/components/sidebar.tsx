@@ -32,7 +32,7 @@ function groupByDate(sessions: ChatSessionItem[]): Record<string, ChatSessionIte
   return groups;
 }
 
-function SidebarProfile({ onBookMessage }: { onBookMessage?: (msg: string) => void }) {
+function SidebarProfile({ onBookMessage, popoverOpen, onPopoverChange, popoverTab }: { onBookMessage?: (msg: string) => void; popoverOpen?: boolean; onPopoverChange?: (open: boolean) => void; popoverTab?: "health" | "visits" | "insurance" }) {
   const { user, profileData, profileChecked } = useAuth();
 
   // Show skeleton while profile is loading
@@ -58,7 +58,7 @@ function SidebarProfile({ onBookMessage }: { onBookMessage?: (msg: string) => vo
   const email = user?.email || "";
 
   return (
-    <ProfilePopover onBookMessage={onBookMessage}>
+    <ProfilePopover onBookMessage={onBookMessage} externalOpen={popoverOpen} onExternalOpenChange={onPopoverChange} initialTab={popoverTab}>
       <button className="flex w-full items-center gap-2.5 border-t border-[#0F1B3D]/[0.06] px-5 py-4 text-left hover:opacity-80 transition-opacity">
         <div className="flex-shrink-0">
           {profileData.profilePictureUrl ? (
@@ -196,6 +196,9 @@ export function Sidebar({
   loadingSessions,
   showProfileTooltip,
   onDismissProfileTooltip,
+  profilePopoverOpen,
+  onProfilePopoverChange,
+  profilePopoverTab,
 }: {
   activeSessionId: string | null;
   onSelectSession: (id: string) => void;
@@ -205,6 +208,9 @@ export function Sidebar({
   loadingSessions: boolean;
   showProfileTooltip?: boolean;
   onDismissProfileTooltip?: () => void;
+  profilePopoverOpen?: boolean;
+  onProfilePopoverChange?: (open: boolean) => void;
+  profilePopoverTab?: "health" | "visits" | "insurance";
 }) {
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -334,7 +340,7 @@ export function Sidebar({
 
       {/* Profile — pinned to bottom, never scrolls */}
       <div className="flex-shrink-0 relative z-10 shadow-[0_-4px_12px_rgba(15,27,61,0.06)] bg-[#f5f7fb] max-md:bg-white" data-tour="profile-button">
-        <SidebarProfile onBookMessage={onBookMessage} />
+        <SidebarProfile onBookMessage={onBookMessage} popoverOpen={profilePopoverOpen} onPopoverChange={onProfilePopoverChange} popoverTab={profilePopoverTab} />
       </div>
     </div>
   );

@@ -130,9 +130,15 @@ function todayStr() {
 export function ProfilePopover({
   children,
   onBookMessage,
+  externalOpen,
+  onExternalOpenChange,
+  initialTab,
 }: {
   children: React.ReactNode;
   onBookMessage?: (message: string) => void;
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
+  initialTab?: "health" | "visits" | "insurance";
 }) {
   const {
     user, profileId, profiles, switchProfile, profileData, doctors, careVisits,
@@ -142,9 +148,19 @@ export function ProfilePopover({
     profileDetailsLoaded, fetchProfileDetails, updateProfilePicture, signOut,
   } = useAuth();
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = (v: boolean) => {
+    setInternalOpen(v);
+    onExternalOpenChange?.(v);
+  };
   const [upgradeOpen, setUpgradeOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>("health");
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab || "health");
+
+  // Respond to initialTab changes from the tour
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
   const [selectedDay, setSelectedDay] = useState<string>(new Date().toLocaleDateString("en-CA")); // YYYY-MM-DD local time
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
