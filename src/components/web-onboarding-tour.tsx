@@ -38,11 +38,12 @@ export function WebOnboardingTour({ onComplete, onShowPaywall }: WebOnboardingTo
     analytics.track("Web Tour Step Viewed" as any, { step: stepNum, step_name: name });
   }, []);
 
+  const nextGuard = useRef(false);
   const next = useCallback(() => {
-    setStep((s) => {
-      const nextStep = Math.min(s + 1, TOTAL_STEPS - 1) as TourStep;
-      return nextStep;
-    });
+    if (nextGuard.current) return;
+    nextGuard.current = true;
+    setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1) as TourStep);
+    setTimeout(() => { nextGuard.current = false; }, 400);
   }, []);
 
   const skip = useCallback(() => {
@@ -59,18 +60,16 @@ export function WebOnboardingTour({ onComplete, onShowPaywall }: WebOnboardingTo
     setTimeout(onComplete, 300);
   }, [onComplete]);
 
-  const handleCareSubmit = useCallback(async () => {
-    if (careSelections.length > 0 && profileId) {
+  const advancingRef = useRef(false);
+  const handleCareSubmit = useCallback(() => {
+    if (advancingRef.current) return;
+    advancingRef.current = true;
+    if (careSelections.length > 0) {
       analytics.track("Web Tour Care Context" as any, { care_for: careSelections });
-      try {
-        await apiFetch(`/profile/${profileId}`, {
-          method: "PUT",
-          body: JSON.stringify({ caregiver_for: careSelections }),
-        });
-      } catch {}
     }
     next();
-  }, [careSelections, profileId, next]);
+    setTimeout(() => { advancingRef.current = false; }, 500);
+  }, [careSelections, next]);
 
   // Open profile popover for steps 2-5
   useEffect(() => {
