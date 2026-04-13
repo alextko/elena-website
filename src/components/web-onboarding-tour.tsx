@@ -158,9 +158,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
   if (phase === "profile") {
     const currentStep = PROFILE_STEPS[profileStep];
     return createPortal(
-      <div className="fixed inset-0 z-[99999] flex items-center justify-center font-[family-name:var(--font-inter)]" style={{ pointerEvents: "none" }}>
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center font-[family-name:var(--font-inter)]">
+        <div className="absolute inset-0 bg-black/50" />
         <SkipButton onClick={skipTour} />
-        <div className="max-w-sm w-full mx-6" style={{ pointerEvents: "auto" }}>
+        <div className="relative z-10 max-w-sm w-full mx-6" style={{ pointerEvents: "auto" }}>
           <div className="rounded-2xl bg-white p-7 shadow-[0_8px_30px_rgba(15,27,61,0.15)]">
             <div className="text-center">
               <h3 className="text-[20px] font-extrabold text-[#0F1B3D] mb-2">{currentStep.title}</h3>
