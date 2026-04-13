@@ -19,8 +19,8 @@ const CARE_OPTIONS = [
   { id: "other", label: "Someone else", icon: HelpCircle },
 ];
 
-const TOTAL_STEPS = 7;
-type TourStep = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+const TOTAL_STEPS = 8;
+type TourStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover }: WebOnboardingTourProps) {
   const [step, setStep] = useState<TourStep>(0);
@@ -71,11 +71,12 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
   }, [careSelections, next]);
 
   // Control profile popover based on step
+  // Step 2: spotlight the profile button (popover closed)
+  // Steps 3-6: popover open with tour cards on top
   useEffect(() => {
-    if (step === 2) onProfilePopover(true, "health");
-    else if (step === 3) onProfilePopover(true, "health");
-    else if (step === 4) onProfilePopover(true, "insurance");
-    else if (step === 5) onProfilePopover(true, "health");
+    if (step === 3 || step === 4) onProfilePopover(true, "health");
+    else if (step === 5) onProfilePopover(true, "insurance");
+    else if (step === 6) onProfilePopover(true, "health");
     else onProfilePopover(false);
   }, [step, onProfilePopover]);
 
@@ -90,10 +91,12 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
         className="fixed inset-0 z-[300] font-[family-name:var(--font-inter)]"
         style={{ pointerEvents: "none" }}
       >
-        {/* Backdrop - hidden during profile popover steps (popover has its own backdrop) */}
-        {(step <= 1 || step >= 6) && (
-          <div className="absolute inset-0 bg-black/40" style={{ pointerEvents: "auto" }} onClick={(e) => e.stopPropagation()} />
-        )}
+        {/* Backdrop - always visible but lighter during popover steps */}
+        <div
+          className={`absolute inset-0 transition-colors duration-300 ${step >= 3 && step <= 6 ? "bg-black/60" : "bg-black/45"}`}
+          style={{ pointerEvents: "auto", zIndex: step >= 3 && step <= 6 ? 355 : 301 }}
+          onClick={(e) => e.stopPropagation()}
+        />
 
         {/* Skip button */}
         <button
@@ -155,39 +158,50 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
               <TourButton onClick={() => { trackStep(1, "care_context"); handleCareSubmit(); }} label="Continue" />
             </TourCard>}
 
-            {step === 2 && <TourCard onNext={() => { trackStep(2, "profile"); next(); }} position="bottom">
-              <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Your health profile</h3>
-              <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
-                This is where all your health data lives. Doctors, medications, to-dos, and appointments.
-              </p>
-              <TourNextLink onClick={() => { trackStep(2, "profile"); next(); }} />
+            {step === 2 && <TourCard onNext={() => { trackStep(2, "profile_button"); next(); }}>
+              <div className="text-center">
+                <div className="text-[32px] mb-3">📋</div>
+                <h3 className="text-[20px] font-bold text-[#0F1B3D] mb-2">Your health profile</h3>
+                <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
+                  Click your name at the bottom of the sidebar to open your profile. This is where your doctors, medications, insurance, and appointments live.
+                </p>
+              </div>
+              <TourButton onClick={() => { trackStep(2, "profile_button"); next(); }} label="Show me" />
             </TourCard>}
 
-            {step === 3 && <TourCard onNext={() => { trackStep(3, "health_data"); next(); }} position="bottom">
-              <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">It gets smarter over time</h3>
+            {step === 3 && <TourCard onNext={() => { trackStep(3, "health_data"); next(); }} position="overlay">
+              <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Health data and to-dos</h3>
               <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
-                As you use Elena, she automatically adds doctors, medications, and to-dos to your profile. You can also add them yourself.
+                As you use Elena, she automatically adds doctors, medications, and to-dos here. You can also add them yourself anytime.
               </p>
               <TourNextLink onClick={() => { trackStep(3, "health_data"); next(); }} />
             </TourCard>}
 
-            {step === 4 && <TourCard onNext={() => { trackStep(4, "insurance"); next(); }} position="bottom">
+            {step === 4 && <TourCard onNext={() => { trackStep(4, "health_data_2"); next(); }} position="overlay">
+              <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">It gets smarter over time</h3>
+              <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
+                Every time Elena books an appointment, finds a doctor, or manages a prescription, it shows up here automatically.
+              </p>
+              <TourNextLink onClick={() => { trackStep(4, "health_data_2"); next(); }} />
+            </TourCard>}
+
+            {step === 5 && <TourCard onNext={() => { trackStep(5, "insurance"); next(); }} position="overlay">
               <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Add your insurance</h3>
               <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
                 Upload your insurance card here. Elena uses it to check coverage, find in-network doctors, and estimate your costs.
               </p>
-              <TourNextLink onClick={() => { trackStep(4, "insurance"); next(); }} />
+              <TourNextLink onClick={() => { trackStep(5, "insurance"); next(); }} />
             </TourCard>}
 
-            {step === 5 && <TourCard onNext={() => { trackStep(5, "family"); next(); }} position="bottom">
+            {step === 6 && <TourCard onNext={() => { trackStep(6, "family"); next(); }} position="overlay">
               <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Manage your family</h3>
               <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
-                Managing care for a parent, partner, or child? Add them here. Each person gets their own profile with separate health data.
+                Managing care for a parent, partner, or child? Click your name in the profile to add family members. Each person gets their own profile.
               </p>
-              <TourNextLink onClick={() => { trackStep(5, "family"); next(); }} />
+              <TourNextLink onClick={() => { trackStep(6, "family"); next(); }} />
             </TourCard>}
 
-            {step === 6 && <TourCard onNext={finish}>
+            {step === 7 && <TourCard onNext={() => { trackStep(7, "chat"); finish(); }}>
               <div className="text-center">
                 <div className="text-[40px] mb-3">💬</div>
                 <h2 className="text-[22px] font-extrabold text-[#0F1B3D] mb-2">Chat with Elena</h2>
@@ -198,9 +212,9 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
                   Your conversations are saved in the sidebar.
                 </p>
               </div>
-              <TourButton onClick={() => { trackStep(6, "chat"); onShowPaywall(); finish(); }} label="See Elena Pro" />
+              <TourButton onClick={() => { trackStep(7, "chat"); onShowPaywall(); finish(); }} label="See Elena Pro" />
               <button
-                onClick={() => { trackStep(6, "chat"); finish(); }}
+                onClick={() => { trackStep(7, "chat"); finish(); }}
                 className="w-full mt-2 py-3 text-[14px] font-medium text-[#8E8E93] hover:text-[#0F1B3D] transition-colors"
                 style={{ pointerEvents: "auto" }}
               >
@@ -228,16 +242,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
 
 // ─── Shared sub-components ──────────────────────────────────────
 
-function TourCard({ children, onNext, position = "center" }: { children: React.ReactNode; onNext: () => void; position?: "center" | "right" | "bottom" }) {
-  const posClass = position === "bottom"
-    ? "fixed bottom-16 left-1/2 -translate-x-1/2 max-md:bottom-20 max-md:left-4 max-md:right-4 max-md:translate-x-0"
-    : position === "right"
-    ? "ml-auto mr-[calc(50%-180px)] max-md:mx-6"
-    : "";
-
+function TourCard({ children, onNext, position = "center" }: { children: React.ReactNode; onNext: () => void; position?: "center" | "overlay" }) {
   return (
     <div
-      className={`relative z-[360] max-w-sm w-full mx-6 ${posClass}`}
+      className="relative z-[360] max-w-sm w-full mx-6"
       style={{ pointerEvents: "auto" }}
     >
       <div className="rounded-2xl bg-white p-7 shadow-[0_8px_30px_rgba(15,27,61,0.15)]">

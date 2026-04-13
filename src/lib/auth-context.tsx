@@ -298,25 +298,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch {}
 
-    // Collect all results first, then apply atomically (prevents stale data on profile switch)
-    let doctorsResult: DoctorItem[] | null = null;
-    let visitsResult: CareVisit[] | null = null;
-    let todosResult: CareTodo[] | null = null;
-    let todayTodosResult: CareTodo[] | null = null;
-    let habitsResult: Habit[] | null = null;
-    let completionsResult: Record<string, Set<string>> | null = null;
-    let insuranceResult: InsuranceCard[] | null = null;
-    let subscriptionResult: SubscriptionResponse | null = null;
+    // Helper: only apply state if the profile hasn't switched mid-flight
+    const isStale = () => profileFetchVersionRef.current !== fetchVersion;
+    // Mark loaded after first meaningful response so the popover skeleton clears early
+    const markLoaded = () => { if (!isStale()) setProfileDetailsLoaded(true); };
 
+    // Fire all requests in parallel, apply state as each resolves (progressive loading).
+    // Each request guards against stale profile switches independently.
     const promises: Promise<void>[] = [];
+
+    // Collect results for cache write at the end (set inline before setState, so non-null at use site)
+    let doctorsResult: DoctorItem[] = [];
+    let visitsResult: CareVisit[] = [];
+    let todosResult: CareTodo[] = [];
+    let todayTodosResult: CareTodo[] = [];
+    let habitsResult: Habit[] = [];
+    let insuranceResult: InsuranceCard[] = [];
+    let subscriptionResult: SubscriptionResponse | null = null;
 
     if (profileId) {
       promises.push(
         apiFetch(`/profile/${profileId}/doctors`)
           .then(async (res) => {
-            if (!res.ok) return;
+            if (!res.ok || isStale()) return;
             const data = await res.json();
             doctorsResult = data.doctors || [];
+            if (!isStale()) setDoctors(doctorsResult);
           })
           .catch(() => {}),
       );
@@ -324,8 +331,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       promises.push(
         apiFetch("/care-visits")
           .then(async (res) => {
-            if (!res.ok) return;
+            if (!res.ok || isStale()) return;
             visitsResult = await res.json();
+            if (!isStale()) { setCareVisits(visitsResult); markLoaded(); }
           })
           .catch(() => {}),
       );
@@ -333,24 +341,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       promises.push(
         apiFetch("/todos?include_future=true")
           .then(async (res) => {
-            if (!res.ok) return;
+            if (!res.ok || isStale()) return;
             todosResult = await res.json();
+            if (!isStale()) { setTodos(todosResult); markLoaded(); }
           })
           .catch(() => {}),
       );
       promises.push(
         apiFetch("/todos")
           .then(async (res) => {
-            if (!res.ok) return;
+            if (!res.ok || isStale()) return;
             todayTodosResult = await res.json();
+            if (!isStale()) { setTodayTodos(todayTodosResult); markLoaded(); }
           })
           .catch(() => {}),
       );
 
-      // Habits + completions (8 weeks back for calendar strip checkmarks)
+      // Habits + completions (12 weeks back for calendar strip checkmarks)
       const now = new Date();
       const startDate = new Date(now);
-      startDate.setDate(now.getDate() - 12 * 7); // 12 weeks back to match mobile
+      startDate.setDate(now.getDate() - 12 * 7);
       const endDate = new Date(now);
       endDate.setDate(now.getDate() + 7);
       const startStr = startDate.toISOString().slice(0, 10);
@@ -359,15 +369,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       promises.push(
         apiFetch("/habits")
           .then(async (res) => {
-            if (!res.ok) return;
+            if (!res.ok || isStale()) return;
             habitsResult = await res.json();
+            if (!isStale()) setHabits(habitsResult);
           })
           .catch(() => {}),
       );
       promises.push(
         apiFetch(`/habits/completions?start_date=${startStr}&end_date=${endStr}`)
           .then(async (res) => {
-            if (!res.ok) return;
+            if (!res.ok || isStale()) return;
             const raw = await res.json();
             const byDate: Record<string, Set<string>> = {};
             if (Array.isArray(raw)) {
@@ -385,7 +396,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }
               }
             }
-            completionsResult = byDate;
+            if (!isStale()) setHabitCompletions(byDate);
           })
           .catch(() => {}),
       );
@@ -393,7 +404,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       promises.push(
         apiFetch("/insurance/cards")
           .then(async (res) => {
-            if (!res.ok) return;
+            if (!res.ok || isStale()) return;
             const data = await res.json();
             const cards: InsuranceCard[] = [];
             for (const [cardType, record] of Object.entries(data)) {
@@ -415,6 +426,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               }
             }
             insuranceResult = cards;
+            if (!isStale()) setInsuranceCards(insuranceResult);
           })
           .catch(() => {}),
       );
@@ -423,32 +435,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     promises.push(
       apiFetch("/web/subscription")
         .then(async (res) => {
-          if (!res.ok) return;
+          if (!res.ok || isStale()) return;
           subscriptionResult = await res.json();
+          if (!isStale()) setSubscription(subscriptionResult);
         })
         .catch(() => {}),
     );
 
     await Promise.all(promises);
 
-    // Bail if the profile was switched while we were fetching — prevents stale data
-    if (profileFetchVersionRef.current !== fetchVersion) {
+    if (isStale()) {
       profileDetailsFetchingRef.current = false;
       return;
     }
 
-    // Apply all results atomically
-    if (doctorsResult !== null) setDoctors(doctorsResult);
-    if (visitsResult !== null) setCareVisits(visitsResult);
-    if (todosResult !== null) setTodos(todosResult);
-    if (todayTodosResult !== null) setTodayTodos(todayTodosResult);
-    if (habitsResult !== null) setHabits(habitsResult);
-    if (completionsResult !== null) setHabitCompletions(completionsResult);
-    if (insuranceResult !== null) setInsuranceCards(insuranceResult);
-    if (subscriptionResult !== null) setSubscription(subscriptionResult);
     setProfileDetailsLoaded(true);
 
-    // Cache for instant restore on next page load (skip habitCompletions — Sets don't serialize)
+    // Cache for instant restore on next page load
     try {
       sessionStorage.setItem("elena_profile_details", JSON.stringify({
         _profileId: profileId,
