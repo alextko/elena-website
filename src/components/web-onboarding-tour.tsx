@@ -102,8 +102,8 @@ const joyrideStyles: any = {
 // Tour steps (indices 0-7, Joyride manages sequencing)
 const TOUR_STEPS: any[] = [
   {
-    target: "body",
-    placement: "center",
+    target: "[data-tour='profile-button']",
+    placement: "center" as const,
     disableBeacon: true,
     title: "Welcome to Elena 👋",
     content: "Let me give you a quick tour. This will only take a moment.",
@@ -138,8 +138,8 @@ const TOUR_STEPS: any[] = [
     content: "This is where you can add family members. Each person gets their own profile with separate health data, doctors, and insurance.",
   },
   {
-    target: "body",
-    placement: "center",
+    target: "[data-tour='profile-button']",
+    placement: "center" as const,
     disableBeacon: true,
     title: "Chat with Elena 💬",
     content: "Ask Elena anything about your health, insurance, or appointments. She can make calls, compare prices, and manage your care. Your conversations are saved in the sidebar.",
@@ -312,5 +312,5 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
         last: "Finish",
       }}
     />
-  ) as any;
+  );
 }
