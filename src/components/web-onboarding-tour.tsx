@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import dynamic from "next/dynamic";
 import { X, ChevronRight, Heart, Users, User, Baby, HelpCircle } from "lucide-react";
 import * as analytics from "@/lib/analytics";
+
+// Dynamic import to avoid SSR issues with Joyride
+const Joyride = dynamic(() => import("react-joyride").then((m: any) => m.Joyride || m.default || m), { ssr: false }) as any;
 
 interface WebOnboardingTourProps {
   onComplete: () => void;
@@ -20,320 +22,264 @@ const CARE_OPTIONS = [
   { id: "other", label: "Someone else", icon: HelpCircle },
 ];
 
-const TOTAL_STEPS = 9;
-type TourStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+// Joyride custom styles matching Elena design system
+const joyrideStyles: any = {
+  options: {
+    primaryColor: "#0F1B3D",
+    zIndex: 99999,
+    arrowColor: "#fff",
+    backgroundColor: "#fff",
+    textColor: "#0F1B3D",
+    overlayColor: "rgba(0, 0, 0, 0.45)",
+  },
+  tooltip: {
+    borderRadius: 16,
+    padding: "24px 28px",
+    boxShadow: "0 8px 30px rgba(15, 27, 61, 0.15)",
+    fontFamily: "var(--font-inter), Inter, -apple-system, sans-serif",
+    maxWidth: 380,
+  },
+  tooltipTitle: {
+    fontSize: 18,
+    fontWeight: 700,
+    color: "#0F1B3D",
+    marginBottom: 4,
+  },
+  tooltipContent: {
+    fontSize: 14,
+    fontWeight: 300,
+    color: "#5a6a82",
+    lineHeight: 1.6,
+    padding: "8px 0 0",
+  },
+  buttonNext: {
+    backgroundColor: "#0F1B3D",
+    borderRadius: 12,
+    fontSize: 14,
+    fontWeight: 600,
+    padding: "10px 24px",
+    fontFamily: "var(--font-inter), Inter, -apple-system, sans-serif",
+  },
+  buttonBack: {
+    color: "#8E8E93",
+    fontSize: 14,
+    fontWeight: 500,
+    marginRight: 8,
+    fontFamily: "var(--font-inter), Inter, -apple-system, sans-serif",
+  },
+  buttonSkip: {
+    color: "#8E8E93",
+    fontSize: 13,
+    fontWeight: 400,
+    fontFamily: "var(--font-inter), Inter, -apple-system, sans-serif",
+  },
+  spotlight: {
+    borderRadius: 14,
+  },
+  beacon: {
+    display: "none",
+  },
+};
+
+// Tour steps (indices 0-7, Joyride manages sequencing)
+const TOUR_STEPS: any[] = [
+  {
+    target: "body",
+    placement: "center",
+    disableBeacon: true,
+    title: "Welcome to Elena 👋",
+    content: "Let me give you a quick tour. This will only take a moment.",
+    locale: { next: "Get Started" },
+  },
+  {
+    target: "[data-tour='profile-button']",
+    placement: "top",
+    disableBeacon: true,
+    title: "Your health profile",
+    content: "This is where your doctors, medications, insurance, and appointments live. All your health data in one place.",
+  },
+  {
+    target: "[data-tour='tab-health']",
+    placement: "bottom",
+    disableBeacon: true,
+    title: "Health",
+    content: "Your game plan, doctors, medications, and to-dos. As you use Elena, she automatically adds and updates everything here.",
+  },
+  {
+    target: "[data-tour='tab-insurance']",
+    placement: "bottom",
+    disableBeacon: true,
+    title: "Insurance",
+    content: "Your insurance cards are stored here. Elena uses them to check coverage, find in-network doctors, and estimate your costs.",
+  },
+  {
+    target: "[data-tour='profile-switcher']",
+    placement: "bottom",
+    disableBeacon: true,
+    title: "Family profiles",
+    content: "This is where you can add family members. Each person gets their own profile with separate health data, doctors, and insurance.",
+  },
+  {
+    target: "body",
+    placement: "center",
+    disableBeacon: true,
+    title: "Chat with Elena 💬",
+    content: "Ask Elena anything about your health, insurance, or appointments. She can make calls, compare prices, and manage your care. Your conversations are saved in the sidebar.",
+    locale: { next: "Got it", last: "Got it" },
+  },
+];
 
 export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover }: WebOnboardingTourProps) {
-  const [step, setStep] = useState<TourStep>(0);
+  const [run, setRun] = useState(false);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [showCareContext, setShowCareContext] = useState(true);
   const [careSelections, setCareSelections] = useState<string[]>([]);
-  const [visible, setVisible] = useState(true);
+  const completedRef = useRef(false);
 
   useEffect(() => {
     analytics.track("Web Tour Started" as any);
   }, []);
 
-  const trackStep = useCallback((stepNum: number, name: string) => {
-    analytics.track("Web Tour Step Viewed" as any, { step: stepNum, step_name: name });
-  }, []);
-
-  const nextGuard = useRef(false);
-  const next = useCallback(() => {
-    if (nextGuard.current) return;
-    nextGuard.current = true;
-    setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1) as TourStep);
-    setTimeout(() => { nextGuard.current = false; }, 400);
-  }, []);
-
-  const skip = useCallback(() => {
-    analytics.track("Web Tour Skipped" as any, { at_step: step });
-    localStorage.setItem("elena_web_tour_done", "true");
-    onProfilePopover(false);
-    setVisible(false);
-    setTimeout(onComplete, 300);
-  }, [step, onComplete, onProfilePopover]);
-
-  const finish = useCallback(() => {
-    analytics.track("Web Tour Completed" as any);
-    localStorage.setItem("elena_web_tour_done", "true");
-    onProfilePopover(false);
-    setVisible(false);
-    setTimeout(onComplete, 300);
-  }, [onComplete, onProfilePopover]);
-
-  const advancingRef = useRef(false);
-  const handleCareSubmit = useCallback(() => {
-    if (advancingRef.current) return;
-    advancingRef.current = true;
+  // Start joyride after care context step
+  const startJoyride = useCallback(() => {
+    setShowCareContext(false);
     if (careSelections.length > 0) {
       analytics.track("Web Tour Care Context" as any, { care_for: careSelections });
     }
-    next();
-    setTimeout(() => { advancingRef.current = false; }, 500);
-  }, [careSelections, next]);
+    setRun(true);
+  }, [careSelections]);
 
-  // Step 7: open the real paywall and end the tour
-  useEffect(() => {
-    if (step === 8) {
-      trackStep(8, "paywall");
-      onShowPaywall();
-      finish();
+  const finish = useCallback(() => {
+    if (completedRef.current) return;
+    completedRef.current = true;
+    analytics.track("Web Tour Completed" as any);
+    localStorage.setItem("elena_web_tour_done", "true");
+    onProfilePopover(false, undefined, false);
+    setRun(false);
+    onShowPaywall();
+    onComplete();
+  }, [onComplete, onShowPaywall, onProfilePopover]);
+
+  const skip = useCallback(() => {
+    if (completedRef.current) return;
+    completedRef.current = true;
+    analytics.track("Web Tour Skipped" as any, { at_step: stepIndex });
+    localStorage.setItem("elena_web_tour_done", "true");
+    onProfilePopover(false, undefined, false);
+    setRun(false);
+    onComplete();
+  }, [stepIndex, onComplete, onProfilePopover]);
+
+  // Control profile popover based on Joyride step
+  const handleJoyrideCallback = useCallback((data: any) => {
+    const { status, index, action, type } = data;
+
+    if (type === "step:after") {
+      const nextIndex = index + (action === "prev" ? -1 : 1);
+      setStepIndex(nextIndex);
+      analytics.track("Web Tour Step Viewed" as any, { step: nextIndex, step_name: TOUR_STEPS[nextIndex]?.title });
+
+      // Control popover based on which step we're going to
+      if (nextIndex === 1) {
+        // Profile button step - close popover
+        onProfilePopover(false, undefined, false);
+      } else if (nextIndex === 2) {
+        // Health tab
+        onProfilePopover(true, "health", false);
+      } else if (nextIndex === 3) {
+        // Insurance tab
+        onProfilePopover(true, "insurance", false);
+      } else if (nextIndex === 4) {
+        // Family switcher
+        onProfilePopover(true, "health", true);
+      } else if (nextIndex >= 5) {
+        // Chat step - close popover
+        onProfilePopover(false, undefined, false);
+      }
     }
-  }, [step, trackStep, onShowPaywall, finish]);
 
-  // Control profile popover based on step
-  // Step 2: spotlight the profile button (popover closed)
-  // Steps 3-6: popover open with tour cards on top
-  useEffect(() => {
-    if (step === 3) onProfilePopover(true, "health", false);
-    else if (step === 4) onProfilePopover(true, "visits", false);
-    else if (step === 5) onProfilePopover(true, "insurance", false);
-    else if (step === 6) onProfilePopover(true, "health", true);
-    else onProfilePopover(false, undefined, false);
-  }, [step, onProfilePopover]);
+    if (status === "finished") {
+      finish();
+    } else if (status === "skipped") {
+      skip();
+    }
+  }, [onProfilePopover, finish, skip]);
 
-  if (!visible) return null;
-
-  return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[300] font-[family-name:var(--font-inter)]"
-        style={{ pointerEvents: "none" }}
-      >
-        {/* Backdrop - always visible but lighter during popover steps */}
-        <div
-          className={`absolute inset-0 transition-colors duration-300 ${step === 2 ? "bg-transparent" : step >= 3 && step <= 6 ? "bg-black/55" : "bg-black/45"}`}
-          style={{ pointerEvents: step === 2 ? "none" : "auto", zIndex: step >= 3 && step <= 6 ? 390 : 301 }}
-          data-tour-backdrop
-          onClick={(e) => e.stopPropagation()}
-        />
+  // Show care context modal first
+  if (showCareContext) {
+    return (
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center font-[family-name:var(--font-inter)]">
+        <div className="absolute inset-0 bg-black/45" />
 
         {/* Skip button */}
         <button
           onClick={skip}
-          className="absolute top-4 right-4 z-[310] flex items-center gap-1 text-white/60 text-sm hover:text-white transition-colors"
-          style={{ pointerEvents: "auto" }}
+          className="absolute top-4 right-4 z-10 flex items-center gap-1 text-white/60 text-sm hover:text-white transition-colors"
         >
           Skip tour <X className="w-4 h-4" />
         </button>
 
-        {/* Step content */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={step}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.25 }}
-            className="absolute inset-0 flex items-center justify-center"
-            style={{ pointerEvents: "none" }}
-          >
-            {step === 0 && <TourCard onNext={() => { trackStep(0, "welcome"); next(); }}>
-              <div className="text-center">
-                <div className="text-[40px] mb-3">👋</div>
-                <h2 className="text-[24px] font-extrabold text-[#0F1B3D] mb-2">Welcome to Elena</h2>
-                <p className="text-[15px] text-[#8E8E93] font-light leading-relaxed">
-                  Let me show you around. This will only take a moment.
-                </p>
-              </div>
-              <TourButton onClick={() => { trackStep(0, "welcome"); next(); }} label="Get Started" />
-            </TourCard>}
-
-            {step === 1 && <TourCard onNext={handleCareSubmit}>
-              <div className="text-center mb-5">
-                <h2 className="text-[22px] font-extrabold text-[#0F1B3D] mb-2">Who are you managing care for?</h2>
-                <p className="text-[14px] text-[#8E8E93] font-light">Select all that apply.</p>
-              </div>
-              <div className="flex flex-col gap-2.5">
-                {CARE_OPTIONS.map((opt) => {
-                  const Icon = opt.icon;
-                  const selected = careSelections.includes(opt.id);
-                  return (
-                    <button
-                      key={opt.id}
-                      onClick={() => setCareSelections((prev) => prev.includes(opt.id) ? prev.filter((s) => s !== opt.id) : [...prev, opt.id])}
-                      className={`flex items-center gap-3 w-full px-4 py-3.5 rounded-xl border text-left transition-all ${
-                        selected ? "bg-[#0F1B3D]/[0.04] border-[#0F1B3D] shadow-[0_0_0_1px_#0F1B3D]" : "bg-white border-[#E5E5EA] hover:border-[#0F1B3D]/20"
-                      }`}
-                      style={{ pointerEvents: "auto" }}
-                    >
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selected ? "bg-[#0F1B3D]" : "bg-[#F5F7FB]"}`}>
-                        <Icon className={`w-4 h-4 ${selected ? "text-white" : "text-[#8E8E93]"}`} />
-                      </div>
-                      <span className={`text-[15px] font-medium ${selected ? "text-[#0F1B3D]" : "text-[#1C1C1E]"}`}>{opt.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <TourButton onClick={() => { trackStep(1, "care_context"); handleCareSubmit(); }} label="Continue" />
-            </TourCard>}
-
-            {step === 2 && <ProfileButtonSpotlight onNext={() => { trackStep(2, "profile_button"); next(); }} />}
-
-            {step === 3 && <TourCard onNext={() => { trackStep(3, "health_tab"); next(); }} position="overlay">
-              <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Health</h3>
-              <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
-                Your game plan, doctors, medications, and to-dos live here. As you use Elena, she automatically adds and updates everything.
-              </p>
-              <TourNextLink onClick={() => { trackStep(3, "health_tab"); next(); }} />
-            </TourCard>}
-
-            {step === 4 && <TourCard onNext={() => { trackStep(4, "visits_tab"); next(); }} position="overlay">
-              <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Visits</h3>
-              <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
-                Your full visit timeline. Past and upcoming appointments, visit notes, and documents are all tracked here.
-              </p>
-              <TourNextLink onClick={() => { trackStep(4, "visits_tab"); next(); }} />
-            </TourCard>}
-
-            {step === 5 && <TourCard onNext={() => { trackStep(5, "insurance_tab"); next(); }} position="overlay">
-              <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Insurance</h3>
-              <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
-                Your insurance cards are stored here. Elena uses them to check coverage, find in-network doctors, and estimate your costs.
-              </p>
-              <TourNextLink onClick={() => { trackStep(5, "insurance_tab"); next(); }} />
-            </TourCard>}
-
-            {step === 6 && <TourCard onNext={() => { trackStep(6, "family_switcher"); next(); }} position="overlay">
-              <h3 className="text-[18px] font-bold text-[#0F1B3D] mb-2">Family profiles</h3>
-              <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
-                This is where you can add family members. Each person gets their own profile with separate health data, doctors, and insurance.
-              </p>
-              <TourNextLink onClick={() => { trackStep(6, "family_switcher"); next(); }} />
-            </TourCard>}
-
-            {step === 7 && <TourCard onNext={() => { trackStep(7, "chat"); next(); }}>
-              <div className="text-center">
-                <div className="text-[32px] mb-3">💬</div>
-                <h2 className="text-[20px] font-bold text-[#0F1B3D] mb-2">Chat with Elena</h2>
-                <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
-                  Ask anything about your health, insurance, or appointments. Elena can make calls, compare prices, and manage your care. Your conversations are saved in the sidebar.
-                </p>
-              </div>
-              <TourButton onClick={() => { trackStep(7, "chat"); next(); }} label="Got it" />
-            </TourCard>}
-
-            {step === 8 && null}
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Progress dots */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-[310]">
-          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-            <div
-              key={i}
-              className={`h-2 rounded-full transition-all ${
-                i === step ? "bg-white w-6" : i < step ? "bg-white/60 w-2" : "bg-white/20 w-2"
-              }`}
-            />
-          ))}
-        </div>
-      </motion.div>
-    </AnimatePresence>
-  );
-}
-
-// ─── Shared sub-components ──────────────────────────────────────
-
-function TourCard({ children, onNext, position = "center" }: { children: React.ReactNode; onNext: () => void; position?: "center" | "overlay" }) {
-  const card = (
-    <div
-      className={position === "overlay"
-        ? "fixed inset-0 flex items-center justify-center"
-        : "relative flex items-center justify-center"
-      }
-      style={{ pointerEvents: "none", zIndex: 99999 }}
-    >
-      <div
-        className="max-w-sm w-full mx-6"
-        style={{ pointerEvents: "auto" }}
-      >
-        <div className="rounded-2xl bg-white p-7 shadow-[0_8px_30px_rgba(15,27,61,0.15)]">
-          {children}
+        <div className="relative z-10 max-w-sm w-full mx-6">
+          <div className="rounded-2xl bg-white p-7 shadow-[0_8px_30px_rgba(15,27,61,0.15)]">
+            <div className="text-center mb-5">
+              <h2 className="text-[22px] font-extrabold text-[#0F1B3D] mb-2">Who are you managing care for?</h2>
+              <p className="text-[14px] text-[#8E8E93] font-light">Select all that apply.</p>
+            </div>
+            <div className="flex flex-col gap-2.5">
+              {CARE_OPTIONS.map((opt) => {
+                const Icon = opt.icon;
+                const selected = careSelections.includes(opt.id);
+                return (
+                  <button
+                    key={opt.id}
+                    onClick={() => setCareSelections((prev) => prev.includes(opt.id) ? prev.filter((s) => s !== opt.id) : [...prev, opt.id])}
+                    className={`flex items-center gap-3 w-full px-4 py-3.5 rounded-xl border text-left transition-all ${
+                      selected ? "bg-[#0F1B3D]/[0.04] border-[#0F1B3D] shadow-[0_0_0_1px_#0F1B3D]" : "bg-white border-[#E5E5EA] hover:border-[#0F1B3D]/20"
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selected ? "bg-[#0F1B3D]" : "bg-[#F5F7FB]"}`}>
+                      <Icon className={`w-4 h-4 ${selected ? "text-white" : "text-[#8E8E93]"}`} />
+                    </div>
+                    <span className={`text-[15px] font-medium ${selected ? "text-[#0F1B3D]" : "text-[#1C1C1E]"}`}>{opt.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={startJoyride}
+              className="w-full mt-5 py-3.5 rounded-xl text-white font-semibold text-[15px] transition-opacity hover:opacity-90"
+              style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%, #2E6BB5 100%)" }}
+            >
+              Continue
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  );
-
-  if (position === "overlay" && typeof document !== "undefined") {
-    return createPortal(card, document.body);
+    );
   }
-  return card;
-}
-
-function TourButton({ onClick, label }: { onClick: () => void; label: string }) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-full mt-5 py-3.5 rounded-xl text-white font-semibold text-[15px] transition-opacity hover:opacity-90"
-      style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%, #2E6BB5 100%)", pointerEvents: "auto" }}
-    >
-      {label}
-    </button>
-  );
-}
-
-function TourNextLink({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="mt-3 flex items-center gap-1.5 text-[14px] font-semibold text-[#0F1B3D] hover:opacity-70 transition-opacity"
-      style={{ pointerEvents: "auto" }}
-    >
-      Next <ChevronRight className="w-4 h-4" />
-    </button>
-  );
-}
-
-function ProfileButtonSpotlight({ onNext }: { onNext: () => void }) {
-  const [rect, setRect] = useState<DOMRect | null>(null);
-
-  useEffect(() => {
-    const el = document.querySelector('[data-tour="profile-button"]');
-    if (el) setRect(el.getBoundingClientRect());
-  }, []);
-
-  const pad = 6;
 
   return (
-    <>
-      {/* Spotlight cutout on the profile button */}
-      {rect && (
-        <div
-          style={{
-            position: "fixed",
-            left: rect.left - pad,
-            top: rect.top - pad,
-            width: rect.width + pad * 2,
-            height: rect.height + pad * 2,
-            borderRadius: 14,
-            boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.5)",
-            zIndex: 305,
-            pointerEvents: "none",
-          }}
-        />
-      )}
-      {/* Tooltip positioned above the profile button */}
-      <div
-        className="z-[360] max-w-xs"
-        style={{
-          pointerEvents: "auto",
-          position: "fixed",
-          left: rect ? rect.left : 16,
-          bottom: rect ? (window.innerHeight - rect.top + pad + 12) : 100,
-        }}
-      >
-        <div className="rounded-2xl bg-white p-5 shadow-[0_8px_30px_rgba(15,27,61,0.15)]">
-          <div className="absolute -bottom-1.5 left-8 w-3 h-3 bg-white rotate-45" />
-          <h3 className="text-[17px] font-bold text-[#0F1B3D] mb-1.5">Your health profile</h3>
-          <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">
-            This is where your doctors, medications, insurance, and appointments live.
-          </p>
-          <TourNextLink onClick={onNext} />
-        </div>
-      </div>
-    </>
+    <Joyride
+      steps={TOUR_STEPS}
+      run={run}
+      stepIndex={stepIndex}
+      continuous
+      showSkipButton
+      showProgress={false}
+      disableOverlayClose
+      disableCloseOnEsc={false}
+      callback={handleJoyrideCallback}
+      styles={joyrideStyles}
+      floaterProps={{
+        disableAnimation: true,
+        styles: { floater: { zIndex: 99999 } },
+      }}
+      locale={{
+        back: "Back",
+        next: "Next",
+        skip: "Skip tour",
+        last: "Finish",
+      }}
+    />
   );
 }
