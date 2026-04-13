@@ -116,8 +116,8 @@ export function WebOnboardingTour({ onComplete, onShowPaywall }: WebOnboardingTo
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-[300] font-[family-name:var(--font-inter)]"
       >
-        {/* Backdrop */}
-        <div className="absolute inset-0 bg-black/50" />
+        {/* Backdrop - hidden when spotlight steps are active (they use box-shadow instead) */}
+        {(step <= 1 || step >= 6) && <div className="absolute inset-0 bg-black/50" />}
 
         {/* Skip button - always visible */}
         <button
@@ -303,7 +303,7 @@ function SpotlightStep({
   }
 
   // Spotlight hole position
-  const pad = 8;
+  const pad = 12;
   const holeStyle: React.CSSProperties = {
     position: "fixed",
     left: rect.left - pad,
@@ -311,9 +311,10 @@ function SpotlightStep({
     width: rect.width + pad * 2,
     height: rect.height + pad * 2,
     borderRadius: 16,
-    boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.5)",
+    boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.45)",
     zIndex: 305,
     pointerEvents: "none",
+    background: "transparent",
   };
 
   // Tooltip position
