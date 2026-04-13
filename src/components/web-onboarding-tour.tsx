@@ -2,15 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronRight, Heart, Users, User, Baby, HelpCircle } from "lucide-react";
+import { useJoyride, EVENTS, STATUS } from "react-joyride";
 import * as analytics from "@/lib/analytics";
-
-// Use the hook API from react-joyride v3
-let useJoyrideHook: any = null;
-let JOYRIDE_STATUS: any = {};
-let JOYRIDE_EVENTS: any = {};
-let JOYRIDE_ACTIONS: any = {};
 
 interface WebOnboardingTourProps {
   onComplete: () => void;
@@ -27,14 +21,7 @@ const CARE_OPTIONS = [
 ];
 
 const joyrideStyles: any = {
-  options: {
-    primaryColor: "#0F1B3D",
-    zIndex: 99999,
-    arrowColor: "#fff",
-    backgroundColor: "#fff",
-    textColor: "#0F1B3D",
-    overlayColor: "rgba(0, 0, 0, 0.45)",
-  },
+  options: { primaryColor: "#0F1B3D", zIndex: 99999, arrowColor: "#fff", backgroundColor: "#fff", textColor: "#0F1B3D", overlayColor: "rgba(0,0,0,0.45)" },
   tooltip: { borderRadius: 20, padding: "28px 32px", boxShadow: "0 8px 30px rgba(15,27,61,0.15)", maxWidth: 360 },
   tooltipTitle: { fontSize: 20, fontWeight: 800, color: "#0F1B3D", marginBottom: 6, textAlign: "center" as const },
   tooltipContent: { fontSize: 15, fontWeight: 300, color: "#5a6a82", lineHeight: 1.65, padding: "6px 0 0", textAlign: "center" as const },
@@ -48,100 +35,73 @@ const joyrideStyles: any = {
 };
 
 const TOUR_STEPS: any[] = [
-  { target: "[data-tour='profile-button']", placement: "top" as const, disableBeacon: true, title: "Your health profile", content: "This is where your doctors, medications, insurance, and appointments live.", locale: { next: "Show me" } },
-  { target: "[data-tour='tab-health']", placement: "right" as const, disableBeacon: true, title: "Health", content: "Your game plan, doctors, medications, and to-dos. Elena automatically adds and updates everything here." },
-  { target: "[data-tour='tab-insurance']", placement: "right" as const, disableBeacon: true, title: "Insurance", content: "Your insurance cards are stored here. Elena uses them to check coverage, find in-network doctors, and estimate your costs." },
-  { target: "[data-tour='profile-switcher']", placement: "right" as const, disableBeacon: true, title: "Family profiles", content: "This is where you can add family members. Each person gets their own profile with separate health data." },
+  { target: "[data-tour='profile-button']", placement: "top", disableBeacon: true, title: "Your health profile", content: "This is where your doctors, medications, insurance, and appointments live.", locale: { next: "Show me" } },
+  { target: "[data-tour='tab-health']", placement: "right", disableBeacon: true, title: "Health", content: "Your game plan, doctors, medications, and to-dos. Elena automatically adds and updates everything here." },
+  { target: "[data-tour='tab-insurance']", placement: "right", disableBeacon: true, title: "Insurance", content: "Your insurance cards are stored here. Elena uses them to check coverage, find in-network doctors, and estimate your costs." },
+  { target: "[data-tour='profile-switcher']", placement: "right", disableBeacon: true, title: "Family profiles", content: "This is where you can add family members. Each person gets their own profile with separate health data." },
 ];
-
-function JoyrideTour({ onStepChange, onFinish, onSkip }: { onStepChange: (idx: number) => void; onFinish: () => void; onSkip: () => void }) {
-  const [JoyrideComp, setJoyrideComp] = useState<any>(null);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    console.log("[joyride-tour] loading module...");
-    import("react-joyride").then((mod) => {
-      console.log("[joyride-tour] module loaded, keys:", Object.keys(mod));
-      console.log("[joyride-tour] Joyride type:", typeof mod.Joyride);
-      setJoyrideComp(() => mod.Joyride);
-      JOYRIDE_STATUS = mod.STATUS;
-      JOYRIDE_EVENTS = mod.EVENTS;
-      JOYRIDE_ACTIONS = mod.ACTIONS;
-      setTimeout(() => {
-        console.log("[joyride-tour] ready, target exists:", !!document.querySelector("[data-tour='profile-button']"));
-        setReady(true);
-      }, 500);
-    }).catch((err) => {
-      console.error("[joyride-tour] failed to load:", err);
-    });
-  }, []);
-
-  const handleCallback = useCallback((data: any) => {
-    const { status, index, action, type } = data;
-    console.log("[joyride]", { status, index, action, type });
-
-    if (type === JOYRIDE_EVENTS.STEP_AFTER) {
-      const nextIdx = action === JOYRIDE_ACTIONS.PREV ? index - 1 : index + 1;
-      if (nextIdx >= TOUR_STEPS.length) {
-        onFinish();
-      } else {
-        onStepChange(nextIdx);
-      }
-    }
-
-    if (status === JOYRIDE_STATUS.FINISHED) onFinish();
-    if (status === JOYRIDE_STATUS.SKIPPED) onSkip();
-    if (type === JOYRIDE_EVENTS.TARGET_NOT_FOUND) {
-      console.warn("[joyride] target not found at step", index);
-    }
-  }, [onStepChange, onFinish, onSkip]);
-
-  console.log("[joyride-tour] render:", { hasComp: !!JoyrideComp, ready });
-  if (!JoyrideComp || !ready) return null;
-  console.log("[joyride-tour] rendering Joyride component");
-
-  return (
-    <JoyrideComp
-      steps={TOUR_STEPS}
-      run={true}
-      continuous
-      showSkipButton
-      showProgress={false}
-      disableOverlayClose
-      callback={handleCallback}
-      styles={joyrideStyles}
-      locale={{ back: "Back", next: "Next", skip: "Skip tour", last: "Finish" }}
-    />
-  );
-}
 
 export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover }: WebOnboardingTourProps) {
   const [phase, setPhase] = useState<"care" | "tour" | "done">("care");
   const [careSelections, setCareSelections] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
+  const finishedRef = useRef(false);
+
+  const { controls, state, on, Tour } = useJoyride({
+    steps: TOUR_STEPS,
+    continuous: true,
+  } as any);
 
   useEffect(() => { setMounted(true); analytics.track("Web Tour Started" as any); }, []);
 
-  const handleStepChange = useCallback((idx: number) => {
-    analytics.track("Web Tour Step Viewed" as any, { step: idx, step_name: TOUR_STEPS[idx]?.title });
-    // Control profile popover
-    if (idx === 0) onProfilePopover(false);
-    else if (idx === 1) onProfilePopover(true, "health", false);
-    else if (idx === 2) onProfilePopover(true, "insurance", false);
-    else if (idx === 3) onProfilePopover(true, "health", true);
-    else onProfilePopover(false);
-  }, [onProfilePopover]);
+  // Subscribe to joyride events
+  useEffect(() => {
+    const unsubAfter = on(EVENTS.STEP_AFTER, (data: any) => {
+      console.log("[tour] step:after", data);
+      const nextIdx = data.index + 1;
+      analytics.track("Web Tour Step Viewed" as any, { step: nextIdx, step_name: TOUR_STEPS[nextIdx]?.title });
 
-  const handleFinish = useCallback(() => {
-    analytics.track("Web Tour Completed" as any);
-    localStorage.setItem("elena_web_tour_done", "true");
-    onProfilePopover(false, undefined, false);
-    setPhase("done");
-    onShowPaywall();
-    onComplete();
-  }, [onComplete, onShowPaywall, onProfilePopover]);
+      // Control profile popover for next step
+      if (nextIdx === 1) onProfilePopover(true, "health", false);
+      else if (nextIdx === 2) onProfilePopover(true, "insurance", false);
+      else if (nextIdx === 3) onProfilePopover(true, "health", true);
+    });
+
+    const unsubEnd = on(EVENTS.TOUR_END, () => {
+      console.log("[tour] tour:end");
+      if (finishedRef.current) return;
+      finishedRef.current = true;
+      analytics.track("Web Tour Completed" as any);
+      localStorage.setItem("elena_web_tour_done", "true");
+      onProfilePopover(false, undefined, false);
+      setPhase("done");
+      onShowPaywall();
+      onComplete();
+    });
+
+    const unsubStatus = on(EVENTS.TOUR_STATUS, (data: any) => {
+      console.log("[tour] status:", data.status);
+      if (data.status === STATUS.SKIPPED) {
+        if (finishedRef.current) return;
+        finishedRef.current = true;
+        analytics.track("Web Tour Skipped" as any);
+        localStorage.setItem("elena_web_tour_done", "true");
+        onProfilePopover(false, undefined, false);
+        setPhase("done");
+        onComplete();
+      }
+    });
+
+    const unsubError = on(EVENTS.TARGET_NOT_FOUND, (data: any) => {
+      console.warn("[tour] target not found:", data);
+    });
+
+    return () => { unsubAfter(); unsubEnd(); unsubStatus(); unsubError(); };
+  }, [on, onComplete, onShowPaywall, onProfilePopover]);
 
   const handleSkip = useCallback(() => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
     analytics.track("Web Tour Skipped" as any);
     localStorage.setItem("elena_web_tour_done", "true");
     onProfilePopover(false, undefined, false);
@@ -151,10 +111,13 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
 
   const startTour = useCallback(() => {
     if (careSelections.length > 0) analytics.track("Web Tour Care Context" as any, { care_for: careSelections });
-    // Open profile popover for first step
-    onProfilePopover(false);
     setPhase("tour");
-  }, [careSelections, onProfilePopover]);
+    // Start the tour after a brief delay for DOM targets to be ready
+    setTimeout(() => {
+      console.log("[tour] calling controls.start()");
+      controls.start();
+    }, 300);
+  }, [careSelections, controls]);
 
   if (!mounted || phase === "done") return null;
 
@@ -194,7 +157,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
     );
   }
 
-  // Phase 2: Joyride tour
-  console.log("[tour] rendering JoyrideTour phase");
-  return <JoyrideTour onStepChange={handleStepChange} onFinish={handleFinish} onSkip={handleSkip} />;
+  // Phase 2: Tour is rendered by the hook's Tour element
+  console.log("[tour] phase=tour, Tour element:", !!Tour);
+  return Tour;
 }
