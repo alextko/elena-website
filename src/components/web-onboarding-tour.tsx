@@ -27,10 +27,10 @@ const JOYRIDE_STEPS: any[] = [
 
 // Profile popover steps use custom overlay cards (can't target portal DOM)
 const PROFILE_STEPS = [
-  { id: "health", title: "Health", body: "Your game plan, doctors, medications, and to-dos. As you use Elena, she automatically adds and updates everything here.", tab: "health" as const },
-  { id: "visits", title: "Visits", body: "Your full visit timeline. Past and upcoming appointments, visit notes, and documents are all tracked here.", tab: "visits" as const },
-  { id: "insurance", title: "Insurance", body: "Your insurance cards are stored here. Elena uses them to check coverage, find in-network doctors, and estimate your costs.", tab: "insurance" as const },
-  { id: "family", title: "Family profiles", body: "This is where you can add family members. Each person gets their own profile with separate health data.", tab: "health" as const, showSwitcher: true },
+  { id: "health", title: "This is your Health tab.", body: "Here you'll find your game plan, your doctors, medications, and daily to-dos. As you chat with Elena, she fills this in automatically.", tab: "health" as const },
+  { id: "visits", title: "This is your Visits tab.", body: "Every appointment Elena books shows up here. You can review past visits, read notes, and keep track of what's coming up.", tab: "visits" as const },
+  { id: "insurance", title: "This is your Insurance tab.", body: "Upload your insurance card here. Elena will use it to check what's covered, find in-network providers, and estimate your costs before you go.", tab: "insurance" as const },
+  { id: "family", title: "You can also manage family members.", body: "If you're helping a parent, partner, or child with their care, add them here. Each person gets their own profile with separate health data, doctors, and insurance.", tab: "health" as const, showSwitcher: true },
 ];
 
 type Phase = "care" | "joyride" | "profile" | "chat" | "done";
@@ -165,13 +165,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
               <h3 className="text-[18px] font-extrabold text-[#0F1B3D] mb-1.5">{currentStep.title}</h3>
               <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">{currentStep.body}</p>
             </div>
-            <div className="flex gap-3 mt-4">
-              <button onClick={skipTour} className="flex-1 py-3 rounded-xl text-[14px] font-medium text-[#8E8E93] hover:text-[#0F1B3D] transition-colors">Skip</button>
-              <button onClick={nextProfile} className="flex-1 py-3 rounded-xl text-white font-semibold text-[14px] hover:opacity-90"
-                style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%)" }}>
-                {profileStep >= PROFILE_STEPS.length - 1 ? "Got it" : "Next"}
-              </button>
-            </div>
+            <button onClick={nextProfile} className="w-full mt-4 py-3 rounded-xl text-white font-semibold text-[14px] hover:opacity-90"
+              style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%)" }}>
+              {profileStep >= PROFILE_STEPS.length - 1 ? "Got it" : "Next"}
+            </button>
           </div>
         </div>
       </div>,
