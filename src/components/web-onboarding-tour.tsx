@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import dynamic from "next/dynamic";
 import { X, ChevronRight, Heart, Users, User, Baby, HelpCircle } from "lucide-react";
 import * as analytics from "@/lib/analytics";
-
-// Dynamic import to avoid SSR issues with Joyride
-const Joyride = dynamic(() => import("react-joyride").then((m: any) => m.Joyride || m.default || m), { ssr: false }) as any;
+import { Joyride as JoyrideComponent } from "react-joyride";
+const Joyride = JoyrideComponent as any;
 
 interface WebOnboardingTourProps {
   onComplete: () => void;
