@@ -272,11 +272,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Fetch detailed profile data (doctors, appointments, credits) — called lazily
+  // Fetch detailed profile data (doctors, appointments, credits) — called eagerly on login
   const fetchProfileDetails = useCallback(async () => {
     if (profileDetailsLoaded || profileDetailsFetchingRef.current) return;
     profileDetailsFetchingRef.current = true;
     const fetchVersion = profileFetchVersionRef.current;
+
+    // Restore cached profile details instantly so the popover isn't blank
+    try {
+      const cached = sessionStorage.getItem("elena_profile_details");
+      if (cached) {
+        const c = JSON.parse(cached);
+        const cachedProfileId = c._profileId;
+        if (cachedProfileId === profileId) {
+          if (c.doctors) setDoctors(c.doctors);
+          if (c.careVisits) setCareVisits(c.careVisits);
+          if (c.todos) setTodos(c.todos);
+          if (c.todayTodos) setTodayTodos(c.todayTodos);
+          if (c.habits) setHabits(c.habits);
+          if (c.insuranceCards) setInsuranceCards(c.insuranceCards);
+          if (c.subscription) setSubscription(c.subscription);
+          // habitCompletions uses Sets which don't serialize — skip cache
+          setProfileDetailsLoaded(true);
+        }
+      }
+    } catch {}
 
     // Collect all results first, then apply atomically (prevents stale data on profile switch)
     let doctorsResult: DoctorItem[] | null = null;
@@ -427,6 +447,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (insuranceResult !== null) setInsuranceCards(insuranceResult);
     if (subscriptionResult !== null) setSubscription(subscriptionResult);
     setProfileDetailsLoaded(true);
+
+    // Cache for instant restore on next page load (skip habitCompletions — Sets don't serialize)
+    try {
+      sessionStorage.setItem("elena_profile_details", JSON.stringify({
+        _profileId: profileId,
+        doctors: doctorsResult,
+        careVisits: visitsResult,
+        todos: todosResult,
+        todayTodos: todayTodosResult,
+        habits: habitsResult,
+        insuranceCards: insuranceResult,
+        subscription: subscriptionResult,
+      }));
+    } catch {}
   }, [profileId, profileDetailsLoaded]);
 
   // Refresh just subscription/credits — used after Stripe checkout redirect
@@ -479,7 +513,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setHabitCompletions({});
         setProfileDetailsLoaded(false);
         profileFetchedRef.current = false;
-        try { sessionStorage.removeItem("elena_me_cache"); } catch {}
+        try { sessionStorage.removeItem("elena_me_cache"); sessionStorage.removeItem("elena_profile_details"); } catch {}
       }
       // TOKEN_REFRESHED, USER_UPDATED, etc. — do nothing, just keep the session
     });
@@ -803,6 +837,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Clear all cached data and allow re-fetch
     setProfileDetailsLoaded(false);
     profileDetailsFetchingRef.current = false;
+    try { sessionStorage.removeItem("elena_profile_details"); } catch {}
     setDoctors([]);
     setCareVisits([]);
     setInsuranceCards([]);
