@@ -244,12 +244,11 @@ function ChatPageInner() {
   useEffect(() => {
     const forceTour = searchParams.get("tour") === "1";
     if (onboardingJustCompleted || forceTour) {
-      const tourDone = localStorage.getItem("elena_web_tour_done");
-      if (!tourDone || forceTour) {
-        if (forceTour) localStorage.removeItem("elena_web_tour_done");
-        const timer = setTimeout(() => setShowTour(true), 1000);
-        return () => clearTimeout(timer);
-      }
+      // Always show tour after fresh onboarding (clear stale flag from previous accounts)
+      if (onboardingJustCompleted) localStorage.removeItem("elena_web_tour_done");
+      if (forceTour) localStorage.removeItem("elena_web_tour_done");
+      const timer = setTimeout(() => setShowTour(true), 1000);
+      return () => clearTimeout(timer);
     }
   }, [onboardingJustCompleted, searchParams]);
 
