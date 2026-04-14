@@ -12,7 +12,7 @@
     { "source": "/lp/chronic", "destination": "/?ref=chronic" },
     { "source": "/lp/insurance", "destination": "/?ref=insurance" },
     { "source": "/lp/care-now", "destination": "/?ref=care_now" },
-    { "source": "/lp/prices", "destination": "/?ref=prices" },
+    { "source": "/lp/price-transparency", "destination": "/?ref=prices" },
     { "source": "/lp/quiz", "destination": "/risk-assessment" }
   ]
 }

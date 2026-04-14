@@ -661,7 +661,7 @@ function LandingPage() {
     "/lp/chronic": "chronic",
     "/lp/insurance": "insurance",
     "/lp/care-now": "care_now",
-    "/lp/prices": "prices",
+    "/lp/price-transparency": "prices",
   };
   const ref = searchParams.get("ref") || searchParams.get("utm_content") || LP_PATH_MAP[pathname] || null;
   const hero = (ref && HERO_COPY[ref]) || null;
