@@ -4,7 +4,7 @@
     { "source": "/navigator", "destination": "/", "permanent": false }
   ],
   "rewrites": [
-    { "source": "/lp/bills", "destination": "/?ref=bills" },
+    { "source": "/lp/bill-fighting", "destination": "/?ref=bill_fighting" },
     { "source": "/lp/calls", "destination": "/?ref=calls" },
     { "source": "/lp/caregiver", "destination": "/?ref=caregiver" },
     { "source": "/lp/meds", "destination": "/?ref=meds" },

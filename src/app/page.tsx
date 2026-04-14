@@ -331,11 +331,11 @@ const INSURERS = [
 ];
 
 const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; subtitle: string; prefill: string }> = {
-  bills: {
-    headline: ["Never get a", "surprise bill again."],
-    accent: "again",
-    subtitle: "Elena helps you compare prices using real, insurance-negotiated rates. Never overpay again.",
-    prefill: "find the cheapest MRI near me",
+  bill_fighting: {
+    headline: ["Most medical bills", "have errors. Fight back."],
+    accent: "Fight back",
+    subtitle: "Up to 80% of medical bills contain mistakes. Elena finds overcharges, files appeals, and negotiates on your behalf so you never pay more than you owe.",
+    prefill: "I got a medical bill that seems too high, can you help?",
   },
   calls: {
     headline: ["Elena calls your", "insurance for you."],
@@ -411,13 +411,13 @@ const BLOBS = [
 // Each template is an array of segments. "text" segments are plain text,
 // "blank" segments render as styled pill inputs inline.
 const MADLIB_TEMPLATES: Record<string, { segments: { type: "text" | "blank"; value: string; placeholder?: string }[] }> = {
-  bills: {
+  bill_fighting: {
     segments: [
-      { type: "text", value: "I need a " },
-      { type: "blank", value: "", placeholder: "procedure" },
-      { type: "text", value: " done. Find me the cheapest option near " },
-      { type: "blank", value: "", placeholder: "zip code" },
-      { type: "text", value: "." },
+      { type: "text", value: "I got a bill for " },
+      { type: "blank", value: "", placeholder: "$___" },
+      { type: "text", value: " from " },
+      { type: "blank", value: "", placeholder: "provider" },
+      { type: "text", value: ". Can you check if I'm being overcharged?" },
     ],
   },
   calls: {
@@ -497,14 +497,14 @@ const MADLIB_TEMPLATES: Record<string, { segments: { type: "text" | "blank"; val
 };
 
 const ROTATING_QUERIES: Record<string, string[]> = {
-  bills: [
-    "compare cataract surgery prices near me",
-    "what options do i have for a hip replacement with Medicare?",
-    "find the cheapest MRI near me",
-    "what are the cheapest prices for a knee replacement in-network?",
-    "compare colonoscopy prices near me",
-    "compare affordable physical therapy prices near me",
-    "what are ultrasound costs at freestanding clinics nearby?",
+  bill_fighting: [
+    "I got a $4,200 ER bill, can you check if it's correct?",
+    "my insurance denied my claim, help me appeal",
+    "I was charged $800 for blood work, that seems way too high",
+    "help me negotiate this hospital bill down",
+    "I got a surprise out-of-network bill, what are my options?",
+    "can you check if my insurance should have covered this?",
+    "I'm being billed for a procedure that was supposed to be preventive",
   ],
   calls: [
     "call UnitedHealthcare about my denied claim",
@@ -653,7 +653,7 @@ function LandingPage() {
   // Rewrites keep the browser URL as /lp/bills but serve /?ref=bills internally.
   // useSearchParams reads the browser URL, so we also extract ref from the path.
   const LP_PATH_MAP: Record<string, string> = {
-    "/lp/bills": "bills",
+    "/lp/bill-fighting": "bill_fighting",
     "/lp/calls": "calls",
     "/lp/caregiver": "caregiver",
     "/lp/meds": "meds",

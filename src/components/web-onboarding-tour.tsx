@@ -13,6 +13,23 @@ interface WebOnboardingTourProps {
   onSidebar: (open: boolean) => void;
 }
 
+function TourTooltip({ step, primaryProps }: { step: any; primaryProps: any }) {
+  return (
+    <div className="font-[family-name:var(--font-inter)] w-[calc(100vw-2rem)] max-w-[360px]">
+      <div className="rounded-2xl bg-white p-6 shadow-[0_8px_30px_rgba(15,27,61,0.15)]">
+        <div className="text-center">
+          <h3 className="text-[18px] font-extrabold text-[#0F1B3D] mb-1.5">{step.title}</h3>
+          <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">{step.content}</p>
+        </div>
+        <button onClick={primaryProps.onClick} className="w-full mt-4 py-3 rounded-xl text-white font-semibold text-[14px] hover:opacity-90"
+          style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%)" }}>
+          {primaryProps.children}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const CARE_OPTIONS = [
   { id: "myself", label: "Myself", icon: User },
   { id: "parent", label: "My parent", icon: Heart },
@@ -33,6 +50,7 @@ const JOYRIDE_STEPS: any[] = [
     locale: { next: "Show me", last: "Show me" },
     hideCloseButton: true,
     primaryColor: "#0F1B3D",
+    tooltipComponent: TourTooltip,
   },
 ];
 
@@ -60,12 +78,6 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     continuous: true,
     styles: {
       options: { primaryColor: "#0F1B3D", zIndex: 99999, overlayColor: "rgba(0,0,0,0.45)" },
-      tooltip: { borderRadius: 20, padding: "28px 32px", boxShadow: "0 8px 30px rgba(15,27,61,0.15)", maxWidth: 360, fontFamily: "Inter, -apple-system, sans-serif" },
-      tooltipTitle: { fontSize: 20, fontWeight: 800, color: "#0F1B3D", marginBottom: 6, textAlign: "center" },
-      tooltipContent: { fontSize: 15, fontWeight: 300, color: "#5a6a82", lineHeight: 1.65, padding: "6px 0 0", textAlign: "center" },
-      tooltipFooter: { marginTop: 20, justifyContent: "center", display: "flex" },
-      buttonNext: { background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%)", borderRadius: 14, fontSize: 15, fontWeight: 600, padding: "14px 0", border: "none", width: "100%", textAlign: "center" },
-      buttonClose: { display: "none" },
       spotlight: { borderRadius: 14 },
       beacon: { display: "none" },
     },
@@ -249,21 +261,12 @@ function ChatStepJoyride({ onFinish }: { onFinish: () => void }) {
         content: "Get started setting up your profile. Compare prices. Book appointments. Call your pharmacy or your insurance. Elena is here to help.",
         locale: { next: "Finish", last: "Finish" },
         hideCloseButton: true,
-        primaryColor: "#0F1B3D",
-        floaterProps: { hideArrow: false },
+        tooltipComponent: TourTooltip,
       },
     ],
     continuous: true,
-    showSkipButton: false,
-    showProgress: false,
     styles: {
       options: { primaryColor: "#0F1B3D", zIndex: 99999, overlayColor: "rgba(0,0,0,0.45)" },
-      tooltip: { borderRadius: 20, padding: "28px 32px", boxShadow: "0 8px 30px rgba(15,27,61,0.15)", maxWidth: 360, fontFamily: "Inter, -apple-system, sans-serif" },
-      tooltipTitle: { fontSize: 20, fontWeight: 800, color: "#0F1B3D", marginBottom: 6, textAlign: "center" },
-      tooltipContent: { fontSize: 15, fontWeight: 300, color: "#5a6a82", lineHeight: 1.65, padding: "6px 0 0", textAlign: "center" },
-      tooltipFooter: { marginTop: 20, justifyContent: "center", display: "flex" },
-      buttonNext: { background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%)", borderRadius: 14, fontSize: 15, fontWeight: 600, padding: "14px 0", border: "none", width: "100%", textAlign: "center" },
-      buttonClose: { display: "none" },
       spotlight: { borderRadius: 14 },
       beacon: { display: "none" },
     },
