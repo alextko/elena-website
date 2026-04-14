@@ -93,9 +93,9 @@ function TabPill({ label, active, onClick }: { label: string; active: boolean; o
   return (
     <button
       onClick={onClick}
-      className={`rounded-full px-[18px] py-2.5 text-sm font-extrabold transition-all ${active ? "shadow-[0_2px_8px_rgba(15,27,61,0.25)]" : ""}`}
+      className={`rounded-full px-[18px] py-2.5 text-sm font-extrabold transition-all ${active ? "shadow-[0_2px_8px_rgba(15,27,61,0.2)]" : "border border-[#0F1B3D]/[0.12]"}`}
       style={{
-        backgroundColor: active ? "#0F1B3D" : "rgba(15,27,61,0.06)",
+        backgroundColor: active ? "#0F1B3D" : "#FFFFFF",
         color: active ? "#FFFFFF" : "#0F1B3D",
       }}
     >
