@@ -157,10 +157,63 @@ function DmeContent() {
     else if (step === 10) analytics.track("DME Quiz Gate Shown" as any);
   }, [step]);
 
-  // After signup at teaser, save and advance to confirmation
+  // Save anonymously when user reaches the teaser (step 10)
+  const anonymousSaveRef = useRef(false);
+  useEffect(() => {
+    if (step !== 10 || anonymousSaveRef.current || session) return;
+    anonymousSaveRef.current = true;
+    // Fire-and-forget anonymous save
+    apiFetch("/dme/intake/anonymous", {
+      method: "POST",
+      body: JSON.stringify({
+        patient_first_name: answers.firstName,
+        patient_last_name: answers.lastName,
+        patient_dob: answers.dob,
+        patient_phone: answers.phone,
+        patient_email: answers.email,
+        shipping_street: answers.shippingStreet,
+        shipping_apt: answers.shippingApt,
+        shipping_city: answers.shippingCity,
+        shipping_state: answers.shippingState,
+        shipping_zip: answers.shippingZip,
+        insurance_provider: answers.insuranceProvider,
+        insurance_member_id: answers.insuranceMemberId,
+        insurance_group_number: answers.insuranceGroupNumber,
+        insurance_plan_type: answers.insurancePlanType,
+        insurance_zip: answers.insuranceZip,
+        equipment_type: answers.equipmentType,
+        urgency: answers.urgency || "routine",
+        equipment_notes: answers.equipmentNotes,
+        has_diagnosis: answers.hasDiagnosis === true,
+        condition_description: answers.conditionDescription,
+        has_prescription: answers.hasPrescription === true,
+        prescribing_doctor_name: answers.prescribingDoctorName,
+        prescribing_doctor_phone: answers.prescribingDoctorPhone,
+        doctor_clinic_name: answers.doctorClinicName,
+        doctor_phone: answers.doctorPhone,
+        doctor_fax: answers.doctorFax,
+        delivery_timing: answers.deliveryTiming || "flexible",
+        mobility_issues: answers.mobilityIssues === true,
+        access_notes: answers.accessNotes,
+        source: "web_quiz",
+      }),
+    }).then(async (res) => {
+      if (res.ok) {
+        const data = await res.json();
+        if (data.intake_id) sessionStorage.setItem("elena_dme_intake_id", data.intake_id);
+      }
+    }).catch(() => {});
+  }, [step, session, answers]);
+
+  // After signup at teaser, claim the anonymous intake and advance to confirmation
   useEffect(() => {
     if (!prevSession.current && session && step === 10 && !savedRef.current) {
       savedRef.current = true;
+      // Claim the anonymous intake
+      const intakeId = sessionStorage.getItem("elena_dme_intake_id");
+      if (intakeId) {
+        apiFetch(`/dme/intake/${intakeId}/claim`, { method: "POST" }).catch(() => {});
+      }
       dispatch({ type: "GO_TO_STEP", payload: 11 });
     }
     prevSession.current = session;
