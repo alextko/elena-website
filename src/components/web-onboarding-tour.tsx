@@ -22,7 +22,17 @@ const CARE_OPTIONS = [
 
 // Only the profile button step uses Joyride (targets main DOM)
 const JOYRIDE_STEPS: any[] = [
-  { target: "[data-tour='profile-button']", placement: "top", disableBeacon: true, skipBeacon: true, title: "Your health profile", content: "This is where your doctors, medications, insurance, and appointments live.", locale: { next: "Show me" } },
+  {
+    target: "[data-tour='profile-button']",
+    placement: "top",
+    disableBeacon: true,
+    skipBeacon: true,
+    title: "This is your profile.",
+    content: "All your health data, doctors, insurance, and appointments live here. Let's take a look inside.",
+    locale: { next: "Show me", last: "Show me" },
+    hideCloseButton: true,
+    primaryColor: "#0F1B3D",
+  },
 ];
 
 // Profile popover steps use custom overlay cards (can't target portal DOM)
@@ -46,6 +56,17 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
   const { controls, on, Tour } = useJoyride({
     steps: JOYRIDE_STEPS,
     continuous: true,
+    styles: {
+      options: { primaryColor: "#0F1B3D", zIndex: 99999, overlayColor: "rgba(0,0,0,0.45)" },
+      tooltip: { borderRadius: 20, padding: "28px 32px", boxShadow: "0 8px 30px rgba(15,27,61,0.15)", maxWidth: 360, fontFamily: "Inter, -apple-system, sans-serif" },
+      tooltipTitle: { fontSize: 20, fontWeight: 800, color: "#0F1B3D", marginBottom: 6, textAlign: "center" },
+      tooltipContent: { fontSize: 15, fontWeight: 300, color: "#5a6a82", lineHeight: 1.65, padding: "6px 0 0", textAlign: "center" },
+      tooltipFooter: { marginTop: 20, justifyContent: "center" },
+      buttonNext: { background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%)", borderRadius: 14, fontSize: 15, fontWeight: 600, padding: "12px 32px", border: "none" },
+      buttonClose: { display: "none" },
+      spotlight: { borderRadius: 14 },
+      beacon: { display: "none" },
+    },
   } as any);
 
   useEffect(() => { setMounted(true); analytics.track("Web Tour Started" as any); }, []);
