@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   MapPin,
   Phone,
@@ -1271,11 +1271,31 @@ export function FormRequestCard({
   form: FormRequest;
   onSubmitted?: (data: Record<string, string>) => void;
 }) {
-  const [values, setValues] = useState<Record<string, string>>({});
+  // Initialize values from default_value fields
+  const [values, setValues] = useState<Record<string, string>>(() => {
+    const defaults: Record<string, string> = {};
+    for (const f of form.fields) {
+      if (f.default_value) defaults[f.key] = f.default_value;
+    }
+    return defaults;
+  });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeImageField, setActiveImageField] = useState<string | null>(null);
+
+  // Multi-page support
+  const pages = useMemo(() => {
+    const map = new Map<number, typeof form.fields>();
+    for (const f of form.fields) {
+      const p = f.page ?? 0;
+      if (!map.has(p)) map.set(p, []);
+      map.get(p)!.push(f);
+    }
+    return Array.from(map.entries()).sort(([a], [b]) => a - b);
+  }, [form.fields]);
+  const isMultiPage = pages.length > 1;
+  const [currentPage, setCurrentPage] = useState(0);
 
   function setValue(key: string, val: string) {
     setValues((prev) => ({ ...prev, [key]: val }));
@@ -1357,18 +1377,33 @@ export function FormRequestCard({
     );
   }
 
+  const currentPageFields = isMultiPage ? (pages[currentPage]?.[1] ?? []) : form.fields;
+  const currentPageTitle = isMultiPage ? currentPageFields[0]?.page_title : undefined;
+  const isLastPage = !isMultiPage || currentPage >= pages.length - 1;
+
+  const fieldCls = "mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30";
+
   return (
     <div className="mt-3 rounded-2xl border border-[#0F1B3D]/[0.06] bg-white p-5 shadow-[0_2px_8px_rgba(15,27,61,0.06)] animate-in fade-in duration-300">
-      <h4 className="text-[16px] font-bold text-[#0F1B3D] mb-1">{form.title}</h4>
-      {form.description && (
+      <h4 className="text-[16px] font-bold text-[#0F1B3D] mb-1">
+        {currentPageTitle || form.title}
+      </h4>
+      {!currentPageTitle && form.description && (
         <p className="text-[13px] text-[#8E8E93] mb-4">{form.description}</p>
+      )}
+      {isMultiPage && (
+        <div className="flex items-center gap-1.5 mb-4">
+          {pages.map((_, i) => (
+            <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= currentPage ? "bg-[#0F1B3D]" : "bg-[#E5E5EA]"}`} />
+          ))}
+        </div>
       )}
 
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
         onChange={(e) => activeImageField && handleImageUpload(e, activeImageField)} />
 
       <div className="space-y-3">
-        {form.fields.map((field) => (
+        {currentPageFields.map((field) => (
           <div key={field.key}>
             <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">
               {field.label}
@@ -1381,13 +1416,13 @@ export function FormRequestCard({
                 onChange={(e) => setValue(field.key, e.target.value)}
                 placeholder={field.placeholder}
                 rows={3}
-                className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 resize-none"
+                className={`${fieldCls} resize-none`}
               />
             ) : field.type === "select" ? (
               <select
                 value={values[field.key] || ""}
                 onChange={(e) => setValue(field.key, e.target.value)}
-                className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+                className={`${fieldCls} appearance-none pr-10 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%238E8E93%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_12px_center] bg-no-repeat`}
               >
                 <option value="">{field.placeholder || "Select..."}</option>
                 {field.options?.map((opt) => (
@@ -1407,7 +1442,7 @@ export function FormRequestCard({
                 value={values[field.key] || ""}
                 onChange={(e) => setValue(field.key, e.target.value)}
                 placeholder={field.placeholder}
-                className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30"
+                className={fieldCls}
               />
             )}
           </div>
@@ -1415,19 +1450,38 @@ export function FormRequestCard({
       </div>
 
       <div className="flex gap-2 mt-4">
-        <button
-          onClick={handleSubmit}
-          disabled={submitting}
-          className="flex-1 rounded-xl bg-[#0F1B3D] px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-[#0F1B3D]/90 disabled:opacity-40 transition-colors"
-        >
-          {submitting ? "Submitting..." : "Submit"}
-        </button>
-        <button
-          onClick={() => { setSubmitted(true); onSubmitted?.({}); }}
-          className="rounded-xl px-4 py-2.5 text-[14px] font-medium text-[#8E8E93] hover:text-[#0F1B3D] transition-colors"
-        >
-          Skip
-        </button>
+        {isMultiPage && currentPage > 0 && (
+          <button
+            onClick={() => setCurrentPage((p) => p - 1)}
+            className="rounded-xl px-4 py-2.5 text-[14px] font-medium text-[#8E8E93] hover:text-[#0F1B3D] transition-colors"
+          >
+            Back
+          </button>
+        )}
+        {isLastPage ? (
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="flex-1 rounded-xl bg-[#0F1B3D] px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-[#0F1B3D]/90 disabled:opacity-40 transition-colors"
+          >
+            {submitting ? "Submitting..." : "Submit"}
+          </button>
+        ) : (
+          <button
+            onClick={() => setCurrentPage((p) => p + 1)}
+            className="flex-1 rounded-xl bg-[#0F1B3D] px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-[#0F1B3D]/90 transition-colors"
+          >
+            Next
+          </button>
+        )}
+        {isLastPage && (
+          <button
+            onClick={() => { setSubmitted(true); onSubmitted?.({}); }}
+            className="rounded-xl px-4 py-2.5 text-[14px] font-medium text-[#8E8E93] hover:text-[#0F1B3D] transition-colors"
+          >
+            Skip
+          </button>
+        )}
       </div>
     </div>
   );

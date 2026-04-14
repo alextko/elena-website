@@ -415,6 +415,9 @@ export interface FormField {
   placeholder?: string;
   required?: boolean;
   options?: string[];
+  default_value?: string;
+  page?: number;
+  page_title?: string;
 }
 
 export interface FormRequest {
