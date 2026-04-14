@@ -642,7 +642,7 @@ export function ProfilePopover({
                 {/* Providers shimmer */}
                 <div>
                   <div className="h-3.5 w-16 rounded bg-[#0F1B3D]/[0.08] mb-2" />
-                  <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] p-3 space-y-2.5">
+                  <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] p-3 space-y-2.5">
                     {[1, 2].map((i) => (
                       <div key={i} className="flex items-center gap-2.5">
                         <div className="h-8 w-8 rounded-full bg-[#0F1B3D]/[0.06]" />
@@ -1018,11 +1018,11 @@ export function ProfilePopover({
                       <Plus className="h-[18px] w-[18px] text-[#0F1B3D]" />
                     </button>
                   </div>
-                  <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
+                  <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
                     {uniqueDoctors.length === 0 && profileDetailsLoaded && (
                       <div className="px-3.5 py-10 text-center">
-                        <p className="text-[17px] font-bold text-[#1C1C1E]">No providers yet</p>
-                        <p className="text-sm text-[#8E8E93] mt-1.5 leading-5">
+                        <p className="text-[15px] font-bold text-[#0F1B3D]">No providers yet</p>
+                        <p className="text-[13px] text-[#8E8E93] mt-1 leading-5">
                           Add your care team to keep everything in one place.
                         </p>
                       </div>
@@ -1059,7 +1059,7 @@ export function ProfilePopover({
                 {/* Personal */}
                 <div>
                   <h3 className="text-[15px] font-extrabold text-[#0F1B3D] mb-2">Personal</h3>
-                  <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
+                  <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
                     <button
                       className="flex w-full items-center gap-3 px-3.5 py-3.5 text-left hover:bg-[#0F1B3D]/[0.02] transition-colors"
                       onClick={async () => { await fetchPersonalData(); setPersonalPanel("details"); }}
@@ -1379,7 +1379,7 @@ export function ProfilePopover({
                     />
                   ))}
                 </div>
-                <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] p-3 space-y-3">
+                <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] p-3 space-y-3">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-full bg-[#0F1B3D]/[0.06]" />
@@ -1399,7 +1399,7 @@ export function ProfilePopover({
                 </div>
 
                 {/* Expandable detail sections */}
-                <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden mt-3">
+                <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden mt-3">
                   <InsuranceDetailRow
                     icon={Pill} label="Medical" card={medicalCard} cardType="medical" fields={MEDICAL_FIELDS}
                     expanded={expandedCard === "medical"}
@@ -1778,7 +1778,7 @@ function VisitDetailPanel({
       {visit.summary &&
         visit.summary !== "past visit" &&
         visit.summary !== "upcoming visit" && (
-        <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] p-4 mb-3">
+        <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] p-4 mb-3">
           <h4 className="text-[13px] font-bold text-[#0F1B3D]/40 uppercase tracking-wider mb-2">Summary</h4>
           <p className="text-[14px] leading-relaxed text-[#1C1C1E]">{visit.summary}</p>
         </div>
@@ -1786,7 +1786,7 @@ function VisitDetailPanel({
 
       {/* Visit Notes */}
       {notes.length > 0 && (
-        <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] p-4 mb-3">
+        <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] p-4 mb-3">
           <h4 className="text-[13px] font-bold text-[#0F1B3D]/40 uppercase tracking-wider mb-3">Visit Notes</h4>
           {notes.map((note) => (
             <div key={note.id} className="mb-3 last:mb-0">
@@ -1833,7 +1833,7 @@ function VisitDetailPanel({
 
       {/* Labs */}
       {visit.labs && visit.labs.length > 0 && (
-        <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden mb-3">
+        <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden mb-3">
           <div className="px-4 pt-4 pb-2">
             <h4 className="text-[13px] font-bold text-[#0F1B3D]/40 uppercase tracking-wider">Lab Results</h4>
           </div>
@@ -1859,7 +1859,7 @@ function VisitDetailPanel({
       )}
 
       {/* Documents */}
-      <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden mb-3">
+      <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden mb-3">
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
           <h4 className="text-[13px] font-bold text-[#0F1B3D]/40 uppercase tracking-wider">Documents</h4>
           <input
@@ -1920,7 +1920,7 @@ function VisitDetailPanel({
 
       {/* Rating & Review (past visits only) */}
       {isPast && (
-        <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] p-4 mb-3">
+        <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] p-4 mb-3">
           <h4 className="text-[13px] font-bold text-[#0F1B3D]/40 uppercase tracking-wider mb-2">
             Rate {visit.doctor_name || "this visit"}
           </h4>
@@ -2093,7 +2093,7 @@ function ProviderDetailPanel({
           </div>
         </div>
 
-        <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
+        <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
           {[
             { label: "Specialty", value: provider.specialty },
             { label: "Practice", value: provider.practice_name },
@@ -2885,7 +2885,7 @@ function PersonalDetailsPanel({
           </div>
           <p className="text-[18px] font-extrabold text-[#0F1B3D]">Personal Details</p>
         </div>
-        <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
+        <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
           {fields.map(([label, key], i) => {
             let val = form[key];
             if (key === "date_of_birth" && val) {
@@ -3097,7 +3097,7 @@ function HealthDataPanel({
           const items = (healthData?.[dataKey] || []) as unknown as Record<string, unknown>[];
           const isOpen = expanded === key;
           return (
-            <div key={key} className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
+            <div key={key} className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
               <button
                 className="flex w-full items-center gap-3 px-3.5 py-3.5 text-left hover:bg-[#0F1B3D]/[0.02] transition-colors"
                 onClick={() => setExpanded(isOpen ? null : key)}
@@ -3228,7 +3228,7 @@ function DocumentsPanel({
         <p className="text-[18px] font-extrabold text-[#0F1B3D]">Documents</p>
       </div>
 
-      <div className="rounded-2xl bg-[#FEFEFB] shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
+      <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
         {documents.length === 0 && (
           <div className="px-3.5 py-10 text-center">
             <p className="text-[17px] font-bold text-[#1C1C1E]">No documents yet</p>
