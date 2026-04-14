@@ -399,7 +399,7 @@ export function ProfilePopover({
         showCloseButton
         className={`w-[90vw] max-w-[36rem] rounded-2xl border-[#0F1B3D]/[0.08] bg-white p-0 shadow-xl overflow-hidden max-md:!fixed max-md:!inset-0 max-md:!top-0 max-md:!left-0 max-md:!translate-x-0 max-md:!translate-y-0 max-md:!w-full max-md:!h-full max-md:!max-w-none max-md:!rounded-none max-md:!border-0 max-md:!bg-white ${externalOpen ? "!z-[350]" : ""}`}
       >
-        <div ref={scrollRef} className="max-h-[65vh] overflow-y-auto max-md:max-h-full max-md:h-full">
+        <div ref={scrollRef} className="h-[65vh] overflow-y-auto max-md:max-h-full max-md:h-full">
           {/* ═══════════ PROVIDER DETAIL VIEW ═══════════ */}
           {selectedProvider && (
             <ProviderDetailPanel
