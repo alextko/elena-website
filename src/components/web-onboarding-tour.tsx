@@ -109,19 +109,29 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     }
   }, [phase, profileStep, onProfilePopover]);
 
+  const [cardVisible, setCardVisible] = useState(true);
+
   const nextProfile = useCallback(() => {
     if (guardRef.current) return;
     guardRef.current = true;
-    setTimeout(() => { guardRef.current = false; }, 300);
+    setTimeout(() => { guardRef.current = false; }, 600);
 
     analytics.track("Web Tour Step Viewed" as any, { step: profileStep + 2, step_name: PROFILE_STEPS[profileStep]?.title });
 
     if (profileStep >= PROFILE_STEPS.length - 1) {
-      onProfilePopover(false, undefined, false);
-      setPhase("chat");
+      setCardVisible(false);
+      setTimeout(() => {
+        onProfilePopover(false, undefined, false);
+        setPhase("chat");
+      }, 250);
       return;
     }
-    setProfileStep((s) => s + 1);
+    // Fade out card, switch tab, fade in new card
+    setCardVisible(false);
+    setTimeout(() => {
+      setProfileStep((s) => s + 1);
+      setCardVisible(true);
+    }, 250);
   }, [profileStep, onProfilePopover]);
 
   const finishTour = useCallback(() => {
@@ -148,12 +158,18 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     onComplete();
   }, [onComplete, onProfilePopover, onSidebar, controls]);
 
+  const [careFading, setCareFading] = useState(false);
+
   const startJoyride = useCallback(() => {
     if (careSelections.length > 0) analytics.track("Web Tour Care Context" as any, { care_for: careSelections });
-    if (isMobile.current) onSidebar(true);
-    setPhase("joyride");
-    // Extra delay on mobile to let sidebar slide animation complete
-    setTimeout(() => controls.start(), isMobile.current ? 600 : 300);
+    // Fade out care card, then start joyride
+    setCareFading(true);
+    setTimeout(() => {
+      if (isMobile.current) onSidebar(true);
+      setPhase("joyride");
+      // Extra delay on mobile to let sidebar slide animation complete
+      setTimeout(() => controls.start(), isMobile.current ? 600 : 300);
+    }, 300);
   }, [careSelections, controls, onSidebar]);
 
   if (!mounted || phase === "done") return null;
@@ -161,7 +177,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   // ── Phase: Care context ──
   if (phase === "care") {
     return createPortal(
-      <div className="fixed inset-0 z-[99999] flex items-center justify-center font-[family-name:var(--font-inter)]">
+      <div className={`fixed inset-0 z-[99999] flex items-center justify-center font-[family-name:var(--font-inter)] transition-opacity duration-300 ${careFading ? "opacity-0" : "opacity-100"}`}>
         <div className="absolute inset-0 bg-black/45" />
         <SkipButton onClick={skipTour} />
         <div className="relative z-10 max-w-md w-full mx-6">
@@ -202,7 +218,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   if (phase === "profile") {
     const currentStep = PROFILE_STEPS[profileStep];
     return createPortal(
-      <div className="fixed z-[99999] font-[family-name:var(--font-inter)] bottom-0 left-0 right-0 md:bottom-auto md:left-auto md:right-auto md:top-1/2 md:-translate-y-1/2" style={{ pointerEvents: "auto" }}>
+      <div className={`fixed z-[99999] font-[family-name:var(--font-inter)] bottom-0 left-0 right-0 md:bottom-auto md:left-auto md:right-auto md:top-1/2 md:-translate-y-1/2 transition-opacity duration-250 ${cardVisible ? "opacity-100" : "opacity-0"}`} style={{ pointerEvents: "auto" }}>
         {/* Desktop: position to the right of the popover (popover is max-w-36rem centered) */}
         <div className="md:fixed md:top-1/2 md:-translate-y-1/2 md:max-w-xs md:w-80" style={{ left: "calc(50% + 19.5rem)" }}>
           <div className="rounded-t-2xl md:rounded-2xl bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:pb-6 shadow-[0_-4px_30px_rgba(15,27,61,0.15)] md:shadow-[0_8px_30px_rgba(15,27,61,0.2)] border-t border-[#E5E5EA] md:border">
