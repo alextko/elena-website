@@ -90,8 +90,8 @@ export const DME_EQUIPMENT_OPTIONS = [
   "Other",
 ];
 
-export type DmeStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
-export const TOTAL_QUESTION_STEPS = 8; // steps 1-7 + confirmation, not counting intro/teaser
+export type DmeStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
+export const TOTAL_QUESTION_STEPS = 8; // question steps only (not intro, interstitials, teaser, confirmation)
 
 export const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",

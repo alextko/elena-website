@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ProgressBar } from "../risk-assessment/components/progress-bar";
 import { StepLayout } from "../risk-assessment/components/step-layout";
 import { OptionButton } from "../risk-assessment/components/option-button";
+import { Interstitial } from "../risk-assessment/components/interstitial";
 import {
   INITIAL_DME_ANSWERS,
   DME_EQUIPMENT_OPTIONS,
@@ -51,7 +52,7 @@ function reducer(state: State, action: Action): State {
     case "SET_ANSWER":
       return { ...state, answers: { ...state.answers, ...action.payload } };
     case "NEXT_STEP":
-      return { ...state, step: Math.min(state.step + 1, 9) as DmeStep, direction: 1 };
+      return { ...state, step: Math.min(state.step + 1, 11) as DmeStep, direction: 1 };
     case "PREV_STEP":
       return { ...state, step: Math.max(state.step - 1, 0) as DmeStep, direction: -1 };
     case "GO_TO_STEP":
@@ -124,7 +125,7 @@ function DmeContent() {
 
   // Persist to sessionStorage
   useEffect(() => {
-    if (step > 0 && step < 9) {
+    if (step > 0 && step < 11) {
       sessionStorage.setItem("elena_dme_answers", JSON.stringify(answers));
       sessionStorage.setItem("elena_dme_step", String(step));
     }
@@ -136,15 +137,15 @@ function DmeContent() {
     if (step === prevStep.current) return;
     prevStep.current = step;
     if (step === 1) analytics.track("DME Quiz Started" as any);
-    else if (step > 0 && step < 8) analytics.track("DME Quiz Step Completed" as any, { step });
-    else if (step === 8) analytics.track("DME Quiz Gate Shown" as any);
+    else if (step > 0 && step < 10 && step !== 2 && step !== 9) analytics.track("DME Quiz Step Completed" as any, { step });
+    else if (step === 10) analytics.track("DME Quiz Gate Shown" as any);
   }, [step]);
 
   // After signup at teaser, save and advance to confirmation
   useEffect(() => {
-    if (!prevSession.current && session && step === 8 && !savedRef.current) {
+    if (!prevSession.current && session && step === 10 && !savedRef.current) {
       savedRef.current = true;
-      dispatch({ type: "GO_TO_STEP", payload: 9 });
+      dispatch({ type: "GO_TO_STEP", payload: 11 });
     }
     prevSession.current = session;
   }, [session, step]);
@@ -231,9 +232,10 @@ function DmeContent() {
   // --- Shell ---
 
   const isIntro = step === 0;
-  const isTeaser = step === 8;
-  const isConfirm = step === 9;
-  const showProgress = !isIntro && !isTeaser && !isConfirm;
+  const isInterstitial = step === 2 || step === 9;
+  const isTeaser = step === 10;
+  const isConfirm = step === 11;
+  const showProgress = !isIntro && !isInterstitial && !isTeaser && !isConfirm;
 
   return (
     <div className="min-h-dvh flex flex-col font-[family-name:var(--font-inter)] bg-[#F7F6F2]">
@@ -325,8 +327,20 @@ function DmeContent() {
             </StepLayout>
           )}
 
-          {/* ── Step 2: Patient Identity ── */}
+          {/* ── Step 2: Interstitial ── */}
           {step === 2 && (
+            <Interstitial
+              headline="80% of DME is covered by insurance, but most people never file."
+              detail="Wheelchairs, CPAP machines, breast pumps, and more are considered medically necessary equipment. Your plan likely covers most or all of the cost."
+              source="CMS.gov"
+              sourceUrl="https://www.cms.gov/medicare/coverage/durable-medical-equipment"
+              onContinue={advance}
+              onBack={goBack}
+            />
+          )}
+
+          {/* ── Step 3: Patient Identity ── */}
+          {step === 3 && (
             <StepLayout
               question="Tell us about yourself"
               subtitle="We need this to verify your insurance eligibility."
@@ -361,8 +375,8 @@ function DmeContent() {
             </StepLayout>
           )}
 
-          {/* ── Step 3: Shipping Address ── */}
-          {step === 3 && (
+          {/* ── Step 4: Shipping Address ── */}
+          {step === 4 && (
             <StepLayout
               question="Where should we ship your equipment?"
               ctaLabel="Continue"
@@ -399,8 +413,8 @@ function DmeContent() {
             </StepLayout>
           )}
 
-          {/* ── Step 4: Insurance ── */}
-          {step === 4 && (
+          {/* ── Step 5: Insurance ── */}
+          {step === 5 && (
             <StepLayout
               question="What's your insurance information?"
               subtitle="This is critical for verifying coverage and getting your equipment approved."
@@ -445,8 +459,8 @@ function DmeContent() {
             </StepLayout>
           )}
 
-          {/* ── Step 5: Medical ── */}
-          {step === 5 && (
+          {/* ── Step 6: Medical ── */}
+          {step === 6 && (
             <StepLayout
               question="Medical information"
               subtitle="This helps us determine what documentation you'll need."
@@ -491,8 +505,8 @@ function DmeContent() {
             </StepLayout>
           )}
 
-          {/* ── Step 6: Provider ── */}
-          {step === 6 && (
+          {/* ── Step 7: Provider ── */}
+          {step === 7 && (
             <StepLayout
               question="Your doctor or clinic"
               subtitle="We may need to contact them for paperwork."
@@ -528,8 +542,8 @@ function DmeContent() {
             </StepLayout>
           )}
 
-          {/* ── Step 7: Delivery ── */}
-          {step === 7 && (
+          {/* ── Step 8: Delivery ── */}
+          {step === 8 && (
             <StepLayout
               question="Delivery details"
               subtitle="Anything we should know about getting this to you?"
@@ -555,8 +569,20 @@ function DmeContent() {
             </StepLayout>
           )}
 
-          {/* ── Step 8: Teaser / Auth Gate ── */}
-          {step === 8 && (
+          {/* ── Step 9: Interstitial ── */}
+          {step === 9 && (
+            <Interstitial
+              headline="The average American overpays $1,200/year on medical equipment."
+              detail="Insurance companies are required to cover medically necessary DME. Elena handles the paperwork, prior authorizations, and supplier coordination so you pay as little as possible."
+              source="Kaiser Family Foundation"
+              sourceUrl="https://www.kff.org/health-costs/"
+              onContinue={advance}
+              onBack={goBack}
+            />
+          )}
+
+          {/* ── Step 10: Teaser / Auth Gate ── */}
+          {step === 10 && (
             <div className="flex-1 flex flex-col items-center justify-center px-6 text-center"
               style={{ background: "linear-gradient(180deg, #0F1B3D 0%, #1A3A6E 50%, #2E6BB5 100%)" }}>
               <div className="max-w-md">
@@ -568,7 +594,7 @@ function DmeContent() {
                 </p>
                 {session ? (
                   <button
-                    onClick={() => dispatch({ type: "GO_TO_STEP", payload: 9 })}
+                    onClick={() => dispatch({ type: "GO_TO_STEP", payload: 11 })}
                     className="w-full max-w-xs mx-auto py-4 rounded-full bg-white/[0.12] backdrop-blur-[40px] border border-white/[0.2] text-white font-semibold text-base hover:bg-white/[0.2] transition-all"
                   >
                     Review & Submit
@@ -585,8 +611,8 @@ function DmeContent() {
             </div>
           )}
 
-          {/* ── Step 9: Confirmation ── */}
-          {step === 9 && (
+          {/* ── Step 11: Confirmation ── */}
+          {step === 11 && (
             <div className="flex-1 flex flex-col px-6 pt-10 pb-6 max-w-lg mx-auto w-full">
               <h2 className="text-[clamp(1.4rem,5vw,1.75rem)] font-light text-[#0F1B3D] leading-tight tracking-tight mb-6">
                 Review your request
