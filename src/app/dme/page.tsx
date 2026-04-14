@@ -62,6 +62,22 @@ function reducer(state: State, action: Action): State {
   }
 }
 
+// --- Validation ---
+
+const isValidEmail = (v: string) => !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+const isValidPhone = (v: string) => !v || /^[\d()+\-.\s]{7,}$/.test(v);
+const isValidZip = (v: string) => !v || /^\d{5}$/.test(v);
+const isValidDob = (v: string) => {
+  if (!v) return true;
+  const d = new Date(v + "T00:00:00");
+  if (isNaN(d.getTime())) return false;
+  const now = new Date();
+  if (d > now) return false; // not in the future
+  const age = now.getFullYear() - d.getFullYear();
+  return age <= 120;
+};
+const errorCls = "text-[12px] text-red-500 mt-1";
+
 // --- Shared input style ---
 
 const inputCls =
@@ -345,7 +361,7 @@ function DmeContent() {
               question="Tell us about yourself"
               subtitle="We need this to verify your insurance eligibility."
               ctaLabel="Continue"
-              ctaEnabled={!!(answers.firstName && answers.lastName)}
+              ctaEnabled={!!(answers.firstName && answers.lastName && isValidEmail(answers.email) && isValidPhone(answers.phone) && isValidDob(answers.dob))}
               onCta={advance}
             >
               <div className="space-y-4">
@@ -362,14 +378,17 @@ function DmeContent() {
                 <div>
                   <label className={labelCls}>Date of birth</label>
                   <input type="date" value={answers.dob} onChange={(e) => setAnswer({ dob: e.target.value })} className={inputCls} />
+                  {answers.dob && !isValidDob(answers.dob) && <p className={errorCls}>Please enter a valid date of birth</p>}
                 </div>
                 <div>
                   <label className={labelCls}>Phone</label>
                   <input type="tel" value={answers.phone} onChange={(e) => setAnswer({ phone: e.target.value })} placeholder="(555) 555-5555" className={inputCls} />
+                  {answers.phone && !isValidPhone(answers.phone) && <p className={errorCls}>Please enter a valid phone number</p>}
                 </div>
                 <div>
                   <label className={labelCls}>Email</label>
                   <input type="email" value={answers.email} onChange={(e) => setAnswer({ email: e.target.value })} placeholder="you@email.com" className={inputCls} />
+                  {answers.email && !isValidEmail(answers.email) && <p className={errorCls}>Please enter a valid email address</p>}
                 </div>
               </div>
             </StepLayout>
@@ -380,7 +399,7 @@ function DmeContent() {
             <StepLayout
               question="Where should we ship your equipment?"
               ctaLabel="Continue"
-              ctaEnabled={!!(answers.shippingStreet && answers.shippingZip)}
+              ctaEnabled={!!(answers.shippingStreet && answers.shippingZip && isValidZip(answers.shippingZip))}
               onCta={advance}
             >
               <div className="space-y-4">
@@ -407,6 +426,7 @@ function DmeContent() {
                   <div>
                     <label className={labelCls}>Zip</label>
                     <input type="text" value={answers.shippingZip} onChange={(e) => setAnswer({ shippingZip: e.target.value })} placeholder="78746" maxLength={5} inputMode="numeric" className={inputCls} />
+                    {answers.shippingZip && !isValidZip(answers.shippingZip) && <p className={errorCls}>Enter a 5-digit zip code</p>}
                   </div>
                 </div>
               </div>
@@ -454,6 +474,7 @@ function DmeContent() {
                 <div>
                   <label className={labelCls}>Zip code</label>
                   <input type="text" value={answers.insuranceZip} onChange={(e) => setAnswer({ insuranceZip: e.target.value })} placeholder="For network matching" maxLength={5} inputMode="numeric" className={inputCls} />
+                  {answers.insuranceZip && !isValidZip(answers.insuranceZip) && <p className={errorCls}>Enter a 5-digit zip code</p>}
                 </div>
               </div>
             </StepLayout>
