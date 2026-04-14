@@ -92,3 +92,27 @@ export const DME_EQUIPMENT_OPTIONS = [
 
 export type DmeStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 export const TOTAL_QUESTION_STEPS = 8; // steps 1-7 + confirmation, not counting intro/teaser
+
+export const US_STATES = [
+  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
+  "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
+  "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
+  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
+  "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC",
+];
+
+export const INSURANCE_PROVIDERS = [
+  "Aetna",
+  "Anthem / Blue Cross Blue Shield",
+  "Cigna",
+  "Humana",
+  "Kaiser Permanente",
+  "Medicaid",
+  "Medicare",
+  "Medicare Advantage",
+  "Molina Healthcare",
+  "Oscar Health",
+  "UnitedHealthcare",
+  "VA / TRICARE",
+  "Other",
+];

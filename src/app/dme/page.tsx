@@ -14,6 +14,8 @@ import {
   INITIAL_DME_ANSWERS,
   DME_EQUIPMENT_OPTIONS,
   TOTAL_QUESTION_STEPS,
+  US_STATES,
+  INSURANCE_PROVIDERS,
 } from "./lib/types";
 import type { DmeAnswers, DmeStep } from "./lib/types";
 
@@ -376,7 +378,10 @@ function DmeContent() {
                   </div>
                   <div>
                     <label className={labelCls}>State</label>
-                    <input type="text" value={answers.shippingState} onChange={(e) => setAnswer({ shippingState: e.target.value })} placeholder="TX" maxLength={2} className={inputCls} />
+                    <select value={answers.shippingState} onChange={(e) => setAnswer({ shippingState: e.target.value })} className={selectCls}>
+                      <option value="">--</option>
+                      {US_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
                   </div>
                   <div>
                     <label className={labelCls}>Zip</label>
@@ -399,7 +404,10 @@ function DmeContent() {
               <div className="space-y-4">
                 <div>
                   <label className={labelCls}>Insurance provider</label>
-                  <input type="text" value={answers.insuranceProvider} onChange={(e) => setAnswer({ insuranceProvider: e.target.value })} placeholder="e.g. Aetna, UnitedHealthcare, Medicare" className={inputCls} autoFocus />
+                  <select value={answers.insuranceProvider} onChange={(e) => setAnswer({ insuranceProvider: e.target.value })} className={selectCls}>
+                    <option value="">Select your insurer</option>
+                    {INSURANCE_PROVIDERS.map((p) => <option key={p} value={p}>{p}</option>)}
+                  </select>
                 </div>
                 <div>
                   <label className={labelCls}>Member ID</label>
