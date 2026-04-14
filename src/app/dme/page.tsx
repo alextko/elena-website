@@ -267,33 +267,50 @@ function DmeContent() {
             <StepLayout
               question="What equipment do you need?"
               subtitle="Select the type of medical equipment you're looking for."
-              ctaLabel={answers.equipmentType ? "Continue" : undefined}
-              ctaEnabled={!!answers.equipmentType}
+              ctaLabel="Continue"
+              ctaEnabled={!!answers.equipmentType && (answers.equipmentType !== "Other" || !!answers.equipmentNotes.trim())}
               onCta={advance}
             >
-              <div className="flex flex-col gap-2.5">
-                {DME_EQUIPMENT_OPTIONS.map((opt) => (
-                  <OptionButton
-                    key={opt}
-                    label={opt}
-                    selected={answers.equipmentType === opt}
-                    onClick={() => {
-                      setAnswer({ equipmentType: opt });
-                      if (opt !== "Other") setTimeout(advance, 400);
-                    }}
-                  />
-                ))}
+              <div className="space-y-4">
+                <div>
+                  <select
+                    value={answers.equipmentType}
+                    onChange={(e) => setAnswer({ equipmentType: e.target.value })}
+                    className={inputCls}
+                  >
+                    <option value="">Select equipment type</option>
+                    {DME_EQUIPMENT_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </div>
+                {answers.equipmentType === "Other" && (
+                  <div>
+                    <label className={labelCls}>Describe the equipment</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Hospital bed, shower chair"
+                      value={answers.equipmentNotes}
+                      onChange={(e) => setAnswer({ equipmentNotes: e.target.value })}
+                      className={inputCls}
+                      autoFocus
+                    />
+                  </div>
+                )}
+                <div>
+                  <label className={labelCls}>How soon do you need this?</label>
+                  <select
+                    value={answers.urgency}
+                    onChange={(e) => setAnswer({ urgency: e.target.value as DmeAnswers["urgency"] })}
+                    className={inputCls}
+                  >
+                    <option value="">Select urgency</option>
+                    <option value="urgent">Urgent / ASAP</option>
+                    <option value="soon">Within a few weeks</option>
+                    <option value="routine">No rush</option>
+                  </select>
+                </div>
               </div>
-              {answers.equipmentType === "Other" && (
-                <input
-                  type="text"
-                  placeholder="Describe the equipment you need"
-                  value={answers.equipmentNotes}
-                  onChange={(e) => setAnswer({ equipmentNotes: e.target.value })}
-                  className={`${inputCls} mt-3`}
-                  autoFocus
-                />
-              )}
             </StepLayout>
           )}
 
@@ -486,25 +503,13 @@ function DmeContent() {
           {/* ── Step 7: Delivery ── */}
           {step === 7 && (
             <StepLayout
-              question="Delivery preferences"
+              question="Delivery details"
+              subtitle="Anything we should know about getting this to you?"
               ctaLabel="Continue"
               ctaEnabled
               onCta={advance}
             >
               <div className="space-y-4">
-                <div>
-                  <label className={labelCls}>When do you need this?</label>
-                  <div className="flex flex-col gap-2.5 mt-1">
-                    {([
-                      ["asap", "As soon as possible"],
-                      ["within_week", "Within a week"],
-                      ["within_month", "Within a month"],
-                      ["flexible", "Flexible / no rush"],
-                    ] as const).map(([val, label]) => (
-                      <OptionButton key={val} label={label} selected={answers.deliveryTiming === val} onClick={() => setAnswer({ deliveryTiming: val })} />
-                    ))}
-                  </div>
-                </div>
                 <div>
                   <label className={labelCls}>Any mobility or access issues at your address?</label>
                   <div className="flex gap-3 mt-1">
