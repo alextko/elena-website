@@ -213,11 +213,18 @@ function DmeContent() {
     sessionStorage.removeItem("elena_dme_answers");
     sessionStorage.removeItem("elena_dme_step");
 
-    // Redirect to chat
-    localStorage.setItem(
-      "elena_pending_query",
-      `I just submitted a DME intake form for ${answers.equipmentType}. What are the next steps to get this covered by my insurance?`
-    );
+    // Redirect to chat with full context
+    const parts = [`I just submitted a DME intake form. Here are the details:`];
+    parts.push(`Equipment: ${answers.equipmentType}${answers.equipmentNotes ? ` (${answers.equipmentNotes})` : ""}`);
+    if (answers.urgency) parts.push(`Urgency: ${answers.urgency}`);
+    if (answers.insuranceProvider) parts.push(`Insurance: ${answers.insuranceProvider}${answers.insurancePlanType ? ` (${answers.insurancePlanType})` : ""}, Member ID: ${answers.insuranceMemberId}`);
+    if (answers.hasDiagnosis && answers.conditionDescription) parts.push(`Diagnosis: ${answers.conditionDescription}`);
+    parts.push(`Has prescription: ${answers.hasPrescription ? "Yes" : "No"}`);
+    if (answers.prescribingDoctorName) parts.push(`Prescribing doctor: ${answers.prescribingDoctorName}`);
+    if (answers.doctorClinicName) parts.push(`Doctor/clinic: ${answers.doctorClinicName}`);
+    parts.push(`Shipping: ${[answers.shippingStreet, answers.shippingCity, answers.shippingState, answers.shippingZip].filter(Boolean).join(", ")}`);
+    parts.push(`What are the next steps to get this covered by my insurance?`);
+    localStorage.setItem("elena_pending_query", parts.join("\n"));
     router.push("/chat");
   }, [answers, profileId, router]);
 
