@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import * as analytics from "@/lib/analytics";
+import { postPendingMessage } from "@/lib/pendingMessage";
 import { getQuizScore } from "../lib/recommendations";
 import type { Recommendation, QuizAnswers, HealthRating } from "../lib/types";
 
@@ -74,6 +75,11 @@ export function Results({ recommendations, answers }: ResultsProps) {
     });
     const query = `Based on my health risk assessment, I need to: ${rec.title.toLowerCase()}. ${rec.description} Can you help me get this done?`;
     localStorage.setItem("elena_pending_query", query);
+    void postPendingMessage({
+      content: query,
+      source: "risk_assessment",
+      metadata: { recommendation_id: rec.id, severity: rec.severity },
+    });
     router.push("/chat");
   }, [router]);
 
@@ -84,6 +90,11 @@ export function Results({ recommendations, answers }: ResultsProps) {
     });
     const query = buildPendingQuery(recommendations);
     localStorage.setItem("elena_pending_query", query);
+    void postPendingMessage({
+      content: query,
+      source: "risk_assessment",
+      metadata: { kind: "get_started", recommendation_count: recommendations.length },
+    });
     router.push("/chat");
   }, [recommendations, router]);
 

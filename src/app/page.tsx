@@ -7,6 +7,7 @@ import { trackViewContent } from "@/lib/tracking-events";
 import * as analytics from "@/lib/analytics";
 import { AuthModal } from "@/components/auth-modal";
 import Spotlights from "@/components/landing/spotlights";
+import { postPendingMessage } from "@/lib/pendingMessage";
 import "./landing.css";
 
 const STATS = [
@@ -796,10 +797,23 @@ function LandingPage() {
         landing_variant: ref || "homepage",
       });
       localStorage.setItem("elena_pending_query", query);
+      void postPendingMessage({
+        content: query,
+        source: madlib ? "madlib" : "landing_hero",
+        landing_variant: ref || "homepage",
+        pending_doc_name: pendingDocFile?.name ?? null,
+      });
     }
     // In demo mode with an attached file but no text query, use a default query
     if (!query && pendingDocFile && demoMode) {
-      localStorage.setItem("elena_pending_query", "Help me understand this bill");
+      const fallback = "Help me understand this bill";
+      localStorage.setItem("elena_pending_query", fallback);
+      void postPendingMessage({
+        content: fallback,
+        source: "demo",
+        landing_variant: ref || "homepage",
+        pending_doc_name: pendingDocFile?.name ?? null,
+      });
     }
     // Store pending doc name for the chat page
     if (pendingDocFile) {

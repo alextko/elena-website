@@ -397,11 +397,14 @@ export function ChatArea({
         return !(prev.role === "user" && prev.content === m.content);
       });
       setMessages(mapped);
-      // Empty session — show welcome screen rather than leaving the page blank
+      // Empty session — show welcome screen rather than leaving the page blank.
+      // Mark ready so the auto-send effect can fire when there's a claimed
+      // pre-auth message waiting (claim flow passes us an empty pre-created session).
       if (mapped.length === 0) {
         setWelcomeHeading("What can I help you with?");
         setSuggestions(["What can you help me with?", "Find a cheaper pharmacy", "Help with my insurance"]);
         setLoadingMessages(false);
+        setSessionReady(true);
         return;
       }
       // Set title from first user message

@@ -4,6 +4,8 @@ import { Suspense, useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/apiFetch";
+import { claimPendingMessages } from "@/lib/pendingMessage";
+import { clearAnonId } from "@/lib/anonId";
 import * as analytics from "@/lib/analytics";
 import { Sidebar } from "@/components/sidebar";
 import { ChatArea } from "@/components/chat-area";
@@ -109,15 +111,53 @@ function ChatPageInner() {
     }
   }, []);
 
-  // Read pending query and document from landing page (set before auth redirect)
-  // Start the chat immediately so it processes in the background during onboarding
+  // Claim any pre-auth pending messages this visitor sent before signing up.
+  // Backend creates a chat_sessions row and marks pending_messages rows as claimed,
+  // then we funnel the message text into the existing auto-send path so the
+  // normal /chat/send flow inserts the user message + generates the assistant reply.
+  // Falls back to the localStorage-only path if claim fails or returns nothing.
+  const pendingClaimAttempted = useRef(false);
   useEffect(() => {
-    const q = localStorage.getItem("elena_pending_query");
-    if (q) {
-      setPendingQuery(q);
-      setIsNewChat(true);
-    }
-  }, []);
+    if (loading || !session || pendingClaimAttempted.current) return;
+    pendingClaimAttempted.current = true;
+
+    let cancelled = false;
+    (async () => {
+      const localQ = localStorage.getItem("elena_pending_query");
+      try {
+        const claim = await claimPendingMessages();
+        if (cancelled) return;
+        if (claim && claim.claimed_count > 0 && claim.session_id && claim.messages.length > 0) {
+          const firstMessage = claim.messages[0].content;
+          setActiveSessionId(claim.session_id);
+          setPendingQuery(firstMessage);
+          setIsNewChat(false);
+          setSessions((prev) => {
+            if (prev.some((s) => s.id === claim.session_id)) return prev;
+            return [{
+              id: claim.session_id!,
+              title: null,
+              preview: firstMessage,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }, ...prev];
+          });
+          localStorage.removeItem("elena_pending_query");
+          clearAnonId();
+          return;
+        }
+      } catch {
+        // Swallow and fall through to localStorage fallback
+      }
+      if (cancelled) return;
+      if (localQ) {
+        setPendingQuery(localQ);
+        setIsNewChat(true);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [loading, session]);
 
   // Track app load
   const hasTrackedAppLoad = useRef(false);
