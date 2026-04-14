@@ -1160,33 +1160,37 @@ export function ProfilePopover({
               <div>
                 {sortedVisits.length === 0 && profileDetailsLoaded && (
                   <div className="rounded-3xl bg-[#DBEAFE] overflow-hidden">
-                    <div className="px-5 pt-5 pb-2">
+                    <div className="flex items-center justify-between px-5 pt-5 pb-2">
                       <h3 className="text-[24px] font-extrabold text-[#0F1B3D]">Timeline</h3>
                     </div>
-                    <div className="px-3 pb-6">
+                    <div className="overflow-y-auto px-3 pb-6" style={{ height: "320px" }}>
                       <div className="flex gap-0 ml-1">
-                        {/* Rail */}
+                        {/* Continuous rail column — matches real timeline */}
                         <div className="flex flex-col items-center w-6 shrink-0">
-                          <div className="w-0.5 h-4 bg-transparent" />
-                          <div className="w-3 h-3 rounded-full border-2 border-[#93B5E1] bg-transparent shrink-0" />
-                          <div className="w-0.5 flex-1 bg-transparent" />
+                          <div className="w-0.5 h-3 bg-transparent" />
+                          <div
+                            className="w-3 h-3 rounded-full shrink-0 my-0.5"
+                            style={{ backgroundColor: "transparent", border: "2px solid #2563EB" }}
+                          />
+                          <div className="w-0.5 h-3 bg-transparent" />
                         </div>
-                        {/* Card */}
-                        <div className="flex-1 min-w-0 pl-1.5">
+                        {/* Labels + Card — matches real timeline */}
+                        <div className="flex-1 min-w-0 ml-2.5">
                           <div className="py-1.5">
                             <span className="text-[15px] font-bold text-[#4A7AB5]">Upcoming</span>
                           </div>
                           <button
-                            className="w-full bg-white rounded-[14px] shadow-[0_1px_4px_rgba(0,0,0,0.05)] px-3.5 py-4 mb-3 text-left hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-shadow cursor-pointer"
+                            className="w-full bg-white rounded-[14px] shadow-[0_1px_4px_rgba(0,0,0,0.05)] px-3.5 py-3 mb-3 text-left hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-shadow cursor-pointer"
                             onClick={() => {
                               onBookMessage?.("Help me find and book a doctor's appointment");
                               setOpen(false);
                             }}
                           >
-                            <p className="text-[16px] font-bold text-[#0F1B3D]">
+                            <p className="text-xs font-semibold text-[#6B9BD2]">Upcoming</p>
+                            <p className="text-[16px] font-bold text-[#0F1B3D] mt-0.5">
                               Schedule your first appointment
                             </p>
-                            <p className="text-[13px] text-[#8E8E93] mt-0.5">
+                            <p className="text-[13px] text-[#8E8E93] mt-px">
                               Chat with Elena to find and book a visit
                             </p>
                           </button>
