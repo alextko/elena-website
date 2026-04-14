@@ -28,10 +28,10 @@ const RELATIONSHIP_OPTIONS = [
 ];
 
 const inputClassName =
-  "w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-[#0F1B3D] placeholder:text-gray-400 outline-none focus:border-[#2E6BB5] focus:ring-1 focus:ring-[#2E6BB5] transition-colors";
+  "w-full rounded-xl border border-[#0F1B3D]/[0.08] bg-white px-3.5 py-2.5 text-sm text-[#0F1B3D] placeholder:text-[#8E8E93] outline-none focus:border-[#2E6BB5] focus:ring-1 focus:ring-[#2E6BB5] transition-colors";
 
 const selectClassName =
-  "w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-[#0F1B3D] outline-none focus:border-[#2E6BB5] focus:ring-1 focus:ring-[#2E6BB5] transition-colors appearance-none bg-white";
+  "w-full rounded-xl border border-[#0F1B3D]/[0.08] bg-white px-3.5 py-2.5 text-sm text-[#0F1B3D] outline-none focus:border-[#2E6BB5] focus:ring-1 focus:ring-[#2E6BB5] transition-colors appearance-none";
 
 const gradientButtonClassName =
   "w-full bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)] text-white rounded-full py-2.5 px-4 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed";
@@ -152,28 +152,28 @@ export function AddFamilyModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-full max-w-md p-6">
+      <DialogContent className="w-full max-w-md rounded-2xl bg-[#F7F6F2] border-[#0F1B3D]/[0.08] p-6 shadow-xl">
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold text-[#0F1B3D]">
+          <DialogTitle className="text-lg font-extrabold text-[#0F1B3D]">
             Add family member
           </DialogTitle>
-          <DialogDescription className="text-sm text-gray-500">
+          <DialogDescription className="text-[13px] text-[#8E8E93]">
             Create a profile you manage or invite someone to connect.
           </DialogDescription>
         </DialogHeader>
 
         {/* Tabs */}
-        <div className="mt-4 flex rounded-lg bg-gray-100 p-1">
+        <div className="mt-4 flex rounded-xl bg-[#0F1B3D]/[0.06] p-1">
           <button
             type="button"
             onClick={() => {
               setActiveTab("manage");
               setError(null);
             }}
-            className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors ${
+            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
               activeTab === "manage"
-                ? "bg-white text-[#0F1B3D] shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-white text-[#0F1B3D] shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
+                : "text-[#8E8E93] hover:text-[#0F1B3D]/60"
             }`}
           >
             Manage their profile
@@ -184,10 +184,10 @@ export function AddFamilyModal({
               setActiveTab("invite");
               setError(null);
             }}
-            className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors ${
+            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
               activeTab === "invite"
-                ? "bg-white text-[#0F1B3D] shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-white text-[#0F1B3D] shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
+                : "text-[#8E8E93] hover:text-[#0F1B3D]/60"
             }`}
           >
             Invite to connect
@@ -196,7 +196,7 @@ export function AddFamilyModal({
 
         {/* Error */}
         {error && (
-          <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+          <div className="mt-3 rounded-xl bg-red-50 px-3.5 py-2.5 text-sm text-red-600">
             {error}
           </div>
         )}
@@ -206,7 +206,7 @@ export function AddFamilyModal({
           <form onSubmit={handleCreateProfile} className="mt-4 space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1 block text-sm font-medium text-[#0F1B3D]">
+                <label className="mb-1 block text-[13px] font-semibold text-[#0F1B3D]/70">
                   First name
                 </label>
                 <input
@@ -219,7 +219,7 @@ export function AddFamilyModal({
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-[#0F1B3D]">
+                <label className="mb-1 block text-[13px] font-semibold text-[#0F1B3D]/70">
                   Last name
                 </label>
                 <input
@@ -234,7 +234,7 @@ export function AddFamilyModal({
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#0F1B3D]">
+              <label className="mb-1 block text-[13px] font-semibold text-[#0F1B3D]/70">
                 Relationship
               </label>
               <select
@@ -255,9 +255,9 @@ export function AddFamilyModal({
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#0F1B3D]">
+              <label className="mb-1 block text-[13px] font-semibold text-[#0F1B3D]/70">
                 Date of birth{" "}
-                <span className="font-normal text-gray-400">(optional)</span>
+                <span className="font-normal text-[#8E8E93]">(optional)</span>
               </label>
               <input
                 type="date"
@@ -268,9 +268,9 @@ export function AddFamilyModal({
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#0F1B3D]">
+              <label className="mb-1 block text-[13px] font-semibold text-[#0F1B3D]/70">
                 Zip code{" "}
-                <span className="font-normal text-gray-400">(optional)</span>
+                <span className="font-normal text-[#8E8E93]">(optional)</span>
               </label>
               <input
                 type="text"
@@ -298,7 +298,7 @@ export function AddFamilyModal({
           <>
             {inviteCode ? (
               <div className="mt-4 space-y-4">
-                <p className="text-sm text-[#0F1B3D]/70">
+                <p className="text-[13px] text-[#8E8E93]">
                   Send this link to your family member so they can connect with you on Elena:
                 </p>
                 <div className="flex items-center gap-2 rounded-xl bg-[#F5F7FB] px-4 py-3">
@@ -333,7 +333,7 @@ export function AddFamilyModal({
               </div>
             ) : (
               <div className="mt-4 space-y-3">
-                <p className="text-sm text-[#0F1B3D]/70">
+                <p className="text-[13px] text-[#8E8E93]">
                   Generate a link to share with your family member. They can create an account or log in to connect with you.
                 </p>
                 <button
