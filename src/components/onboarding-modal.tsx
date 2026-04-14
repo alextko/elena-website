@@ -73,7 +73,7 @@ export function OnboardingModal() {
               {hasName ? `Hey ${profileData.firstName}!` : "Welcome to Elena"}
             </h2>
             <p className="text-[14px] text-[#8E8E93] mt-1.5 leading-relaxed">
-              Help us personalize your experience. All fields are optional.
+              Help us personalize your experience.
             </p>
           </div>
 
