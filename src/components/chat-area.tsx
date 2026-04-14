@@ -1294,7 +1294,7 @@ export function ChatArea({
             ))}
           </div>
         )}
-        <form autoComplete="off" data-lpignore="true" data-1p-ignore onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex items-end gap-2 rounded-[28px] border border-[#E5E5EA] bg-white px-2 py-1.5 shadow-[0_1px_4px_rgba(0,0,0,0.06)] transition-all focus-within:shadow-[0_2px_8px_rgba(0,0,0,0.1)] focus-within:border-[#AEAEB2]">
+        <form autoComplete="off" data-tour="chat-input" data-lpignore="true" data-1p-ignore onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex items-end gap-2 rounded-[28px] border border-[#E5E5EA] bg-white px-2 py-1.5 shadow-[0_1px_4px_rgba(0,0,0,0.06)] transition-all focus-within:shadow-[0_2px_8px_rgba(0,0,0,0.1)] focus-within:border-[#AEAEB2]">
           <input
             ref={fileInputRef}
             type="file"

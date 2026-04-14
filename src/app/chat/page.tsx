@@ -321,6 +321,7 @@ function ChatPageInner() {
           onComplete={() => { setShowTour(false); setTourPopoverOpen(false); }}
           onShowPaywall={() => setUpgradeModalOpen(true)}
           onProfilePopover={(open, tab, showSwitcher) => { setTourPopoverOpen(open); if (tab) setTourPopoverTab(tab); setTourPopoverShowSwitcher(!!showSwitcher); }}
+          onSidebar={(open) => setSidebarOpen(open)}
         />
       )}
       {/* Checkout success banner */}

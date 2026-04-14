@@ -385,6 +385,12 @@ const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; s
     subtitle: "Urgent care, same-day appointments, telehealth, or an ER alternative. Elena finds available providers near you right now and tells you what it'll cost before you go.",
     prefill: "find me a doctor who can see me today near me",
   },
+  prices: {
+    headline: ["See real prices", "before you go."],
+    accent: "before you go",
+    subtitle: "Elena uses real insurance-negotiated rates to show you what procedures actually cost at every provider near you. No surprises, no guessing.",
+    prefill: "compare MRI prices near me",
+  },
 };
 
 const DEFAULT_HERO = {
@@ -479,6 +485,15 @@ const MADLIB_TEMPLATES: Record<string, { segments: { type: "text" | "blank"; val
       { type: "text", value: "." },
     ],
   },
+  prices: {
+    segments: [
+      { type: "text", value: "How much does a " },
+      { type: "blank", value: "", placeholder: "procedure" },
+      { type: "text", value: " cost near " },
+      { type: "blank", value: "", placeholder: "zip code" },
+      { type: "text", value: " with my insurance?" },
+    ],
+  },
 };
 
 const ROTATING_QUERIES: Record<string, string[]> = {
@@ -552,6 +567,15 @@ const ROTATING_QUERIES: Record<string, string[]> = {
     "where can I get an X-ray today without a referral?",
     "find a walk-in clinic near me that takes Aetna",
     "I need a prescription refill today, who can help?",
+  ],
+  prices: [
+    "how much does an MRI cost near me?",
+    "compare colonoscopy prices at hospitals vs outpatient centers",
+    "what will a knee replacement cost with my insurance?",
+    "find the cheapest place to get blood work done near me",
+    "how much does physical therapy cost per session?",
+    "compare prices for a CT scan at facilities near me",
+    "what's the cash price vs insurance price for an ultrasound?",
   ],
 };
 
@@ -637,6 +661,7 @@ function LandingPage() {
     "/lp/chronic": "chronic",
     "/lp/insurance": "insurance",
     "/lp/care-now": "care_now",
+    "/lp/prices": "prices",
   };
   const ref = searchParams.get("ref") || searchParams.get("utm_content") || LP_PATH_MAP[pathname] || null;
   const hero = (ref && HERO_COPY[ref]) || null;
