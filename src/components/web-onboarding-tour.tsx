@@ -37,9 +37,9 @@ const JOYRIDE_STEPS: any[] = [
 
 // Profile popover steps use custom overlay cards (can't target portal DOM)
 const PROFILE_STEPS = [
-  { id: "health", title: "This is your Health tab.", body: "Here you'll find your game plan, your doctors, medications, and daily to-dos. As you chat with Elena, she fills this in automatically.", tab: "health" as const },
-  { id: "visits", title: "This is your Visits tab.", body: "Every appointment Elena books shows up here. You can review past visits, read notes, and keep track of what's coming up.", tab: "visits" as const },
-  { id: "insurance", title: "This is your Insurance tab.", body: "Upload your insurance card here. Elena will use it to check what's covered, find in-network providers, and estimate your costs before you go.", tab: "insurance" as const },
+  { id: "health", title: "This is your Health tab.", body: "Here you'll find your to-dos, your doctors, your medications, your providers, and other health details. As you chat with Elena, she fills this in automatically.", tab: "health" as const },
+  { id: "visits", title: "This is your Visits tab.", body: "Every appointment Elena books shows up here. You can also add visits yourself, review past appointments, read notes, and keep track of what's coming up.", tab: "visits" as const },
+  { id: "insurance", title: "This is your Insurance tab.", body: "When you've shared your insurance, Elena will use it to check what's covered, find in-network providers, and estimate your costs before you go.", tab: "insurance" as const },
   { id: "family", title: "You can also manage family members.", body: "If you're helping a parent, partner, or child with their care, add them here. Each person gets their own profile with separate health data, doctors, and insurance.", tab: "health" as const, showSwitcher: true },
 ];
 
@@ -211,7 +211,6 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover 
               <p className="text-[15px] text-[#5a6a82] font-light leading-relaxed">
                 Ask Elena anything about your health, insurance, or appointments. She can make calls, compare prices, and manage your care.
               </p>
-              <p className="text-[13px] text-[#8E8E93] font-light mt-3">Your conversations are saved in the sidebar.</p>
             </div>
             <GradientButton onClick={finishTour} label="Finish" />
           </div>
