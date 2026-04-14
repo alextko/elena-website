@@ -63,6 +63,8 @@ function reducer(state: State, action: Action): State {
 
 const inputCls =
   "w-full rounded-xl border border-[#E5E5EA] bg-white px-4 py-3 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#2E6BB5] focus:ring-1 focus:ring-[#2E6BB5] transition-colors";
+const selectCls =
+  `${inputCls} appearance-none pr-10 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%238E8E93%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_12px_center] bg-no-repeat`;
 const labelCls = "text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider mb-1 block";
 
 // --- Main Component ---
@@ -276,7 +278,7 @@ function DmeContent() {
                   <select
                     value={answers.equipmentType}
                     onChange={(e) => setAnswer({ equipmentType: e.target.value })}
-                    className={inputCls}
+                    className={selectCls}
                   >
                     <option value="">Select equipment type</option>
                     {DME_EQUIPMENT_OPTIONS.map((opt) => (
@@ -302,7 +304,7 @@ function DmeContent() {
                   <select
                     value={answers.urgency}
                     onChange={(e) => setAnswer({ urgency: e.target.value as DmeAnswers["urgency"] })}
-                    className={inputCls}
+                    className={selectCls}
                   >
                     <option value="">Select urgency</option>
                     <option value="urgent">Urgent / ASAP</option>
@@ -409,7 +411,7 @@ function DmeContent() {
                 </div>
                 <div>
                   <label className={labelCls}>Plan type</label>
-                  <select value={answers.insurancePlanType} onChange={(e) => setAnswer({ insurancePlanType: e.target.value })} className={inputCls}>
+                  <select value={answers.insurancePlanType} onChange={(e) => setAnswer({ insurancePlanType: e.target.value })} className={selectCls}>
                     <option value="">Select if known</option>
                     <option value="HMO">HMO</option>
                     <option value="PPO">PPO</option>
@@ -488,14 +490,25 @@ function DmeContent() {
                   <label className={labelCls}>Doctor / Clinic name</label>
                   <input type="text" value={answers.doctorClinicName} onChange={(e) => setAnswer({ doctorClinicName: e.target.value })} placeholder="Name of your primary doctor or clinic" className={inputCls} autoFocus />
                 </div>
-                <div>
-                  <label className={labelCls}>Phone</label>
-                  <input type="tel" value={answers.doctorPhone} onChange={(e) => setAnswer({ doctorPhone: e.target.value })} placeholder="(555) 555-5555" className={inputCls} />
-                </div>
-                <div>
-                  <label className={labelCls}>Fax <span className="normal-case font-normal text-[#AEAEB2]">(if known)</span></label>
-                  <input type="tel" value={answers.doctorFax} onChange={(e) => setAnswer({ doctorFax: e.target.value })} placeholder="(555) 555-5555" className={inputCls} />
-                </div>
+                {answers.doctorClinicName !== "" && (
+                  <>
+                    <div>
+                      <label className={labelCls}>Phone</label>
+                      <input type="tel" value={answers.doctorPhone} onChange={(e) => setAnswer({ doctorPhone: e.target.value })} placeholder="(555) 555-5555" className={inputCls} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Fax <span className="normal-case font-normal text-[#AEAEB2]">(if known)</span></label>
+                      <input type="tel" value={answers.doctorFax} onChange={(e) => setAnswer({ doctorFax: e.target.value })} placeholder="(555) 555-5555" className={inputCls} />
+                    </div>
+                  </>
+                )}
+                <button
+                  type="button"
+                  onClick={() => { setAnswer({ doctorClinicName: "", doctorPhone: "", doctorFax: "" }); advance(); }}
+                  className="text-[14px] font-medium text-[#8E8E93] hover:text-[#0F1B3D] transition-colors pt-1"
+                >
+                  I don't have a doctor yet
+                </button>
               </div>
             </StepLayout>
           )}
