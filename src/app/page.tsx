@@ -366,7 +366,7 @@ const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; s
     headline: ["Your fertility journey,", "all in one place."],
     accent: "all in one place",
     subtitle: "Track medications and appointments, compare clinic prices, call your insurance about coverage, and manage the whole process without the spreadsheets.",
-    prefill: "help me manage my fertility treatment",
+    prefill: "Help me navigate my fertility journey",
   },
   chronic: {
     headline: ["Take control of", "your condition."],
@@ -428,15 +428,6 @@ const MADLIB_TEMPLATES: Record<string, { segments: { type: "text" | "blank"; val
       { type: "text", value: " " },
       { type: "blank", value: "", placeholder: "dosage" },
       { type: "text", value: " in stock near me." },
-    ],
-  },
-  fertility: {
-    segments: [
-      { type: "text", value: "I'm going through " },
-      { type: "blank", value: "", placeholder: "IVF, IUI, egg freezing" },
-      { type: "text", value: " and need help with " },
-      { type: "blank", value: "", placeholder: "costs, insurance, tracking" },
-      { type: "text", value: "." },
     ],
   },
   chronic: {
