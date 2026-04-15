@@ -130,7 +130,7 @@ export function Intro({ onStart }: IntroProps) {
       </nav>
 
       {/* Content */}
-      <div className="relative z-[4] text-center max-w-[700px] w-full px-6 mt-[20vh] max-md:mt-[15vh]">
+      <div className="relative z-[4] text-center max-w-[800px] w-full px-6 mt-[20vh] max-md:mt-[15vh]">
         <h1 className="text-[clamp(2rem,4.5vw,3.2rem)] max-md:text-[1.7rem] font-light leading-[1.15] tracking-tight text-white">
           See what preventative care<br />
           <span className="font-extrabold">you could be getting for free.</span>
