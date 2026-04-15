@@ -363,10 +363,10 @@ const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; s
     prefill: "find my medication in stock near me",
   },
   fertility: {
-    headline: ["Navigate fertility", "without the stress."],
-    accent: "without the stress",
-    subtitle: "Elena compares IVF clinic prices, checks your insurance coverage, handles prior authorizations, and tracks your entire fertility journey so you can focus on what matters.",
-    prefill: "help me compare IVF clinics and costs near me",
+    headline: ["Your fertility journey,", "all in one place."],
+    accent: "all in one place",
+    subtitle: "Track medications and appointments, compare clinic prices, call your insurance about coverage, and manage the whole process without the spreadsheets.",
+    prefill: "help me manage my fertility treatment",
   },
   chronic: {
     headline: ["Take control of", "your condition."],
@@ -441,11 +441,11 @@ const MADLIB_TEMPLATES: Record<string, { segments: { type: "text" | "blank"; val
   },
   fertility: {
     segments: [
-      { type: "text", value: "Compare " },
+      { type: "text", value: "I'm going through " },
       { type: "blank", value: "", placeholder: "IVF, IUI, egg freezing" },
-      { type: "text", value: " costs near " },
-      { type: "blank", value: "", placeholder: "zip code" },
-      { type: "text", value: ". Check if my insurance covers it." },
+      { type: "text", value: " and need help with " },
+      { type: "blank", value: "", placeholder: "costs, insurance, tracking" },
+      { type: "text", value: "." },
     ],
   },
   chronic: {
@@ -525,13 +525,13 @@ const ROTATING_QUERIES: Record<string, string[]> = {
     "find affordable insulin near me",
   ],
   fertility: [
+    "track my IVF medications and injection schedule",
     "compare IVF clinic prices near me",
-    "does my insurance cover egg freezing?",
-    "find a fertility specialist that takes Blue Cross",
-    "how much does IUI cost out of pocket?",
-    "help me understand my fertility benefits",
-    "compare embryo transfer costs at clinics near me",
-    "what fertility medications does my plan cover?",
+    "call my insurance and ask what fertility treatments are covered",
+    "how much does egg freezing cost with my plan?",
+    "help me keep track of all my fertility appointments",
+    "find a fertility specialist that takes my insurance",
+    "what does my plan cover for IUI?",
   ],
   caregiver: [
     "help me manage my mom's medications and refills",
