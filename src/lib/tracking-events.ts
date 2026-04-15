@@ -45,9 +45,18 @@ const ACTIVATION_FLAG = 'elena_activation_fired_v1';
 /**
  * Fires once per browser when the user has BOTH authenticated and sent a first
  * message (via the claim path or directly in chat). Idempotent — safe to call
- * from multiple sites. This is the Meta ad-set optimization target (`Lead`).
+ * from multiple sites.
+ *
+ * Fires Meta `CompleteRegistration` here (not on the onboarding form) because
+ * Meta locks the ad set optimization event after publish, so every ad set is
+ * permanently optimizing on `CompleteRegistration`. Moving the fire earlier
+ * in the funnel lets Meta optimize against activated users instead of users
+ * who complete the full multi-step onboarding form. The onboarding-form
+ * `CompleteRegistration` fire has been removed from `trackSignup` to avoid
+ * double-counting.
+ *
  * Returns the event_id used for the fbq fire so callers can hand it to backend
- * CAPI for dedup.
+ * CAPI for dedup (Phase 2).
  */
 export function trackActivation(userId?: string): string | undefined {
   if (typeof window === 'undefined') return;
@@ -73,7 +82,7 @@ export function trackActivation(userId?: string): string | undefined {
   try {
     const fbq = (window as any).fbq;
     if (fbq) {
-      fbq('track', 'Lead', { content_name: 'elena_activation' }, { eventID: eid });
+      fbq('track', 'CompleteRegistration', { content_name: 'elena_activation' }, { eventID: eid });
     }
   } catch { /* safe to ignore */ }
 
@@ -139,16 +148,9 @@ export async function trackSignup(method: 'email' | 'google' | 'apple' | string,
     }
   } catch { /* TikTok pixel error — safe to ignore */ }
 
-  // Meta Pixel
-  try {
-    const fbq = (window as any).fbq;
-    if (fbq) {
-      fbq('track', 'CompleteRegistration', {
-        content_name: 'elena_signup',
-        method,
-      });
-    }
-  } catch { /* Meta pixel error — safe to ignore */ }
+  // Meta `CompleteRegistration` is intentionally NOT fired here. It fires from
+  // trackActivation (authed + first message) instead, to give Meta an earlier
+  // optimization signal. See trackActivation() for the rationale.
 }
 
 export function trackSubscription(plan: string, value: number, currency: string = 'USD') {
