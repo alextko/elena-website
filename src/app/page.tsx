@@ -1088,7 +1088,7 @@ function LandingPage() {
               alt="Elena"
               className="w-[280px] h-[280px] rounded-[56px] shadow-[0_16px_48px_rgba(0,0,0,0.12)] bg-[#0F1B3D]"
             />
-            <p className="text-[0.7rem] font-light text-[#AEAEB2] text-center">App coming soon</p>
+            <a href="https://apps.apple.com/us/app/elena-ai-health-navigator/id6760362771" target="_blank" rel="noopener noreferrer" className="text-[0.8rem] font-medium text-white/80 hover:text-white transition-colors text-center">Download on the App Store &rarr;</a>
           </div>
         </div>
       </section>
