@@ -917,7 +917,16 @@ export function ChatArea({
         sessionIdRef.current = result.session_id;
       }
     },
-    [input, isLoading, sendAndPoll, onSessionCreated, welcomeMessage, pendingFiles],
+    // `user` must be in deps so `trackActivation(user.id)` sees the populated
+    // auth user. In the real OAuth flow, chat-area mounts before useAuth
+    // resolves the session, so the first `handleSend` memoization closes over
+    // `user = null`. Without `user` in deps, subsequent renders return the
+    // stale closure (useCallback returns the same reference), the auto-send
+    // path fires the stale handleSend via handleSendRef, and `user?.id`
+    // evaluates to undefined — so trackActivation never fires and the Meta
+    // `CompleteRegistration` pixel (wired to trackActivation) is silently
+    // dropped for every OAuth signup that gets their message auto-sent.
+    [input, isLoading, sendAndPoll, onSessionCreated, welcomeMessage, pendingFiles, user],
   );
 
   // Keep ref in sync for auto-send effect
