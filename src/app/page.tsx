@@ -375,7 +375,7 @@ const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; s
     prefill: "help me manage my diabetes care and find the cheapest insulin near me",
   },
   insurance: {
-    headline: ["Find the right plan.", "Stop overpaying."],
+    headline: ["Find the right insurance.", "Stop overpaying."],
     accent: "overpaying",
     subtitle: "Marketplace plans, employer options, Medicare, Medicaid. Elena compares plans based on your doctors, medications, and expected needs so you pick the one that actually saves you money.",
     prefill: "Help me find the right insurance",
