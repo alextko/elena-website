@@ -336,7 +336,7 @@ const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; s
     headline: ["Most medical bills", "have errors. Fight back."],
     accent: "Fight back",
     subtitle: "Up to 80% of medical bills contain mistakes. Elena finds overcharges, files appeals, and negotiates on your behalf so you never pay more than you owe.",
-    prefill: "I got a medical bill that seems too high, can you help?",
+    prefill: "Check this bill for errors",
   },
   calls: {
     headline: ["Elena calls your", "insurance for you."],
@@ -348,7 +348,7 @@ const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; s
     headline: ["Manage their health", "from your phone."],
     accent: "from your phone",
     subtitle: "Juggling appointments, insurance, and medications for a loved one is exhausting. Elena handles the logistics so you can focus on being there for them.",
-    prefill: "Help me manage my parents' healthcare from my phone",
+    prefill: "Help me manage my family's health care",
   },
   risk_assessment: {
     headline: ["Know your risk", "before it's too late."],
@@ -378,7 +378,7 @@ const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; s
     headline: ["Find the right plan.", "Stop overpaying."],
     accent: "overpaying",
     subtitle: "Marketplace plans, employer options, Medicare, Medicaid. Elena compares plans based on your doctors, medications, and expected needs so you pick the one that actually saves you money.",
-    prefill: "help me find the best health insurance plan for my situation",
+    prefill: "Help me find the right insurance",
   },
   care_now: {
     headline: ["Need care today?", "Elena finds it."],
@@ -390,7 +390,7 @@ const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; s
     headline: ["See real prices", "before you go."],
     accent: "before you go",
     subtitle: "Elena uses real insurance-negotiated rates to show you what procedures actually cost at every provider near you. No surprises, no guessing.",
-    prefill: "compare MRI prices near me",
+    prefill: "How much does a back MRI cost near me?",
   },
 };
 
@@ -412,15 +412,6 @@ const BLOBS = [
 // Each template is an array of segments. "text" segments are plain text,
 // "blank" segments render as styled pill inputs inline.
 const MADLIB_TEMPLATES: Record<string, { segments: { type: "text" | "blank"; value: string; placeholder?: string }[] }> = {
-  bill_fighting: {
-    segments: [
-      { type: "text", value: "I got a bill for " },
-      { type: "blank", value: "", placeholder: "$___" },
-      { type: "text", value: " from " },
-      { type: "blank", value: "", placeholder: "provider" },
-      { type: "text", value: ". Can you check if I'm being overcharged?" },
-    ],
-  },
   calls: {
     segments: [
       { type: "text", value: "Call " },
@@ -457,17 +448,6 @@ const MADLIB_TEMPLATES: Record<string, { segments: { type: "text" | "blank"; val
       { type: "text", value: " and a specialist near me." },
     ],
   },
-  insurance: {
-    segments: [
-      { type: "text", value: "I need " },
-      { type: "blank", value: "", placeholder: "individual, family, Medicare" },
-      { type: "text", value: " coverage. I take " },
-      { type: "blank", value: "", placeholder: "medications" },
-      { type: "text", value: " and see " },
-      { type: "blank", value: "", placeholder: "doctors" },
-      { type: "text", value: "." },
-    ],
-  },
   care_now: {
     segments: [
       { type: "text", value: "I need to see a " },
@@ -475,24 +455,6 @@ const MADLIB_TEMPLATES: Record<string, { segments: { type: "text" | "blank"; val
       { type: "text", value: " today near " },
       { type: "blank", value: "", placeholder: "zip code" },
       { type: "text", value: "." },
-    ],
-  },
-  caregiver: {
-    segments: [
-      { type: "text", value: "Help me manage " },
-      { type: "blank", value: "", placeholder: "my mom, my dad" },
-      { type: "text", value: "'s " },
-      { type: "blank", value: "", placeholder: "medications, appointments, insurance" },
-      { type: "text", value: "." },
-    ],
-  },
-  prices: {
-    segments: [
-      { type: "text", value: "How much does a " },
-      { type: "blank", value: "", placeholder: "procedure" },
-      { type: "text", value: " cost near " },
-      { type: "blank", value: "", placeholder: "zip code" },
-      { type: "text", value: " with my insurance?" },
     ],
   },
 };

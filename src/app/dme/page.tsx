@@ -323,25 +323,96 @@ function DmeContent() {
           transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
           className="flex-1 flex flex-col"
         >
-          {/* ── Step 0: Intro ── */}
+          {/* ── Step 0: Intro (matches risk-assessment style) ── */}
           {step === 0 && (
-            <div className="flex-1 flex flex-col items-center justify-center px-6 text-center"
-              style={{ background: "linear-gradient(180deg, #0F1B3D 0%, #1A3A6E 50%, #2E6BB5 100%)" }}>
-              <div className="max-w-md">
-                <h1 className="text-[clamp(1.6rem,5vw,2.2rem)] font-light text-white leading-tight tracking-tight mb-4">
-                  Get your medical equipment <em className="font-medium not-italic">covered by insurance</em>
+            <section className="relative flex-1 min-h-dvh flex flex-col items-center overflow-hidden">
+              <style dangerouslySetInnerHTML={{ __html: `@keyframes scroll-left{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}` }} />
+              {/* Gradient bg */}
+              <div className="absolute inset-0 z-0 bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)]">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_130%,#F4B084_0%,#E8956D_25%,rgba(46,107,181,0)_60%)]" />
+              </div>
+
+              {/* Blobs */}
+              <div className="absolute inset-0 z-[2] overflow-hidden pointer-events-none">
+                <div className="absolute rounded-full blur-[80px] w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(46,107,181,0.5)_0%,transparent_70%)] -top-[10%] left-[20%]" />
+                <div className="absolute rounded-full blur-[80px] w-[600px] h-[600px] bg-[radial-gradient(circle,rgba(244,176,132,0.35)_0%,transparent_70%)] -bottom-[20%] -right-[5%]" />
+                <div className="absolute rounded-full blur-[80px] w-[400px] h-[400px] bg-[radial-gradient(circle,rgba(26,58,110,0.4)_0%,transparent_70%)] top-[30%] right-[25%]" />
+                <div className="absolute rounded-full blur-[80px] w-[450px] h-[450px] bg-[radial-gradient(circle,rgba(232,149,109,0.25)_0%,transparent_70%)] bottom-[10%] left-[5%]" />
+              </div>
+
+              {/* Nav */}
+              <nav className="absolute top-0 left-0 right-0 z-[100] px-8 py-5 flex items-center justify-between max-md:px-4">
+                <a
+                  href="/"
+                  className="bg-white/[0.08] backdrop-blur-[40px] border border-white/[0.18] border-t-white/30 rounded-[18px_18px_18px_4px] px-5 py-2.5 max-md:px-4 max-md:py-2 max-md:h-10 max-md:flex max-md:items-center text-[1.35rem] max-md:text-[0.95rem] font-semibold text-white no-underline tracking-tight shadow-[0_4px_16px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.15)]"
+                  style={{ WebkitBackdropFilter: "blur(40px) saturate(1.8)" }}
+                >
+                  elena
+                </a>
+              </nav>
+
+              {/* Content */}
+              <div className="relative z-[4] text-center max-w-[700px] w-full px-6 mt-[20vh] max-md:mt-[15vh]">
+                <h1 className="text-[clamp(2rem,4.5vw,3.2rem)] max-md:text-[1.7rem] font-light leading-[1.15] tracking-tight text-white">
+                  Need at-home<br />
+                  <span className="font-extrabold">medical equipment?</span>
                 </h1>
-                <p className="text-[16px] text-white/60 font-light leading-relaxed mb-10">
-                  We'll collect your information and help you get the equipment you need, potentially at no cost to you.
+
+                <p className="text-[0.95rem] max-md:text-[0.8rem] font-light text-white/85 mt-4 tracking-wide max-w-[520px] mx-auto">
+                  Elena checks your insurance, finds the best price from in-network suppliers, and gets it delivered to your door.
                 </p>
+
+                <p className="text-white/40 text-[13px] font-light mt-3">
+                  CPAP machines, breast pumps, oxygen tanks, braces & more
+                </p>
+
                 <button
+                  type="button"
                   onClick={advance}
-                  className="w-full max-w-xs mx-auto py-4 rounded-full bg-white/[0.12] backdrop-blur-[40px] border border-white/[0.2] text-white font-semibold text-base hover:bg-white/[0.2] transition-all"
+                  className="mt-8 px-10 py-4 rounded-full bg-white/[0.12] backdrop-blur-[40px] border border-white/[0.2] border-t-white/30 text-white font-semibold text-base shadow-[0_4px_24px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.15)] hover:bg-white/[0.2] hover:border-white/[0.35] transition-all"
+                  style={{ WebkitBackdropFilter: "blur(40px) saturate(1.8)" }}
                 >
                   Get Started
                 </button>
+
+                <p className="text-white/30 text-xs mt-5 font-light">
+                  Free. Most equipment covered at $0 under your plan.
+                </p>
               </div>
-            </div>
+
+              {/* Testimonials */}
+              <div className="absolute bottom-0 left-0 right-0 z-[2] w-full pb-3 max-md:pb-2" style={{
+                maskImage: "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
+                WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
+              }}>
+                <div className="text-[11px] font-semibold uppercase tracking-[2px] text-white/30 text-center mb-4">
+                  Real people. Real results.
+                </div>
+                <div className="overflow-hidden w-full">
+                  <div className="flex w-max animate-[scroll-left_100s_linear_infinite] max-md:animate-[scroll-left_60s_linear_infinite] will-change-transform [backface-visibility:hidden]">
+                    {[0, 1].map((set) => (
+                      <div key={set} className="flex gap-3 pr-3 shrink-0">
+                        {[
+                          { name: "Jessica", text: <><span className="font-bold">Jessica</span> was quoted <span className="font-bold">$380</span> for a breast pump. Elena found one fully covered by insurance.</>, logo: "/images/insurers/bcbs.svg", logoAlt: "Blue Cross" },
+                          { name: "Michael", text: <><span className="font-bold">Michael</span> got his CPAP machine covered at <span className="font-bold">100%</span> after Elena verified his benefits.</>, logo: "/images/insurers/uhc.svg", logoAlt: "UnitedHealthcare" },
+                          { name: "Sarah", text: <><span className="font-bold">Sarah</span> saved <span className="font-bold">$2,800</span> on her oxygen concentrator through an in-network DME supplier.</>, logo: "/images/insurers/aetna.svg", logoAlt: "Aetna" },
+                          { name: "David", text: <><span className="font-bold">David</span> needed a knee brace — Elena found one covered with just a <span className="font-bold">$32 copay</span>.</>, logo: "/images/insurers/cigna.svg", logoAlt: "Cigna" },
+                          { name: "Lisa", text: <><span className="font-bold">Lisa</span> didn&apos;t know her plan covered a hospital-grade breast pump. Elena got it delivered free.</>, logo: "/images/insurers/humana.svg", logoAlt: "Humana" },
+                          { name: "Tom", text: <><span className="font-bold">Tom</span> got his CPAP supplies on auto-delivery, fully covered. Elena handled everything.</>, logo: "/images/insurers/oscar.svg", logoAlt: "Oscar" },
+                          { name: "Rachel", text: <><span className="font-bold">Rachel</span> compared 4 DME suppliers and found one that ships free with <span className="font-bold">$0</span> out of pocket.</>, logo: "/images/insurers/bcbs.svg", logoAlt: "Blue Cross" },
+                          { name: "James", text: <><span className="font-bold">James</span> needed a wheelchair after surgery. Elena got prior auth approved in <span className="font-bold">3 days</span>.</>, logo: "/images/insurers/uhc.svg", logoAlt: "UnitedHealthcare" },
+                        ].map((card) => (
+                          <div key={`${set}-${card.name}`} className="bg-white/[0.12] backdrop-blur-xl border border-white/[0.18] rounded-2xl px-6 pt-5 pb-4 w-[310px] h-[130px] shrink-0 shadow-[0_4px_16px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.15)] flex flex-col">
+                            <p className="text-[0.88rem] text-white/90 leading-relaxed flex-1">{card.text}</p>
+                            <img src={card.logo} alt={card.logoAlt} className="h-6 mt-auto pt-2 self-start brightness-0 invert opacity-60" />
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
           )}
 
           {/* ── Step 1: Equipment ── */}

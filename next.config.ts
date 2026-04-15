@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
       { source: "/lp/insurance", destination: "/?ref=insurance" },
       { source: "/lp/care-now", destination: "/?ref=care_now" },
       { source: "/lp/price-transparency", destination: "/?ref=prices" },
+      { source: "/lp/equipment", destination: "/dme" },
       { source: "/lp/quiz", destination: "/risk-assessment" },
     ];
   },
