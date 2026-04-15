@@ -121,12 +121,16 @@ function ChatPageInner() {
     if (loading || !session || pendingClaimAttempted.current) return;
     pendingClaimAttempted.current = true;
 
-    let cancelled = false;
+    // Note: no `cancelled` flag / cleanup — pendingClaimAttempted already
+    // prevents re-runs, and React 18+ tolerates setState on unmounted
+    // components. Adding a cancelled flag breaks dev mode because StrictMode
+    // double-invokes effects: the first run starts the async claim, cleanup
+    // sets cancelled=true, the second run short-circuits on
+    // pendingClaimAttempted, and the in-flight claim then drops its response.
     (async () => {
       const localQ = localStorage.getItem("elena_pending_query");
       try {
         const claim = await claimPendingMessages();
-        if (cancelled) return;
         if (claim && claim.claimed_count > 0 && claim.session_id && claim.messages.length > 0) {
           const firstMessage = claim.messages[0].content;
           setActiveSessionId(claim.session_id);
@@ -152,14 +156,11 @@ function ChatPageInner() {
       } catch {
         // Swallow and fall through to localStorage fallback
       }
-      if (cancelled) return;
       if (localQ) {
         setPendingQuery(localQ);
         setIsNewChat(true);
       }
     })();
-
-    return () => { cancelled = true; };
   }, [loading, session]);
 
   // Track app load

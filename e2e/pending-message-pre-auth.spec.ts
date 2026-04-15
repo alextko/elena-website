@@ -7,7 +7,7 @@ import { test, expect, type APIRequestContext, type Page } from "@playwright/tes
 //   2. NEXT_PUBLIC_API_BASE pointed at that backend when starting `npm run dev`
 //   3. Supabase reachable; backend has ANTHROPIC_API_KEY set (for variant 3)
 
-const API_BASE = "http://localhost:8001";
+const API_BASE = "http://localhost:8000";
 const SUPABASE_URL = "https://livbrrqqxnvnxhggguig.supabase.co";
 // Same anon key every browser client sees — intentionally public.
 const SUPABASE_ANON_KEY =
