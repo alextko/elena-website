@@ -387,8 +387,8 @@ const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; s
     prefill: "find me a doctor who can see me today near me",
   },
   prices: {
-    headline: ["See real healthcare prices", "before you go."],
-    accent: "before you go",
+    headline: ["See real healthcare prices.", "Before you go in, compare prices for healthcare."],
+    accent: "compare prices for healthcare",
     subtitle: "Elena uses real insurance-negotiated rates to show you what procedures actually cost at every provider near you. No surprises, no guessing.",
     prefill: "How much does a back MRI cost near me?",
   },
