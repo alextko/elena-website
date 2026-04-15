@@ -345,9 +345,9 @@ const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; s
     prefill: "Call my insurance company for me",
   },
   caregiver: {
-    headline: ["Manage their health", "from your phone."],
-    accent: "from your phone",
-    subtitle: "Juggling appointments, insurance, and medications for a loved one is exhausting. Elena handles the logistics so you can focus on being there for them.",
+    headline: ["Managing a loved one's health?", "Elena handles it."],
+    accent: "Elena handles it",
+    subtitle: "Calling doctors, fighting insurance, tracking medications. Elena does it all so you can focus on being there for them.",
     prefill: "Help me manage my family's health care",
   },
   risk_assessment: {
