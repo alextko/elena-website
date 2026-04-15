@@ -387,7 +387,7 @@ const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; s
     prefill: "find me a doctor who can see me today near me",
   },
   prices: {
-    headline: ["See real prices", "before you go."],
+    headline: ["See real healthcare prices", "before you go."],
     accent: "before you go",
     subtitle: "Elena uses real insurance-negotiated rates to show you what procedures actually cost at every provider near you. No surprises, no guessing.",
     prefill: "How much does a back MRI cost near me?",
@@ -478,11 +478,11 @@ const ROTATING_QUERIES: Record<string, string[]> = {
     "find affordable insulin near me",
   ],
   fertility: [
-    "track my IVF medications and injection schedule",
+    "help me navigate my fertility journey",
     "compare IVF clinic prices near me",
-    "call my insurance and ask what fertility treatments are covered",
+    "does my insurance cover fertility treatments?",
     "how much does egg freezing cost with my plan?",
-    "help me keep track of all my fertility appointments",
+    "help me keep track of my fertility appointments",
     "find a fertility specialist that takes my insurance",
     "what does my plan cover for IUI?",
   ],
