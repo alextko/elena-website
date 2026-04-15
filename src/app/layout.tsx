@@ -109,15 +109,6 @@ fbq('init', '${process.env.NEXT_PUBLIC_META_PIXEL_ID}');
 fbq('track', 'PageView');`,
           }}
         />
-        <Script
-          id="reddit-pixel"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `!function(w,d){if(!w.rdt){var p=w.rdt=function(){p.sendEvent?p.sendEvent.apply(p,arguments):p.callQueue.push(arguments)};p.callQueue=[];var t=d.createElement("script");t.src="https://www.redditstatic.com/ads/pixel.js?pixel_id=a2_iquaum6mzu9t",t.async=!0;var s=d.getElementsByTagName("script")[0];s.parentNode.insertBefore(t,s)}}(window,document);
-rdt('init','a2_iquaum6mzu9t');
-rdt('track', 'PageVisit');`,
-          }}
-        />
         <Providers>{children}</Providers>
       </body>
     </html>

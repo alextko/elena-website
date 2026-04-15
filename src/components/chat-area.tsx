@@ -6,7 +6,7 @@ import { PanelLeft, Plus, ArrowUp, Square, Paperclip, X } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
 import * as analytics from "@/lib/analytics";
-import { trackPaywallHit } from "@/lib/tracking-events";
+import { trackPaywallHit, trackActivation } from "@/lib/tracking-events";
 import { usePollChat } from "@/hooks/usePollChat";
 import { useBookingPoll } from "@/hooks/useBookingPoll";
 import { UpgradeModal } from "@/components/upgrade-modal";
@@ -211,7 +211,7 @@ export function ChatArea({
   isNewChat?: boolean;
   demoMode?: boolean;
 }) {
-  const { profileId, profileData, profiles, refreshInsurance } = useAuth();
+  const { user, profileId, profileData, profiles, refreshInsurance } = useAuth();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const messagesRef = useRef<Message[]>([]);
@@ -810,6 +810,10 @@ export function ChatArea({
         authenticated: true,
         source: initialQuery && messages.length === 0 ? "post_signup" : "chat",
       });
+
+      if (user?.id) {
+        trackActivation(user.id);
+      }
 
       setIsLoading(true);
       console.log("[chat-area] sending message to session:", sessionIdRef.current, "activeSessionId prop:", activeSessionId);

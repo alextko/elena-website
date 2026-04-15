@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { trackViewContent } from "@/lib/tracking-events";
+import { trackViewContent, trackActivation } from "@/lib/tracking-events";
 import * as analytics from "@/lib/analytics";
 import { AuthModal } from "@/components/auth-modal";
 import Spotlights from "@/components/landing/spotlights";
@@ -617,7 +617,15 @@ function LandingPage() {
     "/lp/care-now": "care_now",
     "/lp/price-transparency": "prices",
   };
-  const ref = searchParams.get("ref") || searchParams.get("utm_content") || LP_PATH_MAP[pathname] || null;
+  // Priority: explicit ?ref= > /lp/* path map > utm_content (last-resort, only
+  // if it happens to match a known variant key). utm_content MUST come after
+  // the path map because ad campaigns use free-form slugs like "ugc_insurance"
+  // that are not valid HERO_COPY keys and would blank the variant.
+  const utmContentRef = searchParams.get("utm_content");
+  const ref =
+    searchParams.get("ref") ||
+    LP_PATH_MAP[pathname] ||
+    (utmContentRef && HERO_COPY[utmContentRef] ? utmContentRef : null);
   const hero = (ref && HERO_COPY[ref]) || null;
   const queries = ref ? ROTATING_QUERIES[ref] : undefined;
   const [userHasEdited, setUserHasEdited] = useState(false);
@@ -749,6 +757,9 @@ function LandingPage() {
         source: "landing_page",
         landing_variant: ref || "homepage",
       });
+      if (session?.user?.id) {
+        trackActivation(session.user.id);
+      }
       localStorage.setItem("elena_pending_query", query);
       void postPendingMessage({
         content: query,

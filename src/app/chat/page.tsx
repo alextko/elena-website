@@ -14,7 +14,7 @@ import { OnboardingModal } from "@/components/onboarding-modal";
 import { WebOnboardingTour } from "@/components/web-onboarding-tour";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import type { ChatSessionItem } from "@/lib/types";
-import { trackSubscription } from "@/lib/tracking-events";
+import { trackSubscription, trackActivation } from "@/lib/tracking-events";
 
 export default function ChatPage() {
   return (
@@ -144,6 +144,9 @@ function ChatPageInner() {
           });
           localStorage.removeItem("elena_pending_query");
           clearAnonId();
+          if (session?.user?.id) {
+            trackActivation(session.user.id);
+          }
           return;
         }
       } catch {

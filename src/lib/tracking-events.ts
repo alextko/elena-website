@@ -40,6 +40,53 @@ async function sha256(str: string): Promise<string> {
     .join('');
 }
 
+const ACTIVATION_FLAG = 'elena_activation_fired_v1';
+
+/**
+ * Fires once per browser when the user has BOTH authenticated and sent a first
+ * message (via the claim path or directly in chat). Idempotent — safe to call
+ * from multiple sites. This is the Meta ad-set optimization target (`Lead`).
+ * Returns the event_id used for the fbq fire so callers can hand it to backend
+ * CAPI for dedup.
+ */
+export function trackActivation(userId?: string): string | undefined {
+  if (typeof window === 'undefined') return;
+  if (localStorage.getItem(ACTIVATION_FLAG)) return;
+  localStorage.setItem(ACTIVATION_FLAG, new Date().toISOString());
+
+  const attribution = getStoredAttribution();
+  const eid = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  try {
+    const mp = getMixpanelAny();
+    if (mp) {
+      mp.track('Activated', {
+        event_id: eid,
+        ...(userId ? { user_id: userId } : {}),
+        ...(attribution || {}),
+      });
+    }
+  } catch { /* safe to ignore */ }
+
+  try {
+    const fbq = (window as any).fbq;
+    if (fbq) {
+      fbq('track', 'Lead', { content_name: 'elena_activation' }, { eventID: eid });
+    }
+  } catch { /* safe to ignore */ }
+
+  try {
+    const ttq = (window as any).ttq;
+    if (ttq) {
+      ttq.track('SubmitForm', { content_name: 'elena_activation' });
+    }
+  } catch { /* safe to ignore */ }
+
+  return eid;
+}
+
 export async function trackSignup(method: 'email' | 'google' | 'apple' | string, userId?: string, email?: string) {
   const attribution = getStoredAttribution();
 
@@ -92,14 +139,6 @@ export async function trackSignup(method: 'email' | 'google' | 'apple' | string,
     }
   } catch { /* TikTok pixel error — safe to ignore */ }
 
-  // Reddit Pixel
-  try {
-    const rdt = (window as any).rdt;
-    if (rdt) {
-      rdt('track', 'SignUp');
-    }
-  } catch { /* Reddit pixel error — safe to ignore */ }
-
   // Meta Pixel
   try {
     const fbq = (window as any).fbq;
@@ -149,13 +188,6 @@ export function trackSubscription(plan: string, value: number, currency: string 
     }
   } catch { /* safe to ignore */ }
 
-  try {
-    const rdt = (window as any).rdt;
-    if (rdt) {
-      rdt('track', 'Purchase', { value, currency });
-    }
-  } catch { /* safe to ignore */ }
-
   // Meta Pixel
   try {
     const fbq = (window as any).fbq;
@@ -187,13 +219,6 @@ export function trackViewContent(contentType: 'blog' | 'landing_page', contentNa
     }
   } catch { /* TikTok pixel error — safe to ignore */ }
 
-  try {
-    const rdt = (window as any).rdt;
-    if (rdt) {
-      rdt('track', 'ViewContent', { content_name: contentName });
-    }
-  } catch { /* Reddit pixel error — safe to ignore */ }
-
   // Meta Pixel
   try {
     const fbq = (window as any).fbq;
@@ -221,13 +246,6 @@ export function trackPaywallHit(reason: string, feature?: string) {
         content_type: 'paywall',
         content_name: feature || reason,
       });
-    }
-  } catch { /* safe to ignore */ }
-
-  try {
-    const rdt = (window as any).rdt;
-    if (rdt) {
-      rdt('track', 'ViewContent', { content_name: `paywall_${feature || reason}` });
     }
   } catch { /* safe to ignore */ }
 
