@@ -136,8 +136,8 @@ export function Intro({ onStart }: IntroProps) {
           <span className="font-extrabold">you could be getting for free.</span>
         </h1>
 
-        <p className="text-[0.95rem] max-md:text-[0.8rem] font-light text-white/85 mt-4 tracking-wide max-w-[520px] mx-auto">
-          Most people miss at least 2 critical health screenings. Find out what you're missing and what's covered at no cost.
+        <p className="text-[0.95rem] max-md:text-[0.8rem] font-light text-white/85 mt-4 tracking-wide max-w-[560px] mx-auto">
+          Colon cancer, diabetes, heart disease, osteoporosis — screenings for these are covered at $0 under most plans. Find out which ones you're missing.
         </p>
 
         <p className="text-white/40 text-[13px] font-light mt-3">
