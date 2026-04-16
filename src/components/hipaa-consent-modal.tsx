@@ -93,7 +93,7 @@ export function HipaaConsentModal({ open, onOpenChange, onSigned }: HipaaConsent
 
         <div className="p-6 pt-4">
           <label className="block text-xs font-semibold text-[#0F1B3D] mb-1.5">
-            Type your full legal name to sign
+            Type your full name to sign
           </label>
           <input
             type="text"

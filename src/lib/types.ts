@@ -426,7 +426,11 @@ export interface FormRequest {
   title: string;
   description?: string;
   fields: FormField[];
-  save_to: "profile" | "insurance" | "none";
+  save_to: "profile" | "insurance" | "none" | "health_profile" | "dme" | "insurance_intake";
+  /** For health_profile forms: which sections to show */
+  sections?: string[];
+  /** For health_profile forms: existing data to pre-populate */
+  existing?: Record<string, any[]>;
 }
 
 // --- Personal / Health profile (api_profile.py) ---

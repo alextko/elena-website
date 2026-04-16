@@ -24,6 +24,7 @@ import {
   AddToCalendarCard,
   BookingQuestionCard,
   FormRequestCard,
+  HealthProfileIntakeCard,
   PriceComparisonCard,
   BillAnalysisCard,
   AppealScriptCard,
@@ -852,6 +853,10 @@ export function ChatArea({
             setShowHipaaButton(true);
           }
 
+          // Refresh profile/insurance data after every agent response —
+          // the agent may have updated insurance, doctors, conditions, etc.
+          refreshInsurance();
+
           // Update session ref
           if (chatResult.session_id) {
             sessionIdRef.current = chatResult.session_id;
@@ -1150,7 +1155,33 @@ export function ChatArea({
                     {msg.webSources && msg.webSources.length > 0 && (
                       <SourcesFooter sources={msg.webSources} />
                     )}
-                    {msg.formRequest && (
+                    {msg.formRequest && msg.formRequest.save_to === "health_profile" ? (
+                      <HealthProfileIntakeCard
+                        form={msg.formRequest}
+                        onSubmitted={async (data) => {
+                          analytics.track("Form Submitted", { form_id: msg.formRequest?.form_id, type: "health_profile" });
+                          const parts: string[] = [];
+                          if (data.conditions) { try { parts.push(`${JSON.parse(data.conditions).length} condition(s)`); } catch {} }
+                          if (data.medications) { try { parts.push(`${JSON.parse(data.medications).length} medication(s)`); } catch {} }
+                          if (data.allergies) { try { parts.push(`${JSON.parse(data.allergies).length} allergy/allergies`); } catch {} }
+                          const summary = parts.length > 0 ? `Added: ${parts.join(", ")}` : "No items added";
+                          const formMsg = `[FORM SUBMITTED: ${msg.formRequest?.form_id || "unknown"}] Health profile updated. ${summary}`;
+                          setIsLoading(true);
+                          sendAndPoll(
+                            { message: formMsg, session_id: sessionIdRef.current },
+                            (label) => setToolLabel(label),
+                            (chatResult) => {
+                              const assistantId = nextId();
+                              setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: chatResult.reply || "" }]);
+                              if (chatResult.suggestions?.length) setSuggestions(chatResult.suggestions);
+                              setToolLabel(null);
+                              setIsLoading(false);
+                            },
+                            () => { setToolLabel(null); setIsLoading(false); },
+                          );
+                        }}
+                      />
+                    ) : msg.formRequest ? (
                       <FormRequestCard
                         form={msg.formRequest}
                         onSubmitted={async (data) => {
@@ -1202,7 +1233,7 @@ export function ChatArea({
                           if (saveTo === "insurance") setTimeout(() => refreshInsurance(), 3000);
                         }}
                       />
-                    )}
+                    ) : null}
                   </div>
                 )}
               </div>

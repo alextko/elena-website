@@ -15,6 +15,9 @@ import {
   Send,
   Clock,
   X,
+  Plus,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import type {
   DoctorResult,
@@ -1486,6 +1489,310 @@ export function FormRequestCard({
     </div>
   );
 }
+
+// ────────────────────────────────────────────────────────────────
+//  Health Profile Intake Card
+// ────────────────────────────────────────────────────────────────
+
+const DOSAGE_FORMS = ["Tablet", "Capsule", "Liquid", "Powder", "Crushed", "Injection", "Patch", "Cream", "Drops", "Inhaler", "Nasal Spray", "Spray", "Other"];
+const FREQUENCIES = ["Once per day", "Twice per day", "3 times per day", "Every other day", "Weekly", "As needed", "Other"];
+const TIMES_OF_DAY = ["Morning", "Afternoon", "Evening", "Bedtime", "With meals", "Other"];
+const CONDITION_STATUSES = ["Active", "Managed", "In remission"];
+const ALLERGY_TYPES = ["Drug", "Food", "Environmental", "Insect", "Latex", "Other"];
+const REACTIONS = ["Rash/Hives", "Swelling", "Difficulty breathing", "Anaphylaxis", "Nausea/Vomiting", "Other"];
+const SEVERITIES = ["Mild", "Moderate", "Severe"];
+
+function generateId(): string {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+function SelectField({ label, value, placeholder, options, onChange, multi }: {
+  label: string; value: string; placeholder: string; options: string[];
+  onChange: (v: string) => void; multi?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = multi ? value.split(", ").filter(Boolean) : [];
+  const toggle = (item: string) => {
+    if (!multi) { onChange(item); setOpen(false); return; }
+    const next = selected.includes(item) ? selected.filter((s) => s !== item) : [...selected, item];
+    onChange(next.join(", "));
+  };
+  return (
+    <div className="mt-2.5">
+      <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">{label}</label>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="mt-1 w-full flex items-center justify-between rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-left outline-none focus:border-[#0F1B3D]/30 transition-colors"
+      >
+        <span className={value ? "text-[#0F1B3D]" : "text-[#AEAEB2]"}>{value || placeholder}</span>
+        <ChevronDown className="h-4 w-4 text-[#AEAEB2]" />
+      </button>
+      {open && (
+        <div className="mt-1 rounded-xl border border-[#E5E5EA] bg-white shadow-lg max-h-48 overflow-y-auto">
+          {options.map((opt) => {
+            const active = multi ? selected.includes(opt) : value === opt;
+            return (
+              <button key={opt} type="button" onClick={() => toggle(opt)}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 text-[14px] text-left border-b border-[#E5E5EA]/50 last:border-b-0 transition-colors ${active ? "bg-[#0F1B3D]/[0.04] font-semibold text-[#0F1B3D]" : "text-[#0F1B3D] hover:bg-[#F2F2F7]"}`}
+              >
+                {opt}
+                {active && <Check className="h-4 w-4 text-[#0F1B3D]" />}
+              </button>
+            );
+          })}
+          {multi && (
+            <button type="button" onClick={() => setOpen(false)}
+              className="w-full py-2.5 text-[14px] font-semibold text-[#0F1B3D] bg-[#F2F2F7] rounded-b-xl"
+            >Done</button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ConditionFormFields({ form, onChange }: { form: any; onChange: (f: any) => void }) {
+  const fieldCls = "mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30";
+  return (
+    <>
+      <div className="mt-2.5"><label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Condition name *</label>
+        <input className={fieldCls} placeholder="e.g. Type 2 Diabetes" value={form.name} onChange={(e) => onChange({ ...form, name: e.target.value })} /></div>
+      <SelectField label="Status" value={form.status} placeholder="Select status" options={CONDITION_STATUSES} onChange={(v) => onChange({ ...form, status: v })} />
+      <div className="mt-2.5"><label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">When diagnosed</label>
+        <input className={fieldCls} placeholder="e.g. 2020 or March 2023" value={form.diagnosed_date} onChange={(e) => onChange({ ...form, diagnosed_date: e.target.value })} /></div>
+      <div className="mt-2.5"><label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Notes</label>
+        <textarea className={fieldCls + " min-h-[60px] resize-none"} placeholder="Additional details" value={form.notes} onChange={(e) => onChange({ ...form, notes: e.target.value })} /></div>
+    </>
+  );
+}
+
+function MedicationFormFields({ form, onChange }: { form: any; onChange: (f: any) => void }) {
+  const fieldCls = "mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30";
+  return (
+    <>
+      <div className="mt-2.5"><label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Medication name *</label>
+        <input className={fieldCls} placeholder="e.g. Metformin" value={form.name} onChange={(e) => onChange({ ...form, name: e.target.value })} /></div>
+      <div className="mt-2.5"><label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Strength</label>
+        <input className={fieldCls} placeholder="e.g. 500mg" value={form.dosage_strength} onChange={(e) => onChange({ ...form, dosage_strength: e.target.value })} /></div>
+      <SelectField label="Form" value={form.dosage_form} placeholder="Tablet, Capsule, etc." options={DOSAGE_FORMS} onChange={(v) => onChange({ ...form, dosage_form: v })} />
+      <div className="mt-2.5"><label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Dose</label>
+        <input className={fieldCls} placeholder="e.g. 1 tablet" value={form.dose} onChange={(e) => onChange({ ...form, dose: e.target.value })} /></div>
+      <SelectField label="Frequency" value={form.frequency} placeholder="How often?" options={FREQUENCIES} onChange={(v) => onChange({ ...form, frequency: v })} />
+      <SelectField label="Time of day" value={form.time_of_day} placeholder="When do you take it?" options={TIMES_OF_DAY} onChange={(v) => onChange({ ...form, time_of_day: v })} />
+      <div className="mt-2.5"><label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Prescribed for</label>
+        <input className={fieldCls} placeholder="e.g. High blood pressure" value={form.indication} onChange={(e) => onChange({ ...form, indication: e.target.value })} /></div>
+      <div className="mt-2.5"><label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Prescribing doctor</label>
+        <input className={fieldCls} placeholder="Doctor's name" value={form.prescribing_doctor} onChange={(e) => onChange({ ...form, prescribing_doctor: e.target.value })} /></div>
+      <button type="button" onClick={() => onChange({ ...form, is_otc: !form.is_otc })} className="mt-3 flex items-center gap-2.5">
+        <div className={`w-5 h-5 rounded-md border-[1.5px] flex items-center justify-center transition-colors ${form.is_otc ? "bg-[#0F1B3D] border-[#0F1B3D]" : "border-[#E5E5EA] bg-white"}`}>
+          {form.is_otc && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+        </div>
+        <span className="text-[14px] text-[#8E8E93]">Over-the-counter / supplement</span>
+      </button>
+    </>
+  );
+}
+
+function AllergyFormFields({ form, onChange }: { form: any; onChange: (f: any) => void }) {
+  const fieldCls = "mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30";
+  return (
+    <>
+      <div className="mt-2.5"><label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Allergen *</label>
+        <input className={fieldCls} placeholder="e.g. Penicillin, Peanuts" value={form.name} onChange={(e) => onChange({ ...form, name: e.target.value })} /></div>
+      <SelectField label="Type" value={form.type} placeholder="Drug, Food, etc." options={ALLERGY_TYPES} onChange={(v) => onChange({ ...form, type: v })} />
+      <SelectField label="Reaction" value={form.reaction} placeholder="Select reactions" options={REACTIONS} onChange={(v) => onChange({ ...form, reaction: v })} multi />
+      <SelectField label="Severity" value={form.severity} placeholder="Mild, Moderate, Severe" options={SEVERITIES} onChange={(v) => onChange({ ...form, severity: v })} />
+    </>
+  );
+}
+
+function ItemPill({ label, onEdit, onDelete }: { label: string; onEdit: () => void; onDelete: () => void }) {
+  return (
+    <div className="flex items-center justify-between rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 mb-1.5">
+      <span className="text-[14px] text-[#0F1B3D] truncate flex-1 mr-2">{label}</span>
+      <div className="flex items-center gap-3">
+        <button type="button" onClick={onEdit} className="text-[#8E8E93] hover:text-[#0F1B3D] transition-colors"><Pencil className="h-3.5 w-3.5" /></button>
+        <button type="button" onClick={onDelete} className="text-[#8E8E93] hover:text-red-500 transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
+      </div>
+    </div>
+  );
+}
+
+export function HealthProfileIntakeCard({ form, onSubmitted }: {
+  form: FormRequest;
+  onSubmitted?: (data: Record<string, string>) => void;
+}) {
+  const sections = form.sections || ["conditions", "medications", "allergies"];
+  const existing = form.existing || {};
+
+  type AnyItem = { id: string; [k: string]: any };
+  const [conditions, setConditions] = useState<AnyItem[]>((existing.conditions || []).map((c: any) => ({ id: generateId(), ...c })));
+  const [medications, setMedications] = useState<AnyItem[]>((existing.medications || []).map((m: any) => ({ id: generateId(), ...m })));
+  const [allergies, setAllergies] = useState<AnyItem[]>((existing.allergies || []).map((a: any) => ({ id: generateId(), ...a })));
+
+  const [currentPage, setCurrentPage] = useState(0);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const [condForm, setCondForm] = useState({ name: "", status: "", diagnosed_date: "", notes: "" });
+  const [medForm, setMedForm] = useState({ name: "", dosage_strength: "", dosage_form: "", dose: "", frequency: "", time_of_day: "", indication: "", prescribing_doctor: "", is_otc: false });
+  const [allergyForm, setAllergyForm] = useState({ name: "", type: "", reaction: "", severity: "" });
+
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const currentSection = sections[currentPage];
+  const isLastPage = currentPage === sections.length - 1;
+  const sectionLabels: Record<string, string> = { conditions: "Conditions", medications: "Medications", allergies: "Allergies" };
+
+  function getItems(): AnyItem[] {
+    if (currentSection === "conditions") return conditions;
+    if (currentSection === "medications") return medications;
+    if (currentSection === "allergies") return allergies;
+    return [];
+  }
+
+  function itemLabel(item: AnyItem): string {
+    if (currentSection === "conditions") return [item.name, item.status].filter(Boolean).join(" — ");
+    if (currentSection === "medications") return [item.name, item.dosage_strength, item.frequency].filter(Boolean).join(" · ");
+    if (currentSection === "allergies") return [item.name, item.severity].filter(Boolean).join(" — ");
+    return item.name || "";
+  }
+
+  function startAdd() {
+    if (currentSection === "conditions") setCondForm({ name: "", status: "", diagnosed_date: "", notes: "" });
+    if (currentSection === "medications") setMedForm({ name: "", dosage_strength: "", dosage_form: "", dose: "", frequency: "", time_of_day: "", indication: "", prescribing_doctor: "", is_otc: false });
+    if (currentSection === "allergies") setAllergyForm({ name: "", type: "", reaction: "", severity: "" });
+    setEditingId(null);
+    setShowForm(true);
+  }
+
+  function startEdit(id: string) {
+    setEditingId(id);
+    if (currentSection === "conditions") { const i = conditions.find((c) => c.id === id); if (i) setCondForm({ name: i.name, status: i.status, diagnosed_date: i.diagnosed_date, notes: i.notes }); }
+    if (currentSection === "medications") { const i = medications.find((m) => m.id === id); if (i) setMedForm({ name: i.name, dosage_strength: i.dosage_strength, dosage_form: i.dosage_form, dose: i.dose, frequency: i.frequency, time_of_day: i.time_of_day, indication: i.indication, prescribing_doctor: i.prescribing_doctor, is_otc: i.is_otc }); }
+    if (currentSection === "allergies") { const i = allergies.find((a) => a.id === id); if (i) setAllergyForm({ name: i.name, type: i.type, reaction: i.reaction, severity: i.severity }); }
+    setShowForm(true);
+  }
+
+  function handleDelete(id: string) {
+    if (currentSection === "conditions") setConditions((p) => p.filter((c) => c.id !== id));
+    if (currentSection === "medications") setMedications((p) => p.filter((m) => m.id !== id));
+    if (currentSection === "allergies") setAllergies((p) => p.filter((a) => a.id !== id));
+  }
+
+  function saveItem() {
+    if (currentSection === "conditions") {
+      if (!condForm.name.trim()) return;
+      const item = { id: editingId || generateId(), ...condForm };
+      setConditions((p) => editingId ? p.map((c) => (c.id === editingId ? item : c)) : [...p, item]);
+    } else if (currentSection === "medications") {
+      if (!medForm.name.trim()) return;
+      const item = { id: editingId || generateId(), ...medForm };
+      setMedications((p) => editingId ? p.map((m) => (m.id === editingId ? item : m)) : [...p, item]);
+    } else if (currentSection === "allergies") {
+      if (!allergyForm.name.trim()) return;
+      const item = { id: editingId || generateId(), ...allergyForm };
+      setAllergies((p) => editingId ? p.map((a) => (a.id === editingId ? item : a)) : [...p, item]);
+    }
+    setShowForm(false);
+    setEditingId(null);
+  }
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    try {
+      const data: Record<string, string> = {};
+      const stripId = (items: AnyItem[]) => items.map(({ id, ...rest }) => rest);
+      if (sections.includes("conditions") && conditions.length > 0) data.conditions = JSON.stringify(stripId(conditions));
+      if (sections.includes("medications") && medications.length > 0) data.medications = JSON.stringify(stripId(medications));
+      if (sections.includes("allergies") && allergies.length > 0) data.allergies = JSON.stringify(stripId(allergies));
+      await apiFetch("/chat/form-submit", { method: "POST", body: JSON.stringify({ form_id: form.form_id, save_to: "health_profile", data }) });
+      setSubmitted(true);
+      onSubmitted?.(data);
+    } catch {}
+    setSubmitting(false);
+  }
+
+  if (submitted) {
+    return (
+      <div className="mt-3 rounded-2xl bg-gradient-to-br from-emerald-50 to-white border border-emerald-100 p-4 shadow-[0_2px_8px_rgba(16,185,129,0.08)]">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 shadow-[0_2px_6px_rgba(16,185,129,0.3)]">
+            <Check className="h-4 w-4 text-white" strokeWidth={3} />
+          </div>
+          <div>
+            <p className="text-[14px] font-semibold text-[#0F1B3D]">Health profile updated</p>
+            <p className="text-[12px] text-[#0F1B3D]/40 mt-0.5">Your health information has been saved</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const items = getItems();
+  const addLabel = currentSection === "conditions" ? "a condition" : currentSection === "medications" ? "a medication" : "an allergy";
+
+  return (
+    <div className="mt-3 rounded-2xl border border-[#0F1B3D]/[0.06] bg-white p-5 shadow-[0_2px_8px_rgba(15,27,61,0.06)] animate-in fade-in duration-300">
+      <h4 className="text-[16px] font-bold text-[#0F1B3D] mb-1">{form.title || "Your Health Profile"}</h4>
+      {form.description && <p className="text-[13px] text-[#8E8E93] mb-4">{form.description}</p>}
+
+      {sections.length > 1 && (
+        <div className="flex items-center gap-1.5 mb-4">
+          {sections.map((_, i) => (
+            <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= currentPage ? "bg-[#0F1B3D]" : "bg-[#E5E5EA]"}`} />
+          ))}
+        </div>
+      )}
+
+      <h5 className="text-[15px] font-bold text-[#0F1B3D] mb-3">{sectionLabels[currentSection] || currentSection}</h5>
+
+      {items.map((item) => (
+        <ItemPill key={item.id} label={itemLabel(item)} onEdit={() => startEdit(item.id)} onDelete={() => handleDelete(item.id)} />
+      ))}
+
+      {!showForm && (
+        <button type="button" onClick={startAdd} className="flex items-center gap-1.5 mt-2 text-[14px] font-semibold text-[#0F1B3D] hover:opacity-70 transition-opacity">
+          <Plus className="h-4 w-4" />Add {addLabel}
+        </button>
+      )}
+
+      {showForm && (
+        <div className="mt-2 rounded-xl border border-[#E5E5EA] bg-[#FAFAFC] p-4">
+          {currentSection === "conditions" && <ConditionFormFields form={condForm} onChange={setCondForm} />}
+          {currentSection === "medications" && <MedicationFormFields form={medForm} onChange={setMedForm} />}
+          {currentSection === "allergies" && <AllergyFormFields form={allergyForm} onChange={setAllergyForm} />}
+          <button type="button" onClick={saveItem} className="mt-4 w-full rounded-xl bg-[#0F1B3D] py-2.5 text-[14px] font-semibold text-white hover:bg-[#0F1B3D]/90 transition-colors">
+            {editingId ? "Update" : "Save"}
+          </button>
+          <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="mt-1 w-full py-2 text-[14px] text-[#8E8E93] hover:text-[#0F1B3D] transition-colors">
+            Cancel
+          </button>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 mt-4">
+        {currentPage > 0 && (
+          <button type="button" onClick={() => { setCurrentPage((p) => p - 1); setShowForm(false); }} className="rounded-xl px-4 py-2.5 text-[14px] font-medium text-[#8E8E93] hover:text-[#0F1B3D] transition-colors">
+            Back
+          </button>
+        )}
+        {isLastPage ? (
+          <button type="button" onClick={handleSubmit} disabled={submitting}
+            className="flex-1 rounded-xl bg-[#0F1B3D] px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-[#0F1B3D]/90 disabled:opacity-40 transition-colors"
+          >{submitting ? "Submitting..." : "Submit"}</button>
+        ) : (
+          <button type="button" onClick={() => { setCurrentPage((p) => p + 1); setShowForm(false); }}
+            className="flex-1 rounded-xl bg-[#0F1B3D] px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-[#0F1B3D]/90 transition-colors"
+          >Next</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 
 // ────────────────────────────────────────────────────────────────
 //  Price Comparison Card

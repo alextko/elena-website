@@ -1482,7 +1482,9 @@ export function ProfilePopover({
                   <button
                     onClick={async () => {
                       await apiFetch("/account", { method: "DELETE" });
-                      localStorage.removeItem("elena_onboarding_done");
+                      // Clear all local data to prevent stale data on re-signup
+                      try { localStorage.clear(); } catch {}
+                      try { sessionStorage.clear(); } catch {}
                       await signOut();
                       router.push("/");
                     }}
