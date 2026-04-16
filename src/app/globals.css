@@ -194,6 +194,22 @@
   animation: thinking-pulse 1.6s ease-in-out infinite;
 }
 
+/* Blinking cursor on the last rendered block while the assistant "types" */
+@keyframes elena-cursor-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+.elena-streaming-cursor > :last-child::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: #0F1B3D;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: elena-cursor-pulse 1s ease-in-out infinite;
+}
+
 /* Booking call shake animation */
 @keyframes booking-shake {
   0%, 100% { transform: rotate(0deg); }

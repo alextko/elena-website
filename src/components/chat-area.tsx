@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { Markdown, stripTrailingIncomplete } from "@/components/markdown";
 import { Button } from "@/components/ui/button";
 import { PanelLeft, Plus, ArrowUp, Square, Paperclip, X } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
@@ -74,43 +75,13 @@ type Message = {
   insurancePlanComparison?: import("@/lib/types").InsurancePlanComparison | null;
 };
 
-// Link regex: [^)] for URL ensures we don't stop at an unrelated ")" elsewhere in text.
-// Only ONE outer capturing group so split() doesn't inject sub-group captures into the array.
-const LINK_PATTERN = /(\*\*.*?\*\*|\[[^\]]*\]\(https?:\/\/[^)\n]+\))/g;
-const LINK_MATCH_RE = /^\[([^\]]*)\]\((https?:\/\/[^)]+)\)$/;
-
-function renderMarkdown(text: string, streaming = false) {
-  if (streaming) {
-    // While streaming, strip link syntax to just show the display text
-    const cleaned = text.replace(/\[([^\]]*)\]\(https?:\/\/[^)]*\)/g, "$1");
-    const parts = cleaned.split(/(\*\*.*?\*\*)/g);
-    return parts.map((part, i) => {
-      if (part.startsWith("**") && part.endsWith("**")) {
-        return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>;
-      }
-      return <span key={i}>{part}</span>;
-    });
-  }
-  const parts = text.split(LINK_PATTERN);
-  return parts.map((part, i) => {
-    if (!part) return null;
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>;
-    }
-    const linkMatch = part.match(LINK_MATCH_RE);
-    if (linkMatch) {
-      return <a key={i} href={linkMatch[2]} target="_blank" rel="noopener noreferrer" className="text-[#2E6BB5] underline underline-offset-2">{linkMatch[1]}</a>;
-    }
-    return <span key={i}>{part}</span>;
-  });
-}
-
-// Streaming text — reveals character by character, snapping to word boundaries
+// Streaming text — reveals character by character, snapping to word boundaries.
+// The underlying content is already complete (backend is poll-based, not SSE);
+// this is a cosmetic typing animation.
 function StreamingText({ content, onComplete }: { content: string; onComplete?: () => void }) {
   const [displayed, setDisplayed] = useState("");
   const [done, setDone] = useState(false);
   const indexRef = useRef(0);
-  // Use a ref for onComplete so changing the callback doesn't restart the animation
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
@@ -135,18 +106,14 @@ function StreamingText({ content, onComplete }: { content: string; onComplete?: 
     }, 20);
 
     return () => clearInterval(timer);
-  }, [content]); // onComplete intentionally excluded — accessed via ref
+  }, [content]);
 
-  const lines = displayed.split("\n");
+  const safe = useMemo(() => (done ? displayed : stripTrailingIncomplete(displayed)), [displayed, done]);
+
   return (
-    <>
-      {lines.map((line, i) => (
-        <p key={i} className={line === "" ? "h-3" : "mb-1"}>
-          {renderMarkdown(line, !done)}
-          {!done && i === lines.length - 1 && <span className="inline-block w-[2px] h-[1em] bg-[#0F1B3D] animate-pulse ml-0.5 align-text-bottom" />}
-        </p>
-      ))}
-    </>
+    <div className={done ? undefined : "elena-streaming-cursor"}>
+      <Markdown content={safe} />
+    </div>
   );
 }
 
@@ -1086,11 +1053,7 @@ export function ChatArea({
                       onComplete={() => setStreamingId(null)}
                     />
                   ) : (
-                    msg.content.split("\n").map((line, i) => (
-                      <p key={i} className={line === "" ? "h-3" : "mb-1"}>
-                        {renderMarkdown(line)}
-                      </p>
-                    ))
+                    <Markdown content={msg.content} />
                   )}
                 </div>
                 {/* Structured result cards — hidden while streaming, fade in after */}
