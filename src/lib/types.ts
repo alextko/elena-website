@@ -37,6 +37,7 @@ export interface ChatResponse {
   assistance_result?: AssistanceResult | null;
   price_comparison_label?: string | null;
   insurance_plan_comparison?: InsurancePlanComparison | null;
+  needs_hipaa_consent?: boolean | null;
 }
 
 // --- Session History (api_chat.py:480-485) ---

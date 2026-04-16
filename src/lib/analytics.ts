@@ -49,7 +49,9 @@ export type AnalyticsEvent =
   | "Quiz Results Viewed"
   | "Quiz Signup Clicked"
   | "Quiz Action Clicked"
-  | "Quiz Get Started Clicked";
+  | "Quiz Get Started Clicked"
+  // HIPAA
+  | "HIPAA_CONSENT_SIGNED";
 
 let initialized = false;
 let disabled = false;

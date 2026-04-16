@@ -11,6 +11,7 @@ import { trackPaywallHit, trackActivation } from "@/lib/tracking-events";
 import { usePollChat } from "@/hooks/usePollChat";
 import { useBookingPoll } from "@/hooks/useBookingPoll";
 import { UpgradeModal } from "@/components/upgrade-modal";
+import { HipaaConsentModal } from "@/components/hipaa-consent-modal";
 import {
   DoctorResultsCard,
   LocationResultsCard,
@@ -200,6 +201,8 @@ export function ChatArea({
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState<"upgrade_required" | "limit_reached" | "feature_blocked" | "document_limit">("document_limit");
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>(undefined);
+  const [hipaaConsentOpen, setHipaaConsentOpen] = useState(false);
+  const [showHipaaButton, setShowHipaaButton] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -845,6 +848,10 @@ export function ChatArea({
             trackPaywallHit("upgrade_required", chatResult.gated_feature || undefined);
           }
 
+          if (chatResult.needs_hipaa_consent) {
+            setShowHipaaButton(true);
+          }
+
           // Update session ref
           if (chatResult.session_id) {
             sessionIdRef.current = chatResult.session_id;
@@ -910,6 +917,7 @@ export function ChatArea({
       onDrop={handleDrop}
     >
       <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} reason={upgradeReason} featureName={upgradeFeature} />
+      <HipaaConsentModal open={hipaaConsentOpen} onOpenChange={setHipaaConsentOpen} />
 
       {/* Full-page drag-and-drop overlay */}
       {isDraggingOver && (
@@ -1245,6 +1253,18 @@ export function ChatArea({
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* HIPAA consent button — shown when agent needs authorization */}
+          {showHipaaButton && (
+            <div className="mt-3">
+              <button
+                onClick={() => { setShowHipaaButton(false); setHipaaConsentOpen(true); }}
+                className="rounded-full bg-[#0F1B3D] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#0F1B3D]/90 hover:-translate-y-px"
+              >
+                Open Authorization Form
+              </button>
             </div>
           )}
 
