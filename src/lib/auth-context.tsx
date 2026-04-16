@@ -767,6 +767,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (createRes.ok) {
         const created = await createRes.json();
         console.log("[onboarding] Profile created:", { id: created.profile_id || created.id, first_name: created.first_name, last_name: created.last_name, picture_url: created.profile_picture_url });
+        // For meta-sourced signups the server also fires CAPI CompleteRegistration with
+        // event_id = meta_event_id. Persist it so trackActivation's fbq fire can reuse
+        // the same eventID — Meta dedupes pixel+CAPI on matching (event_name, event_id).
+        if (typeof created.meta_event_id === "string" && created.meta_event_id.length > 0) {
+          try { localStorage.setItem("elena_meta_event_id", created.meta_event_id); } catch {}
+        }
         setProfileId(created.profile_id || created.id);
         setProfileData((prev) => {
           const pictureUrl = created.profile_picture_url || prev?.profilePictureUrl || null;

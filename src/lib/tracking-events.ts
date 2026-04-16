@@ -64,9 +64,17 @@ export function trackActivation(userId?: string): string | undefined {
   localStorage.setItem(ACTIVATION_FLAG, new Date().toISOString());
 
   const attribution = getStoredAttribution();
-  const eid = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  // Prefer the server-issued meta_event_id (stored at profile creation) so the fbq
+  // pixel and the server CAPI CompleteRegistration share an event_id and Meta
+  // dedupes them. Falls back to a fresh UUID for non-meta signups or pre-fix users
+  // whose profile was created before the server started returning meta_event_id.
+  let eid: string | undefined;
+  try { eid = localStorage.getItem('elena_meta_event_id') || undefined; } catch { eid = undefined; }
+  if (!eid) {
+    eid = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
 
   try {
     const mp = getMixpanelAny();
