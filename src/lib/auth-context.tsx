@@ -789,6 +789,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("elena_onboarding_done", "1");
         // Mark onboarding complete on backend
         await apiFetch("/auth/complete-onboarding", { method: "POST" }).catch(() => {});
+        // Generate the 3 core game plan todos (same as mobile onboarding)
+        try {
+          const genRes = await apiFetch("/todos/generate", {
+            method: "POST",
+            body: JSON.stringify({
+              date_of_birth: data.date_of_birth || "",
+              generate_habits: false,
+            }),
+          });
+          if (genRes.ok) {
+            const generated = await genRes.json();
+            setTodos(generated);
+            setTodayTodos(generated);
+          }
+        } catch (e) {
+          console.error("[onboarding] Failed to generate todos:", e);
+        }
         // Accept pending invite if one exists (from invite link signup flow)
         const pendingInvite = localStorage.getItem("elena_pending_invite");
         if (pendingInvite) {

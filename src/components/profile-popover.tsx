@@ -987,14 +987,14 @@ export function ProfilePopover({
                                     )}
                                   </button>
 
-                                  {/* Book button */}
+                                  {/* Start button (matches mobile game plan) */}
                                   {!completed && bookMsg && onBookMessage && (
                                     <button
                                       onClick={() => { onBookMessage(bookMsg); setOpen(false); }}
                                       className="shrink-0 rounded-full px-4 py-[7px] text-[13px] font-semibold text-white transition-colors"
                                       style={{ background: "#5C1A2A" }}
                                     >
-                                      Book
+                                      Start
                                     </button>
                                   )}
                                 </div>
