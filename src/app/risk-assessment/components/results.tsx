@@ -161,10 +161,7 @@ export function Results({ recommendations, answers }: ResultsProps) {
           </motion.div>
 
           <h1 className="text-[clamp(1.6rem,4vw,2.2rem)] font-light leading-[1.15] tracking-tight text-white">
-            We found{" "}
-            <span className="font-extrabold">{totalCount} {totalCount === 1 ? "recommendation" : "recommendations"}</span>{" "}
-            for{" "}
-            <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">you.</em>
+            We found <span className="font-extrabold">{totalCount}&nbsp;{totalCount === 1 ? "recommendation" : "recommendations"}</span> for <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">you.</em>
           </h1>
 
           {totalCount > 0 && (
@@ -281,9 +278,7 @@ export function Results({ recommendations, answers }: ResultsProps) {
         >
           <p className="text-[11px] font-semibold uppercase tracking-[2px] text-white/30 mb-4">Did you know?</p>
           <h2 className="text-[clamp(1.6rem,4.5vw,2.2rem)] font-light text-white leading-tight tracking-tight">
-            Most people{" "}
-            <span className="font-extrabold">overpay 3-5x</span>{" "}
-            for these screenings.
+            Most people <span className="font-extrabold">overpay 3-5x</span> for these screenings.
           </h2>
           <p className="text-white/50 text-[1rem] font-light mt-4 max-w-md mx-auto leading-relaxed">
             Elena finds the best prices, books your appointments, and handles the insurance calls -- so you don't have to.

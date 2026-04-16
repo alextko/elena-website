@@ -59,11 +59,7 @@ export function Teaser({ recommendations, onSignup }: TeaserProps) {
         className="relative z-10 max-w-md w-full text-center py-10 sm:py-0"
       >
         <h2 className="text-[clamp(1.6rem,5vw,2.2rem)] font-light text-white leading-tight tracking-tight mb-2">
-          We found{" "}
-          <span className="font-extrabold text-[#F4B084]">
-            {recommendations.length} {recommendations.length === 1 ? "thing" : "things"}
-          </span>{" "}
-          worth checking.
+          We found <span className="font-extrabold text-[#F4B084]">{recommendations.length}&nbsp;{recommendations.length === 1 ? "thing" : "things"}</span> worth checking.
         </h2>
         <p className="text-white/50 text-sm mb-8">Based on your responses</p>
 
