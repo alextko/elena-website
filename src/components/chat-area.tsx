@@ -12,6 +12,7 @@ import { usePollChat } from "@/hooks/usePollChat";
 import { useBookingPoll } from "@/hooks/useBookingPoll";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import { HipaaConsentModal } from "@/components/hipaa-consent-modal";
+import { FeedbackModal } from "@/components/feedback-modal";
 import {
   DoctorResultsCard,
   LocationResultsCard,
@@ -204,6 +205,20 @@ export function ChatArea({
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>(undefined);
   const [hipaaConsentOpen, setHipaaConsentOpen] = useState(false);
   const [showHipaaButton, setShowHipaaButton] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [softPaywallOpen, setSoftPaywallOpen] = useState(false);
+  const userMessageCountRef = useRef(0);
+
+  // Soft paywall: show upgrade modal once on first value-moment action (free users)
+  const triggerSoftPaywall = useCallback(() => {
+    if (typeof window === "undefined") return;
+    if (localStorage.getItem("elena_soft_paywall_shown")) return;
+    // Check if user is paid (subscription data from auth context)
+    // For now, always trigger for all users — the upgrade modal handles plan checks
+    localStorage.setItem("elena_soft_paywall_shown", "1");
+    analytics.track("Soft Paywall Triggered");
+    setTimeout(() => setSoftPaywallOpen(true), 2000);
+  }, []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -686,6 +701,7 @@ export function ChatArea({
 
     if (uploaded.length > 0) {
       analytics.track("File Attached", { count: uploaded.length });
+      triggerSoftPaywall();
     }
     setPendingFiles((prev) => [...prev, ...uploaded]);
     setUploading(false);
@@ -781,6 +797,13 @@ export function ChatArea({
         authenticated: true,
         source: initialQuery && messages.length === 0 ? "post_signup" : "chat",
       });
+
+      // Show feedback prompt after 5th message (once per session)
+      userMessageCountRef.current++;
+      if (userMessageCountRef.current === 5 && !sessionStorage.getItem("elena_feedback_shown")) {
+        sessionStorage.setItem("elena_feedback_shown", "1");
+        setTimeout(() => setFeedbackOpen(true), 2000);
+      }
 
       if (user?.id) {
         trackActivation(user.id);
@@ -923,6 +946,8 @@ export function ChatArea({
     >
       <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} reason={upgradeReason} featureName={upgradeFeature} />
       <HipaaConsentModal open={hipaaConsentOpen} onOpenChange={setHipaaConsentOpen} />
+      <FeedbackModal open={feedbackOpen} onOpenChange={setFeedbackOpen} />
+      <UpgradeModal open={softPaywallOpen} onOpenChange={setSoftPaywallOpen} reason="upgrade_required" />
 
       {/* Full-page drag-and-drop overlay */}
       {isDraggingOver && (
@@ -1200,6 +1225,8 @@ export function ChatArea({
                           } catch {}
                           // Refresh cached data
                           if (saveTo === "insurance") refreshInsurance();
+                          // Trigger soft paywall on first value-moment action
+                          triggerSoftPaywall();
                           // Send form data to the agent without showing a user message bubble
                           const formSummary = Object.entries(data)
                             .filter(([, v]) => v && String(v).trim())

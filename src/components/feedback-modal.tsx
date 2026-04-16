@@ -1,0 +1,107 @@
+"use client";
+
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
+import { apiFetch } from "@/lib/apiFetch";
+import * as analytics from "@/lib/analytics";
+
+interface FeedbackModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function FeedbackModal({ open, onOpenChange }: FeedbackModalProps) {
+  const [phase, setPhase] = useState<"ask" | "feedback">("ask");
+  const [feedbackText, setFeedbackText] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const handleYes = () => {
+    onOpenChange(false);
+    setPhase("ask");
+    // No App Store review on web — just close
+    analytics.track("Feedback: Yes");
+  };
+
+  const handleNo = () => {
+    setPhase("feedback");
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (feedbackText.trim()) {
+      setSaving(true);
+      try {
+        await apiFetch("/chat/feedback", {
+          method: "POST",
+          body: JSON.stringify({ feedback: feedbackText.trim() }),
+        });
+      } catch {}
+      analytics.track("Feedback: Submitted", { feedback: feedbackText.trim() });
+      setSaving(false);
+    }
+    onOpenChange(false);
+    setPhase("ask");
+    setFeedbackText("");
+  };
+
+  const handleClose = () => {
+    onOpenChange(false);
+    setPhase("ask");
+    setFeedbackText("");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[340px] p-0 overflow-hidden rounded-2xl">
+        <div className="p-8">
+          {phase === "ask" ? (
+            <>
+              <h2 className="text-xl font-bold text-[#0F1B3D] text-center mb-6">
+                Enjoying Elena?
+              </h2>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleNo}
+                  className="flex-1 rounded-full py-3 text-sm font-semibold text-[#0F1B3D] bg-[#F2F2F7] hover:bg-[#E5E5EA] transition-colors"
+                >
+                  No
+                </button>
+                <button
+                  onClick={handleYes}
+                  className="flex-1 rounded-full py-3 text-sm font-semibold text-white bg-[#0F1B3D] hover:bg-[#0F1B3D]/90 transition-colors"
+                >
+                  Yes
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 className="text-xl font-bold text-[#0F1B3D] text-center mb-2">
+                We&apos;d love your feedback
+              </h2>
+              <p className="text-sm text-[#0F1B3D]/60 text-center mb-4">
+                How can we make Elena better?
+              </p>
+              <textarea
+                value={feedbackText}
+                onChange={(e) => setFeedbackText(e.target.value)}
+                placeholder="Tell us what you think..."
+                autoFocus
+                className="w-full rounded-xl border border-[#0F1B3D]/10 bg-[#f5f7fb] px-3.5 py-3 text-sm text-[#0F1B3D] placeholder:text-[#0F1B3D]/30 focus:outline-none focus:ring-2 focus:ring-[#0F1B3D]/20 min-h-[100px] resize-none transition-all"
+              />
+              <button
+                onClick={handleSubmitFeedback}
+                disabled={saving}
+                className="w-full mt-4 rounded-full py-3 text-sm font-semibold text-white bg-[#0F1B3D] hover:bg-[#0F1B3D]/90 transition-colors"
+              >
+                {saving ? "Sending..." : feedbackText.trim() ? "Send Feedback" : "Skip"}
+              </button>
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

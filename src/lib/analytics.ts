@@ -51,7 +51,12 @@ export type AnalyticsEvent =
   | "Quiz Action Clicked"
   | "Quiz Get Started Clicked"
   // HIPAA
-  | "HIPAA_CONSENT_SIGNED";
+  | "HIPAA_CONSENT_SIGNED"
+  // Feedback
+  | "Feedback: Yes"
+  | "Feedback: Submitted"
+  // Paywall
+  | "Soft Paywall Triggered";
 
 let initialized = false;
 let disabled = false;
