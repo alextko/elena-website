@@ -38,6 +38,8 @@ import {
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
 import { AddFamilyModal } from "@/components/add-family-modal";
+import { PhotoCropModal } from "@/components/photo-crop-modal";
+import { AvatarPhoto } from "@/components/avatar-photo";
 import type { CareTodo, CareTodoCreate, CareVisit, DoctorItem, Habit, ProfileSummary, PersonalInfo, HealthData, StructuredDocument as ProfileDocument, SavedCondition, SavedMedication, SavedSurgery, SavedAllergy, SavedFamilyHistory, SavedSocialHistory } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import type { InsuranceCard } from "@/lib/types";
@@ -152,7 +154,14 @@ export function ProfilePopover({
   const router = useRouter();
   const [internalOpen, setInternalOpen] = useState(false);
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  // cropImageSrc is declared below but used in setOpen — we use a ref so the
+  // latest value is always captured when base-ui calls our onOpenChange.
+  const cropOpenRef = useRef(false);
   const setOpen = (v: boolean) => {
+    // Swallow auto-close attempts while the photo crop modal is stacked on top
+    // (base-ui's stacked-dialog behavior otherwise dismisses the parent when a
+    // new modal appears). User can still explicitly close via the X button.
+    if (!v && cropOpenRef.current) return;
     setInternalOpen(v);
     onExternalOpenChange?.(v);
   };
@@ -171,6 +180,12 @@ export function ProfilePopover({
   const [selectedDay, setSelectedDay] = useState<string>(new Date().toLocaleDateString("en-CA")); // YYYY-MM-DD local time
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  // When a photo is picked, we open a crop modal instead of uploading directly.
+  // cropImageSrc holds an object URL to the selected file until the user saves
+  // (upload cropped blob) or cancels (discard). Always revoke the URL when done.
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  // Keep a ref in sync so setOpen (declared above) can read the latest value.
+  useEffect(() => { cropOpenRef.current = !!cropImageSrc; }, [cropImageSrc]);
   const [selectedProvider, setSelectedProvider] = useState<typeof doctors[number] | null>(null);
   const [selectedVisit, setSelectedVisit] = useState<typeof careVisits[number] | null>(null);
   const [editingTodo, setEditingTodo] = useState<{ mode: "create" } | { mode: "edit"; todo: typeof todos[number] } | null>(null);
@@ -278,15 +293,31 @@ export function ProfilePopover({
     }
   }
 
-  async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  // Photo picked → open the crop modal with an object URL. Actual upload
+  // happens in handleCroppedPhoto once the user commits their crop.
+  function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file || !profileId) return;
     e.target.value = "";
+    if (!file || !profileId) return;
+    const url = URL.createObjectURL(file);
+    setCropImageSrc(url);
+  }
 
+  function closeCropModal() {
+    if (cropImageSrc) URL.revokeObjectURL(cropImageSrc);
+    setCropImageSrc(null);
+  }
+
+  async function handleCroppedPhoto(blob: Blob) {
+    if (!profileId) {
+      closeCropModal();
+      return;
+    }
     setUploadingPhoto(true);
     try {
       const form = new FormData();
-      form.append("image", file);
+      // Backend accepts whatever filename; JPEG is what we export from canvas.
+      form.append("image", blob, "profile.jpg");
       const res = await apiFetch(`/profile/${profileId}/picture`, {
         method: "POST",
         body: form,
@@ -299,6 +330,7 @@ export function ProfilePopover({
       // Upload failed silently
     }
     setUploadingPhoto(false);
+    closeCropModal();
   }
 
   useEffect(() => {
@@ -393,6 +425,12 @@ export function ProfilePopover({
   return (
     <>
     <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} />
+    <PhotoCropModal
+      open={!!cropImageSrc}
+      imageSrc={cropImageSrc}
+      onCancel={closeCropModal}
+      onCrop={handleCroppedPhoto}
+    />
     <Dialog open={open} onOpenChange={setOpen} modal={externalOpen ? false : undefined}>
       <DialogTrigger render={children as React.ReactElement}></DialogTrigger>
       <DialogContent
@@ -486,10 +524,11 @@ export function ProfilePopover({
                 disabled={uploadingPhoto || !hasProfile}
               >
                 {profileData?.profilePictureUrl ? (
-                  <img
+                  <AvatarPhoto
                     src={profileData.profilePictureUrl}
                     alt={displayName}
-                    className="h-12 w-12 rounded-full object-cover"
+                    className="h-12 w-12"
+                    isLoading={uploadingPhoto}
                   />
                 ) : (
                   <Avatar className="h-12 w-12">
@@ -570,7 +609,7 @@ export function ProfilePopover({
                                   className="flex items-center gap-3 min-w-0 flex-1 text-left"
                                 >
                                   {p.profile_picture_url ? (
-                                    <img src={p.profile_picture_url} alt={pName} className="h-8 w-8 rounded-full object-cover flex-shrink-0" />
+                                    <AvatarPhoto src={p.profile_picture_url} alt={pName} className="h-8 w-8 flex-shrink-0" />
                                   ) : (
                                     <Avatar className="h-8 w-8">
                                       <AvatarFallback className="bg-[#0F1B3D]/[0.06] text-[11px] font-bold text-[#0F1B3D]/40">{pInitials}</AvatarFallback>

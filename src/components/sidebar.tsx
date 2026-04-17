@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AvatarPhoto } from "@/components/avatar-photo";
 import { Plus, Search, X, Bell } from "lucide-react";
 import * as analytics from "@/lib/analytics";
 import { ProfilePopover } from "@/components/profile-popover";
@@ -62,10 +63,10 @@ function SidebarProfile({ onBookMessage, popoverOpen, onPopoverChange, popoverTa
       <button className="flex w-full items-center gap-2.5 border-t border-[#0F1B3D]/[0.06] px-5 py-4 text-left hover:opacity-80 transition-opacity">
         <div className="flex-shrink-0">
           {profileData.profilePictureUrl ? (
-            <img
+            <AvatarPhoto
               src={profileData.profilePictureUrl}
               alt={displayName}
-              className="h-8 w-8 rounded-full object-cover"
+              className="h-8 w-8"
             />
           ) : (
             <Avatar className="h-8 w-8">
