@@ -519,7 +519,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Fresh sign-in — fetch profile if not already done
         // Mixpanel alias/identify is handled inside fetchProfile() to ensure
         // alias runs before identify (otherwise the anonymous ID never gets linked)
-        fetchProfile();
+        // Claim any pending anonymous DME intake FIRST so /me returns the
+        // synced profile fields on the first fetch. Safety net: if this call
+        // is missed, /chat/pending/claim sweeps by anon_id server-side.
+        (async () => {
+          try {
+            const intakeId = (typeof window !== "undefined")
+              ? sessionStorage.getItem("elena_dme_intake_id")
+              : null;
+            if (intakeId) {
+              const res = await apiFetch(`/dme/intake/${intakeId}/claim`, { method: "POST" });
+              if (res.ok) {
+                try { sessionStorage.removeItem("elena_dme_intake_id"); } catch {}
+                // Signal the chat page to request an intake-aware welcome.
+                try { localStorage.setItem("elena_post_intake_submit", "dme"); } catch {}
+              } else {
+                console.warn(`DME intake claim failed: ${res.status}`);
+              }
+            }
+          } catch (e) {
+            console.warn("DME intake claim error", e);
+          } finally {
+            fetchProfile();
+          }
+        })();
       } else if (event === "SIGNED_OUT") {
         setProfileId(null);
         setProfiles([]);

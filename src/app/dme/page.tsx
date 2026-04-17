@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { AuthModal } from "@/components/auth-modal";
 import { apiFetch } from "@/lib/apiFetch";
+import { getOrCreateAnonId } from "@/lib/anonId";
 import * as analytics from "@/lib/analytics";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProgressBar } from "../risk-assessment/components/progress-bar";
@@ -196,6 +197,7 @@ function DmeContent() {
         mobility_issues: answers.mobilityIssues === true,
         access_notes: answers.accessNotes,
         source: "web_quiz",
+        anon_id: getOrCreateAnonId(),
       }),
     }).then(async (res) => {
       if (res.ok) {
