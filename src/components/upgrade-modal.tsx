@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
 import { getStoredAttribution } from "@/lib/attribution";
@@ -139,10 +139,21 @@ export function UpgradeModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-lg overflow-hidden rounded-2xl border-0 bg-white p-0 shadow-[0_24px_80px_rgba(15,27,61,0.25)]">
+      <DialogContent
+        showCloseButton={false}
+        className="w-[calc(100%-2rem)] max-w-[22rem] sm:w-full sm:max-w-lg overflow-hidden rounded-2xl border-0 bg-white p-0 shadow-[0_24px_80px_rgba(15,27,61,0.25)]"
+      >
         {/* Header with landing-page gradient */}
         <div className="relative px-6 pt-7 pb-5 bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)] text-center">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_130%,#F4B084_0%,#E8956D_25%,rgba(46,107,181,0)_60%)] opacity-40" />
+          <button
+            type="button"
+            onClick={() => { analytics.track("Upgrade Dismissed", { reason }); onOpenChange(false); }}
+            aria-label="Close"
+            className="absolute top-3 right-3 z-20 flex h-7 w-7 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
           <div className="relative z-10">
             <DialogHeader>
               <DialogTitle className="text-center text-xl font-semibold text-white">
