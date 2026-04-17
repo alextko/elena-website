@@ -336,61 +336,61 @@ const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; s
     headline: ["Most medical bills", "have errors. Fight back."],
     accent: "Fight back",
     subtitle: "Up to 80% of medical bills contain mistakes. Elena finds overcharges, files appeals, and negotiates on your behalf so you never pay more than you owe.",
-    prefill: "Check this bill for errors",
+    prefill: "I got a medical bill I'm not sure about. Can you help me review it?",
   },
   calls: {
     headline: ["Elena calls your", "insurance for you."],
     accent: "for you",
     subtitle: "No more hold music. No more transfers. Elena sits on hold, talks to your insurer, and reports back.",
-    prefill: "Call my insurance company for me",
+    prefill: "Can you handle some healthcare calls for me?",
   },
   caregiver: {
     headline: ["Caregiving is exhausting.", "Elena handles it."],
     accent: "Elena handles it",
     subtitle: "Calling doctors, fighting insurance, tracking medications. Elena does it all so you can focus on being there for them.",
-    prefill: "Help me manage my family's health care",
+    prefill: "I'm managing healthcare for my family. Help me take some of it off my plate.",
   },
   risk_assessment: {
     headline: ["Know your risk", "before it's too late."],
     accent: "too late",
     subtitle: "Take our assessment, learn your risks, and get the right tests on the way.",
-    prefill: "I want to understand my health risks based on my family history",
+    prefill: "I want to understand my health risks.",
   },
   meds: {
     headline: ["Find your medications", "in stock today."],
     accent: "today",
     subtitle: "Stop calling pharmacy after pharmacy. Tell Elena what you need and she'll find it in stock near you.",
-    prefill: "find my medication in stock near me",
+    prefill: "I'm looking for medications, the cheapest prices or in stock near me.",
   },
   fertility: {
     headline: ["Your fertility journey,", "all in one place."],
     accent: "all in one place",
     subtitle: "Track medications and appointments, compare clinic prices, call your insurance about coverage, and manage the whole process without the spreadsheets.",
-    prefill: "Help me navigate my fertility journey",
+    prefill: "I'm going through fertility treatment. Help me with the logistics and costs.",
   },
   chronic: {
     headline: ["Take control of", "your condition."],
     accent: "your condition",
     subtitle: "Living with diabetes, autoimmune disease, thyroid disorders, or mental health conditions means constant doctor visits, medications, and insurance battles. Elena manages it all for you.",
-    prefill: "help me manage my diabetes care and find the cheapest insulin near me",
+    prefill: "I'm managing a chronic condition. Help me stay on top of my care.",
   },
   insurance: {
     headline: ["Find the right insurance.", "Stop overpaying."],
     accent: "overpaying",
     subtitle: "Marketplace plans, employer options, Medicare, Medicaid. Elena compares plans based on your doctors, medications, and expected needs so you pick the one that actually saves you money.",
-    prefill: "Help me find the right insurance",
+    prefill: "I need help picking the right health insurance.",
   },
   care_now: {
     headline: ["Need care today?", "Elena finds it."],
     accent: "finds it",
     subtitle: "Urgent care, same-day appointments, telehealth, or an ER alternative. Elena finds available providers near you right now and tells you what it'll cost before you go.",
-    prefill: "find me a doctor who can see me today near me",
+    prefill: "I need to see a doctor soon. Can you find someone nearby?",
   },
   prices: {
     headline: ["See real healthcare prices.", "Before you go in, compare prices for healthcare."],
     accent: "compare prices for healthcare",
     subtitle: "Elena uses real insurance-negotiated rates to show you what procedures actually cost at every provider near you. No surprises, no guessing.",
-    prefill: "How much does a back MRI cost near me?",
+    prefill: "I need to find the best price for a healthcare procedure.",
   },
 };
 
@@ -660,6 +660,8 @@ function LandingPage() {
     : (userHasEdited ? manualInput : (queries ? fullQuery : (hero?.prefill || "")));
   const setInput = useCallback((val: string) => { setUserHasEdited(true); setManualInput(val); }, []);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [chatPreviewVisible, setChatPreviewVisible] = useState(false);
+  const [chatPreviewQuery, setChatPreviewQuery] = useState<string>("");
   const [authDefaultMode, setAuthDefaultMode] = useState<"signin" | "signup">("signup");
   const [pendingDocFile, setPendingDocFile] = useState<File | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -744,9 +746,14 @@ function LandingPage() {
 
   const handleSend = useCallback(() => {
     // Read madlib inputs at send time (not render time) so user input is captured
-    const query = madlib
+    const typed = madlib
       ? getMadlibText().trim()
       : sendQuery.trim();
+    // Fall back to the LP's prefill so users arriving via "Get started" (mobile,
+    // no input shown) or hitting send with an empty field still open chat with
+    // a coherent first message in Elena's voice. Homepage (no ref) stays empty
+    // so those users see Elena's welcome screen instead.
+    const query = typed || (ref && hero?.prefill ? hero.prefill : "");
     if (query) {
       analytics.track("Hero Input Submitted", { query_length: query.length });
       analytics.track("Message Sent", {
@@ -756,6 +763,7 @@ function LandingPage() {
         authenticated: !!session,
         source: "landing_page",
         landing_variant: ref || "homepage",
+        used_default: !typed,
       });
       if (session?.user?.id) {
         trackActivation(session.user.id);
@@ -763,7 +771,7 @@ function LandingPage() {
       localStorage.setItem("elena_pending_query", query);
       void postPendingMessage({
         content: query,
-        source: madlib ? "madlib" : "landing_hero",
+        source: typed ? (madlib ? "madlib" : "landing_hero") : "landing_default",
         landing_variant: ref || "homepage",
         pending_doc_name: pendingDocFile?.name ?? null,
       });
@@ -788,9 +796,14 @@ function LandingPage() {
       router.push("/chat");
       return;
     }
+    // Stash the LP variant so the onboarding tour can tailor the value step
+    // (e.g. skip it for bill_fighting / prices where the hero already is the pitch).
+    localStorage.setItem("elena_lp_variant", ref || "homepage");
     setAuthDefaultMode("signup");
+    setChatPreviewQuery(query || "");
+    setChatPreviewVisible(true);
     setAuthModalOpen(true);
-  }, [sendQuery, ref, madlib, demoMode, session, pendingDocFile, router]);
+  }, [sendQuery, ref, hero, madlib, demoMode, session, pendingDocFile, router]);
 
   const handleChipClick = useCallback((suggestion: typeof SUGGESTIONS[number]) => {
     analytics.track("Suggested Prompt Clicked", { prompt_label: suggestion.label });
@@ -817,7 +830,7 @@ function LandingPage() {
   return (
     <div className="font-[family-name:var(--font-inter)]">
       {/* NAV */}
-      <nav className="absolute top-0 left-0 right-0 z-[100] px-8 py-5 flex items-center justify-between max-md:px-4">
+      <nav className={`absolute top-0 left-0 right-0 z-[100] px-8 py-5 flex items-center justify-between max-md:px-4 transition-opacity duration-150 ${chatPreviewVisible ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
         <a
           href="#"
           className="bg-white/[0.08] backdrop-blur-[40px] border border-white/[0.18] border-t-white/30 rounded-[18px_18px_18px_4px] px-5 py-2.5 max-md:px-4 max-md:py-2 max-md:h-10 max-md:flex max-md:items-center text-[1.35rem] max-md:text-[0.95rem] font-semibold text-white no-underline tracking-tight shadow-[0_4px_16px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.15)]"
@@ -867,7 +880,7 @@ function LandingPage() {
         {/* Content wrapper — viewport-height centered for bills, inline for others */}
         <div className="min-h-[80dvh] flex flex-col items-center justify-center w-full shrink-0 pb-8" style={{ paddingTop: "max(6rem, 12vh)" }}>
         <div className="relative z-[4] text-center max-w-[700px] w-full px-6 max-md:px-5">
-          <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[1.6rem] font-light leading-[1.15] tracking-tight text-white">
+          <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[2.15rem] font-light leading-[1.15] tracking-tight text-white">
             {hero ? (
               <>
                 {hero.headline[0]}<br />
@@ -892,9 +905,9 @@ function LandingPage() {
             </>)}
           </p>
 
-          {/* Chat input bar */}
+          {/* Chat input bar (desktop only — mobile gets a single CTA button below) */}
           <div
-            className={`flex flex-col bg-white/95 rounded-[20px] max-md:rounded-[16px] border max-w-[580px] w-full mx-auto mt-8 max-md:mt-5 shadow-[0_4px_24px_rgba(0,0,0,0.1)] transition-all ${isDraggingOver ? "border-[#2E6BB5] ring-2 ring-[#2E6BB5]/30" : "border-white/30"}`}
+            className={`max-md:hidden flex flex-col bg-white/95 rounded-[20px] max-md:rounded-[16px] border max-w-[580px] w-full mx-auto mt-8 max-md:mt-5 shadow-[0_4px_24px_rgba(0,0,0,0.1)] transition-all ${isDraggingOver ? "border-[#2E6BB5] ring-2 ring-[#2E6BB5]/30" : "border-white/30"}`}
             onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); landingDragCounter.current++; setIsDraggingOver(true); }}
             onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); landingDragCounter.current--; if (landingDragCounter.current <= 0) { landingDragCounter.current = 0; setIsDraggingOver(false); } }}
             onDragOver={(e) => { e.preventDefault(); }}
@@ -1002,32 +1015,32 @@ function LandingPage() {
                   <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
                 </svg>
               </button>
-              {ref === "caregiver" ? (
-                <button
-                  onClick={handleSend}
-                  className="h-10 max-md:h-8 px-5 max-md:px-3.5 rounded-full bg-[#0F1B3D] text-white text-sm max-md:text-[12px] font-semibold flex items-center justify-center cursor-pointer transition-colors hover:bg-[#1A3A6E] whitespace-nowrap"
-                >
-                  Get started
-                </button>
-              ) : (
-                <button
-                  onClick={handleSend}
-                  className="w-10 h-10 max-md:w-8 max-md:h-8 rounded-full bg-[#0F1B3D] flex items-center justify-center cursor-pointer transition-colors hover:bg-[#1A3A6E]"
-                  aria-label="Send"
-                >
-                  <svg viewBox="0 0 20 20" fill="none" className="w-[18px] h-[18px]">
-                    <path d="M10 16V4M4 10l6-6 6 6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-              )}
+              <button
+                onClick={handleSend}
+                className="w-10 h-10 max-md:w-8 max-md:h-8 rounded-full bg-[#0F1B3D] flex items-center justify-center cursor-pointer transition-colors hover:bg-[#1A3A6E]"
+                aria-label="Send"
+              >
+                <svg viewBox="0 0 20 20" fill="none" className="w-[18px] h-[18px]">
+                  <path d="M10 16V4M4 10l6-6 6 6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
             </div>
           </div>
 
-          {/* Suggestion chips */}
-          <div className="text-[11px] max-md:text-[9px] font-semibold uppercase tracking-[1.5px] text-white/40 text-center mt-7 max-md:mt-4 mb-3.5 max-md:mb-2">
+          {/* Mobile-only CTA: replace the whole input + chips with a single Get started button */}
+          <button
+            onClick={handleSend}
+            className="md:hidden block w-auto mx-auto mt-6 h-12 px-10 rounded-full bg-white/[0.18] backdrop-blur-[40px] border border-white/30 border-t-white/50 text-white text-[0.95rem] font-semibold shadow-[0_10px_32px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] active:scale-[0.97] transition-transform"
+            style={{ WebkitBackdropFilter: "blur(40px) saturate(1.8)" }}
+          >
+            Get started
+          </button>
+
+          {/* Suggestion chips (desktop only — mobile hides these with the input) */}
+          <div className="max-md:hidden text-[11px] max-md:text-[9px] font-semibold uppercase tracking-[1.5px] text-white/40 text-center mt-7 max-md:mt-4 mb-3.5 max-md:mb-2">
             Common problems Elena can solve
           </div>
-          <div className="flex gap-2.5 justify-center flex-nowrap px-3 max-md:overflow-x-auto max-md:justify-start max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden max-md:[mask-image:linear-gradient(to_right,black_80%,transparent_100%)]">
+          <div className="max-md:hidden flex gap-2.5 justify-center flex-nowrap px-3 max-md:overflow-x-auto max-md:justify-start max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden max-md:[mask-image:linear-gradient(to_right,black_80%,transparent_100%)]">
             {SUGGESTIONS.map((s) => (
               <button
                 key={s.label}
@@ -1170,7 +1183,67 @@ function LandingPage() {
         </div>
       </footer>
 
-      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} defaultMode={authDefaultMode} />
+      {/* Chat UI preview shown behind the auth modal on send — mirrors the
+          real /chat layout so when the modal's backdrop blurs it, the user
+          sees "the chat is already open and Elena is working." */}
+      {chatPreviewVisible && (
+        <div className="fixed inset-0 z-40 flex bg-white text-[#0F1B3D]" aria-hidden>
+          {/* Sidebar */}
+          <div className="flex h-dvh w-64 flex-shrink-0 flex-col bg-[#f5f7fb] max-md:hidden">
+            <div className="flex items-center gap-2.5 px-5 pt-5 pb-4">
+              <div className="h-12 w-12 rounded-xl overflow-hidden bg-[#0F1B3D] shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/images/elena-icon-cropped.png" alt="" className="h-full w-full object-cover" style={{ transform: "scale(1.1)" }} />
+              </div>
+              <span className="text-lg font-extrabold text-[#0F1B3D] flex-1">elena</span>
+            </div>
+            <div className="flex items-center gap-2 px-4 pb-3">
+              <div className="relative flex-1 h-10 rounded-full border border-[#0F1B3D]/10 bg-[#0F1B3D]/[0.04]" />
+              <div className="h-10 w-10 shrink-0 rounded-full border border-[#0F1B3D]/10 bg-[#0F1B3D]/[0.04]" />
+            </div>
+            <div className="flex-1 min-h-0 overflow-hidden px-3">
+              <p className="px-3 pt-4 pb-1.5 text-[0.65rem] font-semibold uppercase tracking-wider text-[#0F1B3D]/30">Today</p>
+              <div className="px-3 py-2 rounded-xl bg-[#0F1B3D]/[0.06] text-sm text-[#0F1B3D]/80 truncate">
+                {chatPreviewQuery || "New chat"}
+              </div>
+            </div>
+          </div>
+
+          {/* Main chat area */}
+          <div className="flex-1 flex flex-col min-w-0">
+            <div className="h-14 border-b border-[#0F1B3D]/[0.04] flex items-center px-5">
+              <span className="text-sm font-semibold text-[#0F1B3D]/80 truncate">
+                {chatPreviewQuery || "New chat"}
+              </span>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <div className="max-w-2xl mx-auto w-full px-5 py-8 flex flex-col gap-6">
+                {chatPreviewQuery && (
+                  <div className="flex justify-end">
+                    <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-[#e8ecf4] px-5 py-3 text-[15px] text-[#0F1B3D]">
+                      {chatPreviewQuery}
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-[#0F1B3D]/40 animate-pulse" />
+                  <span className="h-2 w-2 rounded-full bg-[#0F1B3D]/40 animate-pulse [animation-delay:150ms]" />
+                  <span className="h-2 w-2 rounded-full bg-[#0F1B3D]/40 animate-pulse [animation-delay:300ms]" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <AuthModal
+        open={authModalOpen}
+        onOpenChange={(open) => {
+          setAuthModalOpen(open);
+          if (!open) setChatPreviewVisible(false);
+        }}
+        defaultMode={authDefaultMode}
+      />
     </div>
   );
 }

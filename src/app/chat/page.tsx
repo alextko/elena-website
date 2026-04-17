@@ -10,7 +10,6 @@ import * as analytics from "@/lib/analytics";
 import { Sidebar } from "@/components/sidebar";
 import { ChatArea } from "@/components/chat-area";
 import { ChatErrorBoundary } from "@/components/error-boundary";
-import { OnboardingModal } from "@/components/onboarding-modal";
 import { WebOnboardingTour } from "@/components/web-onboarding-tour";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import type { ChatSessionItem } from "@/lib/types";
@@ -313,19 +312,23 @@ function ChatPageInner() {
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [tourPopoverTab, setTourPopoverTab] = useState<"health" | "visits" | "insurance">("health");
 
-  // Show onboarding tour after onboarding completes (replaces simple tooltip)
-  // Also supports ?tour=1 URL param for testing
+  // Tour handles onboarding end-to-end now — profile form (name/DOB/zip) is a
+  // phase inside the tour, so the tour mounts *when* needsOnboarding is true,
+  // not after. It stays mounted through completion (onboardingJustCompleted
+  // becomes true mid-tour but the tour doesn't unmount on that transition).
   const [showTour, setShowTour] = useState(false);
   useEffect(() => {
     const forceTour = searchParams.get("tour") === "1";
-    if (onboardingJustCompleted || forceTour) {
-      // Always show tour after fresh onboarding (clear stale flag from previous accounts)
-      if (onboardingJustCompleted) localStorage.removeItem("elena_web_tour_done");
-      if (forceTour) localStorage.removeItem("elena_web_tour_done");
-      const timer = setTimeout(() => setShowTour(true), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [onboardingJustCompleted, searchParams]);
+    const shouldShow = forceTour || needsOnboarding || onboardingJustCompleted;
+    if (!shouldShow) return;
+    // Reset the "tour done" flag so a fresh signup always sees the tour.
+    if (onboardingJustCompleted || needsOnboarding) localStorage.removeItem("elena_web_tour_done");
+    if (forceTour) localStorage.removeItem("elena_web_tour_done");
+    // Small delay so the /chat page's initial paint settles before the tour
+    // fades in. StreamingText's own startDelay covers the rest.
+    const timer = setTimeout(() => setShowTour(true), 220);
+    return () => clearTimeout(timer);
+  }, [onboardingJustCompleted, searchParams, needsOnboarding]);
 
   // Persist active session so refresh/navigation restores it
   useEffect(() => {
@@ -388,7 +391,6 @@ function ChatPageInner() {
 
   return (
     <div className="flex h-dvh overflow-hidden relative">
-      <OnboardingModal />
       <UpgradeModal open={upgradeModalOpen} onOpenChange={setUpgradeModalOpen} reason="soft" />
       {showTour && (
         <WebOnboardingTour

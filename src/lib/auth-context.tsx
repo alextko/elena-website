@@ -290,9 +290,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Fetch detailed profile data (doctors, appointments, credits) — called eagerly on login
+  // Fetch detailed profile data (doctors, appointments, credits) — called eagerly on login.
+  // Guard only on fetchingRef (not on profileDetailsLoaded) so a newly-signed-up
+  // user with optimistic loaded=true can still hydrate real data from the backend.
   const fetchProfileDetails = useCallback(async () => {
-    if (profileDetailsLoaded || profileDetailsFetchingRef.current) return;
+    if (profileDetailsFetchingRef.current) return;
     profileDetailsFetchingRef.current = true;
     const fetchVersion = profileFetchVersionRef.current;
 
@@ -460,29 +462,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .catch(() => {}),
     );
 
-    await Promise.all(promises);
-
-    if (isStale()) {
-      profileDetailsFetchingRef.current = false;
-      return;
-    }
-
-    setProfileDetailsLoaded(true);
-
-    // Cache for instant restore on next page load
     try {
-      sessionStorage.setItem("elena_profile_details", JSON.stringify({
-        _profileId: profileId,
-        doctors: doctorsResult,
-        careVisits: visitsResult,
-        todos: todosResult,
-        todayTodos: todayTodosResult,
-        habits: habitsResult,
-        insuranceCards: insuranceResult,
-        subscription: subscriptionResult,
-      }));
-    } catch {}
-  }, [profileId, profileDetailsLoaded]);
+      await Promise.all(promises);
+
+      if (isStale()) return;
+
+      setProfileDetailsLoaded(true);
+
+      // Cache for instant restore on next page load
+      try {
+        sessionStorage.setItem("elena_profile_details", JSON.stringify({
+          _profileId: profileId,
+          doctors: doctorsResult,
+          careVisits: visitsResult,
+          todos: todosResult,
+          todayTodos: todayTodosResult,
+          habits: habitsResult,
+          insuranceCards: insuranceResult,
+          subscription: subscriptionResult,
+        }));
+      } catch {}
+    } finally {
+      // Always release the lock so a later refresh (or profile switch) can re-enter.
+      profileDetailsFetchingRef.current = false;
+    }
+  }, [profileId]);
 
   // Refresh just subscription/credits — used after Stripe checkout redirect
   const refreshSubscription = useCallback(async () => {
@@ -835,46 +839,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setNeedsOnboarding(false);
         setOnboardingJustCompleted(true);
         localStorage.setItem("elena_onboarding_done", "1");
-        // Mark onboarding complete on backend
-        await apiFetch("/auth/complete-onboarding", { method: "POST" }).catch(() => {});
-        // Generate the 3 core game plan todos (same as mobile onboarding)
-        try {
-          const genRes = await apiFetch("/todos/generate", {
-            method: "POST",
-            body: JSON.stringify({
-              date_of_birth: data.date_of_birth || "",
-              generate_habits: false,
-            }),
-          });
-          if (genRes.ok) {
-            const generated = await genRes.json();
-            setTodos(generated);
-            setTodayTodos(generated);
+        // Everything below this line is fire-and-forget. The modal has already
+        // unmounted (needsOnboarding=false) and the critical profile state is
+        // set — we don't block the UI on LLM todo generation, invite acceptance,
+        // or ad pixel fires, since each can take seconds.
+        void apiFetch("/auth/complete-onboarding", { method: "POST" }).catch(() => {});
+
+        // Generate the 3 core game plan todos (same as mobile onboarding).
+        // LLM call — fire-and-forget; todos populate into state when ready.
+        void (async () => {
+          try {
+            const genRes = await apiFetch("/todos/generate", {
+              method: "POST",
+              body: JSON.stringify({
+                date_of_birth: data.date_of_birth || "",
+                generate_habits: false,
+              }),
+            });
+            if (genRes.ok) {
+              const generated = await genRes.json();
+              setTodos(generated);
+              setTodayTodos(generated);
+            }
+          } catch (e) {
+            console.error("[onboarding] Failed to generate todos:", e);
           }
-        } catch (e) {
-          console.error("[onboarding] Failed to generate todos:", e);
-        }
-        // Accept pending invite if one exists (from invite link signup flow)
+        })();
+
+        // Accept pending invite (invite-link signup flow) — fire-and-forget.
         const pendingInvite = localStorage.getItem("elena_pending_invite");
         if (pendingInvite) {
           localStorage.removeItem("elena_pending_invite");
-          try {
-            const acceptRes = await apiFetch(`/family/invite/${pendingInvite}/accept`, { method: "POST" });
-            if (acceptRes.ok) {
-              // Re-fetch profile to pick up the new linked account
-              profileFetchedRef.current = false;
-              await fetchProfile();
-              // Store flag for the chat page to show a toast
-              localStorage.setItem("elena_invite_accepted", "1");
-            }
-          } catch {}
+          void (async () => {
+            try {
+              const acceptRes = await apiFetch(`/family/invite/${pendingInvite}/accept`, { method: "POST" });
+              if (acceptRes.ok) {
+                profileFetchedRef.current = false;
+                await fetchProfile();
+                localStorage.setItem("elena_invite_accepted", "1");
+              }
+            } catch {}
+          })();
         }
-        // Fire ad pixel CompleteRegistration now that onboarding is actually done
-        const { data: { session: pixelSession } } = await supabase.auth.getSession();
-        const pixelProvider = pixelSession?.user?.app_metadata?.provider || "email";
-        import('@/lib/tracking-events').then(({ trackSignup }) => {
+
+        // Fire ad pixel CompleteRegistration — fire-and-forget.
+        void (async () => {
+          const { data: { session: pixelSession } } = await supabase.auth.getSession();
+          const pixelProvider = pixelSession?.user?.app_metadata?.provider || "email";
+          const { trackSignup } = await import('@/lib/tracking-events');
           trackSignup(pixelProvider, pixelSession?.user?.id, profileData?.email || undefined);
-        });
+        })();
       } else {
         const errText = await createRes.text().catch(() => "");
         console.error("[onboarding] POST /profile failed:", createRes.status, errText);

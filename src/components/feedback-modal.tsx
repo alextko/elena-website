@@ -13,20 +13,24 @@ interface FeedbackModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const APP_STORE_URL = "https://apps.apple.com/us/app/elena-ai-health-navigator/id6760362771";
+
 export function FeedbackModal({ open, onOpenChange }: FeedbackModalProps) {
-  const [phase, setPhase] = useState<"ask" | "feedback">("ask");
+  const [phase, setPhase] = useState<"ask" | "feedback" | "download">("ask");
   const [feedbackText, setFeedbackText] = useState("");
   const [saving, setSaving] = useState(false);
 
   const handleYes = () => {
-    onOpenChange(false);
-    setPhase("ask");
-    // No App Store review on web — just close
     analytics.track("Feedback: Yes");
+    setPhase("download");
   };
 
   const handleNo = () => {
     setPhase("feedback");
+  };
+
+  const handleDownloadClick = () => {
+    analytics.track("Feedback: Download Clicked");
   };
 
   const handleSubmitFeedback = async () => {
@@ -76,6 +80,33 @@ export function FeedbackModal({ open, onOpenChange }: FeedbackModalProps) {
                 </button>
               </div>
             </>
+          ) : phase === "download" ? (
+            <div className="flex flex-col items-center">
+              <img
+                src="/assets/elena-app-icon.png"
+                alt="Elena"
+                className="w-[96px] h-[96px] rounded-[22px] shadow-[0_10px_30px_rgba(15,27,61,0.22)] mb-5"
+              />
+              <h2 className="text-xl font-bold text-[#0F1B3D] text-center mb-1.5">
+                Take Elena with you
+              </h2>
+              <p className="text-sm text-[#0F1B3D]/60 text-center mb-5">
+                Get the iOS app for appointments, bills, and more on the go.
+              </p>
+              <a
+                href={APP_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleDownloadClick}
+                className="transition-transform hover:scale-[1.03] active:scale-[0.98]"
+              >
+                <img
+                  src="/assets/app-store-badge.svg"
+                  alt="Download on the App Store"
+                  className="h-[44px] w-auto"
+                />
+              </a>
+            </div>
           ) : (
             <>
               <h2 className="text-xl font-bold text-[#0F1B3D] text-center mb-2">

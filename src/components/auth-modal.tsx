@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import * as analytics from "@/lib/analytics";
 import {
@@ -31,9 +32,16 @@ export function AuthModal({
   }, [defaultMode]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+
+  // Reset the confirm field when switching between sign-in/sign-up
+  useEffect(() => {
+    setConfirmPassword("");
+  }, [mode]);
 
   // Keep browser chrome navy when auth modal is open on mobile
   useEffect(() => {
@@ -49,6 +57,12 @@ export function AuthModal({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (mode === "signup" && password !== confirmPassword) {
+      setError("Passwords don't match.");
+      return;
+    }
+
     setSubmitting(true);
     analytics.track("Auth Method Selected", { method: "email", mode });
 
@@ -93,8 +107,19 @@ export function AuthModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* Bump overlay z-index on mobile to cover the nav */}
-      <style>{`@media (max-width: 767px) { [data-slot="dialog-overlay"] { z-index: 199 !important; } }`}</style>
+      {/* Bump overlay z-index on mobile to cover the nav; soften the backdrop
+          (less blur, less tint) so the chat preview behind reads through.
+          Scoped to `open` so other dialogs keep their default backdrop. */}
+      {open && (
+        <style>{`
+          [data-slot="dialog-overlay"] {
+            background-color: rgba(0, 0, 0, 0.12) !important;
+            backdrop-filter: blur(3px) !important;
+            -webkit-backdrop-filter: blur(3px) !important;
+          }
+          @media (max-width: 767px) { [data-slot="dialog-overlay"] { z-index: 199 !important; } }
+        `}</style>
+      )}
       <DialogContent className="max-sm:w-[75vw] w-[calc(100%-2rem)] max-w-lg max-h-[90dvh] overflow-y-auto p-0 border-0 rounded-3xl shadow-[0_16px_48px_rgba(0,0,0,0.25)] font-[family-name:var(--font-inter)] [&_[data-slot=dialog-close]]:text-white/70 [&_[data-slot=dialog-close]:hover]:text-white [&_[data-slot=dialog-close]:hover]:bg-white/10 max-md:!fixed max-md:!inset-0 max-md:!top-0 max-md:!left-0 max-md:!translate-x-0 max-md:!translate-y-0 max-md:!w-full max-md:!max-w-none max-md:!max-h-none max-md:!h-full max-md:!rounded-none max-md:!shadow-none max-md:!border-0 max-md:!z-[200]">
         {/* Gradient background matching hero */}
         <div
@@ -164,16 +189,51 @@ export function AuthModal({
               </div>
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-white/50">Password</label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-2xl bg-white/10 border border-white/[0.15] px-5 py-4 max-sm:px-4 max-sm:py-3 text-sm max-sm:text-xs text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/30 focus:bg-white/15"
-                  placeholder="Your password"
-                  minLength={6}
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full rounded-2xl bg-white/10 border border-white/[0.15] pl-5 pr-12 py-4 max-sm:pl-4 max-sm:pr-11 max-sm:py-3 text-sm max-sm:text-xs text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/30 focus:bg-white/15"
+                    placeholder="Your password"
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((s) => !s)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="absolute right-4 max-sm:right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
+
+              {mode === "signup" && (
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-white/50">Confirm password</label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full rounded-2xl bg-white/10 border border-white/[0.15] pl-5 pr-12 py-4 max-sm:pl-4 max-sm:pr-11 max-sm:py-3 text-sm max-sm:text-xs text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/30 focus:bg-white/15"
+                      placeholder="Re-enter your password"
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((s) => !s)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      className="absolute right-4 max-sm:right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {mode === "signin" && !resetSent && (
                 <div className="flex justify-end -mt-2">

@@ -62,18 +62,10 @@ export function UpgradeModal({
   const { subscription } = useAuth();
   const [loading, setLoading] = useState(false);
   const [billing, setBilling] = useState<BillingPeriod>("annual");
-  const [showDismiss, setShowDismiss] = useState(true);
 
   useEffect(() => {
     if (open) analytics.track("Upgrade Modal Shown", { reason, feature_name: featureName });
   }, [open, reason, featureName]);
-
-  useEffect(() => {
-    if (!open) { setShowDismiss(true); return; }
-    setShowDismiss(true);
-    const t = setTimeout(() => setShowDismiss(false), 5000);
-    return () => clearTimeout(t);
-  }, [open]);
 
   const currentTier = subscription?.tier || "free";
   const isStandardLimitReached = currentTier === "standard" && reason === "limit_reached";
@@ -180,7 +172,7 @@ export function UpgradeModal({
                     />
                   )}
                   <span className={`relative z-10 ${billing === period ? "text-[#0F1B3D]" : "text-white/60"}`}>
-                    {period === "annual" ? "Annual (-50%)" : "Monthly"}
+                    {period === "annual" ? "Annual (-25%)" : "Monthly"}
                   </span>
                 </button>
               ))}
@@ -267,14 +259,6 @@ export function UpgradeModal({
             );
           })}
 
-          {showDismiss && (
-            <button
-              className="w-full text-center text-sm text-[#0F1B3D]/30 transition-colors hover:text-[#0F1B3D]/50 pt-1"
-              onClick={() => { analytics.track("Upgrade Dismissed", { reason }); onOpenChange(false); }}
-            >
-              Maybe later
-            </button>
-          )}
         </div>
       </DialogContent>
     </Dialog>
