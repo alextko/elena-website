@@ -887,12 +887,13 @@ export function ProfilePopover({
 
                       if (items.length === 0 && profileDetailsLoaded) {
                         return (
-                          <div className="rounded-[14px] px-[14px] py-[10px]" style={{ background: "rgba(255,255,255,0.3)" }}>
-                            <div className="flex items-center gap-3 py-[10px]">
-                              <div className="w-8 h-8 rounded-full border-2 flex-shrink-0 flex items-center justify-center" style={{ borderColor: "#7A3040", background: "transparent" }} />
-                              <p className="text-[15px] font-semibold" style={{ color: "#7A3040" }}>All caught up!</p>
-                            </div>
-                          </div>
+                          <button
+                            className="w-full rounded-[14px] border border-dashed px-[14px] py-[12px] text-center transition-opacity hover:opacity-70"
+                            style={{ borderColor: "rgba(92,26,42,0.25)", background: "rgba(255,255,255,0.2)" }}
+                            onClick={() => setEditingTodo({ mode: "create" })}
+                          >
+                            <p className="text-[14px]" style={{ color: "#7A3040" }}>Add a to-do</p>
+                          </button>
                         );
                       }
 
