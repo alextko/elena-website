@@ -1002,15 +1002,24 @@ function LandingPage() {
                   <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
                 </svg>
               </button>
-              <button
-                onClick={handleSend}
-                className="w-10 h-10 max-md:w-8 max-md:h-8 rounded-full bg-[#0F1B3D] flex items-center justify-center cursor-pointer transition-colors hover:bg-[#1A3A6E]"
-                aria-label="Send"
-              >
-                <svg viewBox="0 0 20 20" fill="none" className="w-[18px] h-[18px]">
-                  <path d="M10 16V4M4 10l6-6 6 6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
+              {ref === "caregiver" ? (
+                <button
+                  onClick={handleSend}
+                  className="h-10 max-md:h-8 px-5 max-md:px-3.5 rounded-full bg-[#0F1B3D] text-white text-sm max-md:text-[12px] font-semibold flex items-center justify-center cursor-pointer transition-colors hover:bg-[#1A3A6E] whitespace-nowrap"
+                >
+                  Get started
+                </button>
+              ) : (
+                <button
+                  onClick={handleSend}
+                  className="w-10 h-10 max-md:w-8 max-md:h-8 rounded-full bg-[#0F1B3D] flex items-center justify-center cursor-pointer transition-colors hover:bg-[#1A3A6E]"
+                  aria-label="Send"
+                >
+                  <svg viewBox="0 0 20 20" fill="none" className="w-[18px] h-[18px]">
+                    <path d="M10 16V4M4 10l6-6 6 6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
 
