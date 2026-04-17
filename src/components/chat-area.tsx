@@ -169,6 +169,7 @@ export function ChatArea({
   onBookMessageConsumed,
   isNewChat,
   demoMode = false,
+  autoShowHipaa = false,
 }: {
   onToggleSidebar: () => void;
   sidebarOpen: boolean;
@@ -180,6 +181,7 @@ export function ChatArea({
   onBookMessageConsumed?: () => void;
   isNewChat?: boolean;
   demoMode?: boolean;
+  autoShowHipaa?: boolean;
 }) {
   const { user, profileId, profileData, profiles, refreshInsurance } = useAuth();
   const [input, setInput] = useState("");
@@ -205,6 +207,11 @@ export function ChatArea({
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>(undefined);
   const [hipaaConsentOpen, setHipaaConsentOpen] = useState(false);
   const [showHipaaButton, setShowHipaaButton] = useState(false);
+
+  // Auto-open HIPAA consent modal via ?hipaa=1 URL param
+  useEffect(() => {
+    if (autoShowHipaa) setHipaaConsentOpen(true);
+  }, [autoShowHipaa]);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [softPaywallOpen, setSoftPaywallOpen] = useState(false);
   const userMessageCountRef = useRef(0);

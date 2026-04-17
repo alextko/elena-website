@@ -433,6 +433,7 @@ function ChatPageInner() {
           onBookMessageConsumed={() => setBookMessage(null)}
           isNewChat={isNewChat}
           demoMode={demoMode}
+          autoShowHipaa={searchParams.get("hipaa") === "1"}
         />
       </ChatErrorBoundary>
     </div>
