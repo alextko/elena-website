@@ -210,7 +210,11 @@ export function ChatArea({
 
   // Auto-open HIPAA consent modal via ?hipaa=1 URL param
   useEffect(() => {
-    if (autoShowHipaa) setHipaaConsentOpen(true);
+    if (autoShowHipaa) {
+      // Small delay to ensure the modal renders after hydration
+      const t = setTimeout(() => setHipaaConsentOpen(true), 500);
+      return () => clearTimeout(t);
+    }
   }, [autoShowHipaa]);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [softPaywallOpen, setSoftPaywallOpen] = useState(false);
