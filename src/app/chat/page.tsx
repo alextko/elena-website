@@ -358,7 +358,7 @@ function ChatPageInner() {
   return (
     <div className="flex h-dvh overflow-hidden relative">
       <OnboardingModal />
-      <UpgradeModal open={upgradeModalOpen} onOpenChange={setUpgradeModalOpen} />
+      <UpgradeModal open={upgradeModalOpen} onOpenChange={setUpgradeModalOpen} reason="soft" />
       {showTour && (
         <WebOnboardingTour
           onComplete={() => { setShowTour(false); setTourPopoverOpen(false); }}

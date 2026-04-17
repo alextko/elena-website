@@ -958,7 +958,7 @@ export function ChatArea({
       <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} reason={upgradeReason} featureName={upgradeFeature} />
       <HipaaConsentModal open={hipaaConsentOpen} onOpenChange={setHipaaConsentOpen} />
       <FeedbackModal open={feedbackOpen} onOpenChange={setFeedbackOpen} />
-      <UpgradeModal open={softPaywallOpen} onOpenChange={setSoftPaywallOpen} reason="upgrade_required" />
+      <UpgradeModal open={softPaywallOpen} onOpenChange={setSoftPaywallOpen} reason="soft" />
 
       {/* Full-page drag-and-drop overlay */}
       {isDraggingOver && (

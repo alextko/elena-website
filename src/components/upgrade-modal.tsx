@@ -18,7 +18,7 @@ import * as analytics from "@/lib/analytics";
 interface UpgradeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  reason?: "upgrade_required" | "limit_reached" | "feature_blocked" | "document_limit";
+  reason?: "upgrade_required" | "limit_reached" | "feature_blocked" | "document_limit" | "soft";
   featureName?: string;
 }
 
@@ -88,6 +88,8 @@ export function UpgradeModal({
     ? "Feature not available"
     : reason === "document_limit"
     ? "Document limit reached"
+    : reason === "soft"
+    ? "Get more out of Elena"
     : isFreeUser && reason === "upgrade_required"
     ? "Free limit reached"
     : "Upgrade your plan";
@@ -105,6 +107,8 @@ export function UpgradeModal({
     ? `${featureLabel.charAt(0).toUpperCase() + featureLabel.slice(1)} is available on paid plans.`
     : reason === "document_limit"
     ? "You've reached the free document limit. Upgrade for unlimited uploads."
+    : reason === "soft"
+    ? "Upgrade for unlimited calls, document uploads, and more."
     : featureName && featureDescriptions[featureName]
     ? featureDescriptions[featureName]
     : "Unlock the full power of Elena.";
