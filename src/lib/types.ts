@@ -93,6 +93,8 @@ export interface ProfileSummary {
   is_primary: boolean;
   is_linked: boolean;
   profile_picture_url?: string | null;
+  date_of_birth?: string | null;
+  zip_code?: string | null;
 }
 
 export interface MeResponse {

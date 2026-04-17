@@ -283,18 +283,14 @@ function DmeContent() {
     sessionStorage.removeItem("elena_dme_answers");
     sessionStorage.removeItem("elena_dme_step");
 
-    // Redirect to chat with full context
-    const parts = [`I just submitted a DME intake form. Here are the details:`];
-    parts.push(`Equipment: ${answers.equipmentType}${answers.equipmentNotes ? ` (${answers.equipmentNotes})` : ""}`);
-    if (answers.urgency) parts.push(`Urgency: ${answers.urgency}`);
-    if (answers.insuranceProvider) parts.push(`Insurance: ${answers.insuranceProvider}${answers.insurancePlanType ? ` (${answers.insurancePlanType})` : ""}, Member ID: ${answers.insuranceMemberId}`);
-    if (answers.hasDiagnosis && answers.conditionDescription) parts.push(`Diagnosis: ${answers.conditionDescription}`);
-    parts.push(`Has prescription: ${answers.hasPrescription ? "Yes" : "No"}`);
-    if (answers.prescribingDoctorName) parts.push(`Prescribing doctor: ${answers.prescribingDoctorName}`);
-    if (answers.doctorClinicName) parts.push(`Doctor/clinic: ${answers.doctorClinicName}`);
-    parts.push(`Shipping: ${[answers.shippingStreet, answers.shippingCity, answers.shippingState, answers.shippingZip].filter(Boolean).join(", ")}`);
-    parts.push(`What are the next steps to get this covered by my insurance?`);
-    localStorage.setItem("elena_pending_query", parts.join("\n"));
+    // Signal the chat page to ask the backend for an intake-aware welcome.
+    // The intake is already persisted to dme_intakes and will surface in the
+    // agent's system prompt via _build_submissions_context, so we don't need
+    // to resend a synthetic query as the user's first message.
+    localStorage.setItem("elena_post_intake_submit", "dme");
+    // Clear any stale pending query from earlier funnels so it doesn't
+    // accidentally auto-send into the welcome session.
+    localStorage.removeItem("elena_pending_query");
     router.push("/chat");
   }, [answers, profileId, router]);
 

@@ -235,6 +235,10 @@ export function ChatArea({
 
   const sessionIdRef = useRef<string | null>(null);
   const hasCreatedSessionRef = useRef(false);
+  // Prevents StrictMode / effect re-runs from spawning duplicate welcome sessions.
+  // Reset when the dispatch effect transitions to an existing session so the next
+  // genuine "new chat" transition can fetch again.
+  const welcomeInFlightRef = useRef(false);
   const initialQuerySentRef = useRef(false);
   const scrollEndRef = useRef<HTMLDivElement>(null);
   const { sendAndPoll, cancel } = usePollChat(demoMode);
@@ -312,6 +316,10 @@ export function ChatArea({
     hasCreatedSessionRef.current = false;
     setSessionReady(false);
     sessionIdRef.current = null;
+    // Reset the welcome-in-flight guard so a genuine session transition
+    // (new chat button, profile switch) can fetch a fresh welcome. StrictMode
+    // double-invokes this effect on mount but the guard inside fetchWelcome
+    // still prevents the second call from actually hitting the backend.
 
     // Increment request ID so stale fetches are ignored
     const requestId = ++loadRequestRef.current;
@@ -322,6 +330,9 @@ export function ChatArea({
       setLoadingMessages(true);
       // Load existing session messages
       sessionIdRef.current = activeSessionId;
+      // Landing on an existing session counts as completing the current welcome
+      // cycle — future transitions back to a new chat are free to fetch again.
+      welcomeInFlightRef.current = false;
       loadMessages(activeSessionId, requestId);
     } else if (isNewChat || profileChanged) {
       const pending = initialQuery || localStorage.getItem("elena_pending_query");
@@ -467,11 +478,34 @@ export function ChatArea({
 
   async function fetchWelcome(silent = false) {
     console.log("[chat-area] fetchWelcome called, silent:", silent);
+    // Guard against StrictMode / effect re-runs spawning multiple welcome sessions.
+    // Once a welcome call is in flight (or completed) for this mount cycle,
+    // subsequent calls are no-ops. The dispatch effect at the top of the component
+    // resets this ref via setSessionReady(false)/sessionIdRef.current=null when
+    // the user actually switches to a new chat.
+    if (welcomeInFlightRef.current) {
+      console.log("[chat-area] fetchWelcome SKIPPED — already in flight / completed");
+      return;
+    }
+    welcomeInFlightRef.current = true;
     setLoadError(null);
+    // If the user just finished a post-auth intake funnel (DME / insurance /
+    // future funnels), route through the tool-enabled onboarding welcome so the
+    // agent's first turn references the intake they just submitted. The intake
+    // itself is already persisted by the funnel's own endpoint (e.g. /dme/intake);
+    // _build_submissions_context on the backend reads it into the system prompt.
+    let justOnboarded = false;
+    if (typeof window !== "undefined") {
+      const intakeFlag = localStorage.getItem("elena_post_intake_submit");
+      if (intakeFlag) {
+        justOnboarded = true;
+        localStorage.removeItem("elena_post_intake_submit");
+      }
+    }
     try {
       const res = await apiFetch("/chat/welcome", {
         method: "POST",
-        body: JSON.stringify({}),
+        body: JSON.stringify(justOnboarded ? { just_onboarded: true } : {}),
       });
       console.log("[chat-area] fetchWelcome response:", res.status);
       if (!res.ok) {
@@ -1004,8 +1038,14 @@ export function ChatArea({
       {/* Messages */}
       <div className="relative z-10 flex-1 min-h-0 overflow-y-auto overflow-x-hidden chat-selectable flex flex-col">
         <div className="mx-auto max-w-2xl px-4 md:px-8 py-8 space-y-6 flex-1 flex flex-col w-full">
-          {/* Shimmer loading -- shown while waiting for sessions to resolve or messages to load */}
-          {messages.length === 0 && !welcomeHeading && !loadError && !initialQuery && !localStorage.getItem("elena_pending_query") && (
+          {/* Shimmer loading -- shown while waiting for sessions to resolve, the
+              pending-message claim to return, or messages to load.
+              Note: we intentionally do NOT gate on localStorage.elena_pending_query
+              anymore — that window (post-quiz/DME → claim in-flight) is exactly
+              when we want to show the shimmer. initialQuery is only non-null
+              once claim has resolved with a synthetic auto-send, which is the
+              one case the shimmer should step aside for the incoming user bubble. */}
+          {messages.length === 0 && !welcomeHeading && !loadError && !initialQuery && (
             <div className="space-y-6 py-8">
               <p className="text-xs font-medium text-[#0F1B3D]/30 tracking-wide uppercase">
                 {loadingMessages ? "Loading conversation…" : "Setting up your chat…"}

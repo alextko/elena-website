@@ -13,11 +13,16 @@ export function OnboardingModal() {
   const [zipCode, setZipCode] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Sync from profileData when it arrives (Google OAuth name)
+  // Sync from profileData when it arrives. Names come from Google OAuth.
+  // DOB + zip can be pre-filled from quiz/DME funnel data surfaced via /auth/me
+  // — so users who already gave us those fields on the website don't retype them.
   useEffect(() => {
     if (profileData?.firstName && !firstName) setFirstName(profileData.firstName);
     if (profileData?.lastName && !lastName) setLastName(profileData.lastName);
-  }, [profileData?.firstName, profileData?.lastName]);
+    if (profileData?.dob && !dob) setDob(profileData.dob);
+    if (profileData?.zipCode && !zipCode) setZipCode(profileData.zipCode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileData?.firstName, profileData?.lastName, profileData?.dob, profileData?.zipCode]);
 
   const hasName = !!(profileData?.firstName);
 

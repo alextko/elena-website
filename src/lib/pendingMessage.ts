@@ -22,6 +22,13 @@ export interface ClaimResult {
   session_id: string | null;
   claimed_count: number;
   messages: ClaimedPendingMessage[];
+  // Set when the claim path also generated an onboarding welcome (currently
+  // only the quiz-funnel sources). When present, the welcome is already
+  // persisted to chat_messages on the server; the frontend should NOT
+  // auto-resend the synthetic localStorage query.
+  welcome_message?: string | null;
+  welcome_suggestions?: string[];
+  quiz_results_persisted?: boolean;
 }
 
 export async function postPendingMessage(args: PostPendingArgs): Promise<void> {

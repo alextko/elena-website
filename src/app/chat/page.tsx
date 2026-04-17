@@ -57,6 +57,9 @@ function ChatPageInner() {
     if (typeof window !== "undefined") {
       // Don't restore if there's a pending query (e.g. quiz → chat redirect)
       if (localStorage.getItem("elena_pending_query")) return null;
+      // Don't restore if the user just finished a post-auth intake funnel —
+      // we want a fresh intake-aware welcome session rather than an existing chat.
+      if (localStorage.getItem("elena_post_intake_submit")) return null;
       return sessionStorage.getItem("elena_active_session_id");
     }
     return null;
@@ -94,7 +97,12 @@ function ChatPageInner() {
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
   const [inviteAccepted, setInviteAccepted] = useState(false);
   const [bookMessage, setBookMessage] = useState<string | null>(null);
-  const [isNewChat, setIsNewChat] = useState(false);
+  const [isNewChat, setIsNewChat] = useState(() => {
+    if (typeof window !== "undefined") {
+      return !!localStorage.getItem("elena_post_intake_submit");
+    }
+    return false;
+  });
   const [showProfileTooltip, setShowProfileTooltip] = useState(false);
   const [demoMode] = useState(() =>
     typeof window !== "undefined" && sessionStorage.getItem("elena_demo_mode") === "true"
@@ -111,12 +119,21 @@ function ChatPageInner() {
     }
   }, []);
 
+  // Post-auth intake funnel bootstrapping is handled inline in the useState
+  // initializers above (activeSessionId + isNewChat both read the flag on mount).
+  // No follow-up effect needed — avoids a render round-trip that would double-fire
+  // the welcome under StrictMode.
+
   // Claim any pre-auth pending messages this visitor sent before signing up.
   // Backend creates a chat_sessions row and marks pending_messages rows as claimed,
   // then we funnel the message text into the existing auto-send path so the
   // normal /chat/send flow inserts the user message + generates the assistant reply.
   // Falls back to the localStorage-only path if claim fails or returns nothing.
+  //
+  // claimSettled gates the "no sessions → start new chat" auto-decision below,
+  // so we don't race-create an orphan welcome session before the claim resolves.
   const pendingClaimAttempted = useRef(false);
+  const [claimSettled, setClaimSettled] = useState(false);
   useEffect(() => {
     if (loading || !session || pendingClaimAttempted.current) return;
     pendingClaimAttempted.current = true;
@@ -133,15 +150,24 @@ function ChatPageInner() {
         const claim = await claimPendingMessages();
         if (claim && claim.claimed_count > 0 && claim.session_id && claim.messages.length > 0) {
           const firstMessage = claim.messages[0].content;
+          const hasServerWelcome = !!claim.welcome_message && claim.welcome_message.length > 0;
+
           setActiveSessionId(claim.session_id);
-          setPendingQuery(firstMessage);
           setIsNewChat(false);
+          // When the backend already generated + persisted an onboarding welcome
+          // (quiz funnel path), the welcome message lives in chat_messages and
+          // sufficiently addresses the user's intent — skip the synthetic resend
+          // so we don't append a redundant user turn right after the welcome.
+          // Otherwise (legacy landing-hero path), keep the auto-send behavior.
+          if (!hasServerWelcome) {
+            setPendingQuery(firstMessage);
+          }
           setSessions((prev) => {
             if (prev.some((s) => s.id === claim.session_id)) return prev;
             return [{
               id: claim.session_id!,
               title: null,
-              preview: firstMessage,
+              preview: hasServerWelcome ? (claim.welcome_message ?? firstMessage) : firstMessage,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             }, ...prev];
@@ -155,6 +181,8 @@ function ChatPageInner() {
         }
       } catch {
         // Swallow and fall through to localStorage fallback
+      } finally {
+        setClaimSettled(true);
       }
       if (localQ) {
         setPendingQuery(localQ);
@@ -257,10 +285,13 @@ function ChatPageInner() {
     prevProfileId.current = profileId;
   }, [profileId, fetchSessions]);
 
-  // Auto-open most recent session, or start a new chat if none exist
-  // Wait for profileChecked to avoid racing with onboarding detection
+  // Auto-open most recent session, or start a new chat if none exist.
+  // Wait for profileChecked to avoid racing with onboarding detection,
+  // AND for claimSettled so we don't create an orphan welcome session
+  // before the pending-message claim resolves (the claim may itself
+  // produce a session_id we want to land on).
   useEffect(() => {
-    if (!loadingSessions && profileChecked && activeSessionId === null && !pendingQuery && !isNewChat && !needsOnboarding) {
+    if (!loadingSessions && profileChecked && claimSettled && activeSessionId === null && !pendingQuery && !isNewChat && !needsOnboarding) {
       if (sessions.length > 0) {
         setActiveSessionId(sessions[0].id);
       } else {
@@ -268,7 +299,7 @@ function ChatPageInner() {
         setIsNewChat(true);
       }
     }
-  }, [loadingSessions, sessions, activeSessionId, pendingQuery, isNewChat, needsOnboarding, profileChecked]);
+  }, [loadingSessions, sessions, activeSessionId, pendingQuery, isNewChat, needsOnboarding, profileChecked, claimSettled]);
 
   // After onboarding completes, start a new chat only if there isn't one already
   useEffect(() => {

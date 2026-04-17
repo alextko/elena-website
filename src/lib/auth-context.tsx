@@ -23,7 +23,7 @@ interface AuthContextValue {
   profileId: string | null;
   profiles: ProfileSummary[];
   switchProfile: (profileId: string) => Promise<void>;
-  profileData: { firstName: string; lastName: string; email: string; profilePictureUrl?: string | null } | null;
+  profileData: { firstName: string; lastName: string; email: string; profilePictureUrl?: string | null; dob?: string | null; zipCode?: string | null } | null;
   updateProfilePicture: (url: string | null) => void;
   // Cached profile popover data
   doctors: DoctorItem[];
@@ -78,6 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     lastName: string;
     email: string;
     profilePictureUrl?: string | null;
+    dob?: string | null;
+    zipCode?: string | null;
   } | null>(null);
 
   // Cached profile popover data — persists across sidebar toggles
@@ -255,6 +257,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           lastName: activeProfile.last_name,
           email: data.email || "",
           profilePictureUrl: activeProfile.profile_picture_url || null,
+          dob: activeProfile.date_of_birth || null,
+          zipCode: activeProfile.zip_code || null,
         });
       } else {
         setProfileData({
@@ -262,7 +266,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           lastName: "",
           email: data.email || "",
           profilePictureUrl: null,
+          dob: null,
+          zipCode: null,
         });
+      }
+
+      // If backend says onboarding isn't complete (happens when a funnel created
+      // a partial profile — e.g. quiz gave us zip + OAuth name but not DOB), we
+      // want the onboarding modal to show anyway so the user can fill the gap.
+      // The modal will pre-fill from profileData so the user only types what's
+      // actually missing.
+      if (!data.onboarding_completed) {
+        setNeedsOnboarding(true);
+      } else {
+        setNeedsOnboarding(false);
       }
     } catch (e) {
       // Network error — profile data is optional

@@ -7,7 +7,25 @@ import { ArrowRight } from "lucide-react";
 import * as analytics from "@/lib/analytics";
 import { postPendingMessage } from "@/lib/pendingMessage";
 import { getQuizScore } from "../lib/recommendations";
-import type { Recommendation, QuizAnswers, HealthRating } from "../lib/types";
+import type { Recommendation, QuizAnswers, HealthRating, QuizScore } from "../lib/types";
+
+const QUIZ_TYPE = "health_risk_assessment";
+
+function buildQuizPayload(
+  answers: QuizAnswers,
+  recommendations: Recommendation[],
+  score: QuizScore,
+  extra: Record<string, unknown> = {},
+) {
+  return {
+    quiz_type: QUIZ_TYPE,
+    completed_at: new Date().toISOString(),
+    answers,
+    recommendations,
+    score,
+    ...extra,
+  };
+}
 
 interface ResultsProps {
   recommendations: Recommendation[];
@@ -78,10 +96,17 @@ export function Results({ recommendations, answers }: ResultsProps) {
     void postPendingMessage({
       content: query,
       source: "risk_assessment",
-      metadata: { recommendation_id: rec.id, severity: rec.severity },
+      metadata: {
+        kind: "action",
+        recommendation_id: rec.id,
+        severity: rec.severity,
+        quiz_payload: buildQuizPayload(answers, recommendations, score, {
+          selected_recommendation_id: rec.id,
+        }),
+      },
     });
     router.push("/chat");
-  }, [router]);
+  }, [answers, recommendations, score, router]);
 
   const handleGetStarted = useCallback(() => {
     analytics.track("Quiz Get Started Clicked", {
@@ -93,10 +118,14 @@ export function Results({ recommendations, answers }: ResultsProps) {
     void postPendingMessage({
       content: query,
       source: "risk_assessment",
-      metadata: { kind: "get_started", recommendation_count: recommendations.length },
+      metadata: {
+        kind: "get_started",
+        recommendation_count: recommendations.length,
+        quiz_payload: buildQuizPayload(answers, recommendations, score),
+      },
     });
     router.push("/chat");
-  }, [recommendations, router]);
+  }, [answers, recommendations, score, router]);
 
   return (
     <div className="min-h-dvh font-[family-name:var(--font-inter)]">
