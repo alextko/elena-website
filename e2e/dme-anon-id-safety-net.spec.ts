@@ -225,3 +225,108 @@ test("anon-id sweep claims DME intake when /dme/intake/{id}/claim was never call
     await cleanup(request, profileId, intakeId, authUserId);
   }
 });
+
+test("claim bootstraps profile from DME intake when user has none — no modal race", async ({ request }) => {
+  // Covers the real prod bug: user signs up (OAuth lands on /chat), NO
+  // profile exists yet, but the DME intake is already in the DB. Hitting
+  // /chat/pending/claim must bootstrap a profile from the intake so that the
+  // very next /auth/me call returns has_profile=true and onboarding_completed
+  // =true — preventing the onboarding modal from popping with empty fields.
+  test.setTimeout(60_000);
+
+  const stamp = Date.now();
+  const email = `e2e-dme-bootstrap-${stamp}@elena.test`;
+  const password = `PlaywrightTest_${stamp}!`;
+  const anonId = crypto.randomUUID();
+
+  let authUserId: string | null = null;
+  let profileId: string | null = null;
+  let intakeId: string | null = null;
+  let accessToken: string | null = null;
+
+  try {
+    // 1. Anonymous intake with anon_id.
+    const anonResp = await request.post(`${API_BASE}/dme/intake/anonymous`, {
+      headers: { "Content-Type": "application/json" },
+      data: {
+        patient_first_name: "BootstrapNet",
+        patient_last_name: "Tester",
+        patient_dob: "1990-09-09",
+        patient_phone: "+15555551111",
+        patient_email: email,
+        shipping_street: "99 Bootstrap Ln",
+        shipping_city: "Nashville",
+        shipping_state: "TN",
+        shipping_zip: "37203",
+        insurance_provider: "BCBS",
+        insurance_member_id: "BOOT-123",
+        insurance_group_number: "G-BOOT",
+        insurance_plan_type: "PPO",
+        insurance_zip: "37203",
+        equipment_type: "Hospital Bed",
+        urgency: "routine",
+        has_diagnosis: true,
+        condition_description: "Mobility impairment",
+        has_prescription: false,
+        doctor_clinic_name: "Nashville General",
+        delivery_timing: "flexible",
+        source: "web_quiz",
+        anon_id: anonId,
+      },
+    });
+    expect(anonResp.ok()).toBe(true);
+    intakeId = (await anonResp.json()).intake_id as string;
+
+    // 2. Signup — auth.users exists, but NO user_profiles row.
+    const signupResp = await request.post(`${SUPABASE_URL}/auth/v1/signup`, {
+      headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+      data: { email, password },
+    });
+    expect(signupResp.ok()).toBe(true);
+    const signupBody = await signupResp.json();
+    authUserId = signupBody.user.id as string;
+    accessToken = signupBody.access_token as string;
+
+    // Confirm no profile yet.
+    const preResp = await request.get(
+      `${SUPABASE_URL}/rest/v1/user_profiles?auth_user_id=eq.${authUserId}&select=id`,
+      { headers: SUPABASE_HEADERS },
+    );
+    expect((await preResp.json()).length).toBe(0);
+
+    // 3. Call /chat/pending/claim — with no profile, this must bootstrap one
+    //    from the DME intake so onboarding_completed_at is set on the first
+    //    /me call that follows.
+    const claimResp = await request.post(`${API_BASE}/chat/pending/claim`, {
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      data: { anon_id: anonId },
+    });
+    expect(claimResp.ok(), `claim failed: ${claimResp.status()} ${await claimResp.text()}`).toBe(true);
+
+    // 4. /auth/me should now return has_profile=true + onboarding_completed=true.
+    const meResp = await request.get(`${API_BASE}/auth/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    expect(meResp.ok()).toBe(true);
+    const me = await meResp.json();
+    console.log("[bootstrap-test] /auth/me:", me);
+    expect(me.has_profile).toBe(true);
+    expect(me.onboarding_completed).toBe(true);
+    profileId = me.profile_id;
+
+    // 5. Profile is populated from intake. Modal would NEVER pop.
+    const profile = await fetchProfile(request, profileId!);
+    expect(profile!.date_of_birth).toBe("1990-09-09");
+    expect(profile!.zip_code).toBe("37203");
+    expect(profile!.insurance_carrier).toBe("BCBS");
+    expect(profile!.active_conditions || "").toContain("Mobility impairment");
+    expect(profile!.onboarding_completed_at).not.toBeNull();
+
+    // 6. Intake is linked.
+    const intake = await fetchIntake(request, intakeId);
+    expect(intake!.profile_id).toBe(profileId);
+    expect(intake!.status).toBe("submitted");
+  } finally {
+    await cleanup(request, profileId, intakeId, authUserId);
+  }
+});

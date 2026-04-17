@@ -12,6 +12,7 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/apiFetch";
+import { claimPendingMessages } from "@/lib/pendingMessage";
 import { getStoredAttribution } from "@/lib/attribution";
 import * as analytics from "@/lib/analytics";
 import type { MeResponse, DoctorItem, CareVisit, CareTodo, CareTodoCreate, Habit, SubscriptionResponse, InsuranceCard, ProfileSummary } from "@/lib/types";
@@ -516,13 +517,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === "PASSWORD_RECOVERY") {
         // Recovery session — don't fetch profile, the reset-password page handles this
       } else if (event === "SIGNED_IN") {
-        // Fresh sign-in — fetch profile if not already done
+        // Fresh sign-in — run the pending/claim sweep BEFORE fetchProfile so
+        // /auth/me returns the final state (profile bootstrapped from DME or
+        // quiz funnel, structured fields backfilled, onboarding_completed_at
+        // flipped when all four modal fields are populated). Without this
+        // await, /me races the sweep and the onboarding modal pops with
+        // empty fields asking for data the funnel just collected.
+        //
         // Mixpanel alias/identify is handled inside fetchProfile() to ensure
         // alias runs before identify (otherwise the anonymous ID never gets linked)
-        // Claim any pending anonymous DME intake FIRST so /me returns the
-        // synced profile fields on the first fetch. Safety net: if this call
-        // is missed, /chat/pending/claim sweeps by anon_id server-side.
         (async () => {
+          try {
+            await claimPendingMessages();
+          } catch (e) {
+            console.warn("[auth] post-signin pending claim failed", e);
+          }
+          // Belt-and-suspenders: if the user landed back on /dme step 10 and
+          // we have an intake_id in sessionStorage, fire the direct claim
+          // too. Idempotent server-side.
           try {
             const intakeId = (typeof window !== "undefined")
               ? sessionStorage.getItem("elena_dme_intake_id")
@@ -531,17 +543,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const res = await apiFetch(`/dme/intake/${intakeId}/claim`, { method: "POST" });
               if (res.ok) {
                 try { sessionStorage.removeItem("elena_dme_intake_id"); } catch {}
-                // Signal the chat page to request an intake-aware welcome.
                 try { localStorage.setItem("elena_post_intake_submit", "dme"); } catch {}
-              } else {
-                console.warn(`DME intake claim failed: ${res.status}`);
               }
             }
           } catch (e) {
-            console.warn("DME intake claim error", e);
-          } finally {
-            fetchProfile();
+            console.warn("[auth] direct DME claim failed", e);
           }
+          fetchProfile();
         })();
       } else if (event === "SIGNED_OUT") {
         setProfileId(null);
