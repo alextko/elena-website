@@ -986,7 +986,7 @@ function BookingMiniCard() {
           </span>
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-[9px] font-semibold text-[#0F1B3D] truncate">Blue Cross · on hold</div>
+          <div className="text-[9px] font-semibold text-[#0F1B3D] truncate">On hold with BCBS</div>
         </div>
         <div className="text-[9px] font-bold text-[#34C759] tabular-nums whitespace-nowrap">45:23</div>
       </div>

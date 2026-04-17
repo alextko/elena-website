@@ -336,19 +336,19 @@ const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; s
     headline: ["Most medical bills", "have errors. Fight back."],
     accent: "Fight back",
     subtitle: "Up to 80% of medical bills contain mistakes. Elena finds overcharges, files appeals, and negotiates on your behalf so you never pay more than you owe.",
-    prefill: "I got a medical bill I'm not sure about. Can you help me review it?",
+    prefill: "I have questions about a medical bill.",
   },
   calls: {
     headline: ["Elena calls your", "insurance for you."],
     accent: "for you",
     subtitle: "No more hold music. No more transfers. Elena sits on hold, talks to your insurer, and reports back.",
-    prefill: "Can you handle some healthcare calls for me?",
+    prefill: "I need help with some healthcare calls.",
   },
   caregiver: {
     headline: ["Caregiving is exhausting.", "Elena handles it."],
     accent: "Elena handles it",
     subtitle: "Calling doctors, fighting insurance, tracking medications. Elena does it all so you can focus on being there for them.",
-    prefill: "I'm managing healthcare for my family. Help me take some of it off my plate.",
+    prefill: "I'm helping take care of someone's health. Where should I start?",
   },
   risk_assessment: {
     headline: ["Know your risk", "before it's too late."],
@@ -360,37 +360,37 @@ const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; s
     headline: ["Find your medications", "in stock today."],
     accent: "today",
     subtitle: "Stop calling pharmacy after pharmacy. Tell Elena what you need and she'll find it in stock near you.",
-    prefill: "I'm looking for medications, the cheapest prices or in stock near me.",
+    prefill: "I need help with my medications.",
   },
   fertility: {
     headline: ["Your fertility journey,", "all in one place."],
     accent: "all in one place",
     subtitle: "Track medications and appointments, compare clinic prices, call your insurance about coverage, and manage the whole process without the spreadsheets.",
-    prefill: "I'm going through fertility treatment. Help me with the logistics and costs.",
+    prefill: "I'm going through fertility treatment. Where should I start?",
   },
   chronic: {
     headline: ["Take control of", "your condition."],
     accent: "your condition",
     subtitle: "Living with diabetes, autoimmune disease, thyroid disorders, or mental health conditions means constant doctor visits, medications, and insurance battles. Elena manages it all for you.",
-    prefill: "I'm managing a chronic condition. Help me stay on top of my care.",
+    prefill: "I'm managing a chronic condition. Where should I start?",
   },
   insurance: {
     headline: ["Find the right insurance.", "Stop overpaying."],
     accent: "overpaying",
     subtitle: "Marketplace plans, employer options, Medicare, Medicaid. Elena compares plans based on your doctors, medications, and expected needs so you pick the one that actually saves you money.",
-    prefill: "I need help picking the right health insurance.",
+    prefill: "I need help with my health insurance.",
   },
   care_now: {
     headline: ["Need care today?", "Elena finds it."],
     accent: "finds it",
     subtitle: "Urgent care, same-day appointments, telehealth, or an ER alternative. Elena finds available providers near you right now and tells you what it'll cost before you go.",
-    prefill: "I need to see a doctor soon. Can you find someone nearby?",
+    prefill: "I need to see someone about my health soon.",
   },
   prices: {
     headline: ["See real healthcare prices.", "Before you go in, compare prices for healthcare."],
     accent: "compare prices for healthcare",
     subtitle: "Elena uses real insurance-negotiated rates to show you what procedures actually cost at every provider near you. No surprises, no guessing.",
-    prefill: "I need to find the best price for a healthcare procedure.",
+    prefill: "I want to know what healthcare actually costs.",
   },
 };
 
@@ -749,8 +749,8 @@ function LandingPage() {
     const typed = madlib
       ? getMadlibText().trim()
       : sendQuery.trim();
-    // Fall back to the LP's prefill so users arriving via "Get started" (mobile,
-    // no input shown) or hitting send with an empty field still open chat with
+    // Fall back to the LP's prefill so users arriving via the mobile Send CTA
+    // (no input shown) or hitting send with an empty field still open chat with
     // a coherent first message in Elena's voice. Homepage (no ref) stays empty
     // so those users see Elena's welcome screen instead.
     const query = typed || (ref && hero?.prefill ? hero.prefill : "");
@@ -1027,13 +1027,13 @@ function LandingPage() {
             </div>
           </div>
 
-          {/* Mobile-only CTA: replace the whole input + chips with a single Get started button */}
+          {/* Mobile-only CTA: replace the whole input + chips with a single Send button */}
           <button
             onClick={handleSend}
             className="md:hidden block w-auto mx-auto mt-6 h-12 px-10 rounded-full bg-white/[0.18] backdrop-blur-[40px] border border-white/30 border-t-white/50 text-white text-[0.95rem] font-semibold shadow-[0_10px_32px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] active:scale-[0.97] transition-transform"
             style={{ WebkitBackdropFilter: "blur(40px) saturate(1.8)" }}
           >
-            Get started
+            Send
           </button>
 
           {/* Suggestion chips (desktop only — mobile hides these with the input) */}
