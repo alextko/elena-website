@@ -148,7 +148,7 @@ export function HipaaConsentModal({ open, onOpenChange, onSigned }: HipaaConsent
               </DialogDescription>
             </DialogHeader>
 
-            <div className="mt-5 rounded-xl bg-[#FFF8F0] border border-[#F0E0CC] p-4">
+            <div className="mt-5 rounded-xl bg-[#f5f7fb] border border-[#0F1B3D]/[0.06] p-4">
               <p className="text-sm font-semibold text-[#0F1B3D] mb-1">
                 One more thing to know
               </p>
