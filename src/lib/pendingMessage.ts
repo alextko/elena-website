@@ -1,7 +1,7 @@
 import { apiFetch } from "@/lib/apiFetch";
 import { getOrCreateAnonId, getAnonId } from "@/lib/anonId";
 
-export type PendingSource = "landing_hero" | "risk_assessment" | "invite" | "madlib" | "demo";
+export type PendingSource = "landing_hero" | "landing_default" | "risk_assessment" | "invite" | "madlib" | "demo";
 
 export interface PostPendingArgs {
   content: string;

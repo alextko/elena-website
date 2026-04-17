@@ -55,6 +55,7 @@ export type AnalyticsEvent =
   // Feedback
   | "Feedback: Yes"
   | "Feedback: Submitted"
+  | "Feedback: Download Clicked"
   // Paywall
   | "Soft Paywall Triggered";
 
