@@ -218,10 +218,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   if (phase === "profile") {
     const currentStep = PROFILE_STEPS[profileStep];
     return createPortal(
-      <div className={`fixed z-[99999] font-[family-name:var(--font-inter)] bottom-0 left-0 right-0 md:bottom-auto md:left-auto md:right-auto md:top-1/2 md:-translate-y-1/2 transition-opacity duration-250 ${cardVisible ? "opacity-100" : "opacity-0"}`} style={{ pointerEvents: "auto" }}>
-        {/* Desktop: position to the right of the popover (popover is max-w-36rem centered) */}
-        <div className="md:fixed md:top-1/2 md:-translate-y-1/2 md:max-w-xs md:w-80" style={{ left: "calc(50% + 19.5rem)" }}>
-          <div className="rounded-t-2xl md:rounded-2xl bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:pb-6 shadow-[0_-4px_30px_rgba(15,27,61,0.15)] md:shadow-[0_8px_30px_rgba(15,27,61,0.2)] border-t border-[#E5E5EA] md:border">
+      <div className={`fixed z-[99999] font-[family-name:var(--font-inter)] bottom-0 left-0 right-0 xl:bottom-auto xl:left-auto xl:right-auto xl:top-1/2 xl:-translate-y-1/2 transition-opacity duration-250 ${cardVisible ? "opacity-100" : "opacity-0"}`} style={{ pointerEvents: "auto" }}>
+        {/* Mobile + small desktop: bottom card. Wide desktop (>=1280px): to the right of popover */}
+        <div className="xl:fixed xl:top-1/2 xl:-translate-y-1/2 xl:max-w-xs xl:w-80 max-xl:mx-auto max-xl:max-w-md max-xl:px-4 max-xl:pb-4" style={{ left: "calc(50% + 19.5rem)" }}>
+          <div className="rounded-t-2xl xl:rounded-2xl max-xl:rounded-2xl bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] xl:pb-6 shadow-[0_-4px_30px_rgba(15,27,61,0.15)] xl:shadow-[0_8px_30px_rgba(15,27,61,0.2)] border-t border-[#E5E5EA] xl:border">
             <div className="text-center">
               <h3 className="text-[18px] font-extrabold text-[#0F1B3D] mb-1.5">{currentStep.title}</h3>
               <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">{currentStep.body}</p>
