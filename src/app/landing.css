@@ -45,6 +45,37 @@
   to { opacity: 0; }
 }
 
+@keyframes cta-shimmer {
+  0% { transform: translateX(-120%) skewX(-20deg); }
+  60% { transform: translateX(220%) skewX(-20deg); }
+  100% { transform: translateX(220%) skewX(-20deg); }
+}
+
+.cta-shimmer {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.cta-shimmer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 45%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 100%
+  );
+  transform: translateX(-120%) skewX(-20deg);
+  animation: cta-shimmer 2.8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
 .drawer-slide-up {
   animation: slide-up 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }

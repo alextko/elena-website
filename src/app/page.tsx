@@ -387,10 +387,10 @@ const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; s
     prefill: "I need to see someone about my health soon.",
   },
   prices: {
-    headline: ["See real healthcare prices.", "Before you go in, compare prices for healthcare."],
-    accent: "compare prices for healthcare",
+    headline: ["Never get a surprise bill again.", "See prices before you go."],
+    accent: "before you go",
     subtitle: "Elena uses real insurance-negotiated rates to show you what procedures actually cost at every provider near you. No surprises, no guessing.",
-    prefill: "I want to know what healthcare actually costs.",
+    prefill: "I need to get a procedure done near me. Walk me through what it'll cost.",
   },
 };
 
@@ -744,11 +744,14 @@ function LandingPage() {
     };
   }, []);
 
-  const handleSend = useCallback(() => {
-    // Read madlib inputs at send time (not render time) so user input is captured
-    const typed = madlib
-      ? getMadlibText().trim()
-      : sendQuery.trim();
+  const handleSend = useCallback((opts?: { preferPrefill?: boolean }) => {
+    // Read madlib inputs at send time (not render time) so user input is captured.
+    // preferPrefill (used by the bottom CTA) skips the rotating placeholder text so
+    // clicking "Get started" without typing sends the canonical persona prefill
+    // instead of whatever random example query was animating in the hero input.
+    const typed = opts?.preferPrefill && !userHasEdited
+      ? (madlib ? getMadlibText().trim() : "")
+      : (madlib ? getMadlibText().trim() : sendQuery.trim());
     // Fall back to the LP's prefill so users arriving via the mobile Send CTA
     // (no input shown) or hitting send with an empty field still open chat with
     // a coherent first message in Elena's voice. Homepage (no ref) stays empty
@@ -803,7 +806,7 @@ function LandingPage() {
     setChatPreviewQuery(query || "");
     setChatPreviewVisible(true);
     setAuthModalOpen(true);
-  }, [sendQuery, ref, hero, madlib, demoMode, session, pendingDocFile, router]);
+  }, [sendQuery, ref, hero, madlib, demoMode, session, pendingDocFile, router, userHasEdited]);
 
   const handleChipClick = useCallback((suggestion: typeof SUGGESTIONS[number]) => {
     analytics.track("Suggested Prompt Clicked", { prompt_label: suggestion.label });
@@ -1027,13 +1030,13 @@ function LandingPage() {
             </div>
           </div>
 
-          {/* Mobile-only CTA: replace the whole input + chips with a single Send button */}
+          {/* Mobile-only CTA: replace the whole input + chips with a single Get started button */}
           <button
-            onClick={handleSend}
+            onClick={() => handleSend({ preferPrefill: true })}
             className="md:hidden block w-auto mx-auto mt-6 h-12 px-10 rounded-full bg-white/[0.18] backdrop-blur-[40px] border border-white/30 border-t-white/50 text-white text-[0.95rem] font-semibold shadow-[0_10px_32px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] active:scale-[0.97] transition-transform"
             style={{ WebkitBackdropFilter: "blur(40px) saturate(1.8)" }}
           >
-            Send
+            Get started
           </button>
 
           {/* Suggestion chips (desktop only — mobile hides these with the input) */}
@@ -1138,6 +1141,24 @@ function LandingPage() {
 
       {/* SPOTLIGHTS */}
       <Spotlights persona={ref} />
+
+      {/* BOTTOM CTA */}
+      <section className="relative z-10 py-24 px-8 bg-[#F7F6F2] max-md:py-16 max-md:px-5">
+        <div className="mx-auto max-w-[720px] text-center">
+          <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-semibold tracking-tight text-[#0F1B3D] leading-tight mb-4">
+            Ready when you are.
+          </h2>
+          <p className="text-[1.05rem] font-light text-[#5a6a82] leading-[1.7] mb-8 max-md:mb-6">
+            Elena&apos;s got your back. Start the conversation in seconds.
+          </p>
+          <button
+            onClick={() => handleSend({ preferPrefill: true })}
+            className="cta-shimmer inline-flex items-center justify-center h-14 max-md:h-12 px-12 max-md:px-10 rounded-full bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_45%,#2E6BB5_100%)] text-white text-[1.05rem] max-md:text-[0.95rem] font-semibold shadow-[0_10px_30px_rgba(15,27,61,0.28)] hover:shadow-[0_14px_38px_rgba(15,27,61,0.38)] hover:scale-[1.02] transition-all cursor-pointer"
+          >
+            <span className="relative z-[2]">Get started</span>
+          </button>
+        </div>
+      </section>
 
       {/* FOOTER */}
       <footer className="relative z-10 pt-20 pb-10 px-8 text-white overflow-hidden" style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%, #2E6BB5 100%)" }}>
