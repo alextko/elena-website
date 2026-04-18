@@ -1019,7 +1019,7 @@ function LandingPage() {
                 </svg>
               </button>
               <button
-                onClick={handleSend}
+                onClick={() => handleSend()}
                 className="w-10 h-10 max-md:w-8 max-md:h-8 rounded-full bg-[#0F1B3D] flex items-center justify-center cursor-pointer transition-colors hover:bg-[#1A3A6E]"
                 aria-label="Send"
               >
