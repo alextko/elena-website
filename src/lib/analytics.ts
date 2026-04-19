@@ -56,6 +56,10 @@ export type AnalyticsEvent =
   | "Feedback: Yes"
   | "Feedback: Submitted"
   | "Feedback: Download Clicked"
+  // App CTA (download app prompt triggered by in-app data entry)
+  | "App CTA: Shown"
+  | "App CTA: Download Clicked"
+  | "App CTA: Dismissed"
   // Paywall
   | "Soft Paywall Triggered";
 
