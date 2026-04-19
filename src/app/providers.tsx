@@ -2,6 +2,9 @@
 
 import { useEffect } from "react";
 import { AuthProvider } from "@/lib/auth-context";
+import { AppCtaProvider } from "@/lib/app-cta-context";
+import { AppCtaModal } from "@/components/app-cta-modal";
+import { DataAdditionTracker } from "@/components/data-addition-tracker";
 import { captureAttribution } from "@/lib/attribution";
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -9,5 +12,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
     captureAttribution();
   }, []);
 
-  return <AuthProvider>{children}</AuthProvider>;
+  return (
+    <AuthProvider>
+      <AppCtaProvider>
+        {children}
+        <AppCtaModal />
+        <DataAdditionTracker />
+      </AppCtaProvider>
+    </AuthProvider>
+  );
 }
