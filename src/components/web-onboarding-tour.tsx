@@ -345,9 +345,15 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
         }
         const data = await res.json();
         const doc = data.doctors?.[0];
+        // Inline-stringify so the log is actually readable in production
+        // consoles (Chrome truncates nested objects to "Object"). The
+        // enriched fields we care about are practice / phone / address /
+        // photo_url / serper_specialty — anything beyond the input name +
+        // specialty tells us Serper found a match.
         console.log(
-          "[tour] enrichment response — name=", bareName, "zip=", zipUsed,
-          "→", doc,
+          "[tour] enrichment response — name=", bareName,
+          "zip=", zipUsed,
+          "→", JSON.stringify(doc),
         );
         // Accept practice/phone/address (full match) OR photo/serper_specialty
         // (partial match worth surfacing). Previously we required one of the
@@ -1151,6 +1157,18 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
           <motion.div
             layout
             transition={{ layout: { duration: 0.42, ease: [0.4, 0, 0.2, 1] } }}
+            // iOS Safari doesn't auto-dismiss the keyboard when you tap
+            // outside an input on the web. Without this, tapping a button
+            // while keyboard is open can fail because the button is below
+            // the keyboard's visual viewport. Blur the focused element on
+            // any pointer-down that isn't itself an input/select/textarea.
+            onPointerDownCapture={(e) => {
+              const target = e.target as HTMLElement | null;
+              const isField = !!target?.closest("input, select, textarea");
+              if (!isField && document.activeElement instanceof HTMLElement) {
+                document.activeElement.blur();
+              }
+            }}
             className="relative rounded-2xl bg-white p-7 pb-[calc(1.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_30px_rgba(15,27,61,0.15)] border border-[#E5E5EA] overflow-hidden flex flex-col"
           >
             {/* Progress dots — tiny row showing how many profile-walkthrough

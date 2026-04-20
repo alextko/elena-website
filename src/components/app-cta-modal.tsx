@@ -10,17 +10,21 @@ export function AppCtaModal() {
 
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) dismiss(); }}>
-      <DialogContent className="sm:max-w-[340px] p-0 overflow-hidden rounded-2xl">
-        <div className="p-8 flex flex-col items-center">
+      {/* w-[calc(100vw-2rem)] ensures the card fills mobile viewports with
+          a 16px gutter on each side; sm:max-w caps it on tablet+ so it
+          doesn't balloon. Without an explicit mobile width the Dialog
+          primitive renders at content width and can look awkward. */}
+      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-[340px] p-0 overflow-hidden rounded-2xl">
+        <div className="p-7 sm:p-8 flex flex-col items-center">
           <img
             src="/assets/elena-app-icon.png"
             alt="Elena"
-            className="w-[96px] h-[96px] rounded-[22px] shadow-[0_10px_30px_rgba(15,27,61,0.22)] mb-5"
+            className="w-[88px] h-[88px] sm:w-[96px] sm:h-[96px] rounded-[22px] shadow-[0_10px_30px_rgba(15,27,61,0.22)] mb-5"
           />
-          <h2 className="text-xl font-bold text-[#0F1B3D] text-center mb-1.5">
+          <h2 className="text-[19px] sm:text-xl font-bold text-[#0F1B3D] text-center mb-1.5">
             Take Elena with you
           </h2>
-          <p className="text-sm text-[#0F1B3D]/60 text-center mb-5">
+          <p className="text-[13px] sm:text-sm text-[#0F1B3D]/60 text-center mb-5 px-1">
             Keep your providers, visits, and bills with you on the go.
           </p>
           <a
@@ -28,7 +32,7 @@ export function AppCtaModal() {
             target="_blank"
             rel="noopener noreferrer"
             onClick={onDownloadClick}
-            className="transition-transform hover:scale-[1.03] active:scale-[0.98] mb-3"
+            className="transition-transform hover:scale-[1.03] active:scale-[0.98] mb-2"
           >
             <img
               src="/assets/app-store-badge.svg"
@@ -36,9 +40,11 @@ export function AppCtaModal() {
               className="h-[44px] w-auto"
             />
           </a>
+          {/* py-3 px-4 bumps the tap target to ~44px for iOS HIG conformance.
+              Text alone is too small to reliably tap on mobile. */}
           <button
             onClick={dismiss}
-            className="text-sm text-[#0F1B3D]/60 hover:text-[#0F1B3D]/80 transition-colors"
+            className="py-3 px-4 text-sm text-[#0F1B3D]/60 hover:text-[#0F1B3D]/80 transition-colors"
           >
             Not now
           </button>
