@@ -24,11 +24,9 @@ const RELATION_OPTIONS: { id: string; label: string }[] = [
 const TOUR_SPECIALTY_OPTIONS: string[] = [
   "Primary Care",
   "Dentist",
-  "Eye Doctor",
   "OB/GYN",
   "Dermatologist",
   "Psychiatrist",
-  "Cardiologist",
   "Other",
 ];
 // Quick-select chips below the visit-type input. Tapping one pre-fills the
