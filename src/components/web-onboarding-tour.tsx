@@ -38,6 +38,7 @@ const VISIT_TYPE_CHIPS: string[] = [
   "Lab work",
   "Eye exam",
   "Specialist visit",
+  "Other",
 ];
 // Top-N US insurance carriers by membership. "Other" lets anyone else still
 // capture a provider name without us maintaining a long list.
@@ -189,6 +190,8 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   // `addKind`; reset as the user advances so each card starts clean.
   const [providerName, setProviderName] = useState("");
   const [providerSpecialty, setProviderSpecialty] = useState("");
+  // Free-text specialty — used when the user taps the "Other" chip.
+  const [providerCustomSpecialty, setProviderCustomSpecialty] = useState("");
   // Live doctor enrichment result (Serper Places via /doctors/enrich).
   // Populated after a debounced lookup when the user types a name. Users
   // tap the suggestion card to accept it; save then posts the enriched
@@ -463,7 +466,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       const tab = PROFILE_STEPS[profileStep]?.tab;
       try {
         if (kind === "provider") {
-          if (!providerName.trim() || !providerSpecialty || !profileId) {
+          const resolvedSpecialty = providerSpecialty === "Other"
+            ? providerCustomSpecialty.trim()
+            : providerSpecialty;
+          if (!providerName.trim() || !resolvedSpecialty || !profileId) {
             throw new Error("Pick a type and enter a name");
           }
           const bareName = providerName.trim().replace(/^(Dr\.?\s+)/i, "").trim() || providerName.trim();
@@ -472,7 +478,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
           // provider record. Otherwise just send what they typed.
           const payload: Record<string, unknown> = {
             name: bareName,
-            specialty: providerSpecialty,
+            specialty: resolvedSpecialty,
           };
           if (providerMatchAccepted && providerMatch) {
             if (providerMatch.practice) payload.practice_name = providerMatch.practice;
@@ -485,7 +491,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
           });
           if (!res.ok) throw new Error("Couldn't save. Try again.");
           await refreshDoctors();
-          setLastAddedProvider({ name: bareName, specialty: providerSpecialty });
+          setLastAddedProvider({ name: bareName, specialty: resolvedSpecialty });
           setSuccessOverlay({
             kind: "provider",
             title: "Added to your profile",
@@ -571,7 +577,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
         setSavingItem(false);
       }
     },
-    [savingItem, profileStep, providerName, providerSpecialty, providerMatch, providerMatchAccepted, visitType, visitDate, lastAddedProvider, visitUseChipMode, insuranceCarrier, insuranceCustomName, familyFirstName, familyLastName, familyRelation, profileId, refreshDoctors, refreshVisits, refreshProfiles, refreshInsurance, nextProfile],
+    [savingItem, profileStep, providerName, providerSpecialty, providerCustomSpecialty, providerMatch, providerMatchAccepted, visitType, visitDate, lastAddedProvider, visitUseChipMode, insuranceCarrier, insuranceCustomName, familyFirstName, familyLastName, familyRelation, profileId, refreshDoctors, refreshVisits, refreshProfiles, refreshInsurance, nextProfile],
   );
 
   const handleSkipItem = useCallback(
@@ -1192,7 +1198,11 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     const selectClass = `${inputClass} appearance-none pr-10 bg-no-repeat`;
 
     const canSave = (() => {
-      if (addKind === "provider") return providerName.trim().length > 0 && providerSpecialty.length > 0;
+      if (addKind === "provider") {
+        if (!providerName.trim()) return false;
+        if (providerSpecialty === "Other") return providerCustomSpecialty.trim().length > 0;
+        return providerSpecialty.length > 0;
+      }
       if (addKind === "visit") {
         const hasDate = displayToIsoDate(visitDate).length > 0;
         if (lastAddedProvider && !visitUseChipMode) return hasDate;
@@ -1277,7 +1287,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                           <button
                             key={s}
                             type="button"
-                            onClick={() => setProviderSpecialty(s)}
+                            onClick={() => {
+                              setProviderSpecialty(s);
+                              if (s !== "Other") setProviderCustomSpecialty("");
+                            }}
                             className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
                               active
                                 ? "bg-[#0F1B3D] text-white"
@@ -1289,6 +1302,16 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                         );
                       })}
                     </div>
+                    {providerSpecialty === "Other" && (
+                      <input
+                        className={inputClass}
+                        type="text"
+                        placeholder="What kind of doctor?"
+                        value={providerCustomSpecialty}
+                        onChange={(e) => setProviderCustomSpecialty(e.target.value)}
+                        autoFocus
+                      />
+                    )}
                     <input
                       className={inputClass}
                       type="text"
@@ -1374,12 +1397,21 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     <p className="text-[12px] sm:text-[13px] font-semibold text-[#0F1B3D]">Any recent or upcoming appointments?</p>
                     <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-0.5 scrollbar-hide sm:flex-wrap sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0">
                       {VISIT_TYPE_CHIPS.map((chip) => {
-                        const active = visitType === chip;
+                        const isOther = chip === "Other";
+                        const active = isOther ? visitCustomOpen : (!visitCustomOpen && visitType === chip);
                         return (
                           <button
                             key={chip}
                             type="button"
-                            onClick={() => { setVisitType(chip); setVisitCustomOpen(false); }}
+                            onClick={() => {
+                              if (isOther) {
+                                setVisitCustomOpen(true);
+                                setVisitType("");
+                              } else {
+                                setVisitType(chip);
+                                setVisitCustomOpen(false);
+                              }
+                            }}
                             className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
                               active
                                 ? "bg-[#0F1B3D] text-white"
@@ -1390,15 +1422,6 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                           </button>
                         );
                       })}
-                      {!visitCustomOpen && (
-                        <button
-                          type="button"
-                          onClick={() => { setVisitCustomOpen(true); setVisitType(""); }}
-                          className="shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-medium text-[#2E6BB5] hover:bg-[#2E6BB5]/[0.08] transition-colors"
-                        >
-                          + Type your own
-                        </button>
-                      )}
                     </div>
                     {visitCustomOpen && (
                       <input
