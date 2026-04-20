@@ -1540,12 +1540,12 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   className="absolute inset-0 bg-white rounded-2xl flex flex-col items-center justify-center text-center px-6"
                 >
                   {successOverlay.kind === "invite" ? (
-                    <div className="relative w-16 h-16 mb-3">
+                    <div className="relative w-20 h-20 sm:w-16 sm:h-16 mb-4 sm:mb-3">
                       <motion.div
                         initial={{ scale: 0.5, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ type: "spring", stiffness: 200, damping: 17 }}
-                        className="w-16 h-16 rounded-full flex items-center justify-center"
+                        className="w-20 h-20 sm:w-16 sm:h-16 rounded-full flex items-center justify-center"
                         style={{ background: ctaGradient }}
                       >
                         <motion.span
@@ -1554,7 +1554,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                           transition={{ duration: 0.9, delay: 0.35, ease: "easeOut" }}
                           className="inline-block"
                         >
-                          <Send className="w-7 h-7 text-white" />
+                          <Send className="w-9 h-9 sm:w-7 sm:h-7 text-white" />
                         </motion.span>
                       </motion.div>
                     </div>
@@ -1563,7 +1563,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                       initial={{ scale: 0.5, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ type: "spring", stiffness: 220, damping: 16 }}
-                      className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-[22px] mb-3"
+                      className="w-20 h-20 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-white font-bold text-[28px] sm:text-[22px] mb-4 sm:mb-3"
                       style={{ background: ctaGradient }}
                     >
                       {successOverlay.initial}
@@ -1573,17 +1573,17 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                       initial={{ scale: 0.5, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ type: "spring", stiffness: 220, damping: 16 }}
-                      className="w-16 h-16 rounded-full flex items-center justify-center mb-3"
+                      className="w-20 h-20 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mb-4 sm:mb-3"
                       style={{ background: ctaGradient }}
                     >
-                      <Check className="w-8 h-8 text-white" strokeWidth={3} />
+                      <Check className="w-10 h-10 sm:w-8 sm:h-8 text-white" strokeWidth={3} />
                     </motion.div>
                   )}
                   <motion.h3
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.28, delay: 0.2 }}
-                    className="text-[16px] font-extrabold text-[#0F1B3D]"
+                    className="text-[18px] sm:text-[16px] font-extrabold text-[#0F1B3D]"
                   >
                     {successOverlay.title}
                   </motion.h3>
@@ -1591,7 +1591,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.28, delay: 0.32 }}
-                    className="text-[13px] text-[#5a6a82] mt-1"
+                    className="text-[14px] sm:text-[13px] text-[#5a6a82] mt-1"
                   >
                     {successOverlay.detail}
                   </motion.p>
