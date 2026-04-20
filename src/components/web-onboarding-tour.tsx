@@ -204,6 +204,12 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   const enrichmentTokenRef = useRef(0);
   const [visitType, setVisitType] = useState("");
   const [visitDate, setVisitDate] = useState("");
+  // Cross-step continuity: if the user just saved a provider, the visits
+  // step pre-fills as a visit with that provider instead of making them
+  // re-pick a type from scratch. Tap "Different appointment" to fall back
+  // to the chip UI.
+  const [lastAddedProvider, setLastAddedProvider] = useState<{ name: string; specialty: string } | null>(null);
+  const [visitUseChipMode, setVisitUseChipMode] = useState(false);
   const [insuranceCarrier, setInsuranceCarrier] = useState("");
   const [insuranceCustomName, setInsuranceCustomName] = useState("");
   const [familyFirstName, setFamilyFirstName] = useState("");
@@ -479,6 +485,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
           });
           if (!res.ok) throw new Error("Couldn't save. Try again.");
           await refreshDoctors();
+          setLastAddedProvider({ name: bareName, specialty: providerSpecialty });
           setSuccessOverlay({
             kind: "provider",
             title: "Added to your profile",
@@ -488,13 +495,18 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
           });
         } else if (kind === "visit") {
           const visitDateIso = displayToIsoDate(visitDate);
-          if (!visitType.trim() || !visitDateIso) throw new Error("Fill in both fields");
+          if (!visitDateIso) throw new Error("Enter a date");
+          const providerContinuity = lastAddedProvider && !visitUseChipMode;
+          const resolvedType = providerContinuity
+            ? `${lastAddedProvider.specialty} visit`
+            : visitType.trim();
+          if (!resolvedType) throw new Error("Fill in both fields");
           const res = await apiFetch("/care-visits", {
             method: "POST",
             body: JSON.stringify({
-              visit_type: visitType.trim(),
+              visit_type: resolvedType,
               visit_date: visitDateIso,
-              summary: "",
+              summary: providerContinuity ? `With ${lastAddedProvider.name}` : "",
             }),
           });
           if (!res.ok) throw new Error("Couldn't save. Try again.");
@@ -502,7 +514,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
           setSuccessOverlay({
             kind: "visit",
             title: "Visit saved",
-            detail: visitType.trim(),
+            detail: providerContinuity ? `With ${lastAddedProvider.name}` : resolvedType,
           });
         } else if (kind === "insurance") {
           if (!insuranceCarrier) throw new Error("Pick a carrier");
@@ -559,7 +571,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
         setSavingItem(false);
       }
     },
-    [savingItem, profileStep, providerName, providerSpecialty, providerMatch, providerMatchAccepted, visitType, visitDate, insuranceCarrier, insuranceCustomName, familyFirstName, familyLastName, familyRelation, profileId, refreshDoctors, refreshVisits, refreshProfiles, refreshInsurance, nextProfile],
+    [savingItem, profileStep, providerName, providerSpecialty, providerMatch, providerMatchAccepted, visitType, visitDate, lastAddedProvider, visitUseChipMode, insuranceCarrier, insuranceCustomName, familyFirstName, familyLastName, familyRelation, profileId, refreshDoctors, refreshVisits, refreshProfiles, refreshInsurance, nextProfile],
   );
 
   const handleSkipItem = useCallback(
@@ -1145,7 +1157,11 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
 
     const canSave = (() => {
       if (addKind === "provider") return providerName.trim().length > 0 && providerSpecialty.length > 0;
-      if (addKind === "visit") return visitType.trim().length > 0 && displayToIsoDate(visitDate).length > 0;
+      if (addKind === "visit") {
+        const hasDate = displayToIsoDate(visitDate).length > 0;
+        if (lastAddedProvider && !visitUseChipMode) return hasDate;
+        return visitType.trim().length > 0 && hasDate;
+      }
       if (addKind === "insurance") {
         if (insuranceCarrier === "Other") return insuranceCustomName.trim().length > 0;
         return insuranceCarrier.length > 0;
@@ -1294,7 +1310,29 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     </p>
                   </div>
                 )}
-                {showPrompt && addKind === "visit" && (
+                {showPrompt && addKind === "visit" && lastAddedProvider && !visitUseChipMode && (
+                  <div className="mt-3 sm:mt-5 text-left space-y-2 sm:space-y-2.5">
+                    <p className="text-[12px] sm:text-[13px] font-semibold text-[#0F1B3D]">Visit with {lastAddedProvider.name}</p>
+                    <input
+                      className={inputClass}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={10}
+                      placeholder="MM/DD/YYYY"
+                      value={visitDate}
+                      onChange={(e) => setVisitDate(maskDateInput(e.target.value))}
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setVisitUseChipMode(true)}
+                      className="text-[12px] text-[#2E6BB5] hover:underline"
+                    >
+                      Different appointment
+                    </button>
+                  </div>
+                )}
+                {showPrompt && addKind === "visit" && (!lastAddedProvider || visitUseChipMode) && (
                   <div className="mt-3 sm:mt-5 text-left space-y-2 sm:space-y-2.5">
                     <p className="text-[12px] sm:text-[13px] font-semibold text-[#0F1B3D]">Any recent appointments?</p>
                     <div className="flex flex-wrap gap-2">
