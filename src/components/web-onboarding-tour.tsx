@@ -548,10 +548,9 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
           const res = await apiFetch("/profiles", {
             method: "POST",
             body: JSON.stringify({
-              label: familyRelation,
-              relationship: familyRelation,
               first_name: familyFirstName.trim(),
               last_name: familyLastName.trim(),
+              ...(familyRelation ? { label: familyRelation, relationship: familyRelation } : {}),
             }),
           });
           if (!res.ok) throw new Error("Couldn't save. Try again.");
@@ -1217,8 +1216,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       }
       if (addKind === "family") return (
         familyFirstName.trim().length > 0 &&
-        familyLastName.trim().length > 0 &&
-        familyRelation.length > 0
+        familyLastName.trim().length > 0
       );
       return false;
     })();
@@ -1506,7 +1504,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                         value={familyRelation}
                         onChange={(e) => setFamilyRelation(e.target.value)}
                       >
-                        <option value="" disabled>Select a relationship</option>
+                        <option value="">Relationship (optional)</option>
                         {RELATION_OPTIONS.map((o) => (
                           <option key={o.id} value={o.id}>{o.label}</option>
                         ))}
