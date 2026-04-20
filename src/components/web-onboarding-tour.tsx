@@ -1234,7 +1234,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 document.activeElement.blur();
               }
             }}
-            className="relative rounded-2xl bg-white p-4 sm:p-7 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-[calc(1.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_30px_rgba(15,27,61,0.15)] border border-[#E5E5EA] overflow-hidden flex flex-col max-h-[80vh]"
+            className={`relative rounded-2xl bg-white p-4 sm:p-7 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-[calc(1.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_30px_rgba(15,27,61,0.15)] border border-[#E5E5EA] overflow-hidden flex flex-col max-h-[80vh] ${successOverlay ? "min-h-[340px] sm:min-h-[360px]" : ""}`}
           >
             {/* Progress dots — tiny row showing how many profile-walkthrough
                 cards remain. Keeps late-stage dropout in check. */}
@@ -1371,7 +1371,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 )}
                 {showPrompt && addKind === "visit" && (!lastAddedProvider || visitUseChipMode) && (
                   <div className="mt-3 sm:mt-5 text-left space-y-2 sm:space-y-2.5">
-                    <p className="text-[12px] sm:text-[13px] font-semibold text-[#0F1B3D]">Any recent appointments?</p>
+                    <p className="text-[12px] sm:text-[13px] font-semibold text-[#0F1B3D]">Any recent or upcoming appointments?</p>
                     <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-0.5 scrollbar-hide sm:flex-wrap sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0">
                       {VISIT_TYPE_CHIPS.map((chip) => {
                         const active = visitType === chip;
