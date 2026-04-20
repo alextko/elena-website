@@ -1380,12 +1380,11 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                       type="text"
                       inputMode="numeric"
                       maxLength={10}
-                      placeholder="MM/DD/YYYY (past or upcoming)"
+                      placeholder="MM/DD/YYYY"
                       value={visitDate}
                       onChange={(e) => setVisitDate(maskDateInput(e.target.value))}
                       autoFocus
                     />
-                    <p className="text-[11px] text-[#8E8E93]">We'll save it to your Visits tab.</p>
                     <button
                       type="button"
                       onClick={() => setVisitUseChipMode(true)}
