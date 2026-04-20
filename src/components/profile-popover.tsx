@@ -244,6 +244,7 @@ export function ProfilePopover({
   const justAddedProfileIds = useJustAddedIds(profiles);
   const [addingProvider, setAddingProvider] = useState(false);
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [addFamilyOpen, setAddFamilyOpen] = useState(false);
   const [confirmUnlink, setConfirmUnlink] = useState<ProfileSummary | null>(null);
@@ -1768,21 +1769,31 @@ export function ProfilePopover({
                 <p className="text-[12px] text-red-400 mb-3">This permanently deletes all your data. This cannot be undone.</p>
                 <div className="flex gap-2">
                   <button
+                    disabled={deletingAccount}
                     onClick={async () => {
-                      await apiFetch("/account", { method: "DELETE" });
-                      // Clear all local data to prevent stale data on re-signup
+                      setDeletingAccount(true);
+                      try {
+                        await apiFetch("/account", { method: "DELETE" });
+                      } catch { /* clear state and redirect anyway */ }
                       try { localStorage.clear(); } catch {}
                       try { sessionStorage.clear(); } catch {}
-                      await signOut();
-                      router.push("/");
+                      // Fire-and-forget: the hard redirect below cancels any
+                      // in-flight JS, and the server session is already invalid
+                      // since the account is gone.
+                      void signOut();
+                      // Hard redirect is near-instant (no client-side React
+                      // re-render) and replaces history so Back doesn't go
+                      // back into the now-defunct app state.
+                      window.location.replace("/");
                     }}
-                    className="flex-1 rounded-lg bg-red-500 py-2 text-[13px] font-semibold text-white hover:bg-red-600 transition-colors"
+                    className="flex-1 rounded-lg bg-red-500 py-2 text-[13px] font-semibold text-white hover:bg-red-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    Delete permanently
+                    {deletingAccount ? "Deleting..." : "Delete permanently"}
                   </button>
                   <button
+                    disabled={deletingAccount}
                     onClick={() => setConfirmDeleteAccount(false)}
-                    className="flex-1 rounded-lg border border-[#E5E5EA] py-2 text-[13px] font-semibold text-[#0F1B3D]/60 hover:bg-[#0F1B3D]/[0.04] transition-colors"
+                    className="flex-1 rounded-lg border border-[#E5E5EA] py-2 text-[13px] font-semibold text-[#0F1B3D]/60 hover:bg-[#0F1B3D]/[0.04] transition-colors disabled:opacity-60"
                   >
                     Cancel
                   </button>
