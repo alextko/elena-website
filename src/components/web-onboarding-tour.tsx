@@ -1540,7 +1540,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute inset-0 bg-white rounded-2xl flex flex-col items-center justify-center text-center px-6"
+                  className="absolute inset-0 bg-white rounded-2xl flex flex-col items-center justify-center text-center px-6 py-8 sm:py-10"
                 >
                   {successOverlay.kind === "invite" ? (
                     <div className="relative w-20 h-20 sm:w-16 sm:h-16 mb-4 sm:mb-3">
