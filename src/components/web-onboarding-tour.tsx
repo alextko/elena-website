@@ -801,7 +801,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
         <motion.div
           layout
           transition={{ layout: { duration: 0.35, ease: motionEase } }}
-          className="relative z-10 w-[calc(100%-3rem)] rounded-2xl bg-white shadow-[0_8px_30px_rgba(15,27,61,0.15)] overflow-hidden"
+          className="relative z-10 w-[calc(100%-3rem)] max-h-[95vh] overflow-y-auto overflow-x-hidden rounded-2xl bg-white shadow-[0_8px_30px_rgba(15,27,61,0.15)]"
           style={{ maxWidth: cardMaxWidth }}
         >
           {/* No `initial={false}` — that would suppress the first slide's
@@ -977,18 +977,18 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.22, ease: motionEase }}
-                  className="p-5 sm:p-7 flex flex-col min-h-[380px] sm:min-h-[440px]"
+                  className="p-5 sm:p-7 flex flex-col min-h-[340px] sm:min-h-[440px]"
                 >
                   <motion.div
-                    className={`text-center ${headlineDone ? "mb-5" : "my-auto"}`}
+                    className={`text-center ${headlineDone ? "mb-3 sm:mb-5" : "my-auto"}`}
                   >
-                    <h2 className="text-[22px] font-extrabold text-[#0F1B3D] text-balance leading-tight">
+                    <h2 className="text-[18px] sm:text-[22px] font-extrabold text-[#0F1B3D] text-balance leading-tight">
                       <StreamingText text={headline} onDone={() => setHeadlineDone(true)} />
                     </h2>
                   </motion.div>
                   {headlineDone && (
                     <>
-                      <RevealStack visible className="flex flex-col gap-2.5">
+                      <RevealStack visible className="flex flex-col gap-1.5 sm:gap-2.5">
                         {options.map((opt) => (
                           <SelectablePill
                             key={opt.id}
@@ -1759,7 +1759,7 @@ function PainResult({ variant, target, punchline }: {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.38, ease: [0.4, 0, 0.2, 1], delay: 0.1 }}
-      className="mt-4 rounded-2xl border border-[#E5E5EA] p-5 text-center"
+      className="mt-3 sm:mt-4 rounded-2xl border border-[#E5E5EA] p-4 sm:p-5 text-center"
       style={{ background: "linear-gradient(180deg, #ffffff 0%, #fff5f4 100%)" }}
     >
       <div className="flex items-baseline justify-center gap-0.5">
@@ -1768,11 +1768,11 @@ function PainResult({ variant, target, punchline }: {
         )}
         <AnimatedCounter target={target} className="text-[44px] sm:text-[56px] font-extrabold text-[#FF3B30] tracking-tight leading-none" />
       </div>
-      <p className="text-[11px] font-bold text-[#8E8E93] uppercase tracking-wider mt-2">
+      <p className="text-[11px] font-bold text-[#8E8E93] uppercase tracking-wider mt-1 sm:mt-2">
         {unitLabel}
       </p>
-      <p className="text-[18px] font-bold text-[#0F1B3D] mt-4 text-balance leading-tight">{punchline}</p>
-      <p className="text-[13px] text-[#5a6a82] font-light mt-2 leading-snug">{bodyLine}</p>
+      <p className="text-[15px] sm:text-[18px] font-bold text-[#0F1B3D] mt-3 sm:mt-4 text-balance leading-tight">{punchline}</p>
+      <p className="text-[12px] sm:text-[13px] text-[#5a6a82] font-light mt-1.5 sm:mt-2 leading-snug">{bodyLine}</p>
     </motion.div>
   );
 }
@@ -1792,7 +1792,7 @@ function SelectablePill({ icon: Icon, label, selected, onClick }: {
       onClick={onClick}
       whileTap={{ scale: 0.98 }}
       transition={{ type: "spring", stiffness: 500, damping: 28 }}
-      className={`flex items-center gap-3 w-full px-4 py-3.5 rounded-full border text-left transition-all duration-200 ${
+      className={`flex items-center gap-3 w-full px-4 py-2.5 sm:py-3.5 rounded-full border text-left transition-all duration-200 ${
         selected
           ? "border-[#0F1B3D] shadow-[0_0_0_1px_#0F1B3D,0_4px_14px_rgba(15,27,61,0.14)]"
           : "border-[#E5E5EA] shadow-[0_1px_2px_rgba(15,27,61,0.04),0_1px_3px_rgba(15,27,61,0.04)] hover:shadow-[0_2px_8px_rgba(15,27,61,0.08)] hover:border-[#0F1B3D]/20"
