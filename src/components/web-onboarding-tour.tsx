@@ -1147,7 +1147,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
 
     // Text at 16px minimum to prevent iOS Safari's auto-zoom on focus
     // (anything smaller triggers it and breaks the mobile card layout).
-    const inputClass = "w-full rounded-xl border border-[#0F1B3D]/10 bg-[#f5f7fb] px-3.5 py-2.5 sm:py-3 text-[16px] text-[#0F1B3D] placeholder:text-[#0F1B3D]/30 focus:outline-none focus:ring-2 focus:ring-[#0F1B3D]/20";
+    // ring-inset keeps the focus outline drawn *inside* the input's own box
+    // instead of 2px outside, so it can't get clipped by the card's
+    // overflow-hidden (which we keep for success-overlay containment).
+    const inputClass = "w-full rounded-xl border border-[#0F1B3D]/10 bg-[#f5f7fb] px-3.5 py-2.5 sm:py-3 text-[16px] text-[#0F1B3D] placeholder:text-[#0F1B3D]/30 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#0F1B3D]/20";
     // For native <select> elements: strip the OS default chevron (which
     // looks jarring against the pill styling, especially on iOS Safari) and
     // reserve room on the right so the text doesn't sit behind the custom
