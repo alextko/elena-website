@@ -1234,7 +1234,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 {showPrompt && addKind === "provider" && (
                   <div className="mt-3 sm:mt-5 text-left space-y-2 sm:space-y-2.5">
                     <p className="text-[12px] sm:text-[13px] font-semibold text-[#0F1B3D]">Have any doctors you like?</p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-0.5 scrollbar-hide sm:flex-wrap sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0">
                       {TOUR_SPECIALTY_OPTIONS.map((s) => {
                         const active = providerSpecialty === s;
                         return (
@@ -1242,7 +1242,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                             key={s}
                             type="button"
                             onClick={() => setProviderSpecialty(s)}
-                            className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
+                            className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
                               active
                                 ? "bg-[#0F1B3D] text-white"
                                 : "bg-[#0F1B3D]/[0.06] text-[#0F1B3D] hover:bg-[#0F1B3D]/[0.10]"
@@ -1335,7 +1335,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 {showPrompt && addKind === "visit" && (!lastAddedProvider || visitUseChipMode) && (
                   <div className="mt-3 sm:mt-5 text-left space-y-2 sm:space-y-2.5">
                     <p className="text-[12px] sm:text-[13px] font-semibold text-[#0F1B3D]">Any recent appointments?</p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-0.5 scrollbar-hide sm:flex-wrap sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0">
                       {VISIT_TYPE_CHIPS.map((chip) => {
                         const active = visitType === chip;
                         return (
@@ -1343,7 +1343,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                             key={chip}
                             type="button"
                             onClick={() => { setVisitType(chip); setVisitCustomOpen(false); }}
-                            className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
+                            className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
                               active
                                 ? "bg-[#0F1B3D] text-white"
                                 : "bg-[#0F1B3D]/[0.06] text-[#0F1B3D] hover:bg-[#0F1B3D]/[0.10]"
@@ -1357,7 +1357,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                         <button
                           type="button"
                           onClick={() => { setVisitCustomOpen(true); setVisitType(""); }}
-                          className="px-3 py-1.5 rounded-full text-[12px] font-medium text-[#2E6BB5] hover:bg-[#2E6BB5]/[0.08] transition-colors"
+                          className="shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-medium text-[#2E6BB5] hover:bg-[#2E6BB5]/[0.08] transition-colors"
                         >
                           + Type your own
                         </button>
