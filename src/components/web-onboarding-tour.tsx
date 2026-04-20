@@ -163,7 +163,7 @@ const PROFILE_STEPS: {
   { id: "family", title: "For you and your people", body: "Keep all of your family's health in one place.", tab: "health", addKind: "family", showSwitcher: true },
 ];
 
-type Phase = "care" | "goals" | "pain" | "value" | "profile-form" | "joyride" | "profile" | "chat" | "done";
+type Phase = "intro" | "care" | "goals" | "pain" | "value" | "profile-form" | "joyride" | "profile" | "chat" | "done";
 
 export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover, onSidebar }: WebOnboardingTourProps) {
   // Auth hooks for the profile-form phase (migrated from the old OnboardingModal)
@@ -182,7 +182,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     refreshInsurance,
   } = useAuth();
 
-  const [phase, setPhase] = useState<Phase>("care");
+  const [phase, setPhase] = useState<Phase>("intro");
   const [profileStep, setProfileStep] = useState(0);
 
   // Inline data-entry state for the profile-phase cards. One field set per
@@ -706,6 +706,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     setTimeout(cb, 280);
   }, []);
 
+  const advanceFromIntro = useCallback(() => {
+    setPhase("care");
+  }, []);
+
   const advanceFromCare = useCallback(() => {
     if (careSelections.length > 0) analytics.track("Web Tour Care Context" as any, { care_for: careSelections });
     // Always collect goals next — the question itself informs personalization,
@@ -777,7 +781,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   //    between phases, and the card's max-width animates so the transition
   //    feels like one continuous container morphing rather than separate
   //    modals. ──
-  if (phase === "care" || phase === "goals" || phase === "pain" || phase === "value" || phase === "profile-form") {
+  if (phase === "intro" || phase === "care" || phase === "goals" || phase === "pain" || phase === "value" || phase === "profile-form") {
     const motionEase = [0.4, 0, 0.2, 1] as const;
     const cardMaxWidth = phase === "value" ? 512 : 448;
     return createPortal(
@@ -799,6 +803,59 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               StreamingText "hidden" variant on mount, making the care
               headline render fully visible instead of streaming in. */}
           <AnimatePresence mode="wait">
+            {phase === "intro" && (
+              <motion.div
+                key="intro"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.22, ease: motionEase }}
+                className="p-5 sm:p-7 flex flex-col min-h-[380px] sm:min-h-[440px]"
+              >
+                <motion.div className={`text-center ${subtitleDone ? "mb-5" : "my-auto"}`}>
+                  {/* Wave animation: scale in, then shake. Same style we had
+                      on the old profile-form "Hey I'm Elena" step. */}
+                  <style>{`
+                    @keyframes elena-wave {
+                      0%   { transform: rotate(0deg); }
+                      20%  { transform: rotate(20deg); }
+                      40%  { transform: rotate(-18deg); }
+                      60%  { transform: rotate(18deg); }
+                      80%  { transform: rotate(-10deg); }
+                      100% { transform: rotate(0deg); }
+                    }
+                  `}</style>
+                  <motion.div
+                    className="text-3xl mb-3 inline-block origin-[70%_70%]"
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.35, ease: motionEase, delay: 0.15 }}
+                    style={{ animation: "elena-wave 900ms ease-in-out 550ms 1" }}
+                    aria-hidden
+                  >
+                    👋
+                  </motion.div>
+                  <h2 className="text-[22px] font-extrabold text-[#0F1B3D] text-balance leading-tight mb-2">
+                    <StreamingText text="Hey, I'm Elena" startDelay={0.6} onDone={() => setHeadlineDone(true)} />
+                  </h2>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: headlineDone ? 1 : 0 }}
+                    transition={{ duration: 0.35, ease: motionEase, delay: 0.1 }}
+                    className="text-[14px] text-[#8E8E93] font-light"
+                    onAnimationComplete={() => { if (headlineDone) setSubtitleDone(true); }}
+                  >
+                    I&apos;m your health care assistant.
+                  </motion.p>
+                </motion.div>
+                {subtitleDone && (
+                  <RevealButton visible delay={0.15}>
+                    <GradientButton onClick={advanceFromIntro} label="Continue" />
+                  </RevealButton>
+                )}
+              </motion.div>
+            )}
+
             {phase === "care" && (
               <motion.div
                 key="care"
@@ -1003,34 +1060,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 className="p-5 sm:p-7 flex flex-col min-h-[380px] sm:min-h-[440px]"
               >
                 <motion.div
-                  layout
-                  transition={{ layout: { duration: 0.45, ease: motionEase } }}
                   className={`text-center ${subtitleDone ? "mb-5" : "my-auto"}`}
                 >
-                  {/* Wave pops in with a scale+fade, then shakes. The 150ms
-                      scale-in delay lets the content's fade-in settle first. */}
-                  <style>{`
-                    @keyframes elena-wave {
-                      0%   { transform: rotate(0deg); }
-                      20%  { transform: rotate(20deg); }
-                      40%  { transform: rotate(-18deg); }
-                      60%  { transform: rotate(18deg); }
-                      80%  { transform: rotate(-10deg); }
-                      100% { transform: rotate(0deg); }
-                    }
-                  `}</style>
-                  <motion.div
-                    className="text-3xl mb-3 inline-block origin-[70%_70%]"
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.35, ease: motionEase, delay: 0.15 }}
-                    style={{ animation: "elena-wave 900ms ease-in-out 550ms 1" }}
-                    aria-hidden
-                  >
-                    👋
-                  </motion.div>
                   <h2 className="text-[22px] font-extrabold text-[#0F1B3D] text-balance leading-tight mb-2">
-                    <StreamingText text="Hey, I'm Elena" onDone={() => setHeadlineDone(true)} />
+                    <StreamingText text="Let's get you set up." onDone={() => setHeadlineDone(true)} />
                   </h2>
                   <motion.p
                     initial={{ opacity: 0 }}
@@ -1039,7 +1072,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     className="text-[14px] text-[#8E8E93] font-light"
                     onAnimationComplete={() => { if (headlineDone) setSubtitleDone(true); }}
                   >
-                    Let&apos;s get you set up.
+                    Just a few quick details.
                   </motion.p>
                 </motion.div>
                 {subtitleDone && (
