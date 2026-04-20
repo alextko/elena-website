@@ -54,6 +54,27 @@ const TOUR_INSURANCE_CARRIERS: string[] = [
   "Other",
 ];
 
+// Native date pickers are clunky on mobile web (tiny calendar widgets, keyboard
+// flicker), so we render a plain text input masked to MM/DD/YYYY and convert
+// to/from ISO at the boundary. These helpers keep state entry display-formatted
+// while preserving the backend's YYYY-MM-DD contract.
+function maskDateInput(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+function displayToIsoDate(display: string): string {
+  const m = display.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!m) return "";
+  return `${m[3]}-${m[1]}-${m[2]}`;
+}
+function isoToDisplayDate(iso: string): string {
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return iso;
+  return `${m[2]}/${m[3]}/${m[1]}`;
+}
+
 interface WebOnboardingTourProps {
   onComplete: () => void;
   onShowPaywall: () => void;
@@ -141,7 +162,7 @@ const PROFILE_STEPS: {
   { id: "health", title: "Your Health tab", body: "Your to-dos, providers, and medications. Elena fills them in as you chat.", tab: "health", addKind: "provider" },
   { id: "visits", title: "Your Visits tab", body: "Every appointment Elena books lives here, plus your notes and history.", tab: "visits", addKind: "visit" },
   { id: "insurance", title: "Your Insurance tab", body: "Elena checks what's covered and estimates costs before you go.", tab: "insurance", addKind: "insurance" },
-  { id: "family", title: "For you and your people", body: "Many people use it just for themselves. If you also help a parent, partner, or kid, you can link them here.", tab: "health", addKind: "family", showSwitcher: true },
+  { id: "family", title: "For you and your people", body: "Keep all of your family's health in one place.", tab: "health", addKind: "family", showSwitcher: true },
 ];
 
 type Phase = "care" | "goals" | "pain" | "value" | "profile-form" | "joyride" | "profile" | "chat" | "done";
@@ -228,7 +249,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   useEffect(() => {
     if (profileData?.firstName && !firstName) setFirstName(profileData.firstName);
     if (profileData?.lastName && !lastName) setLastName(profileData.lastName);
-    if (profileData?.dob && !dob) setDob(profileData.dob);
+    if (profileData?.dob && !dob) setDob(isoToDisplayDate(profileData.dob));
     if (profileData?.zipCode && !zipCode) setZipCode(profileData.zipCode);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileData?.firstName, profileData?.lastName, profileData?.dob, profileData?.zipCode]);
@@ -468,12 +489,13 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               : bareName,
           });
         } else if (kind === "visit") {
-          if (!visitType.trim() || !visitDate) throw new Error("Fill in both fields");
+          const visitDateIso = displayToIsoDate(visitDate);
+          if (!visitType.trim() || !visitDateIso) throw new Error("Fill in both fields");
           const res = await apiFetch("/care-visits", {
             method: "POST",
             body: JSON.stringify({
               visit_type: visitType.trim(),
-              visit_date: visitDate,
+              visit_date: visitDateIso,
               summary: "",
             }),
           });
@@ -723,7 +745,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     await completeOnboarding({
       first_name: cap(firstName.trim()),
       last_name: cap(lastName.trim()),
-      date_of_birth: dob,
+      date_of_birth: displayToIsoDate(dob) || undefined,
       home_address: zipCode.trim(),
     });
     setSavingProfile(false);
@@ -774,8 +796,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.22, ease: motionEase }}
-                className="p-7 flex flex-col"
-                style={{ minHeight: 440 }}
+                className="p-5 sm:p-7 flex flex-col min-h-[380px] sm:min-h-[440px]"
               >
                 <motion.div
                   layout
@@ -833,8 +854,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.22, ease: motionEase }}
-                className="p-7 flex flex-col"
-                style={{ minHeight: 440 }}
+                className="p-5 sm:p-7 flex flex-col min-h-[380px] sm:min-h-[440px]"
               >
                 <motion.div
                   layout
@@ -886,8 +906,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.22, ease: motionEase }}
-                  className="p-7 flex flex-col"
-                  style={{ minHeight: 440 }}
+                  className="p-5 sm:p-7 flex flex-col min-h-[380px] sm:min-h-[440px]"
                 >
                   <motion.div
                     layout
@@ -936,8 +955,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.22, ease: motionEase }}
-                className="p-6 flex flex-col"
-                style={{ minHeight: 440 }}
+                className="p-5 sm:p-6 flex flex-col min-h-[380px] sm:min-h-[440px]"
               >
                 <motion.div
                   layout
@@ -978,8 +996,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.22, ease: motionEase }}
-                className="p-7 flex flex-col"
-                style={{ minHeight: 440 }}
+                className="p-5 sm:p-7 flex flex-col min-h-[380px] sm:min-h-[440px]"
               >
                 <motion.div
                   layout
@@ -1026,7 +1043,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     <RevealStack visible className="space-y-3">
                       {!hasOAuthName && (
                         <motion.div variants={REVEAL_ITEM} className="flex gap-3">
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">
                               First name<span className="text-[#FF3B30] ml-0.5">*</span>
                             </label>
@@ -1037,10 +1054,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                               onChange={(e) => setFirstName(e.target.value)}
                               placeholder="Alex"
                               autoCapitalize="words"
-                              className="mt-1 w-full rounded-full border border-[#E5E5EA] bg-white px-4 py-3 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors capitalize"
+                              className="mt-1 w-full min-w-0 rounded-full border border-[#E5E5EA] bg-white px-4 py-3 text-[16px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors capitalize"
                             />
                           </div>
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">
                               Last name<span className="text-[#FF3B30] ml-0.5">*</span>
                             </label>
@@ -1051,7 +1068,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                               onChange={(e) => setLastName(e.target.value)}
                               placeholder="Smith"
                               autoCapitalize="words"
-                              className="mt-1 w-full rounded-full border border-[#E5E5EA] bg-white px-4 py-3 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors capitalize"
+                              className="mt-1 w-full min-w-0 rounded-full border border-[#E5E5EA] bg-white px-4 py-3 text-[16px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors capitalize"
                             />
                           </div>
                         </motion.div>
@@ -1061,10 +1078,14 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                           Date of birth
                         </label>
                         <input
-                          type="date"
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="bday"
+                          maxLength={10}
+                          placeholder="MM/DD/YYYY"
                           value={dob}
-                          onChange={(e) => setDob(e.target.value)}
-                          className="mt-1 w-full rounded-full border border-[#E5E5EA] bg-white px-4 py-3 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30 transition-colors"
+                          onChange={(e) => setDob(maskDateInput(e.target.value))}
+                          className="mt-1 w-full rounded-full border border-[#E5E5EA] bg-white px-4 py-3 text-[16px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors"
                         />
                       </motion.div>
                       <motion.div variants={REVEAL_ITEM}>
@@ -1079,7 +1100,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                           value={zipCode}
                           onChange={(e) => setZipCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
                           placeholder="10001"
-                          className="mt-1 w-full rounded-full border border-[#E5E5EA] bg-white px-4 py-3 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors"
+                          className="mt-1 w-full rounded-full border border-[#E5E5EA] bg-white px-4 py-3 text-[16px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors"
                         />
                       </motion.div>
                     </RevealStack>
@@ -1122,7 +1143,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
 
     // Text at 16px minimum to prevent iOS Safari's auto-zoom on focus
     // (anything smaller triggers it and breaks the mobile card layout).
-    const inputClass = "w-full rounded-xl border border-[#0F1B3D]/10 bg-[#f5f7fb] px-3.5 py-3 text-[16px] text-[#0F1B3D] placeholder:text-[#0F1B3D]/30 focus:outline-none focus:ring-2 focus:ring-[#0F1B3D]/20";
+    const inputClass = "w-full rounded-xl border border-[#0F1B3D]/10 bg-[#f5f7fb] px-3.5 py-2.5 sm:py-3 text-[16px] text-[#0F1B3D] placeholder:text-[#0F1B3D]/30 focus:outline-none focus:ring-2 focus:ring-[#0F1B3D]/20";
     // For native <select> elements: strip the OS default chevron (which
     // looks jarring against the pill styling, especially on iOS Safari) and
     // reserve room on the right so the text doesn't sit behind the custom
@@ -1132,7 +1153,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
 
     const canSave = (() => {
       if (addKind === "provider") return providerName.trim().length > 0 && providerSpecialty.length > 0;
-      if (addKind === "visit") return visitType.trim().length > 0 && visitDate.length > 0;
+      if (addKind === "visit") return visitType.trim().length > 0 && displayToIsoDate(visitDate).length > 0;
       if (addKind === "insurance") {
         if (insuranceCarrier === "Other") return insuranceCustomName.trim().length > 0;
         return insuranceCarrier.length > 0;
@@ -1169,11 +1190,11 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 document.activeElement.blur();
               }
             }}
-            className="relative rounded-2xl bg-white p-7 pb-[calc(1.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_30px_rgba(15,27,61,0.15)] border border-[#E5E5EA] overflow-hidden flex flex-col"
+            className="relative rounded-2xl bg-white p-4 sm:p-7 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-[calc(1.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_30px_rgba(15,27,61,0.15)] border border-[#E5E5EA] overflow-hidden flex flex-col max-h-[80vh]"
           >
             {/* Progress dots — tiny row showing how many profile-walkthrough
                 cards remain. Keeps late-stage dropout in check. */}
-            <div className="flex justify-center gap-1.5 mb-5">
+            <div className="flex justify-center gap-1.5 mb-3 sm:mb-5">
               {PROFILE_STEPS.map((_, i) => (
                 <div
                   key={i}
@@ -1188,7 +1209,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               ))}
             </div>
 
-            <div className="flex-1 flex flex-col justify-center">
+            <div className="flex-1 flex flex-col justify-center min-h-0 overflow-y-auto">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={profileStep}
@@ -1198,13 +1219,13 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 transition={{ duration: 0.26, ease: motionEase }}
               >
                 <div className="text-center">
-                  <h3 className="text-[18px] font-extrabold text-[#0F1B3D] mb-2">{currentStep.title}</h3>
-                  <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">{currentStep.body}</p>
+                  <h3 className="text-[16px] sm:text-[18px] font-extrabold text-[#0F1B3D] mb-1.5 sm:mb-2">{currentStep.title}</h3>
+                  <p className="text-[13px] sm:text-[14px] text-[#5a6a82] font-light leading-relaxed">{currentStep.body}</p>
                 </div>
 
                 {showPrompt && addKind === "provider" && (
-                  <div className="mt-5 text-left space-y-2.5">
-                    <p className="text-[13px] font-semibold text-[#0F1B3D]">Have any doctors you like?</p>
+                  <div className="mt-4 sm:mt-5 text-left space-y-2 sm:space-y-2.5">
+                    <p className="text-[12px] sm:text-[13px] font-semibold text-[#0F1B3D]">Have any doctors you like?</p>
                     <div className="flex flex-wrap gap-2">
                       {TOUR_SPECIALTY_OPTIONS.map((s) => {
                         const active = providerSpecialty === s;
@@ -1276,14 +1297,14 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                         </div>
                       </motion.button>
                     )}
-                    <p className="text-[11px] text-[#8E8E93] italic pt-1">
-                      Medications, conditions, and allergies live here too — add them anytime.
+                    <p className="hidden sm:block text-[11px] text-[#8E8E93] italic pt-1">
+                      Medications, conditions, and allergies live here too. Add them anytime.
                     </p>
                   </div>
                 )}
                 {showPrompt && addKind === "visit" && (
-                  <div className="mt-5 text-left space-y-2.5">
-                    <p className="text-[13px] font-semibold text-[#0F1B3D]">Any recent appointments?</p>
+                  <div className="mt-4 sm:mt-5 text-left space-y-2 sm:space-y-2.5">
+                    <p className="text-[12px] sm:text-[13px] font-semibold text-[#0F1B3D]">Any recent appointments?</p>
                     <div className="flex flex-wrap gap-2">
                       {VISIT_TYPE_CHIPS.map((chip) => {
                         const active = visitType === chip;
@@ -1324,15 +1345,18 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     )}
                     <input
                       className={inputClass}
-                      type="date"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={10}
+                      placeholder="MM/DD/YYYY"
                       value={visitDate}
-                      onChange={(e) => setVisitDate(e.target.value)}
+                      onChange={(e) => setVisitDate(maskDateInput(e.target.value))}
                     />
                   </div>
                 )}
                 {showPrompt && addKind === "insurance" && (
-                  <div className="mt-5 text-left space-y-2.5">
-                    <p className="text-[13px] font-semibold text-[#0F1B3D]">Who's your insurance?</p>
+                  <div className="mt-4 sm:mt-5 text-left space-y-2 sm:space-y-2.5">
+                    <p className="text-[12px] sm:text-[13px] font-semibold text-[#0F1B3D]">Who's your insurance?</p>
                     <div className="relative">
                       <select
                         className={selectClass}
@@ -1360,16 +1384,16 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                         autoFocus
                       />
                     )}
-                    <p className="text-[12px] text-[#8E8E93]">
+                    <p className="hidden sm:block text-[12px] text-[#8E8E93]">
                       You can add plan details and upload your card anytime from your profile.
                     </p>
                   </div>
                 )}
                 {showPrompt && addKind === "family" && familyMode === "manage" && (
-                  <div className="mt-5 text-left space-y-2.5">
+                  <div className="mt-4 sm:mt-5 text-left space-y-2 sm:space-y-2.5">
                     <div className="flex gap-2">
                       <input
-                        className={inputClass}
+                        className={`${inputClass} flex-1 min-w-0`}
                         type="text"
                         placeholder="First name"
                         value={familyFirstName}
@@ -1377,7 +1401,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                         autoFocus
                       />
                       <input
-                        className={inputClass}
+                        className={`${inputClass} flex-1 min-w-0`}
                         type="text"
                         placeholder="Last name"
                         value={familyLastName}
@@ -1415,7 +1439,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 <button
                   onClick={handleSendInvite}
                   disabled={inviteBusy}
-                  className="w-full mt-4 py-3 rounded-full text-white font-semibold font-sans text-[14px] hover:opacity-90 transition-opacity shadow-[0_4px_14px_rgba(15,27,61,0.25)] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-full mt-3 sm:mt-4 py-2.5 sm:py-3 rounded-full text-white font-semibold font-sans text-[14px] hover:opacity-90 transition-opacity shadow-[0_4px_14px_rgba(15,27,61,0.25)] disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{ background: ctaGradient }}
                 >
                   {inviteBusy ? "Generating link..." : "Invite your family"}
@@ -1423,14 +1447,14 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 <button
                   onClick={() => { setFamilyMode("manage"); setInviteFeedback(null); }}
                   disabled={inviteBusy}
-                  className="w-full mt-2 py-3 rounded-full font-semibold font-sans text-[14px] text-[#0F1B3D] bg-[#0F1B3D]/[0.06] hover:bg-[#0F1B3D]/[0.10] transition-colors disabled:opacity-40"
+                  className="w-full mt-1.5 sm:mt-2 py-2.5 sm:py-3 rounded-full font-semibold font-sans text-[14px] text-[#0F1B3D] bg-[#0F1B3D]/[0.06] hover:bg-[#0F1B3D]/[0.10] transition-colors disabled:opacity-40"
                 >
                   Manage a family member's account
                 </button>
                 <button
                   onClick={() => handleSkipItem("family")}
                   disabled={inviteBusy}
-                  className="w-full mt-2 py-2 text-[13px] text-[#5a6a82] hover:text-[#0F1B3D] transition-colors disabled:opacity-40"
+                  className="w-full mt-1.5 sm:mt-2 py-1.5 sm:py-2 text-[13px] text-[#5a6a82] hover:text-[#0F1B3D] transition-colors disabled:opacity-40"
                 >
                   I'm just managing my own care
                 </button>
@@ -1440,7 +1464,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 <button
                   onClick={() => canSave ? handleSaveItem("family") : handleSkipItem("family")}
                   disabled={savingItem}
-                  className="w-full mt-4 py-3 rounded-full text-white font-semibold font-sans text-[14px] hover:opacity-90 transition-opacity shadow-[0_4px_14px_rgba(15,27,61,0.25)] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-full mt-3 sm:mt-4 py-2.5 sm:py-3 rounded-full text-white font-semibold font-sans text-[14px] hover:opacity-90 transition-opacity shadow-[0_4px_14px_rgba(15,27,61,0.25)] disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{ background: ctaGradient }}
                 >
                   {savingItem ? "Adding..." : canSave ? "Add family member" : "Continue"}
@@ -1448,7 +1472,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 <button
                   onClick={() => setFamilyMode("choose")}
                   disabled={savingItem}
-                  className="w-full mt-2 py-2 text-[13px] text-[#5a6a82] hover:text-[#0F1B3D] transition-colors disabled:opacity-40"
+                  className="w-full mt-1.5 sm:mt-2 py-1.5 sm:py-2 text-[13px] text-[#5a6a82] hover:text-[#0F1B3D] transition-colors disabled:opacity-40"
                 >
                   Back to options
                 </button>
@@ -1465,7 +1489,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
             ) : (
               <button
                 onClick={nextProfile}
-                className="w-full mt-4 py-3 rounded-full text-white font-semibold font-sans text-[14px] hover:opacity-90 transition-opacity shadow-[0_4px_14px_rgba(15,27,61,0.25)]"
+                className="w-full mt-3 sm:mt-4 py-2.5 sm:py-3 rounded-full text-white font-semibold font-sans text-[14px] hover:opacity-90 transition-opacity shadow-[0_4px_14px_rgba(15,27,61,0.25)]"
                 style={{ background: ctaGradient }}
               >
                 {isLast ? "Got it" : "Next"}
@@ -1650,9 +1674,9 @@ function PainResult({ variant, target, punchline }: {
     >
       <div className="flex items-baseline justify-center gap-0.5">
         {variant === "money" && (
-          <span className="text-[40px] font-extrabold text-[#FF3B30] tracking-tight leading-none">$</span>
+          <span className="text-[32px] sm:text-[40px] font-extrabold text-[#FF3B30] tracking-tight leading-none">$</span>
         )}
-        <AnimatedCounter target={target} className="text-[56px] font-extrabold text-[#FF3B30] tracking-tight leading-none" />
+        <AnimatedCounter target={target} className="text-[44px] sm:text-[56px] font-extrabold text-[#FF3B30] tracking-tight leading-none" />
       </div>
       <p className="text-[11px] font-bold text-[#8E8E93] uppercase tracking-wider mt-2">
         {unitLabel}

@@ -133,10 +133,10 @@ export function UpgradeModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="w-[calc(100%-2rem)] max-w-[22rem] sm:w-full sm:max-w-lg overflow-hidden rounded-2xl border-0 bg-white p-0 shadow-[0_24px_80px_rgba(15,27,61,0.25)]"
+        className="w-[calc(100%-2rem)] max-w-[22rem] sm:w-full sm:max-w-lg max-h-[calc(100svh-1rem)] overflow-y-auto overflow-x-hidden rounded-2xl border-0 bg-white p-0 shadow-[0_24px_80px_rgba(15,27,61,0.25)]"
       >
         {/* Header with landing-page gradient */}
-        <div className="relative px-6 pt-7 pb-5 bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)] text-center">
+        <div className="relative px-5 pt-5 pb-4 sm:px-6 sm:pt-7 sm:pb-5 bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)] text-center">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_130%,#F4B084_0%,#E8956D_25%,rgba(46,107,181,0)_60%)] opacity-40" />
           <button
             type="button"
@@ -148,21 +148,21 @@ export function UpgradeModal({
           </button>
           <div className="relative z-10">
             <DialogHeader>
-              <DialogTitle className="text-center text-xl font-semibold text-white">
+              <DialogTitle className="text-center text-lg sm:text-xl font-semibold text-white">
                 {title}
               </DialogTitle>
-              <DialogDescription className="text-center text-sm text-white/60 leading-relaxed mt-1">
+              <DialogDescription className="text-center text-[13px] sm:text-sm text-white/60 leading-relaxed mt-1">
                 {description}
               </DialogDescription>
             </DialogHeader>
 
             {/* Sliding pill toggle */}
-            <div className="inline-flex items-center mt-4 rounded-full bg-white/10 p-1 backdrop-blur-sm border border-white/10">
+            <div className="inline-flex items-center mt-3 sm:mt-4 rounded-full bg-white/10 p-1 backdrop-blur-sm border border-white/10">
               {(["monthly", "annual"] as BillingPeriod[]).map((period) => (
                 <button
                   key={period}
                   onClick={() => setBilling(period)}
-                  className="relative px-5 py-1.5 text-sm font-medium capitalize transition-colors duration-200"
+                  className="relative px-4 sm:px-5 py-1.5 text-[13px] sm:text-sm font-medium capitalize transition-colors duration-200"
                 >
                   {billing === period && (
                     <motion.div
@@ -181,7 +181,7 @@ export function UpgradeModal({
         </div>
 
         {/* Plan cards */}
-        <div className="px-5 pb-5 pt-4 space-y-3">
+        <div className="px-4 pb-4 pt-3 space-y-2.5 sm:px-5 sm:pb-5 sm:pt-4 sm:space-y-3">
           {tiers.map((tier, i) => {
             const plan = PLANS[tier];
             const price = billing === "annual" ? plan.annualMonthly : plan[billing];
@@ -193,7 +193,7 @@ export function UpgradeModal({
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.08, duration: 0.3 }}
-                className={`relative rounded-xl border p-4 transition-all cursor-pointer group ${
+                className={`relative rounded-xl border p-3 sm:p-4 transition-all cursor-pointer group ${
                   isPopular
                     ? "border-[#E8956D]/40 bg-gradient-to-br from-[#FDF8F5] to-white shadow-[0_2px_12px_rgba(232,149,109,0.12)]"
                     : "border-[#E5E5EA] hover:border-[#2E6BB5]/30 bg-white"
@@ -206,8 +206,8 @@ export function UpgradeModal({
                   </span>
                 )}
 
-                <div className="flex items-baseline justify-between mb-3">
-                  <p className="text-[17px] font-extrabold tracking-tight text-[#0F1B3D]">{plan.name}</p>
+                <div className="flex items-baseline justify-between mb-2 sm:mb-3">
+                  <p className="text-[15px] sm:text-[17px] font-extrabold tracking-tight text-[#0F1B3D]">{plan.name}</p>
                   <div className="flex items-baseline">
                     <AnimatePresence mode="wait">
                       <motion.span
@@ -216,16 +216,16 @@ export function UpgradeModal({
                         animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                         exit={{ opacity: 0, y: -6, filter: "blur(3px)" }}
                         transition={{ duration: 0.2 }}
-                        className="text-2xl font-bold text-[#0F1B3D]"
+                        className="text-xl sm:text-2xl font-bold text-[#0F1B3D]"
                       >
                         ${price}
                       </motion.span>
                     </AnimatePresence>
-                    <span className="text-sm text-[#8E8E93] ml-0.5">/mo</span>
+                    <span className="text-[13px] sm:text-sm text-[#8E8E93] ml-0.5">/mo</span>
                   </div>
                 </div>
 
-                <p className="text-[11px] text-[#8E8E93] mb-2 h-4">
+                <p className="text-[11px] text-[#8E8E93] mb-1.5 sm:mb-2 h-4">
                   <AnimatePresence mode="wait">
                     {billing === "annual" && (
                       <motion.span
@@ -241,9 +241,9 @@ export function UpgradeModal({
                   </AnimatePresence>
                 </p>
 
-                <ul className="space-y-1.5 mb-3">
+                <ul className="space-y-1 mb-2.5 sm:space-y-1.5 sm:mb-3">
                   {plan.features.map((f) => (
-                    <li key={f} className="flex items-center gap-2 text-[13px] text-[#0F1B3D]/60">
+                    <li key={f} className="flex items-center gap-2 text-[12px] sm:text-[13px] text-[#0F1B3D]/60">
                       <Check className={`h-3.5 w-3.5 flex-shrink-0 ${isPopular ? "text-[#E8956D]" : "text-[#2E6BB5]"}`} />
                       {f}
                     </li>
@@ -251,7 +251,7 @@ export function UpgradeModal({
                 </ul>
 
                 <div
-                  className="w-full rounded-full py-2.5 text-center text-sm font-bold tracking-tight text-white transition-all bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)] shadow-[0_4px_16px_rgba(46,107,181,0.25)] group-hover:shadow-[0_6px_24px_rgba(46,107,181,0.35)] group-hover:brightness-110"
+                  className="w-full rounded-full py-2 sm:py-2.5 text-center text-[13px] sm:text-sm font-bold tracking-tight text-white transition-all bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)] shadow-[0_4px_16px_rgba(46,107,181,0.25)] group-hover:shadow-[0_6px_24px_rgba(46,107,181,0.35)] group-hover:brightness-110"
                 >
                   {loading ? "Redirecting..." : `Get ${plan.name}`}
                 </div>
