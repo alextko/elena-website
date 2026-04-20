@@ -818,47 +818,50 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 transition={{ duration: 0.22, ease: motionEase }}
                 className="p-5 sm:p-7 flex flex-col min-h-[380px] sm:min-h-[440px]"
               >
-                <motion.div className={`text-center ${subtitleDone ? "mb-5" : "my-auto"}`}>
-                  {/* Wave animation: scale in, then shake. Same style we had
-                      on the old profile-form "Hey I'm Elena" step. */}
-                  <style>{`
-                    @keyframes elena-wave {
-                      0%   { transform: rotate(0deg); }
-                      20%  { transform: rotate(20deg); }
-                      40%  { transform: rotate(-18deg); }
-                      60%  { transform: rotate(18deg); }
-                      80%  { transform: rotate(-10deg); }
-                      100% { transform: rotate(0deg); }
-                    }
-                  `}</style>
-                  <motion.div
-                    className="text-3xl mb-3 inline-block origin-[70%_70%]"
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.35, ease: motionEase, delay: 0.15 }}
-                    style={{ animation: "elena-wave 900ms ease-in-out 550ms 1" }}
-                    aria-hidden
-                  >
-                    👋
+                {/* flex-1 wrapper keeps the headline block vertically centered
+                    in the card while the Continue button snaps to the bottom,
+                    matching the layout of the other shell phases. */}
+                <div className="flex-1 flex flex-col items-center justify-center">
+                  <motion.div className="text-center">
+                    {/* Wave animation: scale in, then shake. Same style we had
+                        on the old profile-form "Hey I'm Elena" step. */}
+                    <style>{`
+                      @keyframes elena-wave {
+                        0%   { transform: rotate(0deg); }
+                        20%  { transform: rotate(20deg); }
+                        40%  { transform: rotate(-18deg); }
+                        60%  { transform: rotate(18deg); }
+                        80%  { transform: rotate(-10deg); }
+                        100% { transform: rotate(0deg); }
+                      }
+                    `}</style>
+                    <motion.div
+                      className="text-3xl mb-3 inline-block origin-[70%_70%]"
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.35, ease: motionEase, delay: 0.15 }}
+                      style={{ animation: "elena-wave 900ms ease-in-out 550ms 1" }}
+                      aria-hidden
+                    >
+                      👋
+                    </motion.div>
+                    <h2 className="text-[22px] font-extrabold text-[#0F1B3D] text-balance leading-tight mb-2">
+                      <StreamingText text="Hey, I'm Elena" startDelay={0.6} onDone={() => setHeadlineDone(true)} />
+                    </h2>
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: headlineDone ? 1 : 0 }}
+                      transition={{ duration: 0.35, ease: motionEase, delay: 0.1 }}
+                      className="text-[14px] text-[#8E8E93] font-light"
+                      onAnimationComplete={() => { if (headlineDone) setSubtitleDone(true); }}
+                    >
+                      I&apos;m your health care assistant.
+                    </motion.p>
                   </motion.div>
-                  <h2 className="text-[22px] font-extrabold text-[#0F1B3D] text-balance leading-tight mb-2">
-                    <StreamingText text="Hey, I'm Elena" startDelay={0.6} onDone={() => setHeadlineDone(true)} />
-                  </h2>
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: headlineDone ? 1 : 0 }}
-                    transition={{ duration: 0.35, ease: motionEase, delay: 0.1 }}
-                    className="text-[14px] text-[#8E8E93] font-light"
-                    onAnimationComplete={() => { if (headlineDone) setSubtitleDone(true); }}
-                  >
-                    I&apos;m your health care assistant.
-                  </motion.p>
-                </motion.div>
-                {subtitleDone && (
-                  <RevealButton visible delay={0.15}>
-                    <GradientButton onClick={advanceFromIntro} label="Continue" />
-                  </RevealButton>
-                )}
+                </div>
+                <RevealButton visible={subtitleDone} delay={0.15}>
+                  <GradientButton onClick={advanceFromIntro} label="Continue" />
+                </RevealButton>
               </motion.div>
             )}
 
