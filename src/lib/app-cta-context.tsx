@@ -18,6 +18,8 @@ type TriggerMetadata = Record<string, unknown>;
 
 interface AppCtaContextValue {
   open: boolean;
+  /** Why the CTA is currently open — drives subtitle copy in the modal. */
+  reason: string | null;
   /** Open the CTA if the user hasn't already engaged with it. No-op otherwise. */
   showAppCta: (reason: string, metadata?: TriggerMetadata) => void;
   /** Mark done and close. Called by the Not-Now button / close X / escape. */
@@ -36,6 +38,7 @@ export function useAppCta(): AppCtaContextValue {
 
 export function AppCtaProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState<string | null>(null);
   const metadataRef = useRef<TriggerMetadata>({});
 
   const showAppCta = useCallback(
@@ -43,6 +46,7 @@ export function AppCtaProvider({ children }: { children: ReactNode }) {
       if (typeof window === "undefined") return;
       if (localStorage.getItem(DONE_KEY)) return;
       metadataRef.current = { trigger: reason, ...(metadata || {}) };
+      setReason(reason);
       setOpen(true);
       analytics.track("App CTA: Shown", metadataRef.current);
     },
@@ -70,7 +74,7 @@ export function AppCtaProvider({ children }: { children: ReactNode }) {
   }, [markDone]);
 
   return (
-    <AppCtaContext.Provider value={{ open, showAppCta, dismiss, onDownloadClick }}>
+    <AppCtaContext.Provider value={{ open, reason, showAppCta, dismiss, onDownloadClick }}>
       {children}
     </AppCtaContext.Provider>
   );

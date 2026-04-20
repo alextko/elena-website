@@ -6,7 +6,10 @@ import { useAppCta } from "@/lib/app-cta-context";
 const APP_STORE_URL = "https://apps.apple.com/us/app/elena-ai-health-navigator/id6760362771";
 
 export function AppCtaModal() {
-  const { open, dismiss, onDownloadClick } = useAppCta();
+  const { open, reason, dismiss, onDownloadClick } = useAppCta();
+  const subtitle = reason === "upgrade"
+    ? "To get more out of your subscription."
+    : "Keep your providers, visits, and bills with you on the go.";
 
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) dismiss(); }}>
@@ -25,7 +28,7 @@ export function AppCtaModal() {
             Take Elena with you
           </h2>
           <p className="text-[13px] sm:text-sm text-[#0F1B3D]/60 text-center mb-5 px-1">
-            Keep your providers, visits, and bills with you on the go.
+            {subtitle}
           </p>
           <a
             href={APP_STORE_URL}

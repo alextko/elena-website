@@ -12,6 +12,7 @@ import { ChatArea } from "@/components/chat-area";
 import { ChatErrorBoundary } from "@/components/error-boundary";
 import { WebOnboardingTour } from "@/components/web-onboarding-tour";
 import { UpgradeModal } from "@/components/upgrade-modal";
+import { useAppCta } from "@/lib/app-cta-context";
 import type { ChatSessionItem } from "@/lib/types";
 import { trackSubscription, trackActivation } from "@/lib/tracking-events";
 
@@ -47,6 +48,7 @@ function ChatPageInner() {
   }, []);
 
   const { session, loading, profileId, refreshSubscription, onboardingJustCompleted, needsOnboarding, profileChecked } = useAuth();
+  const { showAppCta } = useAppCta();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(() =>
@@ -220,9 +222,13 @@ function ChatPageInner() {
       window.history.replaceState({}, "", "/chat");
       // Auto-dismiss after 4 seconds
       const timer = setTimeout(() => setCheckoutSuccess(false), 4000);
-      return () => clearTimeout(timer);
+      // Peak-commitment moment → nudge app download. The one-shot
+      // elena_app_cta_done flag means if this fires, the data-added
+      // and feedback triggers won't re-fire the modal.
+      const ctaTimer = setTimeout(() => showAppCta("upgrade"), 1500);
+      return () => { clearTimeout(timer); clearTimeout(ctaTimer); };
     }
-  }, [searchParams, refreshSubscription]);
+  }, [searchParams, refreshSubscription, showAppCta]);
 
   useEffect(() => {
     if (!loading && !session) {
