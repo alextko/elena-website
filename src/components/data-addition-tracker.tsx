@@ -124,13 +124,23 @@ export function DataAdditionTracker() {
         if (newTotal >= THRESHOLD) {
           if (triggerTimerRef.current) clearTimeout(triggerTimerRef.current);
           triggerTimerRef.current = setTimeout(() => {
+            triggerTimerRef.current = null;
+            // Suppress the CTA while the web tour is showing its own data-
+            // entry prompts — the tour's z-index is above the dialog portal,
+            // and double-nudging mid-tour is bad UX. Counts still accrue, so
+            // the CTA fires naturally on the next add after the tour exits.
+            if (
+              typeof window !== "undefined" &&
+              sessionStorage.getItem("elena_tour_in_progress") === "1"
+            ) {
+              return;
+            }
             showAppCta("data_added", {
               additions_count: newTotal,
               doctors: current.doctors,
               visits: current.visits,
               insurance: current.insurance,
             });
-            triggerTimerRef.current = null;
           }, TRIGGER_DELAY_MS);
         }
       } else if (delta < 0) {

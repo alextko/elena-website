@@ -592,10 +592,19 @@ export function DoctorResultsCard({
 export function LocationResultsCard({
   locations,
   onCall,
+  onSelect,
 }: {
   locations: LocationResult[];
   onCall?: (loc: LocationResult) => void;
+  onSelect?: (loc: LocationResult) => void;
 }) {
+  const formatLocationAddress = (loc: LocationResult): string | null => {
+    const street = loc.address?.trim();
+    const cityState = [loc.city?.trim(), loc.state?.trim()].filter(Boolean).join(", ");
+    const cityLine = [cityState, loc.postal_code?.trim()].filter(Boolean).join(" ");
+    const parts = [street, cityLine].filter(Boolean);
+    return parts.length > 0 ? parts.join(", ") : null;
+  };
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
@@ -664,7 +673,7 @@ export function LocationResultsCard({
               }}
               onClick={() => handleSelect(i)}
             >
-              {/* Top row: info left, action buttons right */}
+              {/* Top row: info left, action icons right */}
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <p className="text-[15px] font-bold text-[var(--elena-text-primary)] truncate">
@@ -675,6 +684,11 @@ export function LocationResultsCard({
                       {loc.category}
                     </p>
                   )}
+                  {formatLocationAddress(loc) && (
+                    <p className="text-xs text-[var(--elena-text-secondary)] mt-px truncate">
+                      {formatLocationAddress(loc)}
+                    </p>
+                  )}
                   {loc.phone_number && (
                     <p className="text-xs text-[var(--elena-text-secondary)] mt-px">
                       {loc.phone_number}
@@ -682,11 +696,12 @@ export function LocationResultsCard({
                   )}
                 </div>
 
-                {/* Action buttons */}
+                {/* Action icons */}
                 <div className="flex items-center gap-2 shrink-0">
                   {loc.phone_number && onCall && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onCall(loc); }}
+                      aria-label={`Call ${loc.name}`}
                       className="flex h-[30px] w-[30px] items-center justify-center rounded-full border-[1.5px] border-[var(--elena-border)] text-[var(--elena-navy)] hover:bg-[var(--elena-warm-bg)] transition-colors"
                     >
                       <Phone className="h-3.5 w-3.5" />
@@ -698,6 +713,7 @@ export function LocationResultsCard({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
+                      aria-label={`Directions to ${loc.name}`}
                       className="flex h-[30px] w-[30px] items-center justify-center rounded-full border-[1.5px] border-[var(--elena-border)] text-[var(--elena-navy)] hover:bg-[var(--elena-warm-bg)] transition-colors"
                     >
                       <Navigation className="h-3.5 w-3.5" />
@@ -706,9 +722,9 @@ export function LocationResultsCard({
                 </div>
               </div>
 
-              {/* Bottom row: badges + rating left, distance right */}
-              <div className="flex items-center justify-between gap-2 mt-1">
-                <div className="flex items-center flex-wrap gap-1.5 flex-1 min-w-0">
+              {/* Bottom row: badges + rating + distance on left, "This one" pill on right */}
+              <div className="flex items-center justify-between gap-2 mt-1.5">
+                <div className="flex items-center flex-wrap gap-x-2 gap-y-1 flex-1 min-w-0">
                   {loc.in_network != null && loc.in_network && (
                     <span className="flex items-center gap-[3px] text-[11px] font-semibold text-[var(--elena-green)]">
                       <Check className="h-3.5 w-3.5" /> In-network
@@ -727,11 +743,19 @@ export function LocationResultsCard({
                       )}
                     </span>
                   )}
+                  {dist && (
+                    <span className="text-[11px] text-[var(--elena-text-muted)]">
+                      {dist}
+                    </span>
+                  )}
                 </div>
-                {dist && (
-                  <span className="text-[11px] text-[var(--elena-text-muted)] shrink-0">
-                    {dist}
-                  </span>
+                {onSelect && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onSelect(loc); }}
+                    className="shrink-0 rounded-full px-3 py-1 text-[12px] font-semibold bg-[var(--elena-navy)] text-white hover:opacity-90 transition-opacity"
+                  >
+                    This one
+                  </button>
                 )}
               </div>
             </div>
@@ -1501,6 +1525,18 @@ const CONDITION_STATUSES = ["Active", "Managed", "In remission"];
 const ALLERGY_TYPES = ["Drug", "Food", "Environmental", "Insect", "Latex", "Other"];
 const REACTIONS = ["Rash/Hives", "Swelling", "Difficulty breathing", "Anaphylaxis", "Nausea/Vomiting", "Other"];
 const SEVERITIES = ["Mild", "Moderate", "Severe"];
+const SPECIALTIES = [
+  "Primary Care", "OB/GYN", "Dentist", "Eye Doctor", "Pharmacy",
+  "Dermatology", "Cardiology", "Endocrinology", "Gastroenterology",
+  "Neurology", "Orthopedics", "Pulmonology", "Rheumatology",
+  "Psychiatry", "Therapist", "Allergy/Immunology", "ENT", "Urology",
+  "Nephrology", "Oncology", "Pain Management", "Physical Therapy", "Other",
+];
+const VISIT_TYPES = [
+  "Annual physical", "Sick visit", "Specialist consult", "Follow-up",
+  "Preventive screening", "Lab work", "Imaging", "Procedure", "Emergency",
+  "Urgent care", "Telehealth", "Dental", "Eye exam", "Other",
+];
 
 function generateId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -1607,6 +1643,38 @@ function AllergyFormFields({ form, onChange }: { form: any; onChange: (f: any) =
   );
 }
 
+function DoctorFormFields({ form, onChange }: { form: any; onChange: (f: any) => void }) {
+  const fieldCls = "mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30";
+  return (
+    <>
+      <div className="mt-2.5"><label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Name *</label>
+        <input className={fieldCls} placeholder="e.g. Dr. Sarah Chen" value={form.name} onChange={(e) => onChange({ ...form, name: e.target.value })} /></div>
+      <SelectField label="Specialty" value={form.specialty} placeholder="Select specialty" options={SPECIALTIES} onChange={(v) => onChange({ ...form, specialty: v })} />
+      <div className="mt-2.5"><label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Practice / clinic</label>
+        <input className={fieldCls} placeholder="e.g. Bay Area Primary Care" value={form.practice_name} onChange={(e) => onChange({ ...form, practice_name: e.target.value })} /></div>
+      <div className="mt-2.5"><label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Phone</label>
+        <input className={fieldCls} placeholder="e.g. (415) 555-0100" value={form.phone} onChange={(e) => onChange({ ...form, phone: e.target.value })} /></div>
+      <div className="mt-2.5"><label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Address</label>
+        <input className={fieldCls} placeholder="Office address" value={form.address} onChange={(e) => onChange({ ...form, address: e.target.value })} /></div>
+    </>
+  );
+}
+
+function VisitFormFields({ form, onChange }: { form: any; onChange: (f: any) => void }) {
+  const fieldCls = "mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30";
+  return (
+    <>
+      <div className="mt-2.5"><label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Provider / doctor *</label>
+        <input className={fieldCls} placeholder="e.g. Dr. Sarah Chen" value={form.provider_name} onChange={(e) => onChange({ ...form, provider_name: e.target.value })} /></div>
+      <SelectField label="Visit type" value={form.visit_type} placeholder="Annual physical, follow-up, etc." options={VISIT_TYPES} onChange={(v) => onChange({ ...form, visit_type: v })} />
+      <div className="mt-2.5"><label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Date</label>
+        <input type="date" className={fieldCls} value={form.visit_date} onChange={(e) => onChange({ ...form, visit_date: e.target.value })} /></div>
+      <div className="mt-2.5"><label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Notes</label>
+        <textarea className={fieldCls + " min-h-[60px] resize-none"} placeholder="What it was for, outcome, anything to remember" value={form.notes} onChange={(e) => onChange({ ...form, notes: e.target.value })} /></div>
+    </>
+  );
+}
+
 function ItemPill({ label, onEdit, onDelete }: { label: string; onEdit: () => void; onDelete: () => void }) {
   return (
     <div className="flex items-center justify-between rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 mb-1.5">
@@ -1630,6 +1698,8 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
   const [conditions, setConditions] = useState<AnyItem[]>((existing.conditions || []).map((c: any) => ({ id: generateId(), ...c })));
   const [medications, setMedications] = useState<AnyItem[]>((existing.medications || []).map((m: any) => ({ id: generateId(), ...m })));
   const [allergies, setAllergies] = useState<AnyItem[]>((existing.allergies || []).map((a: any) => ({ id: generateId(), ...a })));
+  const [doctors, setDoctors] = useState<AnyItem[]>((existing.doctors || []).map((d: any) => ({ id: d.id || generateId(), ...d })));
+  const [visits, setVisits] = useState<AnyItem[]>((existing.visits || []).map((v: any) => ({ id: v.id || generateId(), ...v })));
 
   const [currentPage, setCurrentPage] = useState(0);
   const [showForm, setShowForm] = useState(false);
@@ -1638,18 +1708,28 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
   const [condForm, setCondForm] = useState({ name: "", status: "", diagnosed_date: "", notes: "" });
   const [medForm, setMedForm] = useState({ name: "", dosage_strength: "", dosage_form: "", dose: "", frequency: "", time_of_day: "", indication: "", prescribing_doctor: "", is_otc: false });
   const [allergyForm, setAllergyForm] = useState({ name: "", type: "", reaction: "", severity: "" });
+  const [doctorForm, setDoctorForm] = useState({ name: "", specialty: "", practice_name: "", phone: "", address: "" });
+  const [visitForm, setVisitForm] = useState({ provider_name: "", visit_type: "", visit_date: "", notes: "" });
 
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   const currentSection = sections[currentPage];
   const isLastPage = currentPage === sections.length - 1;
-  const sectionLabels: Record<string, string> = { conditions: "Conditions", medications: "Medications", allergies: "Allergies" };
+  const sectionLabels: Record<string, string> = {
+    conditions: "Conditions",
+    medications: "Medications",
+    allergies: "Allergies",
+    doctors: "Doctors",
+    visits: "Past Visits",
+  };
 
   function getItems(): AnyItem[] {
     if (currentSection === "conditions") return conditions;
     if (currentSection === "medications") return medications;
     if (currentSection === "allergies") return allergies;
+    if (currentSection === "doctors") return doctors;
+    if (currentSection === "visits") return visits;
     return [];
   }
 
@@ -1657,6 +1737,8 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
     if (currentSection === "conditions") return [item.name, item.status].filter(Boolean).join(" — ");
     if (currentSection === "medications") return [item.name, item.dosage_strength, item.frequency].filter(Boolean).join(" · ");
     if (currentSection === "allergies") return [item.name, item.severity].filter(Boolean).join(" — ");
+    if (currentSection === "doctors") return [item.name || item.practice_name, item.specialty].filter(Boolean).join(" — ");
+    if (currentSection === "visits") return [item.provider_name, item.visit_type, item.visit_date].filter(Boolean).join(" · ");
     return item.name || "";
   }
 
@@ -1664,6 +1746,8 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
     if (currentSection === "conditions") setCondForm({ name: "", status: "", diagnosed_date: "", notes: "" });
     if (currentSection === "medications") setMedForm({ name: "", dosage_strength: "", dosage_form: "", dose: "", frequency: "", time_of_day: "", indication: "", prescribing_doctor: "", is_otc: false });
     if (currentSection === "allergies") setAllergyForm({ name: "", type: "", reaction: "", severity: "" });
+    if (currentSection === "doctors") setDoctorForm({ name: "", specialty: "", practice_name: "", phone: "", address: "" });
+    if (currentSection === "visits") setVisitForm({ provider_name: "", visit_type: "", visit_date: "", notes: "" });
     setEditingId(null);
     setShowForm(true);
   }
@@ -1673,6 +1757,8 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
     if (currentSection === "conditions") { const i = conditions.find((c) => c.id === id); if (i) setCondForm({ name: i.name, status: i.status, diagnosed_date: i.diagnosed_date, notes: i.notes }); }
     if (currentSection === "medications") { const i = medications.find((m) => m.id === id); if (i) setMedForm({ name: i.name, dosage_strength: i.dosage_strength, dosage_form: i.dosage_form, dose: i.dose, frequency: i.frequency, time_of_day: i.time_of_day, indication: i.indication, prescribing_doctor: i.prescribing_doctor, is_otc: i.is_otc }); }
     if (currentSection === "allergies") { const i = allergies.find((a) => a.id === id); if (i) setAllergyForm({ name: i.name, type: i.type, reaction: i.reaction, severity: i.severity }); }
+    if (currentSection === "doctors") { const i = doctors.find((d) => d.id === id); if (i) setDoctorForm({ name: i.name || "", specialty: i.specialty || "", practice_name: i.practice_name || "", phone: i.phone || "", address: i.address || "" }); }
+    if (currentSection === "visits") { const i = visits.find((v) => v.id === id); if (i) setVisitForm({ provider_name: i.provider_name || "", visit_type: i.visit_type || "", visit_date: i.visit_date || "", notes: i.notes || "" }); }
     setShowForm(true);
   }
 
@@ -1680,6 +1766,8 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
     if (currentSection === "conditions") setConditions((p) => p.filter((c) => c.id !== id));
     if (currentSection === "medications") setMedications((p) => p.filter((m) => m.id !== id));
     if (currentSection === "allergies") setAllergies((p) => p.filter((a) => a.id !== id));
+    if (currentSection === "doctors") setDoctors((p) => p.filter((d) => d.id !== id));
+    if (currentSection === "visits") setVisits((p) => p.filter((v) => v.id !== id));
   }
 
   function saveItem() {
@@ -1695,6 +1783,14 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
       if (!allergyForm.name.trim()) return;
       const item = { id: editingId || generateId(), ...allergyForm };
       setAllergies((p) => editingId ? p.map((a) => (a.id === editingId ? item : a)) : [...p, item]);
+    } else if (currentSection === "doctors") {
+      if (!doctorForm.name.trim() && !doctorForm.practice_name.trim()) return;
+      const item = { id: editingId || generateId(), ...doctorForm };
+      setDoctors((p) => editingId ? p.map((d) => (d.id === editingId ? item : d)) : [...p, item]);
+    } else if (currentSection === "visits") {
+      if (!visitForm.provider_name.trim()) return;
+      const item = { id: editingId || generateId(), ...visitForm };
+      setVisits((p) => editingId ? p.map((v) => (v.id === editingId ? item : v)) : [...p, item]);
     }
     setShowForm(false);
     setEditingId(null);
@@ -1708,6 +1804,9 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
       if (sections.includes("conditions") && conditions.length > 0) data.conditions = JSON.stringify(stripId(conditions));
       if (sections.includes("medications") && medications.length > 0) data.medications = JSON.stringify(stripId(medications));
       if (sections.includes("allergies") && allergies.length > 0) data.allergies = JSON.stringify(stripId(allergies));
+      // Keep doctor IDs so server merges by id; visits are insert-only so strip ids.
+      if (sections.includes("doctors") && doctors.length > 0) data.doctors = JSON.stringify(doctors);
+      if (sections.includes("visits") && visits.length > 0) data.visits = JSON.stringify(stripId(visits));
       await apiFetch("/chat/form-submit", { method: "POST", body: JSON.stringify({ form_id: form.form_id, save_to: "health_profile", data }) });
       setSubmitted(true);
       onSubmitted?.(data);
@@ -1732,7 +1831,13 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
   }
 
   const items = getItems();
-  const addLabel = currentSection === "conditions" ? "a condition" : currentSection === "medications" ? "a medication" : "an allergy";
+  const addLabel =
+    currentSection === "conditions" ? "a condition"
+    : currentSection === "medications" ? "a medication"
+    : currentSection === "allergies" ? "an allergy"
+    : currentSection === "doctors" ? "a doctor"
+    : currentSection === "visits" ? "a past visit"
+    : "an item";
 
   return (
     <div className="mt-3 rounded-2xl border border-[#0F1B3D]/[0.06] bg-white p-5 shadow-[0_2px_8px_rgba(15,27,61,0.06)] animate-in fade-in duration-300">
@@ -1764,6 +1869,8 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
           {currentSection === "conditions" && <ConditionFormFields form={condForm} onChange={setCondForm} />}
           {currentSection === "medications" && <MedicationFormFields form={medForm} onChange={setMedForm} />}
           {currentSection === "allergies" && <AllergyFormFields form={allergyForm} onChange={setAllergyForm} />}
+          {currentSection === "doctors" && <DoctorFormFields form={doctorForm} onChange={setDoctorForm} />}
+          {currentSection === "visits" && <VisitFormFields form={visitForm} onChange={setVisitForm} />}
           <button type="button" onClick={saveItem} className="mt-4 w-full rounded-xl bg-[#0F1B3D] py-2.5 text-[14px] font-semibold text-white hover:bg-[#0F1B3D]/90 transition-colors">
             {editingId ? "Update" : "Save"}
           </button>

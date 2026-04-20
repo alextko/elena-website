@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { ChevronDown } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
 
@@ -27,11 +28,12 @@ const RELATIONSHIP_OPTIONS = [
   { value: "other", label: "Other" },
 ];
 
+// text-base = 16px; smaller sizes trigger iOS Safari auto-zoom on focus.
 const inputClassName =
-  "w-full rounded-xl border border-[#0F1B3D]/[0.08] bg-white px-3.5 py-2.5 text-sm text-[#0F1B3D] placeholder:text-[#8E8E93] outline-none focus:border-[#2E6BB5] focus:ring-1 focus:ring-[#2E6BB5] transition-colors";
+  "w-full rounded-xl border border-[#0F1B3D]/[0.08] bg-white px-3.5 py-2.5 text-base text-[#0F1B3D] placeholder:text-[#8E8E93] outline-none focus:border-[#2E6BB5] focus:ring-1 focus:ring-[#2E6BB5] transition-colors";
 
 const selectClassName =
-  "w-full rounded-xl border border-[#0F1B3D]/[0.08] bg-white px-3.5 py-2.5 text-sm text-[#0F1B3D] outline-none focus:border-[#2E6BB5] focus:ring-1 focus:ring-[#2E6BB5] transition-colors appearance-none";
+  "w-full rounded-xl border border-[#0F1B3D]/[0.08] bg-white px-3.5 py-2.5 pr-10 text-base text-[#0F1B3D] outline-none focus:border-[#2E6BB5] focus:ring-1 focus:ring-[#2E6BB5] transition-colors appearance-none";
 
 const gradientButtonClassName =
   "w-full bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)] text-white rounded-full py-2.5 px-4 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed";
@@ -237,21 +239,24 @@ export function AddFamilyModal({
               <label className="mb-1 block text-[13px] font-semibold text-[#0F1B3D]/70">
                 Relationship
               </label>
-              <select
-                required
-                value={relationship}
-                onChange={(e) => setRelationship(e.target.value)}
-                className={selectClassName}
-              >
-                <option value="" disabled>
-                  Select relationship
-                </option>
-                {RELATIONSHIP_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
+              <div className="relative">
+                <select
+                  required
+                  value={relationship}
+                  onChange={(e) => setRelationship(e.target.value)}
+                  className={selectClassName}
+                >
+                  <option value="" disabled>
+                    Select relationship
                   </option>
-                ))}
-              </select>
+                  {RELATIONSHIP_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#0F1B3D]/60" />
+              </div>
             </div>
 
             <div>

@@ -1,13 +1,58 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronRight, Heart, Users, User, Baby, HelpCircle, DollarSign, Clock, HeartPulse, Phone } from "lucide-react";
+import { X, ChevronRight, ChevronDown, Heart, Users, User, Baby, HelpCircle, DollarSign, Clock, HeartPulse, Phone, Check, Send } from "lucide-react";
 import { useJoyride, EVENTS, STATUS } from "react-joyride";
 import * as analytics from "@/lib/analytics";
 import { useAuth } from "@/lib/auth-context";
+import { apiFetch } from "@/lib/apiFetch";
 import { StreamingText } from "@/components/streaming-text";
+
+type AddKind = "provider" | "visit" | "family" | "insurance";
+const RELATION_OPTIONS: { id: string; label: string }[] = [
+  { id: "parent", label: "Parent" },
+  { id: "partner", label: "Partner" },
+  { id: "child", label: "Child" },
+  { id: "other", label: "Someone else" },
+];
+// Short list for the tour; the full Add Provider form in the profile popover
+// has the long list. Ordered by how commonly people "have one" rather than
+// alphabetically — the user's reason for this tour prompt is specifically
+// that dentist-but-no-PCP is a frequent pattern.
+const TOUR_SPECIALTY_OPTIONS: string[] = [
+  "Primary Care",
+  "Dentist",
+  "Eye Doctor",
+  "OB/GYN",
+  "Dermatologist",
+  "Psychiatrist",
+  "Cardiologist",
+  "Other",
+];
+// Quick-select chips below the visit-type input. Tapping one pre-fills the
+// text field so common cases skip typing entirely.
+const VISIT_TYPE_CHIPS: string[] = [
+  "Annual physical",
+  "Dentist cleaning",
+  "Dermatologist",
+  "Lab work",
+  "Eye exam",
+  "Specialist visit",
+];
+// Top-N US insurance carriers by membership. "Other" lets anyone else still
+// capture a provider name without us maintaining a long list.
+const TOUR_INSURANCE_CARRIERS: string[] = [
+  "Aetna",
+  "Blue Cross Blue Shield",
+  "Cigna",
+  "UnitedHealthcare",
+  "Kaiser Permanente",
+  "Humana",
+  "Anthem",
+  "Other",
+];
 
 interface WebOnboardingTourProps {
   onComplete: () => void;
@@ -81,22 +126,91 @@ const JOYRIDE_STEPS: any[] = [
   },
 ];
 
-// Profile popover steps use custom overlay cards (can't target portal DOM)
-const PROFILE_STEPS = [
-  { id: "health", title: "Your Health tab", body: "Your to-dos, providers, and medications. Elena fills them in as you chat.", tab: "health" as const },
-  { id: "visits", title: "Your Visits tab", body: "Every appointment Elena books lives here, plus your notes and history.", tab: "visits" as const },
-  { id: "insurance", title: "Your Insurance tab", body: "Elena checks what's covered and estimates costs before you go.", tab: "insurance" as const },
-  { id: "family", title: "Manage your whole family", body: "Add parents, partners, or kids. Each gets their own profile with separate records.", tab: "health" as const, showSwitcher: true },
+// Profile popover steps use custom overlay cards (can't target portal DOM).
+// `addKind` marks tabs that offer an inline data-entry prompt during the tour.
+// Skipped for users who already have data of that kind (they see the plain
+// description card instead).
+const PROFILE_STEPS: {
+  id: string;
+  title: string;
+  body: string;
+  tab: "health" | "visits" | "insurance";
+  addKind: AddKind | null;
+  showSwitcher?: boolean;
+}[] = [
+  { id: "health", title: "Your Health tab", body: "Your to-dos, providers, and medications. Elena fills them in as you chat.", tab: "health", addKind: "provider" },
+  { id: "visits", title: "Your Visits tab", body: "Every appointment Elena books lives here, plus your notes and history.", tab: "visits", addKind: "visit" },
+  { id: "insurance", title: "Your Insurance tab", body: "Elena checks what's covered and estimates costs before you go.", tab: "insurance", addKind: "insurance" },
+  { id: "family", title: "For you and your people", body: "Many people use it just for themselves. If you also help a parent, partner, or kid, you can link them here.", tab: "health", addKind: "family", showSwitcher: true },
 ];
 
 type Phase = "care" | "goals" | "pain" | "value" | "profile-form" | "joyride" | "profile" | "chat" | "done";
 
 export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover, onSidebar }: WebOnboardingTourProps) {
   // Auth hooks for the profile-form phase (migrated from the old OnboardingModal)
-  const { needsOnboarding, completeOnboarding, profileData } = useAuth();
+  const {
+    needsOnboarding,
+    completeOnboarding,
+    profileData,
+    profileId,
+    doctors,
+    careVisits,
+    profiles,
+    insuranceCards,
+    refreshDoctors,
+    refreshVisits,
+    refreshProfiles,
+    refreshInsurance,
+  } = useAuth();
 
   const [phase, setPhase] = useState<Phase>("care");
   const [profileStep, setProfileStep] = useState(0);
+
+  // Inline data-entry state for the profile-phase cards. One field set per
+  // `addKind`; reset as the user advances so each card starts clean.
+  const [providerName, setProviderName] = useState("");
+  const [providerSpecialty, setProviderSpecialty] = useState("");
+  // Live doctor enrichment result (Serper Places via /doctors/enrich).
+  // Populated after a debounced lookup when the user types a name. Users
+  // tap the suggestion card to accept it; save then posts the enriched
+  // payload instead of just name+specialty.
+  const [providerMatch, setProviderMatch] = useState<{
+    practice?: string;
+    phone?: string;
+    address?: string;
+    photo_url?: string;
+  } | null>(null);
+  const [providerMatchAccepted, setProviderMatchAccepted] = useState(false);
+  const [providerMatchLoading, setProviderMatchLoading] = useState(false);
+  const enrichmentTokenRef = useRef(0);
+  const [visitType, setVisitType] = useState("");
+  const [visitDate, setVisitDate] = useState("");
+  const [insuranceCarrier, setInsuranceCarrier] = useState("");
+  const [insuranceCustomName, setInsuranceCustomName] = useState("");
+  const [familyFirstName, setFamilyFirstName] = useState("");
+  const [familyLastName, setFamilyLastName] = useState("");
+  const [familyRelation, setFamilyRelation] = useState("");
+  // Two-step UX for the family card: first the user picks a path
+  // (invite vs. manage), then we show the form only for the managed path.
+  const [familyMode, setFamilyMode] = useState<"choose" | "manage">("choose");
+  const [inviteBusy, setInviteBusy] = useState(false);
+  const [inviteFeedback, setInviteFeedback] = useState<string | null>(null);
+  const [savingItem, setSavingItem] = useState(false);
+  const [itemError, setItemError] = useState<string | null>(null);
+  // Progressive-disclosure toggles: users see chips first, then can opt
+  // into free-text entry. Keeps the card's default state compact.
+  const [visitCustomOpen, setVisitCustomOpen] = useState(false);
+  // Brief success overlay that replaces the form while the save settles,
+  // then nextProfile() fires. Gives the user a concrete "it landed" beat
+  // before advancing.
+  const [successOverlay, setSuccessOverlay] = useState<
+    | { kind: "provider"; title: string; detail: string }
+    | { kind: "visit"; title: string; detail: string }
+    | { kind: "family"; title: string; detail: string; initial: string }
+    | { kind: "insurance"; title: string; detail: string }
+    | { kind: "invite"; title: string; detail: string }
+    | null
+  >(null);
   const [careSelections, setCareSelections] = useState<string[]>([]);
   const [goalSelections, setGoalSelections] = useState<string[]>([]);
   const [painSelection, setPainSelection] = useState<string | null>(null);
@@ -164,6 +278,12 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     isMobile.current = window.innerWidth < 768;
     setLpVariant(localStorage.getItem("elena_lp_variant"));
     analytics.track("Web Tour Started" as any);
+    // Suppress the App Store CTA while the tour is running so users aren't
+    // double-nudged in the middle of data entry. Cleared on finish/skip.
+    try { sessionStorage.setItem("elena_tour_in_progress", "1"); } catch {}
+    return () => {
+      try { sessionStorage.removeItem("elena_tour_in_progress"); } catch {}
+    };
   }, []);
 
   // Joyride event: after profile button step, open popover
@@ -186,12 +306,96 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     }
   }, [phase, profileStep, onProfilePopover]);
 
+  // Debounced enrichment: after the user pauses typing the doctor's name,
+  // hit /doctors/enrich to backfill practice/phone/address. Result surfaces
+  // as a tappable card under the input; user confirms to use the enriched
+  // payload on save. Stale responses are discarded via a monotonic token.
+  useEffect(() => {
+    const trimmed = providerName.trim();
+    if (trimmed.length < 3 || !providerSpecialty) {
+      setProviderMatch(null);
+      setProviderMatchAccepted(false);
+      setProviderMatchLoading(false);
+      return;
+    }
+    // Input changed — previously-accepted match no longer applies.
+    setProviderMatchAccepted(false);
+    const token = ++enrichmentTokenRef.current;
+    const timer = setTimeout(async () => {
+      if (token !== enrichmentTokenRef.current) return;
+      setProviderMatchLoading(true);
+      try {
+        const bareName = trimmed.replace(/^(Dr\.?\s+)/i, "").trim();
+        // Prefer the tour's own zip state (captured in the profile-form
+        // phase a few screens back) — it's always fresh. Fall back to the
+        // auth-context cached profile data which can lag after signup.
+        const zipUsed = zipCode.trim() || profileData?.zipCode || "";
+        const res = await apiFetch("/doctors/enrich", {
+          method: "POST",
+          body: JSON.stringify({
+            doctors: [{ name: bareName, specialty: providerSpecialty }],
+            zip_code: zipUsed,
+          }),
+        });
+        if (token !== enrichmentTokenRef.current) return;
+        if (!res.ok) {
+          console.log("[tour] enrichment: non-OK", res.status, "name=", bareName, "zip=", zipUsed);
+          setProviderMatch(null);
+          return;
+        }
+        const data = await res.json();
+        const doc = data.doctors?.[0];
+        console.log(
+          "[tour] enrichment response — name=", bareName, "zip=", zipUsed,
+          "→", doc,
+        );
+        // Accept practice/phone/address (full match) OR photo/serper_specialty
+        // (partial match worth surfacing). Previously we required one of the
+        // first three; brands with only photo metadata were silently dropped.
+        if (doc && (doc.phone || doc.address || doc.practice || doc.photo_url || doc.serper_specialty)) {
+          setProviderMatch({
+            practice: doc.practice || undefined,
+            phone: doc.phone || undefined,
+            address: doc.address || undefined,
+            photo_url: doc.photo_url || undefined,
+          });
+        } else {
+          setProviderMatch(null);
+        }
+      } catch {
+        if (token === enrichmentTokenRef.current) setProviderMatch(null);
+      } finally {
+        if (token === enrichmentTokenRef.current) setProviderMatchLoading(false);
+      }
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [providerName, providerSpecialty, zipCode, profileData?.zipCode]);
+
   const nextProfile = useCallback(() => {
     if (guardRef.current) return;
     guardRef.current = true;
     setTimeout(() => { guardRef.current = false; }, 600);
 
     analytics.track("Web Tour Step Viewed" as any, { step: profileStep + 2, step_name: PROFILE_STEPS[profileStep]?.title });
+
+    // Clear per-card form state so the next card starts fresh.
+    setItemError(null);
+    setProviderName("");
+    setProviderSpecialty("");
+    setProviderMatch(null);
+    setProviderMatchAccepted(false);
+    setProviderMatchLoading(false);
+    setVisitType("");
+    setVisitDate("");
+    setInsuranceCarrier("");
+    setInsuranceCustomName("");
+    setVisitCustomOpen(false);
+    setFamilyFirstName("");
+    setFamilyLastName("");
+    setFamilyRelation("");
+    setFamilyMode("choose");
+    setInviteFeedback(null);
+    setSuccessOverlay(null);
 
     if (profileStep >= PROFILE_STEPS.length - 1) {
       onProfilePopover(false, undefined, false);
@@ -202,11 +406,231 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     setProfileStep((s) => s + 1);
   }, [profileStep, onProfilePopover]);
 
+  // Does the user already have ≥1 item of this kind? If yes, we skip the
+  // inline add prompt on that card and show the plain description instead.
+  const hasExistingData = useCallback(
+    (kind: AddKind | null) => {
+      if (!kind) return false;
+      if (kind === "provider") return doctors.length > 0;
+      if (kind === "visit") return careVisits.length > 0;
+      // profiles includes the user's own profile, so >1 means they've added
+      // someone else.
+      if (kind === "family") return profiles.length > 1;
+      // Treat any medical insurance card as "already has data" so we don't
+      // overwrite structured fields the user already captured by uploading.
+      if (kind === "insurance") return insuranceCards.some((c) => c.card_type === "medical");
+      return false;
+    },
+    [doctors.length, careVisits.length, profiles.length, insuranceCards],
+  );
+
+  const handleSaveItem = useCallback(
+    async (kind: AddKind) => {
+      if (savingItem) return;
+      setItemError(null);
+      setSavingItem(true);
+      const tab = PROFILE_STEPS[profileStep]?.tab;
+      try {
+        if (kind === "provider") {
+          if (!providerName.trim() || !providerSpecialty || !profileId) {
+            throw new Error("Pick a type and enter a name");
+          }
+          const bareName = providerName.trim().replace(/^(Dr\.?\s+)/i, "").trim() || providerName.trim();
+          // If the user tapped the enrichment card, include the backfilled
+          // practice/phone/address so Elena starts with a fully-formed
+          // provider record. Otherwise just send what they typed.
+          const payload: Record<string, unknown> = {
+            name: bareName,
+            specialty: providerSpecialty,
+          };
+          if (providerMatchAccepted && providerMatch) {
+            if (providerMatch.practice) payload.practice_name = providerMatch.practice;
+            if (providerMatch.phone) payload.phone = providerMatch.phone;
+            if (providerMatch.address) payload.address = providerMatch.address;
+          }
+          const res = await apiFetch(`/profile/${profileId}/doctors/add`, {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) throw new Error("Couldn't save. Try again.");
+          await refreshDoctors();
+          setSuccessOverlay({
+            kind: "provider",
+            title: "Added to your profile",
+            detail: providerMatchAccepted && providerMatch?.practice
+              ? `${bareName} · ${providerMatch.practice}`
+              : bareName,
+          });
+        } else if (kind === "visit") {
+          if (!visitType.trim() || !visitDate) throw new Error("Fill in both fields");
+          const res = await apiFetch("/care-visits", {
+            method: "POST",
+            body: JSON.stringify({
+              visit_type: visitType.trim(),
+              visit_date: visitDate,
+              summary: "",
+            }),
+          });
+          if (!res.ok) throw new Error("Couldn't save. Try again.");
+          await refreshVisits();
+          setSuccessOverlay({
+            kind: "visit",
+            title: "Visit saved",
+            detail: visitType.trim(),
+          });
+        } else if (kind === "insurance") {
+          if (!insuranceCarrier) throw new Error("Pick a carrier");
+          // "Other" means the user typed a custom carrier name — save that
+          // rather than the literal string "Other".
+          const providerName = insuranceCarrier === "Other"
+            ? insuranceCustomName.trim()
+            : insuranceCarrier;
+          if (!providerName) throw new Error("Enter your insurance carrier");
+          const res = await apiFetch(`/insurance/cards/medical`, {
+            method: "POST",
+            body: JSON.stringify({ structured_data: { provider: providerName } }),
+          });
+          if (!res.ok) throw new Error("Couldn't save. Try again.");
+          await refreshInsurance();
+          setSuccessOverlay({
+            kind: "insurance",
+            title: "Insurance saved",
+            detail: providerName,
+          });
+        } else if (kind === "family") {
+          if (!familyFirstName.trim() || !familyLastName.trim()) {
+            throw new Error("Enter a first and last name");
+          }
+          const res = await apiFetch("/profiles", {
+            method: "POST",
+            body: JSON.stringify({
+              label: familyRelation,
+              relationship: familyRelation,
+              first_name: familyFirstName.trim(),
+              last_name: familyLastName.trim(),
+            }),
+          });
+          if (!res.ok) throw new Error("Couldn't save. Try again.");
+          // Refresh the profiles dropdown so the new family member appears
+          // without switching the active profile (refreshProfiles does not
+          // touch profileId).
+          await refreshProfiles();
+          setSuccessOverlay({
+            kind: "family",
+            title: "Family member added",
+            detail: `${familyFirstName.trim()} ${familyLastName.trim()}`,
+            initial: familyFirstName.trim().charAt(0).toUpperCase(),
+          });
+        }
+        analytics.track("Web Tour Data Added", {
+          type: kind,
+          tab,
+          tour_step: profileStep,
+        });
+      } catch (e: any) {
+        setItemError(e?.message || "Something went wrong");
+      } finally {
+        setSavingItem(false);
+      }
+    },
+    [savingItem, profileStep, providerName, providerSpecialty, providerMatch, providerMatchAccepted, visitType, visitDate, insuranceCarrier, insuranceCustomName, familyFirstName, familyLastName, familyRelation, profileId, refreshDoctors, refreshVisits, refreshProfiles, refreshInsurance, nextProfile],
+  );
+
+  const handleSkipItem = useCallback(
+    (kind: AddKind) => {
+      analytics.track("Web Tour Data Skipped", {
+        type: kind,
+        tab: PROFILE_STEPS[profileStep]?.tab,
+        tour_step: profileStep,
+      });
+      nextProfile();
+    },
+    [profileStep, nextProfile],
+  );
+
+  // One-click invite: generates a link, fires the native share sheet if the
+  // browser supports it, otherwise copies to clipboard. Either way the tour
+  // advances after a brief confirmation so the user sees the outcome.
+  const handleSendInvite = useCallback(async () => {
+    if (inviteBusy) return;
+    setInviteBusy(true);
+    setInviteFeedback(null);
+    setItemError(null);
+    analytics.track("Web Tour Data Added", {
+      type: "family",
+      method: "invite",
+      tour_step: profileStep,
+      phase: "started",
+    });
+    try {
+      const res = await apiFetch("/family/invite", {
+        method: "POST",
+        body: JSON.stringify({ invitee_name: "", relationship: "other" }),
+      });
+      if (!res.ok) throw new Error("Couldn't create invite link");
+      const data = await res.json();
+      const code = data.invite_code;
+      const from = profileData?.firstName || "";
+      const url = `https://elena-health.com/invite/${code}${from ? `?from=${encodeURIComponent(from)}` : ""}`;
+      const shareText = `I'm using Elena to manage health care. Join me here:`;
+      let feedback = "Link copied to your clipboard";
+      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+        try {
+          await navigator.share({ title: "Join me on Elena", text: shareText, url });
+          feedback = "Invite sent";
+        } catch {
+          // User cancelled or share failed — fall through to clipboard so the
+          // link isn't lost.
+          try { await navigator.clipboard?.writeText(url); } catch {}
+        }
+      } else {
+        try { await navigator.clipboard?.writeText(url); } catch {}
+      }
+      setInviteFeedback(feedback);
+      analytics.track("Web Tour Data Added", {
+        type: "family",
+        method: "invite",
+        tour_step: profileStep,
+        phase: "completed",
+      });
+      setSuccessOverlay({
+        kind: "invite",
+        title: "Invite link ready",
+        detail: feedback,
+      });
+    } catch (e: any) {
+      setItemError(e?.message || "Something went wrong");
+      setInviteBusy(false);
+      return;
+    }
+    // leave inviteBusy true until the success overlay advances the tour.
+  }, [inviteBusy, profileStep, profileData]);
+
+  // Hold the success overlay briefly, then advance. Separate effect so the
+  // overlay animates in first and the tour doesn't snap away instantly.
+  useEffect(() => {
+    if (!successOverlay) return;
+    // Hold long enough for the user to both see the overlay confirmation on
+    // the card AND register the entrance/pulse in the profile popover
+    // above. Family holds slightly longer because the tour closes the
+    // popover entirely when advancing past the last profile step, and we
+    // want the user to see the new profile arrive before it disappears.
+    const hold = successOverlay.kind === "invite"
+      ? 1500
+      : successOverlay.kind === "family"
+      ? 1900
+      : 1200;
+    const timer = setTimeout(() => { nextProfile(); }, hold);
+    return () => clearTimeout(timer);
+  }, [successOverlay, nextProfile]);
+
+
   const finishTour = useCallback(() => {
     if (finishedRef.current) return;
     finishedRef.current = true;
     analytics.track("Web Tour Completed" as any);
     localStorage.setItem("elena_web_tour_done", "true");
+    try { sessionStorage.removeItem("elena_tour_in_progress"); } catch {}
     onProfilePopover(false, undefined, false);
     if (isMobile.current) onSidebar(false);
     setPhase("done");
@@ -219,6 +643,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     finishedRef.current = true;
     analytics.track("Web Tour Skipped" as any);
     localStorage.setItem("elena_web_tour_done", "true");
+    try { sessionStorage.removeItem("elena_tour_in_progress"); } catch {}
     onProfilePopover(false, undefined, false);
     if (isMobile.current) onSidebar(false);
     controls.stop();
@@ -685,6 +1110,35 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     const currentStep = PROFILE_STEPS[profileStep];
     const isLast = profileStep >= PROFILE_STEPS.length - 1;
     const motionEase = [0.4, 0, 0.2, 1] as const;
+    const addKind = currentStep.addKind;
+    const showPrompt = addKind != null && !hasExistingData(addKind);
+    const ctaGradient = "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%)";
+
+    // Text at 16px minimum to prevent iOS Safari's auto-zoom on focus
+    // (anything smaller triggers it and breaks the mobile card layout).
+    const inputClass = "w-full rounded-xl border border-[#0F1B3D]/10 bg-[#f5f7fb] px-3.5 py-3 text-[16px] text-[#0F1B3D] placeholder:text-[#0F1B3D]/30 focus:outline-none focus:ring-2 focus:ring-[#0F1B3D]/20";
+    // For native <select> elements: strip the OS default chevron (which
+    // looks jarring against the pill styling, especially on iOS Safari) and
+    // reserve room on the right so the text doesn't sit behind the custom
+    // chevron we overlay. Always pair with a ChevronDown icon absolutely
+    // positioned inside a wrapping relative div.
+    const selectClass = `${inputClass} appearance-none pr-10 bg-no-repeat`;
+
+    const canSave = (() => {
+      if (addKind === "provider") return providerName.trim().length > 0 && providerSpecialty.length > 0;
+      if (addKind === "visit") return visitType.trim().length > 0 && visitDate.length > 0;
+      if (addKind === "insurance") {
+        if (insuranceCarrier === "Other") return insuranceCustomName.trim().length > 0;
+        return insuranceCarrier.length > 0;
+      }
+      if (addKind === "family") return (
+        familyFirstName.trim().length > 0 &&
+        familyLastName.trim().length > 0 &&
+        familyRelation.length > 0
+      );
+      return false;
+    })();
+
     return createPortal(
       <motion.div
         className="fixed z-[99999] font-[family-name:var(--font-inter)] bottom-0 left-0 right-0"
@@ -696,9 +1150,27 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
         <div className="mx-auto max-w-md px-4 pb-4">
           <motion.div
             layout
-            transition={{ layout: { duration: 0.35, ease: motionEase } }}
-            className="rounded-2xl bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-[0_-4px_30px_rgba(15,27,61,0.15)] border border-[#E5E5EA]"
+            transition={{ layout: { duration: 0.42, ease: [0.4, 0, 0.2, 1] } }}
+            className="relative rounded-2xl bg-white p-7 pb-[calc(1.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_30px_rgba(15,27,61,0.15)] border border-[#E5E5EA] overflow-hidden flex flex-col"
           >
+            {/* Progress dots — tiny row showing how many profile-walkthrough
+                cards remain. Keeps late-stage dropout in check. */}
+            <div className="flex justify-center gap-1.5 mb-5">
+              {PROFILE_STEPS.map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    i === profileStep
+                      ? "w-5 bg-[#0F1B3D]"
+                      : i < profileStep
+                      ? "w-1.5 bg-[#0F1B3D]/30"
+                      : "w-1.5 bg-[#0F1B3D]/10"
+                  }`}
+                />
+              ))}
+            </div>
+
+            <div className="flex-1 flex flex-col justify-center">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={profileStep}
@@ -706,16 +1178,354 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.26, ease: motionEase }}
-                className="text-center"
               >
-                <h3 className="text-[18px] font-extrabold text-[#0F1B3D] mb-1.5">{currentStep.title}</h3>
-                <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">{currentStep.body}</p>
+                <div className="text-center">
+                  <h3 className="text-[18px] font-extrabold text-[#0F1B3D] mb-2">{currentStep.title}</h3>
+                  <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">{currentStep.body}</p>
+                </div>
+
+                {showPrompt && addKind === "provider" && (
+                  <div className="mt-5 text-left space-y-2.5">
+                    <p className="text-[13px] font-semibold text-[#0F1B3D]">Have any doctors you like?</p>
+                    <div className="flex flex-wrap gap-2">
+                      {TOUR_SPECIALTY_OPTIONS.map((s) => {
+                        const active = providerSpecialty === s;
+                        return (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => setProviderSpecialty(s)}
+                            className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
+                              active
+                                ? "bg-[#0F1B3D] text-white"
+                                : "bg-[#0F1B3D]/[0.06] text-[#0F1B3D] hover:bg-[#0F1B3D]/[0.10]"
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <input
+                      className={inputClass}
+                      type="text"
+                      placeholder="Name or practice"
+                      value={providerName}
+                      onChange={(e) => setProviderName(e.target.value)}
+                    />
+                    {providerMatchLoading && (
+                      <p className="text-[11px] text-[#8E8E93] italic">Searching nearby…</p>
+                    )}
+                    {providerMatch && !providerMatchLoading && (
+                      <motion.button
+                        type="button"
+                        onClick={() => setProviderMatchAccepted((v) => !v)}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.28 }}
+                        className={`w-full text-left rounded-xl border p-3 transition-colors ${
+                          providerMatchAccepted
+                            ? "border-[#2E6BB5] bg-[#2E6BB5]/[0.08]"
+                            : "border-[#E5E5EA] hover:border-[#2E6BB5]/40 hover:bg-[#f5f7fb]"
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1 min-w-0">
+                            {providerMatch.practice && (
+                              <p className="text-[13px] font-semibold text-[#0F1B3D] truncate">
+                                {providerMatch.practice}
+                              </p>
+                            )}
+                            {providerMatch.address && (
+                              <p className="text-[11px] text-[#5a6a82] truncate mt-0.5">
+                                {providerMatch.address}
+                              </p>
+                            )}
+                            {providerMatch.phone && (
+                              <p className="text-[11px] text-[#5a6a82] truncate">
+                                {providerMatch.phone}
+                              </p>
+                            )}
+                            {!providerMatchAccepted && (
+                              <p className="text-[11px] text-[#2E6BB5] font-semibold mt-1">
+                                Tap to use
+                              </p>
+                            )}
+                          </div>
+                          {providerMatchAccepted && (
+                            <Check className="h-4 w-4 text-[#2E6BB5] mt-0.5 shrink-0" strokeWidth={3} />
+                          )}
+                        </div>
+                      </motion.button>
+                    )}
+                    <p className="text-[11px] text-[#8E8E93] italic pt-1">
+                      Medications, conditions, and allergies live here too — add them anytime.
+                    </p>
+                  </div>
+                )}
+                {showPrompt && addKind === "visit" && (
+                  <div className="mt-5 text-left space-y-2.5">
+                    <p className="text-[13px] font-semibold text-[#0F1B3D]">Any recent appointments?</p>
+                    <div className="flex flex-wrap gap-2">
+                      {VISIT_TYPE_CHIPS.map((chip) => {
+                        const active = visitType === chip;
+                        return (
+                          <button
+                            key={chip}
+                            type="button"
+                            onClick={() => { setVisitType(chip); setVisitCustomOpen(false); }}
+                            className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
+                              active
+                                ? "bg-[#0F1B3D] text-white"
+                                : "bg-[#0F1B3D]/[0.06] text-[#0F1B3D] hover:bg-[#0F1B3D]/[0.10]"
+                            }`}
+                          >
+                            {chip}
+                          </button>
+                        );
+                      })}
+                      {!visitCustomOpen && (
+                        <button
+                          type="button"
+                          onClick={() => { setVisitCustomOpen(true); setVisitType(""); }}
+                          className="px-3 py-1.5 rounded-full text-[12px] font-medium text-[#2E6BB5] hover:bg-[#2E6BB5]/[0.08] transition-colors"
+                        >
+                          + Type your own
+                        </button>
+                      )}
+                    </div>
+                    {visitCustomOpen && (
+                      <input
+                        className={inputClass}
+                        type="text"
+                        placeholder="What was the appointment?"
+                        value={visitType}
+                        onChange={(e) => setVisitType(e.target.value)}
+                        autoFocus
+                      />
+                    )}
+                    <input
+                      className={inputClass}
+                      type="date"
+                      value={visitDate}
+                      onChange={(e) => setVisitDate(e.target.value)}
+                    />
+                  </div>
+                )}
+                {showPrompt && addKind === "insurance" && (
+                  <div className="mt-5 text-left space-y-2.5">
+                    <p className="text-[13px] font-semibold text-[#0F1B3D]">Who's your insurance?</p>
+                    <div className="relative">
+                      <select
+                        className={selectClass}
+                        value={insuranceCarrier}
+                        onChange={(e) => {
+                          setInsuranceCarrier(e.target.value);
+                          if (e.target.value !== "Other") setInsuranceCustomName("");
+                        }}
+                        autoFocus
+                      >
+                        <option value="">Pick a carrier...</option>
+                        {TOUR_INSURANCE_CARRIERS.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#0F1B3D]/60" />
+                    </div>
+                    {insuranceCarrier === "Other" && (
+                      <input
+                        className={inputClass}
+                        type="text"
+                        placeholder="Enter carrier name"
+                        value={insuranceCustomName}
+                        onChange={(e) => setInsuranceCustomName(e.target.value)}
+                        autoFocus
+                      />
+                    )}
+                    <p className="text-[12px] text-[#8E8E93]">
+                      You can add plan details and upload your card anytime from your profile.
+                    </p>
+                  </div>
+                )}
+                {showPrompt && addKind === "family" && familyMode === "manage" && (
+                  <div className="mt-5 text-left space-y-2.5">
+                    <div className="flex gap-2">
+                      <input
+                        className={inputClass}
+                        type="text"
+                        placeholder="First name"
+                        value={familyFirstName}
+                        onChange={(e) => setFamilyFirstName(e.target.value)}
+                        autoFocus
+                      />
+                      <input
+                        className={inputClass}
+                        type="text"
+                        placeholder="Last name"
+                        value={familyLastName}
+                        onChange={(e) => setFamilyLastName(e.target.value)}
+                      />
+                    </div>
+                    <div className="relative">
+                      <select
+                        className={selectClass}
+                        value={familyRelation}
+                        onChange={(e) => setFamilyRelation(e.target.value)}
+                      >
+                        <option value="" disabled>Select a relationship</option>
+                        {RELATION_OPTIONS.map((o) => (
+                          <option key={o.id} value={o.id}>{o.label}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#0F1B3D]/60" />
+                    </div>
+                  </div>
+                )}
+                {showPrompt && addKind === "family" && familyMode === "choose" && inviteFeedback && (
+                  <p className="mt-3 text-[12px] text-[#2E6BB5] text-center">{inviteFeedback}</p>
+                )}
+
+                {itemError && (
+                  <p className="mt-3 text-[12px] text-[#B5707A] text-center">{itemError}</p>
+                )}
               </motion.div>
             </AnimatePresence>
-            <button onClick={nextProfile} className="w-full mt-4 py-3 rounded-full text-white font-semibold font-sans text-[14px] hover:opacity-90 transition-opacity shadow-[0_4px_14px_rgba(15,27,61,0.25)]"
-              style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%)" }}>
-              {isLast ? "Got it" : "Next"}
-            </button>
+            </div>
+
+            {showPrompt && addKind === "family" && familyMode === "choose" ? (
+              <>
+                <button
+                  onClick={handleSendInvite}
+                  disabled={inviteBusy}
+                  className="w-full mt-4 py-3 rounded-full text-white font-semibold font-sans text-[14px] hover:opacity-90 transition-opacity shadow-[0_4px_14px_rgba(15,27,61,0.25)] disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ background: ctaGradient }}
+                >
+                  {inviteBusy ? "Generating link..." : "Invite your family"}
+                </button>
+                <button
+                  onClick={() => { setFamilyMode("manage"); setInviteFeedback(null); }}
+                  disabled={inviteBusy}
+                  className="w-full mt-2 py-3 rounded-full font-semibold font-sans text-[14px] text-[#0F1B3D] bg-[#0F1B3D]/[0.06] hover:bg-[#0F1B3D]/[0.10] transition-colors disabled:opacity-40"
+                >
+                  Manage a family member's account
+                </button>
+                <button
+                  onClick={() => handleSkipItem("family")}
+                  disabled={inviteBusy}
+                  className="w-full mt-2 py-2 text-[13px] text-[#5a6a82] hover:text-[#0F1B3D] transition-colors disabled:opacity-40"
+                >
+                  I'm just managing my own care
+                </button>
+              </>
+            ) : showPrompt && addKind === "family" && familyMode === "manage" ? (
+              <>
+                <button
+                  onClick={() => canSave ? handleSaveItem("family") : handleSkipItem("family")}
+                  disabled={savingItem}
+                  className="w-full mt-4 py-3 rounded-full text-white font-semibold font-sans text-[14px] hover:opacity-90 transition-opacity shadow-[0_4px_14px_rgba(15,27,61,0.25)] disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ background: ctaGradient }}
+                >
+                  {savingItem ? "Adding..." : canSave ? "Add family member" : "Continue"}
+                </button>
+                <button
+                  onClick={() => setFamilyMode("choose")}
+                  disabled={savingItem}
+                  className="w-full mt-2 py-2 text-[13px] text-[#5a6a82] hover:text-[#0F1B3D] transition-colors disabled:opacity-40"
+                >
+                  Back to options
+                </button>
+              </>
+            ) : showPrompt ? (
+              <button
+                onClick={() => canSave ? handleSaveItem(addKind!) : handleSkipItem(addKind!)}
+                disabled={savingItem}
+                className="w-full mt-4 py-3 rounded-full text-white font-semibold font-sans text-[14px] hover:opacity-90 transition-opacity shadow-[0_4px_14px_rgba(15,27,61,0.25)] disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ background: ctaGradient }}
+              >
+                {savingItem ? "Saving..." : canSave ? "Save and continue" : "Continue"}
+              </button>
+            ) : (
+              <button
+                onClick={nextProfile}
+                className="w-full mt-4 py-3 rounded-full text-white font-semibold font-sans text-[14px] hover:opacity-90 transition-opacity shadow-[0_4px_14px_rgba(15,27,61,0.25)]"
+                style={{ background: ctaGradient }}
+              >
+                {isLast ? "Got it" : "Next"}
+              </button>
+            )}
+
+            {/* Success overlay — covers the card briefly after a save or an
+                invite link is generated, then the tour advances. Absolutely
+                positioned so the card's layout height doesn't shift. */}
+            <AnimatePresence>
+              {successOverlay && (
+                <motion.div
+                  key={`overlay-${successOverlay.kind}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute inset-0 bg-white rounded-2xl flex flex-col items-center justify-center text-center px-6"
+                >
+                  {successOverlay.kind === "invite" ? (
+                    <div className="relative w-16 h-16 mb-3">
+                      <motion.div
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: "spring", stiffness: 200, damping: 17 }}
+                        className="w-16 h-16 rounded-full flex items-center justify-center"
+                        style={{ background: ctaGradient }}
+                      >
+                        <motion.span
+                          initial={{ x: 0, y: 0, opacity: 1 }}
+                          animate={{ x: 36, y: -30, opacity: [1, 1, 0] }}
+                          transition={{ duration: 0.9, delay: 0.35, ease: "easeOut" }}
+                          className="inline-block"
+                        >
+                          <Send className="w-7 h-7 text-white" />
+                        </motion.span>
+                      </motion.div>
+                    </div>
+                  ) : successOverlay.kind === "family" ? (
+                    <motion.div
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 220, damping: 16 }}
+                      className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-[22px] mb-3"
+                      style={{ background: ctaGradient }}
+                    >
+                      {successOverlay.initial}
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 220, damping: 16 }}
+                      className="w-16 h-16 rounded-full flex items-center justify-center mb-3"
+                      style={{ background: ctaGradient }}
+                    >
+                      <Check className="w-8 h-8 text-white" strokeWidth={3} />
+                    </motion.div>
+                  )}
+                  <motion.h3
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.28, delay: 0.2 }}
+                    className="text-[16px] font-extrabold text-[#0F1B3D]"
+                  >
+                    {successOverlay.title}
+                  </motion.h3>
+                  <motion.p
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.28, delay: 0.32 }}
+                    className="text-[13px] text-[#5a6a82] mt-1"
+                  >
+                    {successOverlay.detail}
+                  </motion.p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </div>
       </motion.div>,

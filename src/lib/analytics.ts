@@ -60,6 +60,9 @@ export type AnalyticsEvent =
   | "App CTA: Shown"
   | "App CTA: Download Clicked"
   | "App CTA: Dismissed"
+  // Web tour inline data-entry prompts
+  | "Web Tour Data Added"
+  | "Web Tour Data Skipped"
   // Paywall
   | "Soft Paywall Triggered";
 

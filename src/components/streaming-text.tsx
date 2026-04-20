@@ -51,22 +51,20 @@ export function StreamingText({
       }}
     >
       {words.map((word, i) => (
-        <span key={i}>
-          <motion.span
-            variants={{
-              hidden: { opacity: 0, y: 6 },
-              visible: {
-                opacity: 1,
-                y: 0,
-                transition: { duration: 0.28, ease: [0.4, 0, 0.2, 1] },
-              },
-            }}
-            style={{ display: "inline-block" }}
-          >
-            {word}
-          </motion.span>
-          {i < words.length - 1 && " "}
-        </span>
+        <motion.span
+          key={i}
+          variants={{
+            hidden: { opacity: 0, y: 6 },
+            visible: {
+              opacity: 1,
+              y: 0,
+              transition: { duration: 0.28, ease: [0.4, 0, 0.2, 1] },
+            },
+          }}
+          style={{ display: "inline-block", whiteSpace: "pre" }}
+        >
+          {i < words.length - 1 ? `${word} ` : word}
+        </motion.span>
       ))}
     </motion.span>
   );

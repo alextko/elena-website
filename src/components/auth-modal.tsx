@@ -16,7 +16,7 @@ export function AuthModal({
   open,
   onOpenChange,
   oauthRedirectTo,
-  defaultMode = "signin",
+  defaultMode = "signup",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;

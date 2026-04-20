@@ -43,6 +43,10 @@ interface AuthContextValue {
   refreshTodos: () => Promise<void>;
   refreshDoctors: () => Promise<void>;
   refreshVisits: () => Promise<void>;
+  /** Re-fetch /auth/me to update the `profiles` list (e.g. after adding a
+   *  managed profile). Intentionally does NOT change `profileId` — the
+   *  active profile stays on whatever it already was. */
+  refreshProfiles: () => Promise<void>;
   refreshInsurance: () => Promise<void>;
   refreshHabits: () => Promise<void>;
   needsOnboarding: boolean;
@@ -721,6 +725,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, []);
 
+  const refreshProfiles = useCallback(async () => {
+    try {
+      const res = await apiFetch("/auth/me");
+      if (!res.ok) return;
+      const data: MeResponse = await res.json();
+      setProfiles(data.profiles || []);
+      // Also keep the cached /auth/me fresh so the next page load sees the
+      // new profile in the dropdown immediately.
+      try { sessionStorage.setItem("elena_me_cache", JSON.stringify(data)); } catch {}
+    } catch {}
+  }, []);
+
   const refreshInsurance = useCallback(async () => {
     try {
       const res = await apiFetch("/insurance/cards");
@@ -1049,6 +1065,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshTodos,
         refreshDoctors,
         refreshVisits,
+        refreshProfiles,
         refreshInsurance,
         refreshHabits,
         needsOnboarding,
