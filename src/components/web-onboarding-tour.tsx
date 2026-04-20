@@ -799,8 +799,6 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 className="p-5 sm:p-7 flex flex-col min-h-[380px] sm:min-h-[440px]"
               >
                 <motion.div
-                  layout
-                  transition={{ layout: { duration: 0.45, ease: motionEase } }}
                   className={`text-center ${headlineDone ? "mb-5" : "my-auto"}`}
                 >
                   <h2 className="text-[22px] font-extrabold text-[#0F1B3D] mb-2 text-balance leading-tight">
@@ -857,8 +855,6 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 className="p-5 sm:p-7 flex flex-col min-h-[380px] sm:min-h-[440px]"
               >
                 <motion.div
-                  layout
-                  transition={{ layout: { duration: 0.45, ease: motionEase } }}
                   className={`text-center ${headlineDone ? "mb-5" : "my-auto"}`}
                 >
                   <h2 className="text-[22px] font-extrabold text-[#0F1B3D] text-balance leading-tight">
@@ -909,8 +905,6 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   className="p-5 sm:p-7 flex flex-col min-h-[380px] sm:min-h-[440px]"
                 >
                   <motion.div
-                    layout
-                    transition={{ layout: { duration: 0.45, ease: motionEase } }}
                     className={`text-center ${headlineDone ? "mb-5" : "my-auto"}`}
                   >
                     <h2 className="text-[22px] font-extrabold text-[#0F1B3D] text-balance leading-tight">
