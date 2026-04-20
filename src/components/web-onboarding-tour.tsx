@@ -1245,7 +1245,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 document.activeElement.blur();
               }
             }}
-            className={`relative rounded-2xl bg-white p-4 sm:p-7 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-[calc(1.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_30px_rgba(15,27,61,0.15)] border border-[#E5E5EA] overflow-hidden flex flex-col max-h-[80vh] ${successOverlay ? "min-h-[340px] sm:min-h-[360px]" : ""}`}
+            className={`relative rounded-2xl bg-white p-4 sm:p-7 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-[calc(1.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_30px_rgba(15,27,61,0.15)] border border-[#E5E5EA] overflow-hidden flex flex-col max-h-[80vh] ${successOverlay ? "h-[340px] sm:h-[360px]" : ""}`}
           >
             {/* Progress dots — tiny row showing how many profile-walkthrough
                 cards remain. Keeps late-stage dropout in check. */}
@@ -1264,6 +1264,11 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               ))}
             </div>
 
+            {/* Fade the content + buttons out while the success overlay is
+                active. Otherwise the button text (e.g. "Save and continue" →
+                "Continue") was visibly morphing under the fading overlay,
+                reading as a flicker during step transitions. */}
+            <div className={`flex-1 flex flex-col min-h-0 transition-opacity duration-200 ${successOverlay ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
             <div className="flex-1 flex flex-col justify-center min-h-0 overflow-y-auto">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
@@ -1275,7 +1280,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               >
                 <div className="text-center">
                   <h3 className="text-[16px] sm:text-[18px] font-extrabold text-[#0F1B3D] mb-1.5 sm:mb-2">{currentStep.title}</h3>
-                  <p className="hidden sm:block text-[13px] sm:text-[14px] text-[#5a6a82] font-light leading-relaxed">{currentStep.body}</p>
+                  <p className="text-[13px] sm:text-[14px] text-[#5a6a82] font-light leading-relaxed">{currentStep.body}</p>
                 </div>
 
                 {showPrompt && addKind === "provider" && (
@@ -1585,6 +1590,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 {isLast ? "Got it" : "Next"}
               </button>
             )}
+            </div>
 
             {/* Success overlay — covers the card briefly after a save or an
                 invite link is generated, then the tour advances. Absolutely
