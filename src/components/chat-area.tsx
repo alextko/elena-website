@@ -183,7 +183,7 @@ export function ChatArea({
   demoMode?: boolean;
   autoShowHipaa?: boolean;
 }) {
-  const { user, profileId, profileData, profiles, refreshInsurance } = useAuth();
+  const { user, profileId, profileData, profiles, refreshInsurance, refreshTodos, refreshVisits, refreshDoctors } = useAuth();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const messagesRef = useRef<Message[]>([]);
@@ -921,9 +921,15 @@ export function ChatArea({
             setShowHipaaButton(true);
           }
 
-          // Refresh profile/insurance data after every agent response —
-          // the agent may have updated insurance, doctors, conditions, etc.
+          // Refresh profile data after every agent response — the agent may
+          // have updated insurance, created todos, added doctors / visits,
+          // etc. Refreshing here catches the "tool call succeeded but UI is
+          // stale" case where the user doesn't see the new todo / doctor
+          // until they reopen the profile popover.
           refreshInsurance();
+          refreshTodos();
+          refreshVisits();
+          refreshDoctors();
 
           // Update session ref
           if (chatResult.session_id) {
@@ -1153,6 +1159,7 @@ export function ChatArea({
                       <LocationResultsCard
                         locations={msg.locationResults}
                         onCall={(loc) => handleSend(`Call ${loc.name} at ${loc.phone_number}`)}
+                        onSelect={(loc) => handleSend(`Let's go with ${loc.name}`)}
                       />
                     ) : !msg.formRequest && msg.doctorResults && msg.doctorResults.length > 0 ? (
                       msg.priceComparisonLabel ? (
@@ -1240,6 +1247,8 @@ export function ChatArea({
                           if (data.conditions) { try { parts.push(`${JSON.parse(data.conditions).length} condition(s)`); } catch {} }
                           if (data.medications) { try { parts.push(`${JSON.parse(data.medications).length} medication(s)`); } catch {} }
                           if (data.allergies) { try { parts.push(`${JSON.parse(data.allergies).length} allergy/allergies`); } catch {} }
+                          if (data.doctors) { try { parts.push(`${JSON.parse(data.doctors).length} doctor(s)`); } catch {} }
+                          if (data.visits) { try { parts.push(`${JSON.parse(data.visits).length} past visit(s)`); } catch {} }
                           const summary = parts.length > 0 ? `Added: ${parts.join(", ")}` : "No items added";
                           const formMsg = `[FORM SUBMITTED: ${msg.formRequest?.form_id || "unknown"}] Health profile updated. ${summary}`;
                           setIsLoading(true);

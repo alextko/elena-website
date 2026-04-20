@@ -9,6 +9,7 @@ import {
   Stethoscope,
   Calendar,
   LogOut,
+  ChevronLeft,
   ChevronRight,
   ChevronDown,
   Sparkles,
@@ -35,6 +36,7 @@ import {
   Activity,
   ChevronUp,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
 import { AddFamilyModal } from "@/components/add-family-modal";
@@ -43,8 +45,46 @@ import { AvatarPhoto } from "@/components/avatar-photo";
 import type { CareTodo, CareTodoCreate, CareVisit, DoctorItem, Habit, ProfileSummary, PersonalInfo, HealthData, StructuredDocument as ProfileDocument, SavedCondition, SavedMedication, SavedSurgery, SavedAllergy, SavedFamilyHistory, SavedSocialHistory } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import type { InsuranceCard } from "@/lib/types";
+import { todoOccursOn, todoVisibleOnDate, isUntilDone } from "@/lib/todo-recurrence";
 
 type Tab = "health" | "visits" | "insurance";
+
+/**
+ * Tracks which item IDs are "just added" relative to the previous render.
+ * First render establishes a baseline (nothing is new); subsequent renders
+ * that introduce new IDs mark them for ~2s so the UI can highlight them.
+ * Used by list sections to pulse a newly-added row after the tour saves.
+ */
+function useJustAddedIds<T extends { id?: string | null }>(items: T[]): Set<string> {
+  const [justAdded, setJustAdded] = useState<Set<string>>(new Set());
+  const prevIdsRef = useRef<Set<string>>(new Set());
+  const firstRenderRef = useRef(true);
+  useEffect(() => {
+    const current = new Set(items.map((i) => i.id).filter(Boolean) as string[]);
+    if (firstRenderRef.current) {
+      prevIdsRef.current = current;
+      firstRenderRef.current = false;
+      return;
+    }
+    const added = [...current].filter((id) => !prevIdsRef.current.has(id));
+    prevIdsRef.current = current;
+    if (added.length === 0) return;
+    setJustAdded((prev) => {
+      const next = new Set(prev);
+      for (const id of added) next.add(id);
+      return next;
+    });
+    const timer = setTimeout(() => {
+      setJustAdded((prev) => {
+        const next = new Set(prev);
+        for (const id of added) next.delete(id);
+        return next;
+      });
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [items]);
+  return justAdded;
+}
 
 // ─── Field label maps ───
 
@@ -178,6 +218,12 @@ export function ProfilePopover({
     if (showSwitcher !== undefined) setSwitcherOpen(showSwitcher);
   }, [showSwitcher]);
   const [selectedDay, setSelectedDay] = useState<string>(new Date().toLocaleDateString("en-CA")); // YYYY-MM-DD local time
+  // Week offset for the Game Plan calendar strip. 0 = current week,
+  // +1 = next, -1 = previous. Lets users navigate to weeks with scheduled
+  // todos. Reset to 0 whenever the popover opens.
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [monthOffset, setMonthOffset] = useState(0);
+  const [calendarExpanded, setCalendarExpanded] = useState(false);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   // When a photo is picked, we open a crop modal instead of uploading directly.
@@ -190,6 +236,12 @@ export function ProfilePopover({
   const [selectedVisit, setSelectedVisit] = useState<typeof careVisits[number] | null>(null);
   const [editingTodo, setEditingTodo] = useState<{ mode: "create" } | { mode: "edit"; todo: typeof todos[number] } | null>(null);
   const completedTodoIds = useMemo(() => new Set(todos.filter(t => t.status === 'completed').map(t => t.id)), [todos]);
+
+  // "Just added" tracking — pulses newly-arrived list rows (e.g. after the
+  // tour saves a provider/visit/family member). Cleared after ~2s.
+  const justAddedDoctorIds = useJustAddedIds(doctors);
+  const justAddedVisitIds = useJustAddedIds(careVisits);
+  const justAddedProfileIds = useJustAddedIds(profiles);
   const [addingProvider, setAddingProvider] = useState(false);
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -206,9 +258,13 @@ export function ProfilePopover({
   const todayRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Close switcher dropdown on outside click
+  // Close switcher dropdown on outside click — but NOT when the parent is
+  // explicitly holding it open (e.g. during the onboarding tour's family
+  // step, where tapping the tour card below would otherwise close it and
+  // hide the new-member entrance animation).
   useEffect(() => {
     if (!switcherOpen) return;
+    if (showSwitcher === true) return;
     function handleClick(e: MouseEvent) {
       if (switcherRef.current && !switcherRef.current.contains(e.target as Node)) {
         setSwitcherOpen(false);
@@ -216,7 +272,7 @@ export function ProfilePopover({
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [switcherOpen]);
+  }, [switcherOpen, showSwitcher]);
 
   async function handleUnlink(profile: ProfileSummary) {
     setUnlinking(true);
@@ -339,6 +395,7 @@ export function ProfilePopover({
     if (open && profileDetailsLoaded) {
       // Reset to today's date on every open (uses local timezone)
       setSelectedDay(new Date().toLocaleDateString("en-CA"));
+      setWeekOffset(0);
       refreshTodos();
       refreshVisits();
       refreshDoctors();
@@ -590,16 +647,23 @@ export function ProfilePopover({
 
                       {!confirmUnlink && (
                         <>
+                          <AnimatePresence initial={false}>
                           {profiles.map((p) => {
                             const isActive = p.id === profileId;
                             const pName = `${p.first_name} ${p.last_name}`.trim() || p.label || "Profile";
                             const pInitials = p.first_name ? `${p.first_name[0]}${p.last_name?.[0] || ""}`.toUpperCase() : "?";
                             const badge = p.is_primary ? "Me" : p.is_linked ? "Linked" : "Managed";
                             const canUnlink = !p.is_primary;
+                            const isJustAdded = justAddedProfileIds.has(p.id);
                             return (
-                              <div
+                              <motion.div
                                 key={p.id}
-                                className={`flex w-full items-center gap-3 px-3 py-2.5 rounded-xl transition-colors hover:bg-white ${isActive ? "bg-white shadow-[0_1px_4px_rgba(0,0,0,0.06)]" : ""}`}
+                                layout
+                                initial={{ opacity: 0, x: -12 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -12 }}
+                                transition={{ duration: 0.42, ease: [0.4, 0, 0.2, 1] }}
+                                className={`relative flex w-full items-center gap-3 px-3 py-2.5 rounded-xl transition-colors hover:bg-white ${isActive ? "bg-white shadow-[0_1px_4px_rgba(0,0,0,0.06)]" : ""}`}
                               >
                                 <button
                                   onClick={async () => {
@@ -632,9 +696,19 @@ export function ProfilePopover({
                                     <X className="h-3.5 w-3.5" />
                                   </button>
                                 )}
-                              </div>
+                                {isJustAdded && (
+                                  <motion.div
+                                    className="absolute inset-0 pointer-events-none rounded-xl"
+                                    style={{ backgroundColor: "rgba(46, 107, 181, 0.14)" }}
+                                    initial={{ opacity: 1 }}
+                                    animate={{ opacity: 0 }}
+                                    transition={{ duration: 2.0, delay: 0.35, ease: "easeOut" }}
+                                  />
+                                )}
+                              </motion.div>
                             );
                           })}
+                          </AnimatePresence>
                           <div className="border-t border-[#E5E5EA] mt-1.5 pt-1.5 mx-1">
                             <button
                               onClick={() => { setSwitcherOpen(false); setOpen(false); setAddFamilyOpen(true); }}
@@ -712,22 +786,16 @@ export function ProfilePopover({
                   {/* Calendar strip */}
                   {(() => {
                     const now = new Date();
-                    const dayOfWeek = now.getDay();
-                    const monday = new Date(now);
-                    monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
-                    const todayKey = now.toLocaleDateString("en-CA"); // YYYY-MM-DD local time
-                    const days = Array.from({ length: 7 }, (_, i) => {
-                      const d = new Date(monday);
-                      d.setDate(monday.getDate() + i);
-                      const dateKey = d.toLocaleDateString("en-CA"); // YYYY-MM-DD local time
+                    const todayKey = now.toLocaleDateString("en-CA");
+
+                    const computeDay = (d: Date) => {
+                      const dateKey = d.toLocaleDateString("en-CA");
                       const isToday = d.toDateString() === now.toDateString();
                       const isFuture = d > now && !isToday;
-                      // Day is complete if all habits are done for that date
                       const dayCompletions = habitCompletions[dateKey];
                       const habitsAllDone = habits.length > 0 && dayCompletions
                         ? habits.every((h) => dayCompletions.has(h.id))
                         : habits.length === 0;
-                      // Also check care todos for this day
                       const dayTodosForCheck = todos.filter((t) =>
                         t.status !== "dismissed" && t.frequency !== "daily" &&
                         (!t.due_date || t.due_date === dateKey)
@@ -736,84 +804,238 @@ export function ProfilePopover({
                         dayTodosForCheck.every((t) => t.status === "completed");
                       const hasAnything = habits.length > 0 || dayTodosForCheck.length > 0;
                       const allDone = !isFuture && hasAnything && habitsAllDone && todosAllDone;
-                      // Event dots: visits + non-daily todos (including recurring occurrences)
                       const visitDots = careVisits
                         .filter((v) => v.visit_date === dateKey)
-                        .map(() => "#FFFFFF");
+                        .map(() => "#5C1A2A");
                       const todoDots = todos
-                        .filter((t) => {
-                          if (t.status === "dismissed" || t.frequency === "daily") return false;
-                          if (!t.due_date) return false;
-                          if (t.due_date === dateKey) return true;
-                          if (t.frequency === "once") return false;
-                          const start = new Date(t.due_date + "T00:00:00");
-                          const cur = new Date(dateKey + "T00:00:00");
-                          if (cur < start) return false;
-                          const interval = t.recurrence_interval || 1;
-                          if (t.frequency === "weekly") {
-                            const daysDiff = Math.round((cur.getTime() - start.getTime()) / 86400000);
-                            return daysDiff % (7 * interval) === 0;
-                          }
-                          if (t.frequency === "monthly") {
-                            const monthsDiff = (cur.getFullYear() - start.getFullYear()) * 12 + (cur.getMonth() - start.getMonth());
-                            return monthsDiff % interval === 0 && cur.getDate() === start.getDate();
-                          }
-                          return false;
-                        })
-                        .map((t) => t.color || "#FFFFFF");
+                        .filter((t) => t.status !== "dismissed" && todoOccursOn(t, dateKey))
+                        .map((t) => t.color || "#5C1A2A");
                       const dots = [...visitDots, ...todoDots].slice(0, 3);
-                      return { label: d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2), num: d.getDate(), isToday, isFuture, allDone, dots, dateKey };
+                      return {
+                        label: d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2),
+                        num: d.getDate(),
+                        isToday, isFuture, allDone, dots, dateKey,
+                      };
+                    };
+
+                    // Week-strip data (collapsed mode)
+                    const dayOfWeek = now.getDay();
+                    const monday = new Date(now);
+                    monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7) + weekOffset * 7);
+                    const weekDays = Array.from({ length: 7 }, (_, i) => {
+                      const d = new Date(monday);
+                      d.setDate(monday.getDate() + i);
+                      return computeDay(d);
                     });
+                    const weekFirstDay = new Date(monday);
+                    const weekLastDay = new Date(monday);
+                    weekLastDay.setDate(monday.getDate() + 6);
+                    const sameMonth = weekFirstDay.getMonth() === weekLastDay.getMonth();
+                    const weekRangeLabel = sameMonth
+                      ? weekFirstDay.toLocaleDateString("en-US", { month: "short", year: "numeric" })
+                      : `${weekFirstDay.toLocaleDateString("en-US", { month: "short" })}–${weekLastDay.toLocaleDateString("en-US", { month: "short", year: "numeric" })}`;
+
+                    // Month-grid data (expanded mode): 6 rows x 7 cols, Monday-first
+                    const displayedMonth = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+                    const monthFirstDayIdx = (displayedMonth.getDay() + 6) % 7;
+                    const gridStart = new Date(displayedMonth);
+                    gridStart.setDate(displayedMonth.getDate() - monthFirstDayIdx);
+                    const monthDays = Array.from({ length: 42 }, (_, i) => {
+                      const d = new Date(gridStart);
+                      d.setDate(gridStart.getDate() + i);
+                      return { ...computeDay(d), inCurrentMonth: d.getMonth() === displayedMonth.getMonth() };
+                    });
+                    const monthRangeLabel = displayedMonth.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+
+                    const rangeLabel = calendarExpanded ? monthRangeLabel : weekRangeLabel;
+                    const hasOffset = calendarExpanded ? monthOffset !== 0 : weekOffset !== 0;
+                    const handlePrev = () => calendarExpanded ? setMonthOffset((o) => o - 1) : setWeekOffset((o) => o - 1);
+                    const handleNext = () => calendarExpanded ? setMonthOffset((o) => o + 1) : setWeekOffset((o) => o + 1);
+                    const handleToday = () => { setWeekOffset(0); setMonthOffset(0); setSelectedDay(todayKey); };
+                    // Jump selection to a specific day; if it's out-of-month, navigate the grid too.
+                    const jumpToDay = (dateKey: string) => {
+                      setSelectedDay(dateKey);
+                      const target = new Date(dateKey + "T00:00:00");
+                      setMonthOffset((target.getFullYear() - now.getFullYear()) * 12 + (target.getMonth() - now.getMonth()));
+                    };
+
                     return (
-                      <div className="flex justify-center gap-[8px] px-5 pb-4">
-                        {days.map((day) => {
-                          const isSelected = day.dateKey === selectedDay;
-                          return (
+                      <>
+                        {/* Header: range (expand toggle) + Today + prev/next */}
+                        <div className="flex items-center justify-between px-5 pb-2">
+                          <div className="flex items-center gap-2">
                             <button
-                              key={day.label + day.num}
-                              className="flex flex-col items-center gap-0.5 w-10 transition-opacity"
-                              onClick={() => setSelectedDay(day.dateKey)}
+                              onClick={() => setCalendarExpanded((e) => !e)}
+                              className="flex items-center gap-1 text-[12px] font-bold uppercase tracking-wider transition-colors hover:opacity-80"
+                              style={{ color: "#5C1A2A" }}
+                              aria-label={calendarExpanded ? "Collapse calendar" : "Expand calendar"}
                             >
-                              <span
-                                className="text-[11px] font-semibold uppercase"
-                                style={{ color: day.isToday ? "#5C1A2A" : "#7A3040" }}
-                              >
-                                {day.label}
-                              </span>
-                              <span
-                                className="w-8 h-8 rounded-full flex items-center justify-center text-[14px] font-bold"
-                                style={{
-                                  color: isSelected ? "#FFFFFF" : day.isFuture ? "#7A3040" : "#5C1A2A",
-                                  background: isSelected ? "#5C1A2A" : day.isToday ? "#FFFFFF" : "transparent",
-                                  opacity: day.isFuture && !isSelected ? 0.5 : 1,
-                                }}
-                              >
-                                {!day.isFuture && day.allDone ? (
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isSelected ? "#FFFFFF" : "#5C1A2A"} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                    <polyline points="20 6 9 17 4 12" />
-                                  </svg>
-                                ) : (
-                                  day.num
-                                )}
-                              </span>
-                              {/* Event dots */}
-                              <div className="flex gap-[3px] h-[7px]">
-                                {day.dots.map((color, di) => (
-                                  <div
-                                    key={di}
-                                    className="w-[6px] h-[6px] rounded-full"
-                                    style={{
-                                      background: day.isFuture ? "transparent" : color,
-                                      border: day.isFuture ? `1.5px solid ${color}` : "none",
-                                      opacity: day.isFuture ? 0.6 : 0.9,
-                                    }}
-                                  />
-                                ))}
-                              </div>
+                              <span>{rangeLabel}</span>
+                              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${calendarExpanded ? "rotate-180" : ""}`} />
                             </button>
-                          );
-                        })}
-                      </div>
+                            {hasOffset && (
+                              <button
+                                onClick={handleToday}
+                                className="text-[11px] font-semibold rounded-full px-2 py-0.5 transition-colors"
+                                style={{ color: "#5C1A2A", background: "rgba(92,26,42,0.12)" }}
+                              >
+                                Today
+                              </button>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={handlePrev}
+                              aria-label={calendarExpanded ? "Previous month" : "Previous week"}
+                              className="w-7 h-7 rounded-full flex items-center justify-center transition-colors hover:bg-black/10"
+                              style={{ color: "#5C1A2A" }}
+                            >
+                              <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={handleNext}
+                              aria-label={calendarExpanded ? "Next month" : "Next week"}
+                              className="w-7 h-7 rounded-full flex items-center justify-center transition-colors hover:bg-black/10"
+                              style={{ color: "#5C1A2A" }}
+                            >
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <AnimatePresence mode="wait" initial={false}>
+                          {calendarExpanded ? (
+                            <motion.div
+                              key="month"
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                              style={{ overflow: "hidden" }}
+                            >
+                              <div className="px-5 pb-4">
+                                <div className="grid grid-cols-7 gap-[4px] mb-1">
+                                  {["M", "T", "W", "T", "F", "S", "S"].map((lbl, i) => (
+                                    <div key={i} className="text-[10px] font-bold uppercase text-center" style={{ color: "#5C1A2A", opacity: 0.7 }}>
+                                      {lbl}
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="grid grid-cols-7 gap-[4px]">
+                                  {monthDays.map((day) => {
+                                    const isSelected = day.dateKey === selectedDay;
+                                    const outOfMonth = !day.inCurrentMonth;
+                                    const textColor = isSelected
+                                      ? "#FFFFFF"
+                                      : day.isToday && !outOfMonth
+                                      ? "#5C1A2A"
+                                      : outOfMonth
+                                      ? "rgba(92,26,42,0.25)"
+                                      : "#5C1A2A";
+                                    return (
+                                      <button
+                                        key={day.dateKey}
+                                        onClick={() => jumpToDay(day.dateKey)}
+                                        className="flex flex-col items-center gap-0.5 py-1 transition-opacity"
+                                      >
+                                        <span
+                                          className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold"
+                                          style={{
+                                            color: textColor,
+                                            background: isSelected ? "#5C1A2A" : "transparent",
+                                            boxShadow: day.isToday && !isSelected && !outOfMonth ? "inset 0 0 0 2px #5C1A2A" : "none",
+                                          }}
+                                        >
+                                          {!day.isFuture && day.allDone && day.inCurrentMonth ? (
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isSelected ? "#FFFFFF" : "#5C1A2A"} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                              <polyline points="20 6 9 17 4 12" />
+                                            </svg>
+                                          ) : (
+                                            day.num
+                                          )}
+                                        </span>
+                                        <div className="flex gap-[3px] h-[7px] mt-0.5">
+                                          {outOfMonth
+                                            ? null
+                                            : day.dots.map((color, di) => (
+                                                <div
+                                                  key={di}
+                                                  className="w-[6px] h-[6px] rounded-full"
+                                                  style={{
+                                                    background: day.isFuture ? "transparent" : color,
+                                                    border: day.isFuture ? `1.5px solid ${color}` : "none",
+                                                    opacity: day.isFuture ? 0.8 : 1,
+                                                  }}
+                                                />
+                                              ))}
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </motion.div>
+                          ) : (
+                            <motion.div
+                              key="week"
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                              style={{ overflow: "hidden" }}
+                            >
+                              <div className="flex justify-center gap-[8px] px-5 pb-4">
+                                {weekDays.map((day) => {
+                                  const isSelected = day.dateKey === selectedDay;
+                                  return (
+                                    <button
+                                      key={day.label + day.num}
+                                      className="flex flex-col items-center gap-0.5 w-10 transition-opacity"
+                                      onClick={() => setSelectedDay(day.dateKey)}
+                                    >
+                                      <span
+                                        className="text-[11px] font-semibold uppercase"
+                                        style={{ color: day.isToday ? "#5C1A2A" : "#7A3040" }}
+                                      >
+                                        {day.label}
+                                      </span>
+                                      <span
+                                        className="w-8 h-8 rounded-full flex items-center justify-center text-[14px] font-bold"
+                                        style={{
+                                          color: isSelected ? "#FFFFFF" : day.isFuture ? "#7A3040" : "#5C1A2A",
+                                          background: isSelected ? "#5C1A2A" : day.isToday ? "#FFFFFF" : "transparent",
+                                          opacity: day.isFuture && !isSelected ? 0.5 : 1,
+                                        }}
+                                      >
+                                        {!day.isFuture && day.allDone ? (
+                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isSelected ? "#FFFFFF" : "#5C1A2A"} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="20 6 9 17 4 12" />
+                                          </svg>
+                                        ) : (
+                                          day.num
+                                        )}
+                                      </span>
+                                      <div className="flex gap-[3px] h-[7px]">
+                                        {day.dots.map((color, di) => (
+                                          <div
+                                            key={di}
+                                            className="w-[6px] h-[6px] rounded-full"
+                                            style={{
+                                              background: day.isFuture ? "transparent" : color,
+                                              border: day.isFuture ? `1.5px solid ${color}` : "none",
+                                              opacity: day.isFuture ? 0.6 : 0.9,
+                                            }}
+                                          />
+                                        ))}
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </>
                     );
                   })()}
 
@@ -881,33 +1103,17 @@ export function ProfilePopover({
                       }));
 
                       // Care todos: for today use backend-filtered todayTodos,
-                      // for other dates use all todos with client-side filtering.
+                      // for other dates use the shared helper.
                       const todoSource = isViewingToday ? todayTodos : todos;
                       const dayTodos: GamePlanItem[] = todoSource
                         .filter((t) => {
-                          if (t.status === "dismissed") return false;
-                          if (t.frequency === "daily") return false; // daily shows as habits
                           if (isViewingToday) {
-                            // Backend already filtered — show everything it returned
+                            // Backend already filtered to today's items; just exclude dismissed + daily.
+                            if (t.status === "dismissed") return false;
+                            if (t.frequency === "daily") return false;
                             return true;
                           }
-                          // For other days: match by due_date or recurring schedule
-                          if (!t.due_date) return true;
-                          if (t.due_date === selectedDay) return true;
-                          if (t.frequency === "once") return false;
-                          const start = new Date(t.due_date + "T00:00:00");
-                          const sel = new Date(selectedDay + "T00:00:00");
-                          if (sel < start) return false;
-                          const interval = t.recurrence_interval || 1;
-                          if (t.frequency === "weekly") {
-                            const daysDiff = Math.round((sel.getTime() - start.getTime()) / 86400000);
-                            return daysDiff % (7 * interval) === 0;
-                          }
-                          if (t.frequency === "monthly") {
-                            const monthsDiff = (sel.getFullYear() - start.getFullYear()) * 12 + (sel.getMonth() - start.getMonth());
-                            return monthsDiff % interval === 0 && sel.getDate() === start.getDate();
-                          }
-                          return false;
+                          return todoVisibleOnDate(t, selectedDay, todayKey);
                         })
                         .map((t) => ({
                           type: "todo" as const,
@@ -1067,32 +1273,53 @@ export function ProfilePopover({
                         </p>
                       </div>
                     )}
-                    {uniqueDoctors.map((provider, i) => {
-                      const Icon = specialtyIcon(provider.specialty);
-                      const displayName = provider.name || provider.practice_name || provider.specialty;
-                      const detailParts = [provider.credential, provider.specialty].filter(Boolean);
-                      const detail = detailParts.join(" · ");
-                      return (
-                        <React.Fragment key={provider.id || i}>
-                          {i > 0 && <div className="h-px bg-[#E5E5EA] ml-[62px] mr-3.5" />}
-                          <button
-                            className="flex w-full items-center gap-3 px-3.5 py-3.5 text-left hover:bg-[#0F1B3D]/[0.02] transition-colors"
-                            onClick={() => setSelectedProvider(provider)}
+                    <AnimatePresence initial={false}>
+                      {uniqueDoctors.map((provider, i) => {
+                        const Icon = specialtyIcon(provider.specialty);
+                        const displayName = provider.name || provider.practice_name || provider.specialty;
+                        const detailParts = [provider.credential, provider.specialty].filter(Boolean);
+                        const detail = detailParts.join(" · ");
+                        const isJustAdded = !!provider.id && justAddedDoctorIds.has(provider.id);
+                        return (
+                          <motion.div
+                            key={provider.id || i}
+                            layout
+                            initial={{ opacity: 0, x: -16 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -16 }}
+                            transition={{ duration: 0.42, ease: [0.4, 0, 0.2, 1] }}
                           >
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7F6F2]">
-                              <Icon className="h-[18px] w-[18px] text-[#0F1B3D]" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-[16px] font-semibold text-[#1C1C1E] truncate">{displayName}</p>
-                              {detail && detail !== displayName && (
-                                <p className="text-[13px] text-[#8E8E93] mt-px truncate">{detail}</p>
+                            {i > 0 && <div className="h-px bg-[#E5E5EA] ml-[62px] mr-3.5" />}
+                            <div className="relative">
+                              <button
+                                className="flex w-full items-center gap-3 px-3.5 py-3.5 text-left hover:bg-[#0F1B3D]/[0.02] transition-colors"
+                                onClick={() => setSelectedProvider(provider)}
+                              >
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7F6F2]">
+                                  <Icon className="h-[18px] w-[18px] text-[#0F1B3D]" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-[16px] font-semibold text-[#1C1C1E] truncate">{displayName}</p>
+                                  {detail && detail !== displayName && (
+                                    <p className="text-[13px] text-[#8E8E93] mt-px truncate">{detail}</p>
+                                  )}
+                                </div>
+                                <ChevronRight className="h-[18px] w-[18px] text-[#0F1B3D] shrink-0" />
+                              </button>
+                              {isJustAdded && (
+                                <motion.div
+                                  className="absolute inset-0 pointer-events-none"
+                                  style={{ backgroundColor: "rgba(46, 107, 181, 0.14)" }}
+                                  initial={{ opacity: 1 }}
+                                  animate={{ opacity: 0 }}
+                                  transition={{ duration: 2.0, delay: 0.35, ease: "easeOut" }}
+                                />
                               )}
                             </div>
-                            <ChevronRight className="h-[18px] w-[18px] text-[#0F1B3D] shrink-0" />
-                          </button>
-                        </React.Fragment>
-                      );
-                    })}
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
                   </div>
                 </div>
 
@@ -1261,6 +1488,7 @@ export function ProfilePopover({
                       style={{ height: "320px" }}
                       onScroll={handleVisitsScroll}
                     >
+                    <AnimatePresence initial={false}>
                     {sortedVisits.map((visit, i) => {
                       const isFuture = visit.visit_date > today;
                       const isToday = visit.visit_date === today;
@@ -1282,8 +1510,16 @@ export function ProfilePopover({
                         isFuture &&
                         (i === 0 || sortedVisits[i - 1].visit_date < today);
 
+                      const isJustAdded = !!visit.id && justAddedVisitIds.has(visit.id);
+
                       return (
-                        <React.Fragment key={visit.id}>
+                        <motion.div
+                          key={visit.id}
+                          initial={{ opacity: 0, scale: 0.96 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.96 }}
+                          transition={{ duration: 0.42, ease: [0.4, 0, 0.2, 1] }}
+                        >
                           {/* Visit entry with integrated rail, today marker, and month header */}
                           <div className="flex gap-0 ml-1">
                             {/* Continuous rail column */}
@@ -1350,6 +1586,7 @@ export function ProfilePopover({
                               )}
 
                               {/* Visit card */}
+                              <div className="relative">
                               <button
                                 className="w-full bg-white rounded-[14px] shadow-[0_1px_4px_rgba(0,0,0,0.05)] px-3.5 py-3 mb-3 text-left hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-shadow cursor-pointer"
                               onClick={() => setSelectedVisit(visit)}
@@ -1384,11 +1621,22 @@ export function ProfilePopover({
                                   </p>
                                 )}
                               </button>
+                              {isJustAdded && (
+                                <motion.div
+                                  className="absolute inset-0 pointer-events-none rounded-[14px]"
+                                  style={{ backgroundColor: "rgba(46, 107, 181, 0.14)" }}
+                                  initial={{ opacity: 1 }}
+                                  animate={{ opacity: 0 }}
+                                  transition={{ duration: 2.0, delay: 0.35, ease: "easeOut" }}
+                                />
+                              )}
+                              </div>
                             </div>
                           </div>
-                        </React.Fragment>
+                        </motion.div>
                       );
                     })}
+                    </AnimatePresence>
 
                     {/* End section: today marker + no upcoming + fading tail */}
                     {sortedVisits.length > 0 && (
@@ -1572,11 +1820,19 @@ const TODO_COLORS = [
   "#F59E0B", "#10B981", "#06B6D4", "#6366F1",
 ];
 
-const FREQUENCY_OPTIONS = [
-  { value: "once", label: "One-time" },
+type FrequencyChoice = "until_done" | "daily" | "weekly" | "monthly" | "once" | "custom";
+const FREQUENCY_OPTIONS: { value: FrequencyChoice; label: string }[] = [
+  { value: "until_done", label: "Until done" },
   { value: "daily", label: "Daily" },
   { value: "weekly", label: "Weekly" },
   { value: "monthly", label: "Monthly" },
+  { value: "once", label: "One-time" },
+  { value: "custom", label: "Custom" },
+];
+const CUSTOM_UNITS: { value: "daily" | "weekly" | "monthly"; singular: string; plural: string }[] = [
+  { value: "daily", singular: "day", plural: "days" },
+  { value: "weekly", singular: "week", plural: "weeks" },
+  { value: "monthly", singular: "month", plural: "months" },
 ];
 
 // ═══════════════════════════════════════════════════
@@ -2421,20 +2677,43 @@ function TodoEditorPanel({
   const [title, setTitle] = useState(existing?.title || "");
   const [subtitle, setSubtitle] = useState(existing?.subtitle || "");
   const [color, setColor] = useState(existing?.color || "#0F1B3D");
-  const [frequency, setFrequency] = useState<string>(existing?.frequency || "once");
+  const [frequencyChoice, setFrequencyChoice] = useState<FrequencyChoice>(() => {
+    const interval = existing?.recurrence_interval ?? 1;
+    if (interval > 1 && existing?.frequency && existing.frequency !== "once") return "custom";
+    if (existing?.frequency === "once" && !existing?.due_date) return "until_done";
+    return (existing?.frequency as FrequencyChoice) ?? "until_done";
+  });
+  const [customInterval, setCustomInterval] = useState<string>(
+    String(existing?.recurrence_interval && existing.recurrence_interval > 1 ? existing.recurrence_interval : 2),
+  );
+  const [customUnit, setCustomUnit] = useState<"daily" | "weekly" | "monthly">(
+    existing?.frequency === "weekly" || existing?.frequency === "monthly" ? existing.frequency : "daily",
+  );
   const [dueDate, setDueDate] = useState(existing?.due_date || "");
   const [dueTime, setDueTime] = useState(existing?.due_time || "");
   const [saving, setSaving] = useState(false);
 
+  const needsDate = frequencyChoice !== "until_done";
+
   async function handleSave() {
     if (!title.trim()) return;
     setSaving(true);
+    const actualFrequency =
+      frequencyChoice === "custom"
+        ? customUnit
+        : frequencyChoice === "until_done"
+        ? "once"
+        : frequencyChoice;
+    const actualInterval =
+      frequencyChoice === "custom" ? parseInt(customInterval, 10) || 1 : 1;
+    const actualDueDate = frequencyChoice === "until_done" ? null : dueDate || null;
     const data: CareTodoCreate = {
       title: title.trim(),
       subtitle: subtitle.trim(),
-      frequency,
-      due_date: dueDate || null,
+      frequency: actualFrequency,
+      due_date: actualDueDate,
       due_time: dueTime || null,
+      recurrence_interval: actualInterval,
     };
     if (isEdit && existing) {
       await onUpdate(existing.id, data);
@@ -2497,9 +2776,9 @@ function TodoEditorPanel({
             {FREQUENCY_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
-                onClick={() => setFrequency(opt.value)}
+                onClick={() => setFrequencyChoice(opt.value)}
                 className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
-                  frequency === opt.value
+                  frequencyChoice === opt.value
                     ? "bg-[#0F1B3D] text-white"
                     : "bg-white border border-[#E5E5EA] text-[#0F1B3D]/60"
                 }`}
@@ -2508,29 +2787,60 @@ function TodoEditorPanel({
               </button>
             ))}
           </div>
+          {frequencyChoice === "custom" && (
+            <div className="flex items-center gap-2 mt-3">
+              <span className="text-[13px] text-[#0F1B3D]/70">Every</span>
+              <input
+                type="number"
+                min={1}
+                value={customInterval}
+                onChange={(e) => setCustomInterval(e.target.value)}
+                className="w-16 rounded-lg border border-[#E5E5EA] bg-white px-2 py-1 text-[14px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+              />
+              <div className="flex gap-1">
+                {CUSTOM_UNITS.map((u) => (
+                  <button
+                    key={u.value}
+                    onClick={() => setCustomUnit(u.value)}
+                    className={`rounded-lg px-2.5 py-1 text-[12px] font-semibold transition-colors ${
+                      customUnit === u.value
+                        ? "bg-[#0F1B3D] text-white"
+                        : "bg-white border border-[#E5E5EA] text-[#0F1B3D]/60"
+                    }`}
+                  >
+                    {(parseInt(customInterval, 10) || 1) === 1 ? u.singular : u.plural}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Due date */}
-        <div className="flex gap-3 max-md:flex-col max-md:gap-2">
-          <div className="flex-1">
-            <label className="text-[13px] max-md:text-[11px] font-semibold text-[#8E8E93] uppercase tracking-wider">Due Date</label>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 max-md:px-3 max-md:py-2 text-[15px] max-md:text-[14px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
-            />
+        {/* Due date — hidden for "until done" since it has no specific date */}
+        {needsDate && (
+          <div className="flex gap-3 max-md:flex-col max-md:gap-2">
+            <div className="flex-1">
+              <label className="text-[13px] max-md:text-[11px] font-semibold text-[#8E8E93] uppercase tracking-wider">
+                {frequencyChoice === "weekly" || frequencyChoice === "monthly" || frequencyChoice === "custom" ? "Start Date" : "Due Date"}
+              </label>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 max-md:px-3 max-md:py-2 text-[15px] max-md:text-[14px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-[13px] max-md:text-[11px] font-semibold text-[#8E8E93] uppercase tracking-wider">Time</label>
+              <input
+                type="time"
+                value={dueTime}
+                onChange={(e) => setDueTime(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 max-md:px-3 max-md:py-2 text-[15px] max-md:text-[14px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+              />
+            </div>
           </div>
-          <div className="flex-1">
-            <label className="text-[13px] max-md:text-[11px] font-semibold text-[#8E8E93] uppercase tracking-wider">Time</label>
-            <input
-              type="time"
-              value={dueTime}
-              onChange={(e) => setDueTime(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 max-md:px-3 max-md:py-2 text-[15px] max-md:text-[14px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
-            />
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Actions */}

@@ -331,6 +331,13 @@ const INSURERS = [
   { src: "/images/insurers/vsp.svg", alt: "VSP Vision" },
 ];
 
+// Default first-message template for users arriving via the homepage mobile
+// "Get started" CTA (no ref-specific landing page, so no targeted prefill).
+// Without this the agent lands with an empty first message and responds with
+// awkward "I don't have your data" copy. This opener invites Elena to do her
+// own pitch instead.
+const HOMEPAGE_DEFAULT_QUERY = "Hi Elena, I'm new here. What can you help me with?";
+
 const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; subtitle: string; prefill: string }> = {
   bill_fighting: {
     headline: ["Most medical bills", "have errors. Fight back."],
@@ -752,11 +759,12 @@ function LandingPage() {
     const typed = opts?.preferPrefill && !userHasEdited
       ? (madlib ? getMadlibText().trim() : "")
       : (madlib ? getMadlibText().trim() : sendQuery.trim());
-    // Fall back to the LP's prefill so users arriving via the mobile Send CTA
-    // (no input shown) or hitting send with an empty field still open chat with
-    // a coherent first message in Elena's voice. Homepage (no ref) stays empty
-    // so those users see Elena's welcome screen instead.
-    const query = typed || (ref && hero?.prefill ? hero.prefill : "");
+    // Fall back to the LP's prefill so users arriving via the mobile "Get
+    // started" CTA (no input shown) or hitting send with an empty field open
+    // chat with a coherent first message in Elena's voice. Ref-specific LPs
+    // use their own prefill; the homepage gets HOMEPAGE_DEFAULT_QUERY so the
+    // agent doesn't land with "I don't have your data".
+    const query = typed || hero?.prefill || HOMEPAGE_DEFAULT_QUERY;
     if (query) {
       analytics.track("Hero Input Submitted", { query_length: query.length });
       analytics.track("Message Sent", {
@@ -853,7 +861,7 @@ function LandingPage() {
           </a>
         </div>
         <button
-          onClick={() => { analytics.track("Login Button Clicked"); setAuthDefaultMode("signin"); setAuthModalOpen(true); }}
+          onClick={() => { analytics.track("Login Button Clicked"); setAuthDefaultMode("signup"); setAuthModalOpen(true); }}
           className="bg-white/[0.08] backdrop-blur-[40px] border border-white/[0.18] border-t-white/30 rounded-full px-7 py-3 max-md:px-5 max-md:py-2 max-md:h-10 text-white/90 text-[0.9rem] max-md:text-[0.8rem] font-normal cursor-pointer transition-all shadow-[0_4px_16px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.15)] hover:bg-white/15 hover:text-white hover:border-white/25"
           style={{ WebkitBackdropFilter: "blur(40px) saturate(1.8)" }}
         >
@@ -1030,7 +1038,8 @@ function LandingPage() {
             </div>
           </div>
 
-          {/* Mobile-only CTA: replace the whole input + chips with a single Get started button */}
+          {/* Mobile-only CTA: replace the whole input + chips with a single
+              "Get started" button matching the caregiver LP. */}
           <button
             onClick={() => handleSend({ preferPrefill: true })}
             className="md:hidden block w-auto mx-auto mt-6 h-12 px-10 rounded-full bg-white/[0.18] backdrop-blur-[40px] border border-white/30 border-t-white/50 text-white text-[0.95rem] font-semibold shadow-[0_10px_32px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] active:scale-[0.97] transition-transform"
