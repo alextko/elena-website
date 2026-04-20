@@ -1186,7 +1186,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
           >
             {/* Progress dots — tiny row showing how many profile-walkthrough
                 cards remain. Keeps late-stage dropout in check. */}
-            <div className="flex justify-center gap-1.5 mb-3 sm:mb-5">
+            <div className="flex justify-center gap-1.5 mb-2 sm:mb-5">
               {PROFILE_STEPS.map((_, i) => (
                 <div
                   key={i}
@@ -1212,11 +1212,11 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               >
                 <div className="text-center">
                   <h3 className="text-[16px] sm:text-[18px] font-extrabold text-[#0F1B3D] mb-1.5 sm:mb-2">{currentStep.title}</h3>
-                  <p className="text-[13px] sm:text-[14px] text-[#5a6a82] font-light leading-relaxed">{currentStep.body}</p>
+                  <p className="hidden sm:block text-[13px] sm:text-[14px] text-[#5a6a82] font-light leading-relaxed">{currentStep.body}</p>
                 </div>
 
                 {showPrompt && addKind === "provider" && (
-                  <div className="mt-4 sm:mt-5 text-left space-y-2 sm:space-y-2.5">
+                  <div className="mt-3 sm:mt-5 text-left space-y-2 sm:space-y-2.5">
                     <p className="text-[12px] sm:text-[13px] font-semibold text-[#0F1B3D]">Have any doctors you like?</p>
                     <div className="flex flex-wrap gap-2">
                       {TOUR_SPECIALTY_OPTIONS.map((s) => {
@@ -1295,7 +1295,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   </div>
                 )}
                 {showPrompt && addKind === "visit" && (
-                  <div className="mt-4 sm:mt-5 text-left space-y-2 sm:space-y-2.5">
+                  <div className="mt-3 sm:mt-5 text-left space-y-2 sm:space-y-2.5">
                     <p className="text-[12px] sm:text-[13px] font-semibold text-[#0F1B3D]">Any recent appointments?</p>
                     <div className="flex flex-wrap gap-2">
                       {VISIT_TYPE_CHIPS.map((chip) => {
@@ -1347,7 +1347,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   </div>
                 )}
                 {showPrompt && addKind === "insurance" && (
-                  <div className="mt-4 sm:mt-5 text-left space-y-2 sm:space-y-2.5">
+                  <div className="mt-3 sm:mt-5 text-left space-y-2 sm:space-y-2.5">
                     <p className="text-[12px] sm:text-[13px] font-semibold text-[#0F1B3D]">Who's your insurance?</p>
                     <div className="relative">
                       <select
@@ -1382,7 +1382,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   </div>
                 )}
                 {showPrompt && addKind === "family" && familyMode === "manage" && (
-                  <div className="mt-4 sm:mt-5 text-left space-y-2 sm:space-y-2.5">
+                  <div className="mt-3 sm:mt-5 text-left space-y-2 sm:space-y-2.5">
                     <div className="flex gap-2">
                       <input
                         className={`${inputClass} flex-1 min-w-0`}
