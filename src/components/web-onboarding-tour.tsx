@@ -1245,7 +1245,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 document.activeElement.blur();
               }
             }}
-            className={`relative rounded-2xl bg-white p-4 sm:p-7 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-[calc(1.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_30px_rgba(15,27,61,0.15)] border border-[#E5E5EA] overflow-hidden flex flex-col max-h-[80vh] ${successOverlay ? "h-[340px] sm:h-[360px]" : ""}`}
+            className={`relative rounded-2xl bg-white p-4 sm:p-7 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-[calc(1.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_30px_rgba(15,27,61,0.15)] border border-[#E5E5EA] overflow-hidden flex flex-col max-h-[80vh] ${successOverlay ? "h-[240px] sm:h-[300px]" : ""}`}
           >
             {/* Progress dots — tiny row showing how many profile-walkthrough
                 cards remain. Keeps late-stage dropout in check. */}
