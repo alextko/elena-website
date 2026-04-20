@@ -1315,17 +1315,18 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 )}
                 {showPrompt && addKind === "visit" && lastAddedProvider && !visitUseChipMode && (
                   <div className="mt-3 sm:mt-5 text-left space-y-2 sm:space-y-2.5">
-                    <p className="text-[12px] sm:text-[13px] font-semibold text-[#0F1B3D]">Visit with {lastAddedProvider.name}</p>
+                    <p className="text-[12px] sm:text-[13px] font-semibold text-[#0F1B3D]">Have any visits with {lastAddedProvider.name} to log?</p>
                     <input
                       className={inputClass}
                       type="text"
                       inputMode="numeric"
                       maxLength={10}
-                      placeholder="MM/DD/YYYY"
+                      placeholder="MM/DD/YYYY (past or upcoming)"
                       value={visitDate}
                       onChange={(e) => setVisitDate(maskDateInput(e.target.value))}
                       autoFocus
                     />
+                    <p className="text-[11px] text-[#8E8E93]">We'll save it to your Visits tab.</p>
                     <button
                       type="button"
                       onClick={() => setVisitUseChipMode(true)}
