@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Sparkles } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
 import * as analytics from "@/lib/analytics";
@@ -148,13 +149,26 @@ export function HipaaConsentModal({ open, onOpenChange, onSigned }: HipaaConsent
               </DialogDescription>
             </DialogHeader>
 
-            <div className="mt-5 rounded-xl bg-[#f5f7fb] border border-[#0F1B3D]/[0.06] p-4">
-              <p className="text-sm font-semibold text-[#0F1B3D] mb-1">
-                One more thing to know
-              </p>
-              <p className="text-sm text-[#0F1B3D]/70 leading-relaxed">
-                Some insurers require their own authorization form before sharing your information. If that comes up when we call on your behalf, we'll let you know and walk you through it.
-              </p>
+            <div
+              className="mt-5 rounded-2xl p-4 pl-5 flex gap-3"
+              style={{
+                background: "linear-gradient(135deg, #FFF5EC 0%, #FFEADB 100%)",
+                border: "1px solid rgba(244, 176, 132, 0.35)",
+              }}
+            >
+              <div className="shrink-0 mt-0.5">
+                <div className="h-8 w-8 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #F4B084, #E8956D)" }}>
+                  <Sparkles className="h-4 w-4 text-white" strokeWidth={2.5} />
+                </div>
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-[#0F1B3D] mb-1">
+                  A quick heads up
+                </p>
+                <p className="text-[13px] text-[#0F1B3D]/75 leading-relaxed">
+                  Some insurers require their own authorization form before sharing your information. If that comes up when we call on your behalf, we'll let you know and walk you through it.
+                </p>
+              </div>
             </div>
 
             <button
