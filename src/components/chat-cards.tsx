@@ -1368,6 +1368,32 @@ export function FormRequestCard({
           setValue(fieldKey, "Uploaded");
         }
       } catch {}
+    } else if (form.save_to === "medication") {
+      // Pill-bottle OCR. Same pattern as the mobile flow — send to
+      // /medications/ocr, merge the extracted fields into the form's values
+      // so they ride the subsequent /chat/form-submit back to the agent as
+      // its tool result. The agent then calls update_health_profile with
+      // the fields.
+      const formData = new FormData();
+      formData.append("image", file);
+      try {
+        const res = await apiFetch("/medications/ocr", { method: "POST", body: formData });
+        if (res.ok) {
+          const data = await res.json();
+          setValues((prev) => {
+            const next = { ...prev };
+            for (const [k, v] of Object.entries(data)) {
+              if (v != null && v !== "") next[k] = String(v);
+            }
+            next[fieldKey] = data.name ? `Scanned: ${data.name}` : "Scanned";
+            return next;
+          });
+        } else {
+          setValue(fieldKey, "Could not read the label. Try again?");
+        }
+      } catch {
+        setValue(fieldKey, "Could not read the label. Try again?");
+      }
     } else {
       // Generic file upload via presigned URL
       try {
