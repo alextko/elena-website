@@ -175,13 +175,7 @@ const PROFILE_STEPS: {
   { id: "family", title: "For you and your people", body: "Keep all of your family's health in one place.", tab: "health", addKind: "family", showSwitcher: true },
 ];
 
-type Phase = "intro" | "care" | "care-ack" | "router" | "pain" | "value" | "profile-form" | "situation" | "meds" | "care-plan" | "validation" | "dependents" | "elena-plan" | "joyride" | "profile" | "chat" | "done";
-
-// Dependent entry for the caregiver-branch "who are you caring for"
-// phase. relationship maps to the backend's ManagedProfileRequest
-// vocabulary (child, spouse, parent, sibling, other); careId is the
-// originating CARE_OPTIONS id so we can match back to selections.
-type Dependent = { careId: string; relationship: string; label: string; firstName: string; lastName: string };
+type Phase = "intro" | "care" | "care-ack" | "setup-for" | "router" | "pain" | "value" | "profile-form" | "situation" | "meds" | "care-plan" | "validation" | "elena-plan" | "joyride" | "profile" | "chat" | "done";
 
 // Map CARE_OPTIONS ids to the backend relationship values used by
 // /profiles. The care phase's "partner" maps to the profile-level
@@ -202,10 +196,15 @@ function careIdToNounLabel(careId: string): string {
 
 // Router choices determine the downstream flow after profile-form.
 // Condition / medications / money all go through `situation` (collect
-// what's going on) but diverge after. Caregiver / staying-healthy skip
-// the condition block entirely and go straight to a branch-tuned
-// elena-plan → joyride.
-type RouterChoice = "condition" | "medications" | "money" | "caregiver" | "staying_healthy";
+// what's going on) but diverge after. Staying-healthy skips the
+// condition block entirely and goes straight to elena-plan → joyride.
+//
+// "Caring for someone else" used to be a router option but now runs
+// through the upstream setup-for phase: the whole onboarding operates
+// on the dependent's profile once the user picks them there, so
+// they're really just doing condition/medications/money FOR that
+// person. No separate caregiver branch downstream.
+type RouterChoice = "condition" | "medications" | "money" | "staying_healthy";
 
 // Hero values rendered on elena-plan for branches that don't have a
 // condition template driving content. First-person "I can" phrasing
@@ -228,11 +227,6 @@ const MONEY_BRANCH_HERO_VALUES = [
   "I can help you pay bills on time and dispute wrong charges.",
   "I can compare plans and help you get the most out of your insurance.",
   "I can find home medical equipment at the best price.",
-];
-const CAREGIVER_BRANCH_HERO_VALUES = [
-  "I can call providers to book visits for everyone you care for.",
-  "I can research in-network options for each person.",
-  "I can flag med interactions across the family.",
 ];
 const STAYING_HEALTHY_BRANCH_HERO_VALUES = [
   "I can call your PCP to book your annual physical.",
@@ -351,21 +345,6 @@ function cleanActionToUserVoice(raw: string): string {
   return s;
 }
 
-// Build a human-readable list ("my mom Linda Smith", "my mom Linda
-// and my partner David", etc.). Used by buildSeedMessageFromActions
-// to give Elena concrete context about who the caregiver is asking
-// about. Full name if lastName present, else first name only.
-function formatDependentsList(deps: { relationship: string; label: string; firstName: string; lastName: string }[]): string {
-  if (deps.length === 0) return "";
-  const parts = deps.map((d) => {
-    const full = d.lastName ? `${d.firstName} ${d.lastName}`.trim() : d.firstName;
-    return `my ${d.label} ${full}`;
-  });
-  if (parts.length === 1) return parts[0];
-  if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
-  return `${parts.slice(0, -1).join(", ")}, and ${parts[parts.length - 1]}`;
-}
-
 // Convert the user's picked hero lines (written in Elena's first-person
 // "I can..." voice) into a user-addressed opening message for the chat.
 // Elena's agent receives this as the user's first turn and starts on it.
@@ -374,29 +353,15 @@ function formatDependentsList(deps: { relationship: string; label: string; first
 // can" (e.g. "You said $X. I can help…") get their "You said" prefix
 // trimmed off so the request reads naturally.
 //
-// Context-aware preamble: caregivers get a lead-in line naming who they
-// care for ("I'm caring for my mom Linda and my partner David.") so
-// Elena starts with concrete context instead of generic bullets like
-// "Keep it all straight" that don't tell her about whom. Falls back to
-// plain bullets when no dependents were captured or branch isn't caregiver.
-function buildSeedMessageFromActions(
-  actions: string[],
-  opts?: {
-    branch?: RouterChoice | null;
-    dependents?: { relationship: string; label: string; firstName: string; lastName: string }[];
-  },
-): string {
+// Dependent sessions don't need a "caring for X" preamble because the
+// active profile is ALREADY the dependent by the time this seed is
+// sent — Elena's patient_info.first_name is the dependent's. The
+// caregiver framing happens at the profile level, not the message.
+function buildSeedMessageFromActions(actions: string[]): string {
   const cleaned = actions.map(cleanActionToUserVoice).filter((s) => s.length > 0);
   if (cleaned.length === 0) return "";
-  const isCaregiver = opts?.branch === "caregiver";
-  const deps = opts?.dependents || [];
-  const preamble = isCaregiver && deps.length > 0
-    ? `I'm a caregiver helping ${formatDependentsList(deps)}.`
-    : "";
-  const body = cleaned.length === 1
-    ? cleaned[0]
-    : `Please help me with these:\n${cleaned.map((s) => `• ${s}`).join("\n")}`;
-  return preamble ? `${preamble}\n\n${body}` : body;
+  if (cleaned.length === 1) return cleaned[0];
+  return `Please help me with these:\n${cleaned.map((s) => `• ${s}`).join("\n")}`;
 }
 
 // elena-plan row: selectable action card. Vertical layout with the mini
@@ -661,6 +626,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     refreshVisits,
     refreshProfiles,
     refreshInsurance,
+    switchProfile,
   } = useAuth();
 
   // Resume-on-refresh: tour state is persisted to sessionStorage on every
@@ -687,7 +653,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     checkedPlanItems: string[];
     confirmedActions: string[];
     customActionText: string;
-    dependents: Dependent[];
+    setupForCareId: string | null;
+    dependentFirstName: string;
+    dependentLastName: string;
+    dependentProfileId: string | null;
   }> => {
     if (typeof window === "undefined") return {};
     try {
@@ -784,12 +753,22 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   const [confirmedActions, setConfirmedActions] = useState<string[]>(tourSnapshot.confirmedActions ?? []);
   const [customActionText, setCustomActionText] = useState(tourSnapshot.customActionText ?? "");
 
-  // Caregiver-branch "who are you caring for" phase. Seeded lazily on
-  // phase entry from careSelections (user's earlier relationship picks);
-  // each row is a name input that can be left blank to skip. Saved as
-  // linked managed profiles via POST /profiles on Continue.
-  const [dependents, setDependents] = useState<Dependent[]>(tourSnapshot.dependents ?? []);
-  const [savingDependents, setSavingDependents] = useState(false);
+  // setup-for phase: when the user picked non-myself in the care phase,
+  // we ask which ONE they want to set Elena up for today. Picking a
+  // dependent creates+switches to their linked profile so the rest of
+  // the tour (situation/meds/care-plan) operates on THEIR chart. Picking
+  // myself just continues the for-me flow.
+  const [setupForCareId, setSetupForCareId] = useState<string | null>(tourSnapshot.setupForCareId ?? null);
+  // Name of the dependent this session is being set up for (only used
+  // when setupForCareId is non-myself). Entered inline on the same
+  // setup-for screen; captured here and written on profile create.
+  const [dependentFirstName, setDependentFirstName] = useState(tourSnapshot.dependentFirstName ?? "");
+  const [dependentLastName, setDependentLastName] = useState(tourSnapshot.dependentLastName ?? "");
+  // ID of the dependent profile once created — used to key downstream
+  // apiFetch calls (conditions, medications, todos) to their chart
+  // instead of the primary user's.
+  const [dependentProfileId, setDependentProfileId] = useState<string | null>(tourSnapshot.dependentProfileId ?? null);
+  const [creatingDependent, setCreatingDependent] = useState(false);
 
   // Dev override: ?force_prompts=1 makes hasExistingData always return
   // false so the profile walkthrough's inline add-forms show even on
@@ -906,7 +885,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
           checkedPlanItems,
           confirmedActions,
           customActionText,
-          dependents,
+          setupForCareId,
+          dependentFirstName,
+          dependentLastName,
+          dependentProfileId,
         }),
       );
     } catch {}
@@ -915,7 +897,8 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     firstName, lastName, dob, zipCode,
     selectedSituation, customSituation,
     selectedMeds, customMeds, checkedPlanItems,
-    confirmedActions, customActionText, dependents,
+    confirmedActions, customActionText,
+    setupForCareId, dependentFirstName, dependentLastName, dependentProfileId,
   ]);
 
   // Stash the prop callbacks in refs so the joyride-advance effect below
@@ -1319,17 +1302,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     try {
       const raw = sessionStorage.getItem("elena_tour_seeded_actions");
       if (raw) {
-        const parsed = JSON.parse(raw) as {
-          actions?: string[];
-          branch?: RouterChoice | null;
-          dependents?: { relationship: string; label: string; firstName: string; lastName: string }[];
-        };
+        const parsed = JSON.parse(raw) as { actions?: string[] };
         const actions = Array.isArray(parsed.actions) ? parsed.actions : [];
         if (actions.length > 0) {
-          const seedMessage = buildSeedMessageFromActions(actions, {
-            branch: parsed.branch ?? null,
-            dependents: Array.isArray(parsed.dependents) ? parsed.dependents : [],
-          });
+          const seedMessage = buildSeedMessageFromActions(actions);
           if (seedMessage) {
             // Prefer the callback path: force-tour users already have
             // the chat page mounted, and its one-time pending-query
@@ -1396,22 +1372,50 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     setPhase("care");
   }, []);
 
+  // Whether the user's care selections include anyone besides themselves.
+  // Drives whether we surface the setup-for phase (pick ONE person to set
+  // up Elena for today) or skip straight to the self-care flow.
+  const hasNonSelfCareSelections = careSelections.some((id) => id !== "myself");
+
   const advanceFromCare = useCallback(() => {
     if (careSelections.length > 0) analytics.track("Web Tour Care Context" as any, { care_for: careSelections });
     // Caregivers managing more than one person get an acknowledgment beat
     // first so they feel seen about the multi-person load. Single-person
-    // selections (including myself-only) skip straight to the router.
+    // selections (including myself-only) skip straight to setup-for /
+    // router depending on who they picked.
     if (careSelections.length >= 2) {
       setPhase("care-ack");
+    } else if (hasNonSelfCareSelections) {
+      // Single non-self pick still needs the setup-for decision so the
+      // profile gets created + switched before we ask about conditions.
+      setPhase("setup-for");
     } else {
       setPhase("router");
     }
-  }, [careSelections]);
+  }, [careSelections, hasNonSelfCareSelections]);
 
   const advanceFromCareAck = useCallback(() => {
     analytics.track("Web Tour Care Ack Continued" as any, { count: careSelections.length });
-    setPhase("router");
-  }, [careSelections.length]);
+    if (hasNonSelfCareSelections) {
+      setPhase("setup-for");
+    } else {
+      setPhase("router");
+    }
+  }, [careSelections.length, hasNonSelfCareSelections]);
+
+  // Setup-for phase → pain. If the user picked "myself", there's no
+  // dependent profile to create and we're in the normal for-me flow.
+  // If they picked a relationship (mom/partner/child/other), we'll
+  // create the linked profile after profile-form and switch to it.
+  const advanceFromSetupFor = useCallback(() => {
+    if (!setupForCareId) return;
+    analytics.track("Web Tour Setup For Selected" as any, {
+      care_id: setupForCareId,
+      self: setupForCareId === "myself",
+      has_name: dependentFirstName.trim().length > 0,
+    });
+    setPhase("pain");
+  }, [setupForCareId, dependentFirstName]);
 
   const advanceFromPain = useCallback(() => {
     analytics.track("Web Tour Pain Step" as any, { bucket: painSelection });
@@ -1420,31 +1424,90 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   }, [painSelection, lpVariant]);
 
   // Post-profile routing: condition / medications / money collect
-  // what's going on first via situation. Caregiver routes into its
-  // own "who are you caring for" dependents capture. Staying-healthy
-  // has no domain-specific capture and goes straight to elena-plan.
+  // what's going on first via situation. Staying-healthy has no
+  // domain-specific capture and goes straight to elena-plan.
   const routeAfterProfile = useCallback(() => {
-    if (routerChoice === "caregiver") {
-      setPhase("dependents");
-    } else if (routerChoice === "staying_healthy") {
+    if (routerChoice === "staying_healthy") {
       setPhase("elena-plan");
     } else {
       setPhase("situation");
     }
   }, [routerChoice]);
 
-  const advanceFromValue = useCallback(() => {
+  // Create the dependent profile and switch the active profile to it
+  // so all downstream data (conditions/medications/todos) saves to
+  // THEIR chart. Fire-and-forget saves for any OTHER people the user
+  // selected in the care phase — they appear in the sidebar switcher
+  // for future sessions but don't block this one. Returns true on
+  // success (switch completed), false on failure.
+  const createDependentAndSwitch = useCallback(async (): Promise<boolean> => {
+    if (!setupForCareId || setupForCareId === "myself") return true;
+    const first = dependentFirstName.trim();
+    if (!first) return false;
+    setCreatingDependent(true);
+    try {
+      const relationship = careIdToRelationship(setupForCareId);
+      const res = await apiFetch("/profiles", {
+        method: "POST",
+        body: JSON.stringify({
+          first_name: first,
+          last_name: dependentLastName.trim(),
+          label: relationship,
+          relationship,
+        }),
+      });
+      if (!res.ok) {
+        console.log("[tour] dependent profile create failed", res.status);
+        return false;
+      }
+      const created = await res.json();
+      const newId = created?.id || created?.profile_id;
+      if (!newId) {
+        console.log("[tour] dependent profile response missing id", created);
+        return false;
+      }
+      setDependentProfileId(newId);
+      await refreshProfiles();
+      await switchProfile(newId);
+      // Silently create the OTHER selected relationships as linked
+      // profiles so the sidebar has them ready for later sessions.
+      // No blocking on this — it's "nice to have" for continuity.
+      const others = careSelections.filter(
+        (id) => id !== "myself" && id !== setupForCareId,
+      );
+      for (const otherId of others) {
+        apiFetch("/profiles", {
+          method: "POST",
+          body: JSON.stringify({
+            first_name: careIdToNounLabel(otherId).replace(/^./, (c) => c.toUpperCase()),
+            last_name: "",
+            label: careIdToRelationship(otherId),
+            relationship: careIdToRelationship(otherId),
+          }),
+        }).catch(() => {});
+      }
+      return true;
+    } finally {
+      setCreatingDependent(false);
+    }
+  }, [setupForCareId, dependentFirstName, dependentLastName, careSelections, refreshProfiles, switchProfile]);
+
+  const advanceFromValue = useCallback(async () => {
     analytics.track("Web Tour Value Step Continued" as any, { lp_variant: lpVariant || "homepage" });
     // Fresh signup without pre-filled profile → collect name/DOB/zip first;
     // handleProfileSubmit then routes into the appropriate branch.
     if (needsOnboarding) {
       setPhase("profile-form");
-    } else {
-      // Profile already set up (quiz funnel, force-tour, etc.). Route
-      // straight into the branch the user picked in the router earlier.
-      routeAfterProfile();
+      return;
     }
-  }, [lpVariant, needsOnboarding, routeAfterProfile]);
+    // Profile already set up (quiz funnel, force-tour, etc.).
+    // If this session is for a dependent, create+switch their profile
+    // first so downstream conditions / meds save to the right chart.
+    if (setupForCareId && setupForCareId !== "myself") {
+      await createDependentAndSwitch();
+    }
+    routeAfterProfile();
+  }, [lpVariant, needsOnboarding, routeAfterProfile, setupForCareId, createDependentAndSwitch]);
 
   // Profile-form submit — migrates the OnboardingModal's handleSubmit.
   // completeOnboarding() handles: POST /profile, setProfileId, setProfileData,
@@ -1469,11 +1532,16 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       date_of_birth: displayToIsoDate(dob) || undefined,
       home_address: zipCode.trim(),
     });
+    // For dependent setups, create the dependent's profile and switch
+    // active so downstream situation/meds/care-plan write to their
+    // chart. Primary user's profile (just completed above) stays as
+    // the login owner; the switch is session-scoped.
+    if (setupForCareId && setupForCareId !== "myself") {
+      await createDependentAndSwitch();
+    }
     setSavingProfile(false);
-    // Router already ran before value + profile-form, so we have the
-    // user's branch pick. Go straight into the right downstream phase.
     routeAfterProfile();
-  }, [canSubmitProfile, firstName, lastName, dob, zipCode, completeOnboarding, routeAfterProfile]);
+  }, [canSubmitProfile, firstName, lastName, dob, zipCode, completeOnboarding, routeAfterProfile, setupForCareId, createDependentAndSwitch]);
 
   // Fire "Onboarding Modal Shown" analytics when the profile-form phase opens,
   // preserving data continuity with the prior OnboardingModal. (Event name kept
@@ -1597,20 +1665,11 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     // persisted handoff — no chat behavior change yet.
     try {
       if (seededActions.length > 0) {
-        const namedDeps = dependents
-          .filter((d) => d.firstName.trim().length > 0)
-          .map((d) => ({
-            relationship: d.relationship,
-            label: d.label,
-            firstName: d.firstName.trim(),
-            lastName: d.lastName.trim(),
-          }));
         sessionStorage.setItem("elena_tour_seeded_actions", JSON.stringify({
           actions: seededActions,
           branch: routerChoice,
           situation: selectedSituation,
           conditionName: customSituation.trim() || null,
-          dependents: namedDeps,
           created_at: new Date().toISOString(),
         }));
       }
@@ -1620,7 +1679,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     const tpl = getTemplate(selectedSituation);
     const conditionName = chip?.conditionName || customSituation.trim();
     // Branches that collected a condition (condition / medications / money)
-    // save it. Caregiver / staying-healthy didn't collect one.
+    // save it. Staying-healthy didn't collect one.
     const collectedCondition = routerChoice === "condition" || routerChoice === "medications" || routerChoice === "money";
     try {
       if (profileId && collectedCondition && conditionName) {
@@ -1630,7 +1689,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
         }).catch((e) => console.log("[tour] condition save failed", e));
       }
       // Meds: condition, medications, and money branches all collect
-      // them. Only caregiver / staying_healthy skipped this step.
+      // them. Only staying_healthy skipped this step.
       if (profileId && tpl && (routerChoice === "condition" || routerChoice === "medications" || routerChoice === "money")) {
         const allMeds = [...selectedMeds, ...customMeds.map((m) => m.trim()).filter(Boolean)];
         await Promise.all(
@@ -1689,37 +1748,9 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
           (routerChoice === "condition" || routerChoice === "medications" || routerChoice === "money")
             ? (tpl?.conditionName || customSituation.trim() || undefined)
             : undefined;
-        const isCaregiver = routerChoice === "caregiver";
-        const namedDeps = dependents.filter((d) => d.firstName.trim().length > 0);
         for (const raw of seededActions) {
           const cleanedTitle = cleanActionToUserVoice(raw);
           if (!cleanedTitle) continue;
-          const isGenericCaregiver =
-            /everyone (i|my) care for|everyone i care for|for each person|across the family/i.test(cleanedTitle);
-          const isAbstract =
-            /keep it all straight|keep.*straight in one place|keep it straight/i.test(cleanedTitle);
-          if (isCaregiver && isAbstract) continue;
-          if (isCaregiver && isGenericCaregiver && namedDeps.length > 0) {
-            for (const d of namedDeps) {
-              const name = d.firstName.trim();
-              let perPerson: string;
-              if (/book.*visit|call.*provider/i.test(cleanedTitle)) {
-                perPerson = `Book ${name}'s next visit`;
-              } else if (/in-network.*option|in.*network/i.test(cleanedTitle)) {
-                perPerson = `Find in-network providers for ${name}`;
-              } else if (/med.*interaction|medication/i.test(cleanedTitle)) {
-                perPerson = `Review ${name}'s medications for interactions`;
-              } else {
-                perPerson = cleanedTitle
-                  .replace(/for everyone (i|my) care for/gi, `for ${name}`)
-                  .replace(/for each person/gi, `for ${name}`)
-                  .replace(/across the family/gi, `for ${name}`);
-              }
-              const stem = perPerson.charAt(0).toLowerCase() + perPerson.slice(1);
-              push({ title: perPerson, subtitle: name, book_message: `Help me ${stem}` });
-            }
-            continue;
-          }
           const lowered = cleanedTitle.charAt(0).toLowerCase() + cleanedTitle.slice(1);
           const bookStem = lowered.startsWith("help ") ? lowered.slice(5) : lowered;
           push({
@@ -1749,7 +1780,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       setSavingSituation(false);
       leaveShellThen(beginJoyride);
     }
-  }, [savingSituation, selectedSituation, customSituation, selectedMeds, customMeds, checkedPlanItems, profileId, routerChoice, confirmedActions, customActionText, dependents, beginJoyride, leaveShellThen]);
+  }, [savingSituation, selectedSituation, customSituation, selectedMeds, customMeds, checkedPlanItems, profileId, routerChoice, confirmedActions, customActionText, beginJoyride, leaveShellThen]);
 
   // Fire the validation-shown event once when the phase enters (it's the
   // "wow" beat, so we track regardless of what the user does next).
@@ -1763,69 +1794,12 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     });
   }, [phase, selectedSituation, checkedPlanItems.length]);
 
-  // Seed the dependents state on entering the phase from careSelections.
-  // Non-"myself" picks become one row each; if the user picked only
-  // "myself" (or nothing) we still render a single freeform row so a
-  // caregiver can type a name without the flow being a dead end.
   useEffect(() => {
-    if (phase !== "dependents") return;
-    if (dependents.length > 0) return;
-    const rows = careSelections
-      .filter((id) => id !== "myself")
-      .map<Dependent>((id) => ({
-        careId: id,
-        relationship: careIdToRelationship(id),
-        label: careIdToNounLabel(id),
-        firstName: "",
-        lastName: "",
-      }));
-    setDependents(
-      rows.length > 0
-        ? rows
-        : [{ careId: "other", relationship: "other", label: "someone", firstName: "", lastName: "" }],
-    );
-  }, [phase, careSelections, dependents.length]);
-
-  useEffect(() => {
-    if (phase !== "dependents") return;
-    analytics.track("Web Tour Dependents Shown" as any, {
-      relationship_count: careSelections.filter((id) => id !== "myself").length,
+    if (phase !== "setup-for") return;
+    analytics.track("Web Tour Setup For Shown" as any, {
+      selection_count: careSelections.filter((id) => id !== "myself").length,
     });
   }, [phase, careSelections]);
-
-  // Save dependents as linked managed profiles, then continue to
-  // elena-plan. Each non-empty row POSTs once via /profiles. Failures
-  // are logged but don't block the flow — name capture is best-effort.
-  const advanceFromDependents = useCallback(async () => {
-    if (savingDependents) return;
-    const toSave = dependents.filter((d) => d.firstName.trim().length > 0);
-    analytics.track("Web Tour Dependents Continued" as any, {
-      saved_count: toSave.length,
-      total_rows: dependents.length,
-    });
-    setSavingDependents(true);
-    try {
-      if (toSave.length > 0) {
-        await Promise.all(
-          toSave.map((d) =>
-            apiFetch("/profiles", {
-              method: "POST",
-              body: JSON.stringify({
-                first_name: d.firstName.trim(),
-                last_name: d.lastName.trim(),
-                label: d.relationship,
-                relationship: d.relationship,
-              }),
-            }).catch((e) => console.log("[tour] dependent save failed", d, e)),
-          ),
-        );
-        await refreshProfiles();
-      }
-    } finally {
-      setSavingDependents(false);
-      setPhase("elena-plan");
-    }
-  }, [savingDependents, dependents, refreshProfiles]);
 
   useEffect(() => {
     if (phase !== "elena-plan") return;
@@ -1848,7 +1822,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   //    between phases, and the card's max-width animates so the transition
   //    feels like one continuous container morphing rather than separate
   //    modals. ──
-  if (phase === "intro" || phase === "care" || phase === "care-ack" || phase === "router" || phase === "pain" || phase === "value" || phase === "profile-form" || phase === "situation" || phase === "meds" || phase === "care-plan" || phase === "validation" || phase === "dependents" || phase === "elena-plan") {
+  if (phase === "intro" || phase === "care" || phase === "care-ack" || phase === "setup-for" || phase === "router" || phase === "pain" || phase === "value" || phase === "profile-form" || phase === "situation" || phase === "meds" || phase === "care-plan" || phase === "validation" || phase === "elena-plan") {
     const motionEase = [0.4, 0, 0.2, 1] as const;
     const cardMaxWidth = phase === "value" ? 512 : 448;
     return createPortal(
@@ -2048,6 +2022,118 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               );
             })()}
 
+            {phase === "setup-for" && (() => {
+              // Who is THIS session for? Show myself + every non-self
+              // care selection as cards, single-select. Picking a
+              // relationship exposes inline name inputs whose capture
+              // creates the linked profile (and switches to it) after
+              // profile-form. Picking myself skips all of that.
+              const options: { id: string; label: string; icon: typeof User }[] = [
+                { id: "myself", label: "Me", icon: User },
+                ...careSelections
+                  .filter((id) => id !== "myself")
+                  .map((id) => {
+                    const opt = CARE_OPTIONS.find((o) => o.id === id);
+                    return opt ? { id: opt.id, label: opt.label, icon: opt.icon } : null;
+                  })
+                  .filter((x): x is { id: string; label: string; icon: typeof User } => x !== null),
+              ];
+              const pickedOther = setupForCareId && setupForCareId !== "myself";
+              const canContinue =
+                !creatingDependent &&
+                !!setupForCareId &&
+                (setupForCareId === "myself" || dependentFirstName.trim().length > 0);
+              const dependentLabel = pickedOther
+                ? careIdToNounLabel(setupForCareId as string)
+                : "";
+              return (
+                <motion.div
+                  key="setup-for"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.22, ease: motionEase }}
+                  className="p-5 sm:p-7 flex flex-col gap-4 min-h-[380px] sm:min-h-[440px]"
+                >
+                  <div className="flex-1 flex flex-col justify-center gap-4">
+                    <div className="text-center">
+                      <h2 className="text-[22px] font-extrabold text-[#0F1B3D] mb-2 text-balance leading-tight">
+                        <StreamingText
+                          text="Who do you want to set Elena up for first?"
+                          onDone={() => setHeadlineDone(true)}
+                        />
+                      </h2>
+                      <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: headlineDone ? 1 : 0 }}
+                        transition={{ duration: 0.3, ease: motionEase }}
+                        className="text-[14px] text-[#8E8E93] font-light text-balance"
+                      >
+                        We can add the others later.
+                      </motion.p>
+                    </div>
+                    {headlineDone && (
+                      <RevealStack visible className="flex flex-col gap-2">
+                        {options.map((opt) => (
+                          <SelectablePill
+                            key={opt.id}
+                            icon={opt.icon}
+                            label={opt.label}
+                            selected={setupForCareId === opt.id}
+                            onClick={() => setSetupForCareId(opt.id)}
+                          />
+                        ))}
+                      </RevealStack>
+                    )}
+                    {headlineDone && pickedOther && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, ease: motionEase }}
+                        className="flex flex-col gap-1.5"
+                      >
+                        <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider px-1">
+                          Your {dependentLabel}
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={dependentFirstName}
+                            onChange={(e) => setDependentFirstName(e.target.value)}
+                            placeholder="First name"
+                            autoComplete="off"
+                            autoCorrect="off"
+                            autoCapitalize="words"
+                            className="flex-1 rounded-xl border border-[#0F1B3D]/[0.08] bg-white px-3.5 py-2.5 text-base text-[#0F1B3D] placeholder:text-[#8E8E93] outline-none focus:border-[#2E6BB5] focus:ring-1 focus:ring-[#2E6BB5] transition-colors"
+                          />
+                          <input
+                            type="text"
+                            value={dependentLastName}
+                            onChange={(e) => setDependentLastName(e.target.value)}
+                            placeholder="Last name"
+                            autoComplete="off"
+                            autoCorrect="off"
+                            autoCapitalize="words"
+                            className="flex-1 rounded-xl border border-[#0F1B3D]/[0.08] bg-white px-3.5 py-2.5 text-base text-[#0F1B3D] placeholder:text-[#8E8E93] outline-none focus:border-[#2E6BB5] focus:ring-1 focus:ring-[#2E6BB5] transition-colors"
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                  <RevealButton visible={headlineDone} delay={0.1 + options.length * 0.07}>
+                    <button
+                      onClick={advanceFromSetupFor}
+                      disabled={!canContinue}
+                      className="w-full py-3.5 rounded-full text-white font-semibold font-sans text-[15px] transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(15,27,61,0.25)]"
+                      style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%)" }}
+                    >
+                      {creatingDependent ? "Setting up..." : "Continue"}
+                    </button>
+                  </RevealButton>
+                </motion.div>
+              );
+            })()}
+
             {phase === "pain" && (() => {
               // Variant derived from the router pick: money-centric
               // intents (money, medications) show the dollars-over-decade
@@ -2125,10 +2211,6 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 money: {
                   headline: "Let's bring those costs down.",
                   subtitle: "Price checks, bills, and appeals — I'll fight for every dollar.",
-                },
-                caregiver: {
-                  headline: "Less on your plate, starting today.",
-                  subtitle: "One place for their care, one place for yours. I'll keep it straight.",
                 },
                 staying_healthy: {
                   headline: "Stay ahead of it, not behind it.",
@@ -2301,7 +2383,6 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 { key: "condition", label: "Managing a condition", icon: HeartPulse },
                 { key: "medications", label: "My medications", icon: Heart },
                 { key: "money", label: "Saving money", icon: DollarSign },
-                { key: "caregiver", label: "Caring for someone", icon: Users },
                 { key: "staying_healthy", label: "Staying on top of it", icon: HelpCircle },
               ];
               return (
@@ -2829,91 +2910,6 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               );
             })()}
 
-            {phase === "dependents" && (() => {
-              const headline = "Who are you taking care of?";
-              const subtitle = "Add names to personalize — skip any you want.";
-              const canContinue = !savingDependents;
-              return (
-                <motion.div
-                  key="dependents"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.22, ease: motionEase }}
-                  className="p-5 sm:p-7 flex flex-col gap-4 min-h-[380px] sm:min-h-[440px]"
-                >
-                  <div className="flex-1 flex flex-col justify-center gap-4">
-                    <div className="text-center">
-                      <h2 className="text-[22px] font-extrabold text-[#0F1B3D] mb-2 text-balance leading-tight">
-                        <StreamingText text={headline} onDone={() => setHeadlineDone(true)} />
-                      </h2>
-                      <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: headlineDone ? 1 : 0 }}
-                        transition={{ duration: 0.3, ease: motionEase }}
-                        className="text-[14px] text-[#8E8E93] font-light"
-                      >
-                        {subtitle}
-                      </motion.p>
-                    </div>
-                    {headlineDone && (
-                      <RevealStack visible className="flex flex-col gap-3">
-                        {dependents.map((d, i) => (
-                          <motion.div
-                            key={`${d.careId}-${i}`}
-                            variants={REVEAL_ITEM}
-                            className="flex flex-col gap-1.5"
-                          >
-                            <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider px-1">
-                              Your {d.label}
-                            </label>
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={d.firstName}
-                                onChange={(e) => {
-                                  const v = e.target.value;
-                                  setDependents((prev) => prev.map((row, idx) => (idx === i ? { ...row, firstName: v } : row)));
-                                }}
-                                placeholder="First name"
-                                autoComplete="off"
-                                autoCorrect="off"
-                                autoCapitalize="words"
-                                className="flex-1 rounded-xl border border-[#0F1B3D]/[0.08] bg-white px-3.5 py-2.5 text-base text-[#0F1B3D] placeholder:text-[#8E8E93] outline-none focus:border-[#2E6BB5] focus:ring-1 focus:ring-[#2E6BB5] transition-colors"
-                              />
-                              <input
-                                type="text"
-                                value={d.lastName}
-                                onChange={(e) => {
-                                  const v = e.target.value;
-                                  setDependents((prev) => prev.map((row, idx) => (idx === i ? { ...row, lastName: v } : row)));
-                                }}
-                                placeholder="Last name"
-                                autoComplete="off"
-                                autoCorrect="off"
-                                autoCapitalize="words"
-                                className="flex-1 rounded-xl border border-[#0F1B3D]/[0.08] bg-white px-3.5 py-2.5 text-base text-[#0F1B3D] placeholder:text-[#8E8E93] outline-none focus:border-[#2E6BB5] focus:ring-1 focus:ring-[#2E6BB5] transition-colors"
-                              />
-                            </div>
-                          </motion.div>
-                        ))}
-                      </RevealStack>
-                    )}
-                  </div>
-                  <RevealButton visible={headlineDone} delay={0.1 + dependents.length * 0.07}>
-                    <button
-                      onClick={advanceFromDependents}
-                      disabled={!canContinue}
-                      className="w-full py-3.5 rounded-full text-white font-semibold font-sans text-[15px] transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(15,27,61,0.25)]"
-                      style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%)" }}
-                    >
-                      {savingDependents ? "Saving..." : "Continue"}
-                    </button>
-                  </RevealButton>
-                </motion.div>
-              );
-            })()}
-
             {phase === "elena-plan" && (() => {
               const tpl = getTemplate(selectedSituation);
               // OTC list for the derived "I can track your X refills" line —
@@ -2946,8 +2942,6 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 baseLines = MEDS_BRANCH_HERO_VALUES;
               } else if (routerChoice === "money") {
                 baseLines = MONEY_BRANCH_HERO_VALUES;
-              } else if (routerChoice === "caregiver") {
-                baseLines = CAREGIVER_BRANCH_HERO_VALUES;
               } else if (routerChoice === "staying_healthy") {
                 baseLines = STAYING_HEALTHY_BRANCH_HERO_VALUES;
               } else {
@@ -2971,25 +2965,15 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   derived.unshift(`You said ${painOpt.label.toLowerCase()}. I can help bring that down.`);
                 }
               }
-              if (routerChoice === "caregiver") {
-                // Prefer first names captured in the dependents phase.
-                // Multiple names → "I can keep Linda and David's care
-                // straight"; single name → "I can book Linda's next
-                // visit". Falls back to the relationship-count headline
-                // when the user skipped every dependents row.
-                const namedDeps = dependents.filter((d) => d.firstName.trim().length > 0);
-                if (namedDeps.length >= 2) {
-                  const names = namedDeps.map((d) => d.firstName.trim());
-                  const joined = names.length === 2
-                    ? `${names[0]} and ${names[1]}`
-                    : `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
-                  derived.unshift(`I can keep ${joined}'s care straight in one place.`);
-                } else if (namedDeps.length === 1) {
-                  const d = namedDeps[0];
-                  derived.unshift(`I can book ${d.firstName.trim()}'s next visit.`);
-                } else if (careSelections.length >= 2) {
-                  derived.unshift(`You're caring for ${careSelections.length} people. I can keep it all straight.`);
-                }
+              // Dependent-setup derivation: when the user is setting
+              // Elena up for someone else, prepend a name-specific line
+              // so the elena-plan card speaks to THEM by name. Because
+              // the active profile is already the dependent at this
+              // point, this is framing-only (no separate caregiver data
+              // channel needed).
+              if (setupForCareId && setupForCareId !== "myself" && dependentFirstName.trim()) {
+                const first = dependentFirstName.trim();
+                derived.unshift(`I can book ${first}'s next visit.`);
               }
               // Cap at 3 AND dedupe by visual variant. Two cards that map
               // to the same mockup (e.g. derived "track your Fluoxetine
@@ -3800,9 +3784,6 @@ function BenefitTiles({ routerChoice }: { routerChoice: RouterChoice | null }) {
   if (routerChoice === "money" || routerChoice === "medications") {
     // Money-first: costs tile leads, insurance (coverage + bills) second.
     tiles = [tileMoney, tileInsurance, tileHours, tileFamily];
-  } else if (routerChoice === "caregiver") {
-    // Caregiver-first: family tile leads, hours-back second.
-    tiles = [tileFamily, tileHours, tileInsurance, tileMoney];
   } else {
     // Condition / staying-healthy / null: default to hours-back leading,
     // since those users typically feel time pressure (appointments,
