@@ -890,7 +890,7 @@ function LandingPage() {
 
         {/* Content wrapper — viewport-height centered for bills, inline for others */}
         <div className="min-h-[80dvh] flex flex-col items-center justify-center w-full shrink-0 pb-8" style={{ paddingTop: "max(6rem, 12vh)" }}>
-        <div className="relative z-[4] text-center max-w-[700px] w-full px-6 max-md:px-5">
+        <div className="relative z-[4] text-center max-w-[700px] md:max-w-[880px] w-full px-6 max-md:px-5">
           <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[2.15rem] font-light leading-[1.15] tracking-tight text-white">
             {hero ? (
               <>
@@ -906,14 +906,16 @@ function LandingPage() {
                 })() : hero.headline[1]}
               </>
             ) : (
-              <>What can I help you<br />with <em className="italic font-normal font-[family-name:var(--font-dm-serif)]">today?</em></>
+              <>
+                <span className="block md:whitespace-nowrap">Better healthcare starts with</span>
+                <span className="block md:whitespace-nowrap">an <em className="italic font-normal font-[family-name:var(--font-dm-serif)]">advocate.</em> Meet Elena.</span>
+              </>
             )}
           </h1>
           <p className="text-[0.95rem] max-md:text-[0.75rem] font-light text-white/85 mt-4 max-md:mt-2.5 tracking-wide">
-            {hero ? hero.subtitle : (<>
-              <span className="hidden md:inline">Elena is your personal health assistant. She&apos;s like ChatGPT, but she can make calls and is an expert in navigating the healthcare system.</span>
-              <span className="md:hidden">Elena is your personal health assistant. She&apos;s like ChatGPT, but she can make calls and navigate the healthcare system.</span>
-            </>)}
+            {hero ? hero.subtitle : (
+              <>Elena makes the calls, fights the bills, and finds in-network care. So you don&apos;t have to.</>
+            )}
           </p>
 
           {/* Chat input bar (desktop only — mobile gets a single CTA button below) */}

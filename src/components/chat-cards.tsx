@@ -153,11 +153,33 @@ function useInlineMap({
 
   // Initialize map once
   useEffect(() => {
-    if (!containerRef.current || !MAPBOX_TOKEN || items.length === 0) return;
+    // Token first — when it's empty, <InlineMapView> returns null and
+    // the ref never attaches. Checking containerRef first would have
+    // misleadingly reported "containerRef not attached" for what is
+    // really a missing-env-var problem.
+    if (!MAPBOX_TOKEN) {
+      console.log("[map-debug] useInlineMap skipped: NEXT_PUBLIC_MAPBOX_TOKEN missing at build time (value is empty string)");
+      return;
+    }
+    if (items.length === 0) {
+      console.log("[map-debug] useInlineMap skipped: no map items");
+      return;
+    }
+    if (!containerRef.current) {
+      console.log("[map-debug] useInlineMap skipped: containerRef not attached");
+      return;
+    }
+    console.log("[map-debug] useInlineMap init", { token_prefix: MAPBOX_TOKEN.slice(0, 6), items: items.length });
     let cancelled = false;
 
     (async () => {
-      const mapboxgl = (await import("mapbox-gl")).default;
+      let mapboxgl;
+      try {
+        mapboxgl = (await import("mapbox-gl")).default;
+      } catch (err) {
+        console.error("[map-debug] mapbox-gl dynamic import failed", err);
+        return;
+      }
 
       if (!document.getElementById("mapbox-gl-css")) {
         const link = document.createElement("link");
@@ -179,16 +201,23 @@ function useInlineMap({
       const bounds = new mapboxgl.LngLatBounds();
       items.forEach((m) => bounds.extend([m.lng, m.lat]));
 
-      const map = new mapboxgl.Map({
-        container: containerRef.current,
-        style: "mapbox://styles/mapbox/standard",
-        bounds,
-        fitBoundsOptions: { padding: 50, maxZoom: items.length === 1 ? 12 : 14 },
-        attributionControl: false,
-        dragRotate: false,
-        pitchWithRotate: false,
-        touchZoomRotate: true,
-      });
+      let map;
+      try {
+        map = new mapboxgl.Map({
+          container: containerRef.current,
+          style: "mapbox://styles/mapbox/standard",
+          bounds,
+          fitBoundsOptions: { padding: 50, maxZoom: items.length === 1 ? 12 : 14 },
+          attributionControl: false,
+          dragRotate: false,
+          pitchWithRotate: false,
+          touchZoomRotate: true,
+        });
+      } catch (err) {
+        console.error("[map-debug] mapboxgl.Map() constructor threw", err);
+        return;
+      }
+      map.on("error", (e) => console.error("[map-debug] mapbox map error event", e));
       // Disable rotation via touch
       map.touchZoomRotate.disableRotation();
 

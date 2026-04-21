@@ -35,11 +35,13 @@ import {
   User,
   Activity,
   ChevronUp,
+  ShieldCheck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
 import { AddFamilyModal } from "@/components/add-family-modal";
+import { HipaaConsentModal } from "@/components/hipaa-consent-modal";
 import { PhotoCropModal } from "@/components/photo-crop-modal";
 import { AvatarPhoto } from "@/components/avatar-photo";
 import type { CareTodo, CareTodoCreate, CareVisit, DoctorItem, Habit, ProfileSummary, PersonalInfo, HealthData, StructuredDocument as ProfileDocument, SavedCondition, SavedMedication, SavedSurgery, SavedAllergy, SavedFamilyHistory, SavedSocialHistory } from "@/lib/types";
@@ -334,6 +336,7 @@ export function ProfilePopover({
           date_of_birth: p.date_of_birth || "", gender: p.gender || "",
           phone_number: p.phone_number || "", home_address: p.home_address || "",
           city: p.city || "", state: p.state || "", zip_code: p.zip_code || "",
+          hipaa_consent_signed_at: p.hipaa_consent_signed_at || null,
         });
       }
       const hd: HealthData = { conditions: [], medications: [], surgeries: [], allergies: [], familyHistory: [], socialHistory: [] };
@@ -3251,8 +3254,10 @@ function PersonalDetailsPanel({
     first_name: "", last_name: "", preferred_name: "", email: "",
     date_of_birth: "", gender: "", phone_number: "",
     home_address: "", city: "", state: "", zip_code: "",
+    hipaa_consent_signed_at: null,
   });
   const [saving, setSaving] = useState(false);
+  const [hipaaOpen, setHipaaOpen] = useState(false);
 
   useEffect(() => {
     if (personalInfo) setForm(personalInfo);
@@ -3303,7 +3308,7 @@ function PersonalDetailsPanel({
         </div>
         <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
           {fields.map(([label, key], i) => {
-            let val = form[key];
+            let val = (form[key] || "") as string;
             if (key === "date_of_birth" && val) {
               try { val = new Date(val + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }); } catch {}
             }
@@ -3324,6 +3329,49 @@ function PersonalDetailsPanel({
             </div>
           )}
         </div>
+
+        {/* HIPAA authorization — Elena needs a signed form to call
+            providers and insurers on the user's behalf. Shown alongside
+            Personal Details so users can re-open and sign at any time,
+            including after the "Open Authorization Form" button in chat
+            is missed or dismissed. */}
+        <div className="mt-4 flex items-center gap-3 mb-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0F1B3D]/[0.06]">
+            <ShieldCheck className="h-5 w-5 text-[#0F1B3D]" />
+          </div>
+          <p className="text-[18px] font-extrabold text-[#0F1B3D]">Authorization</p>
+        </div>
+        <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
+          <div className="px-4 py-3.5">
+            <div className="flex items-center justify-between">
+              <div className="min-w-0">
+                <p className="text-[14px] font-medium text-[#0F1B3D]">HIPAA authorization</p>
+                <p className="text-[12px] text-[#8E8E93] mt-0.5 leading-snug">
+                  {form.hipaa_consent_signed_at
+                    ? `Signed on ${(() => { try { return new Date(form.hipaa_consent_signed_at!).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }); } catch { return "file"; } })()}`
+                    : "Required for Elena to call providers and insurers for you."}
+                </p>
+              </div>
+              <button
+                onClick={() => setHipaaOpen(true)}
+                className="shrink-0 rounded-full bg-[#0F1B3D] px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#0F1B3D]/90 transition-colors"
+              >
+                {form.hipaa_consent_signed_at ? "Re-sign" : "Sign now"}
+              </button>
+            </div>
+          </div>
+        </div>
+        <HipaaConsentModal
+          open={hipaaOpen}
+          onOpenChange={setHipaaOpen}
+          onSigned={() => {
+            // Reflect the new signature locally so the panel updates
+            // without waiting for a full profile refetch.
+            const now = new Date().toISOString();
+            setForm((prev) => ({ ...prev, hipaa_consent_signed_at: now }));
+            onUpdated({ ...form, hipaa_consent_signed_at: now });
+          }}
+        />
       </div>
     );
   }
