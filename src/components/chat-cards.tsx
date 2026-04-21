@@ -21,6 +21,8 @@ import {
   Pill,
   UserRound,
   Lock,
+  ClipboardList,
+  CircleCheck,
 } from "lucide-react";
 import type {
   DoctorResult,
@@ -2852,6 +2854,94 @@ export function RefillPlanCreatedCard({ data }: { data: RefillPlanCreatedPayload
       <div className="px-5 pb-4 pt-1">
         <p className="text-[11px] font-medium" style={{ color: "rgba(92,26,42,0.7)" }}>
           You'll see these on your Game Plan in the Health tab.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// CarePlanCard — Game-Plan-styled card for a curated condition care plan.
+//
+// Emitted by the backend whenever `get_care_plan_for_condition` matches
+// the user's stated condition against the template library. Visually
+// echoes the Game Plan tile in the profile popover (same salmon, same
+// white inner card, same row layout) so users see "oh, this is the plan
+// that lives in my Health tab" without the agent having to explain.
+// Backend payload: ChatResponse.care_plan_shown (api_chat.py).
+// ──────────────────────────────────────────────────────────────────────
+
+export interface CarePlanItemPayload {
+  id: string;
+  label: string;
+  todo_text: string;
+}
+
+export interface CarePlanShownPayload {
+  key: string;
+  condition_name: string;
+  plan_items: CarePlanItemPayload[];
+  source?: string | null;
+}
+
+export function CarePlanCard({ data }: { data: CarePlanShownPayload }) {
+  const items = data.plan_items || [];
+
+  return (
+    <div
+      className="mt-3 rounded-[20px] overflow-hidden"
+      style={{
+        background: "#F4B084",
+        boxShadow: "0 8px 30px rgba(0,0,0,0.10), 0 3px 10px rgba(0,0,0,0.05)",
+      }}
+    >
+      {/* Header */}
+      <div className="px-5 pt-4 pb-3">
+        <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wider" style={{ color: "#7A3040" }}>
+          <ClipboardList className="h-3.5 w-3.5" />
+          <span>Care plan</span>
+        </div>
+        <h3 className="mt-1 text-[20px] font-extrabold leading-tight" style={{ color: "#5C1A2A" }}>
+          {data.condition_name}
+        </h3>
+        <p className="text-[13px] font-medium mt-0.5" style={{ color: "#7A3040" }}>
+          {items.length} next step{items.length === 1 ? "" : "s"} I can help with
+        </p>
+      </div>
+
+      {/* Game Plan-style item list */}
+      {items.length > 0 && (
+        <div className="bg-white/95 mx-3 mb-3 rounded-xl overflow-hidden">
+          {items.map((item, i) => (
+            <div key={item.id || i}>
+              {i > 0 && <div className="h-px mx-[14px]" style={{ background: "rgba(92,26,42,0.15)" }} />}
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                  style={{ background: "#F4B084" }}
+                >
+                  <CircleCheck className="h-4 w-4 text-white" strokeWidth={2.5} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[15px] font-semibold leading-tight" style={{ color: "#5C1A2A" }}>
+                    {item.todo_text}
+                  </p>
+                  <p className="text-[12.5px] mt-[2px] leading-snug" style={{ color: "#7A3040" }}>
+                    {item.label}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Footer — source citation for clinical provenance */}
+      <div className="px-5 pb-4 pt-1">
+        <p className="text-[11px] font-medium" style={{ color: "rgba(92,26,42,0.7)" }}>
+          {data.source
+            ? `Based on ${data.source}. I can add any of these to your Game Plan.`
+            : "I can add any of these to your Game Plan."}
         </p>
       </div>
     </div>

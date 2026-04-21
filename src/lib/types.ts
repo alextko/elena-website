@@ -40,6 +40,7 @@ export interface ChatResponse {
   needs_hipaa_consent?: boolean | null;
   todo_created?: boolean | null;
   refill_plan_created?: import("@/components/chat-cards").RefillPlanCreatedPayload | null;
+  care_plan_shown?: import("@/components/chat-cards").CarePlanShownPayload | null;
 }
 
 // --- Session History (api_chat.py:480-485) ---
