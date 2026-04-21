@@ -13,11 +13,20 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const hasTrackedPageView = useRef(false);
+
   useEffect(() => {
     if (!loading && session) {
       router.replace("/chat");
     }
   }, [loading, session, router]);
+
+  useEffect(() => {
+    if (!loading && !session && !hasTrackedPageView.current) {
+      hasTrackedPageView.current = true;
+      analytics.track("Login Page Viewed");
+    }
+  }, [loading, session]);
 
   if (loading) {
     return (
@@ -26,14 +35,6 @@ export default function LoginPage() {
       </div>
     );
   }
-
-  const hasTrackedPageView = useRef(false);
-  useEffect(() => {
-    if (!loading && !session && !hasTrackedPageView.current) {
-      hasTrackedPageView.current = true;
-      analytics.track("Login Page Viewed");
-    }
-  }, [loading, session]);
 
   if (session) return null;
 
