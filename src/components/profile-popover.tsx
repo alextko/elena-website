@@ -963,9 +963,12 @@ export function ProfilePopover({
                                                   key={di}
                                                   className="w-[6px] h-[6px] rounded-full"
                                                   style={{
-                                                    background: day.isFuture ? "transparent" : color,
-                                                    border: day.isFuture ? `1.5px solid ${color}` : "none",
-                                                    opacity: day.isFuture ? 0.8 : 1,
+                                                    // Solid + faded for future dates so they're
+                                                    // actually visible. The previous ring style
+                                                    // (transparent bg + 1.5px border on a 6px
+                                                    // circle) was effectively invisible.
+                                                    background: color,
+                                                    opacity: day.isFuture ? 0.55 : 1,
                                                   }}
                                                 />
                                               ))}
@@ -1022,9 +1025,11 @@ export function ProfilePopover({
                                             key={di}
                                             className="w-[6px] h-[6px] rounded-full"
                                             style={{
-                                              background: day.isFuture ? "transparent" : color,
-                                              border: day.isFuture ? `1.5px solid ${color}` : "none",
-                                              opacity: day.isFuture ? 0.6 : 0.9,
+                                              // Solid + faded for future dates so they're
+                                              // actually visible. Previously rendered as a
+                                              // 1.5px ring on a 6px circle = invisible.
+                                              background: color,
+                                              opacity: day.isFuture ? 0.55 : 0.9,
                                             }}
                                           />
                                         ))}
@@ -1106,8 +1111,26 @@ export function ProfilePopover({
                       // Care todos: for today use backend-filtered todayTodos,
                       // for other dates use the shared helper.
                       const todoSource = isViewingToday ? todayTodos : todos;
+                      // Overload control: when the tour (or Elena) has
+                      // populated the game plan with 4+ tactical
+                      // care_plan todos, hide the two profile-completion
+                      // todos that read as chores ("Add your providers
+                      // and visit history", "Fill out your health
+                      // profile"). Keep "Add your insurance" — it's a
+                      // quick, high-value add and unblocks coverage
+                      // checks. Threshold is on care_plan-category
+                      // todos specifically so pure profile-completion
+                      // flows (user did the simple onboarding with no
+                      // tactical picks) still see the full set.
+                      const carePlanTodoCount = todoSource.filter(
+                        (t) => t.category === "care_plan" && t.status !== "dismissed" && t.frequency !== "daily",
+                      ).length;
+                      const hideProfileChores = carePlanTodoCount >= 4;
                       const dayTodos: GamePlanItem[] = todoSource
                         .filter((t) => {
+                          if (hideProfileChores && (t.category === "providers" || t.category === "health_profile")) {
+                            return false;
+                          }
                           if (isViewingToday) {
                             // Backend already filtered to today's items; just exclude dismissed + daily.
                             if (t.status === "dismissed") return false;
@@ -1124,10 +1147,21 @@ export function ProfilePopover({
 
                       const items: GamePlanItem[] = [...dayVisits, ...dayHabits, ...dayTodos];
 
-                      // Sort: visits first, then by sort order (don't reorder on completion)
+                      // Sort: visits first, then care-plan todos (from
+                      // onboarding — condition-specific labs, exams,
+                      // screenings), then habits, then profile-completion
+                      // todos ("Add your insurance", "Add a doctor") at
+                      // the bottom. Within each group, respect sort_order.
+                      const todoTier = (item: GamePlanItem): number => {
+                        if (item.type !== "todo") return item.type === "habit" ? 1 : 0;
+                        return item.todo.category === "care_plan" ? 0 : 2;
+                      };
                       items.sort((a, b) => {
                         if (a.type === "visit" && b.type !== "visit") return -1;
                         if (a.type !== "visit" && b.type === "visit") return 1;
+                        const tierA = todoTier(a);
+                        const tierB = todoTier(b);
+                        if (tierA !== tierB) return tierA - tierB;
                         return a.sortOrder - b.sortOrder;
                       });
 
@@ -1195,18 +1229,18 @@ export function ProfilePopover({
                                 {i > 0 && (
                                   <div className="h-px mx-[14px]" style={{ background: "rgba(92,26,42,0.2)" }} />
                                 )}
-                                <div className="flex items-center gap-3 py-[10px]">
-                                  {/* Checkbox */}
+                                <div className="flex items-center gap-3 max-md:gap-2 py-[10px]">
+                                  {/* Checkbox — smaller on mobile to leave more room for the title */}
                                   <button
                                     onClick={() => isHabit ? toggleHabit(item.id) : toggleTodo(item.todo.id)}
-                                    className="w-8 h-8 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors duration-200"
+                                    className="w-8 h-8 max-md:w-[22px] max-md:h-[22px] rounded-full border-2 max-md:border flex-shrink-0 flex items-center justify-center transition-colors duration-200"
                                     style={{
                                       borderColor: completed ? "#5C1A2A" : "#7A3040",
                                       background: completed ? "#5C1A2A" : "transparent",
                                     }}
                                   >
                                     {completed && (
-                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                      <svg className="w-4 h-4 max-md:w-3 max-md:h-3" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                         <polyline points="20 6 9 17 4 12" />
                                       </svg>
                                     )}
@@ -1218,7 +1252,7 @@ export function ProfilePopover({
                                     onClick={!isHabit ? () => setEditingTodo({ mode: "edit", todo: item.todo }) : undefined}
                                   >
                                     <div
-                                      className="text-[15px] font-semibold transition-all duration-200 truncate"
+                                      className="text-[15px] max-md:text-[14px] font-semibold transition-all duration-200 truncate"
                                       style={{
                                         color: completed ? "#7A3040" : "#5C1A2A",
                                         textDecoration: completed ? "line-through" : "none",
@@ -1227,18 +1261,18 @@ export function ProfilePopover({
                                       {title}
                                     </div>
                                     {(subtitle || dueTime) && (
-                                      <div className="text-[13px] mt-[1px] truncate" style={{ color: "#7A3040" }}>
+                                      <div className="text-[13px] max-md:text-[12px] mt-[1px] truncate" style={{ color: "#7A3040" }}>
                                         {dueTime && <span>{dueTime.replace(/^0/, "")} · </span>}
                                         {subtitle}
                                       </div>
                                     )}
                                   </button>
 
-                                  {/* Start button (matches mobile game plan) */}
+                                  {/* Start button — shrink on mobile so the title gets more horizontal real estate */}
                                   {!completed && bookMsg && onBookMessage && (
                                     <button
                                       onClick={() => { onBookMessage(bookMsg); setOpen(false); }}
-                                      className="shrink-0 rounded-full px-4 py-[7px] text-[13px] font-semibold text-white transition-colors"
+                                      className="shrink-0 rounded-full px-4 py-[7px] text-[13px] max-md:px-2.5 max-md:py-1 max-md:text-[12px] font-semibold text-white transition-colors"
                                       style={{ background: "#5C1A2A" }}
                                     >
                                       Start
