@@ -23,6 +23,7 @@ import {
   Lock,
   ClipboardList,
   CircleCheck,
+  Calendar,
 } from "lucide-react";
 import type {
   DoctorResult,
@@ -2942,6 +2943,124 @@ export function CarePlanCard({ data }: { data: CarePlanShownPayload }) {
           {data.source
             ? `Based on ${data.source}. I can add any of these to your Game Plan.`
             : "I can add any of these to your Game Plan."}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// ScheduledActionCard — Game-Plan-styled receipt for a single scheduled
+// action: a future call (schedule_call), a timed/dated todo
+// (manage_care_todos with a due_date), or a logged visit (manage_care_visit).
+//
+// Backend payload: ChatResponse.scheduled_action_created (api_chat.py).
+// Shape: { kind: "call" | "todo" | "visit", title, subtitle?, scheduled_at?,
+//          hipaa_signed?, call_type?, category? }
+// ──────────────────────────────────────────────────────────────────────
+
+export interface ScheduledActionCreatedPayload {
+  kind: "call" | "todo" | "visit";
+  title: string;
+  subtitle?: string | null;
+  scheduled_at?: string | null;
+  hipaa_signed?: boolean | null;
+  call_type?: string | null;
+  category?: string | null;
+}
+
+function formatScheduledAt(iso: string | null | undefined): {
+  date: string;
+  time: string | null;
+} {
+  if (!iso) return { date: "", time: null };
+  const hasTime = iso.length > 10 && iso.includes("T");
+  try {
+    const d = hasTime ? new Date(iso) : new Date(`${iso.slice(0, 10)}T12:00:00`);
+    const date = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const time = hasTime
+      ? d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+      : null;
+    return { date, time };
+  } catch {
+    return { date: iso.slice(0, 10), time: null };
+  }
+}
+
+export function ScheduledActionCard({ data }: { data: ScheduledActionCreatedPayload }) {
+  const { date, time } = formatScheduledAt(data.scheduled_at);
+  const kindLabel =
+    data.kind === "call" ? "Call scheduled" : data.kind === "visit" ? "Visit added" : "Reminder set";
+  const Icon = data.kind === "call" ? Phone : data.kind === "visit" ? Calendar : CircleCheck;
+  const showHipaaBanner = data.kind === "call" && data.hipaa_signed === false;
+
+  return (
+    <div
+      className="mt-3 rounded-[20px] overflow-hidden"
+      style={{
+        background: "#F4B084",
+        boxShadow: "0 8px 30px rgba(0,0,0,0.10), 0 3px 10px rgba(0,0,0,0.05)",
+      }}
+    >
+      <div className="px-5 pt-4 pb-3">
+        <div
+          className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wider"
+          style={{ color: "#7A3040" }}
+        >
+          <Icon className="h-3.5 w-3.5" />
+          <span>{kindLabel}</span>
+        </div>
+        <h3 className="mt-1 text-[20px] font-extrabold leading-tight" style={{ color: "#5C1A2A" }}>
+          {data.title}
+        </h3>
+      </div>
+
+      {showHipaaBanner && (
+        <div
+          className="mx-3 mb-2 rounded-xl px-3 py-2 flex items-start gap-2"
+          style={{ background: "rgba(255,255,255,0.55)", border: "1px solid rgba(92,26,42,0.18)" }}
+        >
+          <Lock className="h-4 w-4 mt-0.5 shrink-0" style={{ color: "#5C1A2A" }} />
+          <p className="text-[12px] leading-relaxed" style={{ color: "#5C1A2A" }}>
+            Call is queued, sign the HIPAA authorization to let Elena place it on your behalf.
+          </p>
+        </div>
+      )}
+
+      <div className="bg-white/95 mx-3 mb-3 rounded-xl overflow-hidden">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+            style={{ background: "#F4B084" }}
+          >
+            <Icon className="h-4 w-4 text-white" strokeWidth={2.5} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[15px] font-semibold leading-tight" style={{ color: "#5C1A2A" }}>
+              {data.title}
+            </p>
+            {data.subtitle && (
+              <p className="text-[12.5px] mt-[2px] leading-snug" style={{ color: "#7A3040" }}>
+                {data.subtitle}
+              </p>
+            )}
+          </div>
+          {date && (
+            <span
+              className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide"
+              style={{ background: "rgba(92,26,42,0.10)", color: "#5C1A2A" }}
+            >
+              {time ? `${date} · ${time}` : date}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="px-5 pb-4 pt-1">
+        <p className="text-[11px] font-medium" style={{ color: "rgba(92,26,42,0.7)" }}>
+          {data.kind === "visit"
+            ? "You'll see this on your Visits tab."
+            : "You'll see this on your Game Plan in the Health tab."}
         </p>
       </div>
     </div>

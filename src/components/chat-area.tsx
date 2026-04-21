@@ -35,6 +35,7 @@ import {
   InsurancePlanComparisonCard,
   RefillPlanCreatedCard,
   CarePlanCard,
+  ScheduledActionCard,
 } from "@/components/chat-cards";
 import type {
   ChatMessageItem,
@@ -81,6 +82,7 @@ type Message = {
   insurancePlanComparison?: import("@/lib/types").InsurancePlanComparison | null;
   refillPlanCreated?: import("@/components/chat-cards").RefillPlanCreatedPayload | null;
   carePlanShown?: import("@/components/chat-cards").CarePlanShownPayload | null;
+  scheduledActionCreated?: import("@/components/chat-cards").ScheduledActionCreatedPayload | null;
 };
 
 // Streaming text — reveals character by character, snapping to word boundaries.
@@ -336,6 +338,7 @@ export function ChatArea({
     // (new chat button, profile switch) can fetch a fresh welcome. StrictMode
     // double-invokes this effect on mount but the guard inside fetchWelcome
     // still prevents the second call from actually hitting the backend.
+    welcomeInFlightRef.current = false;
 
     // Increment request ID so stale fetches are ignored
     const requestId = ++loadRequestRef.current;
@@ -916,6 +919,7 @@ export function ChatArea({
               insurancePlanComparison: chatResult.insurance_plan_comparison,
               refillPlanCreated: chatResult.refill_plan_created,
               carePlanShown: chatResult.care_plan_shown,
+              scheduledActionCreated: chatResult.scheduled_action_created,
             },
           ]);
           setStreamingId(assistantId);
@@ -1378,6 +1382,9 @@ export function ChatArea({
                     )}
                     {msg.carePlanShown && (
                       <CarePlanCard data={msg.carePlanShown} />
+                    )}
+                    {msg.scheduledActionCreated && (
+                      <ScheduledActionCard data={msg.scheduledActionCreated} />
                     )}
                     {msg.bookingResult && msg.bookingResult.status === "confirmed" && (
                       <>

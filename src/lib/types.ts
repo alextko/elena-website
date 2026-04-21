@@ -41,6 +41,7 @@ export interface ChatResponse {
   todo_created?: boolean | null;
   refill_plan_created?: import("@/components/chat-cards").RefillPlanCreatedPayload | null;
   care_plan_shown?: import("@/components/chat-cards").CarePlanShownPayload | null;
+  scheduled_action_created?: import("@/components/chat-cards").ScheduledActionCreatedPayload | null;
 }
 
 // --- Session History (api_chat.py:480-485) ---
