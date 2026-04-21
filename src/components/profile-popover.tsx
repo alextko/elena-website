@@ -962,14 +962,7 @@ export function ProfilePopover({
                                                 <div
                                                   key={di}
                                                   className="w-[6px] h-[6px] rounded-full"
-                                                  style={{
-                                                    // Solid + faded for future dates so they're
-                                                    // actually visible. The previous ring style
-                                                    // (transparent bg + 1.5px border on a 6px
-                                                    // circle) was effectively invisible.
-                                                    background: color,
-                                                    opacity: day.isFuture ? 0.55 : 1,
-                                                  }}
+                                                  style={{ background: color }}
                                                 />
                                               ))}
                                         </div>
@@ -1024,13 +1017,7 @@ export function ProfilePopover({
                                           <div
                                             key={di}
                                             className="w-[6px] h-[6px] rounded-full"
-                                            style={{
-                                              // Solid + faded for future dates so they're
-                                              // actually visible. Previously rendered as a
-                                              // 1.5px ring on a 6px circle = invisible.
-                                              background: color,
-                                              opacity: day.isFuture ? 0.55 : 0.9,
-                                            }}
+                                            style={{ background: color }}
                                           />
                                         ))}
                                       </div>
