@@ -14,7 +14,21 @@ import { WebOnboardingTour } from "@/components/web-onboarding-tour";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import { useAppCta } from "@/lib/app-cta-context";
 import type { ChatSessionItem } from "@/lib/types";
-import { trackSubscription, trackActivation } from "@/lib/tracking-events";
+import { trackSubscription, trackStartTrial, trackActivation } from "@/lib/tracking-events";
+
+// Plan price lookup for Subscribe fires. Mirrors the annual/weekly/monthly
+// prices shown in upgrade-modal.tsx. StartTrial events don't use this (value=0).
+const PLAN_PRICE_USD: Record<string, number> = {
+  standard_weekly: 6.99,
+  standard_monthly: 19.99,
+  standard_annual: 179.99,
+  premium_monthly: 39.99,
+  premium_annual: 299.99,
+};
+
+function getPlanPriceUSD(plan: string): number {
+  return PLAN_PRICE_USD[plan] ?? 0;
+}
 
 export default function ChatPage() {
   return (
@@ -209,13 +223,26 @@ function ChatPageInner() {
     if (searchParams.get("checkout") === "success") {
       analytics.track("Checkout Completed");
       setCheckoutSuccess(true);
-      // Verify subscription is real before firing ad pixel events
+      // Verify subscription is real before firing ad pixel events.
+      // Route by sub.status:
+      //   "trialing" → StartTrial (value=0). The user clicked "Start free
+      //                trial" and Stripe created a trialing subscription; no
+      //                money moved yet. Firing Subscribe here would tell Meta
+      //                a $179.99 conversion happened when it didn't.
+      //   "active"   → Subscribe with the real plan price. Either a direct-
+      //                paid plan (no trial) or the trial→paid transition
+      //                landed while the page was still open (rare).
+      // Both fires pass the server-issued meta event_id so Meta dedups with
+      // the matching backend CAPI fire from the Stripe webhook.
       apiFetch("/web/subscription").then(async (res) => {
         if (!res.ok) return;
         const sub = await res.json();
         refreshSubscription();
-        if (sub.tier !== "free" && sub.status === "active") {
-          trackSubscription(sub.plan || sub.tier, sub.price || 29, "USD");
+        const planKey: string = sub.plan || sub.tier;
+        if (sub.tier !== "free" && sub.status === "trialing") {
+          trackStartTrial(planKey, "USD", sub.meta_start_trial_event_id);
+        } else if (sub.tier !== "free" && sub.status === "active") {
+          trackSubscription(planKey, getPlanPriceUSD(planKey), "USD", sub.meta_subscribe_event_id);
         }
       }).catch(() => {});
       // Clean URL without reload
