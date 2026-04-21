@@ -451,6 +451,7 @@ export interface PersonalInfo {
   city: string;
   state: string;
   zip_code: string;
+  hipaa_consent_signed_at?: string | null;
 }
 
 export interface SavedCondition {

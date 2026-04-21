@@ -404,6 +404,15 @@ function ChatPageInner() {
           onShowPaywall={() => setUpgradeModalOpen(true)}
           onProfilePopover={(open, tab, showSwitcher) => { setTourPopoverOpen(open); if (tab) setTourPopoverTab(tab); setTourPopoverShowSwitcher(!!showSwitcher); }}
           onSidebar={(open) => setSidebarOpen(open)}
+          onSeedQuery={(msg) => {
+            // Tour finished with user-picked actions. Seed the chat
+            // directly — localStorage wouldn't work here because the
+            // chat page's one-time pending-query pickup has already
+            // run, so force-tour users would never see it.
+            setPendingQuery(msg);
+            setIsNewChat(true);
+            try { localStorage.removeItem("elena_pending_query"); } catch {}
+          }}
         />
       )}
       {/* Checkout success banner */}

@@ -11,6 +11,7 @@ import { trackPaywallHit, trackActivation } from "@/lib/tracking-events";
 import { usePollChat } from "@/hooks/usePollChat";
 import { useBookingPoll } from "@/hooks/useBookingPoll";
 import { UpgradeModal } from "@/components/upgrade-modal";
+import { ReviewsModal } from "@/components/reviews-modal";
 import { HipaaConsentModal } from "@/components/hipaa-consent-modal";
 import { FeedbackModal } from "@/components/feedback-modal";
 import {
@@ -185,7 +186,7 @@ export function ChatArea({
   demoMode?: boolean;
   autoShowHipaa?: boolean;
 }) {
-  const { user, profileId, profileData, profiles, refreshInsurance, refreshTodos, refreshVisits, refreshDoctors } = useAuth();
+  const { user, profileId, profileData, profiles, subscription, refreshInsurance, refreshTodos, refreshVisits, refreshDoctors } = useAuth();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const messagesRef = useRef<Message[]>([]);
@@ -207,6 +208,11 @@ export function ChatArea({
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState<"upgrade_required" | "limit_reached" | "feature_blocked" | "document_limit">("document_limit");
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>(undefined);
+  // Post-seed tour paywall: the review modal precedes the upgrade
+  // modal and fires on the first real value-moment Elena delivers
+  // (booking_id, bill_analysis, appeal_script, etc., or a successful
+  // todo creation). One-shot: consumes the sessionStorage gate flag.
+  const [reviewsOpen, setReviewsOpen] = useState(false);
   const [hipaaConsentOpen, setHipaaConsentOpen] = useState(false);
   const [showHipaaButton, setShowHipaaButton] = useState(false);
 
@@ -242,6 +248,12 @@ export function ChatArea({
   // genuine "new chat" transition can fetch again.
   const welcomeInFlightRef = useRef(false);
   const initialQuerySentRef = useRef(false);
+  // Tracks the last string we auto-sent. When initialQuery changes to
+  // a *new* value (e.g. tour's onSeedQuery callback fires a second
+  // pending-query after the landing one was already consumed), we need
+  // to reset the sent/sending guards so the new seed can still reach
+  // Elena. Without this, the stuck flags silently swallow the seed.
+  const lastAutoSentQuery = useRef<string | null>(null);
   const scrollEndRef = useRef<HTMLDivElement>(null);
   const { sendAndPoll, cancel } = usePollChat(demoMode);
   const booking = useBookingPoll();
@@ -555,14 +567,23 @@ export function ChatArea({
   }, [initialDocName]);
 
   useEffect(() => {
-    console.log("[chat-area] auto-send check:", {
-      hasInitialQuery: !!initialQuery,
-      alreadySent: initialQuerySentRef.current,
-      sending: initialQuerySending.current,
-      sessionId: sessionIdRef.current,
-      hasHandleSend: !!handleSendRef.current,
-      sessionReady,
-    });
+    // Reset the sent/sending guards when initialQuery changes to a new
+    // value. Covers the tour's second-seed handoff (landing query was
+    // already auto-sent on mount, tour's onSeedQuery then hands a new
+    // seed through pendingQuery → initialQuery) and the "reuse the
+    // same chat" flow where a stuck ref would otherwise eat the seed.
+    const isNewQuery = !!initialQuery && initialQuery !== lastAutoSentQuery.current;
+    if (isNewQuery) {
+      initialQuerySentRef.current = false;
+      initialQuerySending.current = false;
+    }
+    console.log(
+      `[chat-area] auto-send check: hasInitialQuery=${!!initialQuery} alreadySent=${initialQuerySentRef.current} sending=${initialQuerySending.current} sessionId=${sessionIdRef.current || "null"} hasHandleSend=${!!handleSendRef.current} sessionReady=${sessionReady} isLoading=${isLoading} isNewQuery=${isNewQuery} initialQueryPreview=${initialQuery ? JSON.stringify(initialQuery.slice(0, 40)) : "null"}`,
+    );
+    // Guard on isLoading: if a prior send is still in flight, handleSend
+    // would early-return silently and the seed would be lost. When
+    // isLoading flips back to false the effect re-runs and picks it up.
+    if (isLoading) return;
     if (
       initialQuery &&
       !initialQuerySentRef.current &&
@@ -573,10 +594,11 @@ export function ChatArea({
       console.log("[chat-area] AUTO-SENDING initial query:", initialQuery.slice(0, 50));
       initialQuerySending.current = true;
       initialQuerySentRef.current = true;
+      lastAutoSentQuery.current = initialQuery;
       localStorage.removeItem("elena_pending_query");
       handleSendRef.current(initialQuery);
     }
-  }, [initialQuery, welcomeMessage, sessionReady]);
+  }, [initialQuery, welcomeMessage, sessionReady, isLoading]);
 
   // Auto-send book message from game plan
   useEffect(() => {
@@ -913,11 +935,86 @@ export function ChatArea({
             has_doctors: !!(chatResult.doctor_results?.length),
             has_locations: !!(chatResult.location_results?.length),
           });
+          // Map-readiness debug. Logs per-entry coord state when
+          // provider / location cards come down so "no map" bug
+          // reports can be diagnosed from devtools alone. Grep the
+          // console for [map-debug].
+          if (chatResult.doctor_results?.length) {
+            const rows = chatResult.doctor_results.map((d) => ({
+              name: d.name,
+              source: (d as unknown as { source?: string }).source ?? null,
+              lat: d.latitude,
+              lng: d.longitude,
+              has_coords: !!(d.latitude && d.longitude),
+              zip: d.postal_code,
+            }));
+            console.log("[map-debug] doctor_results", {
+              total: rows.length,
+              map_ready: rows.filter((r) => r.has_coords).length,
+              sources: Array.from(new Set(rows.map((r) => r.source))),
+              rows,
+            });
+          }
+          if (chatResult.location_results?.length) {
+            const rows = chatResult.location_results.map((l) => ({
+              name: l.name,
+              category: l.category,
+              lat: l.latitude,
+              lng: l.longitude,
+              has_coords: !!(l.latitude && l.longitude),
+              address: l.address,
+              zip: l.postal_code,
+            }));
+            console.log("[map-debug] location_results", {
+              total: rows.length,
+              map_ready: rows.filter((r) => r.has_coords).length,
+              rows,
+            });
+          }
+          // Post-seed tour paywall. Two triggers, both gated by the
+          // elena_tour_post_seed_gate flag + free tier:
+          //  1. Real value moment (booking_id, bill_analysis,
+          //     appeal_script, assistance_result, plan_comparison,
+          //     todo_created) — Elena delivered something tangible, so
+          //     we show reviews → upgrade while the dopamine is fresh.
+          //  2. Backend quota block (error_code === "upgrade_required")
+          //     — if the gate flag is set, wrap the upgrade modal in
+          //     the reviews modal first; otherwise open upgrade directly.
+          // The flag is consumed (cleared) on first fire of either path.
+          const tourGateFlag = typeof window !== "undefined"
+            && sessionStorage.getItem("elena_tour_post_seed_gate") === "1";
+          const isFreeTier = !(subscription && subscription.tier && subscription.tier !== "free");
+          const hasValueMoment =
+            !!chatResult.booking_id ||
+            !!chatResult.bill_analysis ||
+            !!chatResult.appeal_script ||
+            !!chatResult.assistance_result ||
+            !!chatResult.insurance_plan_comparison ||
+            !!chatResult.todo_created;
+
           if (chatResult.error_code === "upgrade_required") {
             setUpgradeReason("upgrade_required");
             setUpgradeFeature(chatResult.gated_feature || undefined);
-            setUpgradeOpen(true);
             trackPaywallHit("upgrade_required", chatResult.gated_feature || undefined);
+            if (tourGateFlag && isFreeTier) {
+              setReviewsOpen(true);
+              try { sessionStorage.removeItem("elena_tour_post_seed_gate"); } catch {}
+            } else {
+              setUpgradeOpen(true);
+            }
+          } else if (hasValueMoment && tourGateFlag && isFreeTier) {
+            analytics.track("Tour Post-Seed Paywall Hit" as any, {
+              trigger: "value_moment",
+              has_booking: !!chatResult.booking_id,
+              has_bill_analysis: !!chatResult.bill_analysis,
+              has_appeal: !!chatResult.appeal_script,
+              has_assistance: !!chatResult.assistance_result,
+              has_plan_comparison: !!chatResult.insurance_plan_comparison,
+              has_todo_created: !!chatResult.todo_created,
+            });
+            setUpgradeReason("upgrade_required");
+            setReviewsOpen(true);
+            try { sessionStorage.removeItem("elena_tour_post_seed_gate"); } catch {}
           }
 
           if (chatResult.needs_hipaa_consent) {
@@ -999,6 +1096,14 @@ export function ChatArea({
       onDrop={handleDrop}
     >
       <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} reason={upgradeReason} featureName={upgradeFeature} />
+      <ReviewsModal
+        open={reviewsOpen}
+        onOpenChange={setReviewsOpen}
+        onContinue={() => {
+          setReviewsOpen(false);
+          setUpgradeOpen(true);
+        }}
+      />
       <HipaaConsentModal open={hipaaConsentOpen} onOpenChange={setHipaaConsentOpen} />
       <FeedbackModal open={feedbackOpen} onOpenChange={setFeedbackOpen} />
       <UpgradeModal open={softPaywallOpen} onOpenChange={setSoftPaywallOpen} reason="soft" />
@@ -1155,28 +1260,91 @@ export function ChatArea({
                   )}
                 </div>
                 {/* Structured result cards — hidden while streaming, fade in after */}
-                {msg.id !== streamingId && (
+                {msg.id !== streamingId && (() => {
+                  // One-shot per-message map-readiness debug. Fires at
+                  // render time (not just on onDone) so cards loaded
+                  // from session history also get logged. Side-effect
+                  // inside an IIFE is intentional — render-time logs
+                  // are fine and we want this visible on every card.
+                  if (typeof window !== "undefined") {
+                    const w = window as unknown as { __mapDebugLogged?: Set<string> };
+                    w.__mapDebugLogged = w.__mapDebugLogged || new Set();
+                    if (!w.__mapDebugLogged.has(msg.id)) {
+                      if (msg.doctorResults?.length) {
+                        const rows = msg.doctorResults.map((d) => ({
+                          name: d.name, lat: d.latitude, lng: d.longitude,
+                          has_coords: !!(d.latitude && d.longitude), zip: d.postal_code,
+                          source: (d as unknown as { source?: string }).source ?? null,
+                        }));
+                        console.log("[map-debug] doctor_results (render)", {
+                          msg_id: msg.id, total: rows.length,
+                          map_ready: rows.filter((r) => r.has_coords).length,
+                          sources: Array.from(new Set(rows.map((r) => r.source))),
+                          rows,
+                        });
+                        w.__mapDebugLogged.add(msg.id);
+                      }
+                      if (msg.locationResults?.length) {
+                        const rows = msg.locationResults.map((l) => ({
+                          name: l.name, lat: l.latitude, lng: l.longitude,
+                          has_coords: !!(l.latitude && l.longitude),
+                          address: l.address, zip: l.postal_code, category: l.category,
+                        }));
+                        console.log("[map-debug] location_results (render)", {
+                          msg_id: msg.id, total: rows.length,
+                          map_ready: rows.filter((r) => r.has_coords).length,
+                          rows,
+                        });
+                        w.__mapDebugLogged.add(msg.id);
+                      }
+                    }
+                  }
+                  return (
                   <div className={`${msg.isStreaming === false || !msg.isStreaming ? "elena-card-enter" : ""} max-md:scale-[0.88] max-md:origin-top-left`}>
                     {/* Show location card if present (pharmacies, labs, etc.), otherwise doctor card — skip if form is shown */}
                     {!msg.formRequest && msg.locationResults && msg.locationResults.length > 0 ? (
                       <LocationResultsCard
                         locations={msg.locationResults}
                         onCall={(loc) => handleSend(`Call ${loc.name} at ${loc.phone_number}`)}
-                        onSelect={(loc) => handleSend(`Let's go with ${loc.name}`)}
+                        onSelect={(loc) => {
+                          // Disambiguate when multiple results share a
+                          // name (e.g. 7 CVSs) by including the address.
+                          // Without this, Elena gets "Let's go with CVS"
+                          // and can't pick one.
+                          const locLabel = [loc.address, loc.city].filter(Boolean).join(", ");
+                          const msg = locLabel
+                            ? `Let's go with ${loc.name} at ${locLabel}`
+                            : `Let's go with ${loc.name}`;
+                          handleSend(msg);
+                        }}
                       />
                     ) : !msg.formRequest && msg.doctorResults && msg.doctorResults.length > 0 ? (
-                      msg.priceComparisonLabel ? (
-                        <PriceComparisonCard
-                          doctors={msg.doctorResults}
-                          label={msg.priceComparisonLabel}
-                          onBookDoctor={(doc) => handleSend(`Book an appointment with ${doc.name}`)}
-                        />
-                      ) : (
-                        <DoctorResultsCard
-                          doctors={msg.doctorResults}
-                          onBookDoctor={(doc) => handleSend(`Book an appointment with ${doc.name}`)}
-                        />
-                      )
+                      (() => {
+                        // Provider names aren't unique (same doctor across
+                        // practices, same practice name at multiple sites).
+                        // Include the practice and street so Elena knows
+                        // exactly which one to book.
+                        const bookLabel = (doc: DoctorResult) => {
+                          const where = [doc.practice_name, doc.address, doc.city]
+                            .filter(Boolean)
+                            .join(", ");
+                          return where
+                            ? `Book an appointment with ${doc.name} at ${where}`
+                            : `Book an appointment with ${doc.name}`;
+                        };
+                        return msg.priceComparisonLabel ? (
+                          <PriceComparisonCard
+                            doctors={msg.doctorResults}
+                            label={msg.priceComparisonLabel}
+                            onBookDoctor={(doc) => handleSend(bookLabel(doc))}
+                          />
+                        ) : (
+                          <DoctorResultsCard
+                            doctors={msg.doctorResults}
+                            onBookDoctor={(doc) => handleSend(bookLabel(doc))}
+                          />
+                        );
+                      })()
                     ) : null}
                     {msg.reviewResults && (
                       <ReviewsCard data={msg.reviewResults} />
@@ -1328,7 +1496,8 @@ export function ChatArea({
                       />
                     ) : null}
                   </div>
-                )}
+                  );
+                })()}
               </div>
             )
           )}
