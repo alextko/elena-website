@@ -1436,10 +1436,16 @@ export function ProfilePopover({
                   >
                     <div className="px-5 py-5 text-left">
                       <p className="text-[20px] font-extrabold text-white tracking-tight">
-                        Elena {subscription?.tier === "standard" ? "Standard" : "Pro"}
+                        Elena {subscription?.tier === "premium" ? "Premium" : "Pro"}
                       </p>
                       <p className="text-[14px] text-white/60 mt-1">
-                        {subscription?.plan?.includes("annual") ? "Annual plan" : "Monthly plan"}
+                        {subscription?.status === "trialing"
+                          ? "Free trial"
+                          : subscription?.plan?.includes("annual")
+                          ? "Annual plan"
+                          : subscription?.plan?.includes("weekly")
+                          ? "Weekly plan"
+                          : "Monthly plan"}
                       </p>
                     </div>
                   </div>
