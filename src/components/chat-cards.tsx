@@ -1483,12 +1483,55 @@ export function FormRequestCard({
                 ))}
               </select>
             ) : field.type === "image" ? (
-              <button
-                onClick={() => { setActiveImageField(field.key); fileInputRef.current?.click(); }}
-                className="mt-1 w-full rounded-xl border-2 border-dashed border-[#E5E5EA] bg-[#FAFAFA] px-3.5 py-4 text-[14px] text-[#AEAEB2] hover:border-[#0F1B3D]/20 hover:text-[#0F1B3D]/50 transition-colors text-center"
-              >
-                {values[field.key] ? "Uploaded" : field.placeholder || "Tap to upload"}
-              </button>
+              (() => {
+                // OCR paths set the value to "Scanned: {name}" on success
+                // (medication flow) or an error string on failure. Non-OCR
+                // uploads get a storage key. Each deserves its own state so
+                // the user can tell what actually happened.
+                const raw = values[field.key] || "";
+                const isScanned = raw.startsWith("Scanned");
+                const isError = raw.startsWith("Could not");
+                const hasValue = raw.length > 0;
+                const base = "mt-1 w-full rounded-xl border-2 px-3.5 py-4 text-[14px] transition-colors text-left";
+                const variant = isScanned
+                  ? "border-solid border-[#34C759] bg-[#F0FAF3]"
+                  : isError
+                  ? "border-solid border-[#FF6B6B] bg-[#FFF5F5]"
+                  : hasValue
+                  ? "border-solid border-[#34C759] bg-[#F0FAF3]"
+                  : "border-dashed border-[#E5E5EA] bg-[#FAFAFA] hover:border-[#0F1B3D]/20";
+                return (
+                  <button
+                    onClick={() => { setActiveImageField(field.key); fileInputRef.current?.click(); }}
+                    className={`${base} ${variant}`}
+                  >
+                    {isScanned ? (
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#34C759]">
+                          <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
+                        </span>
+                        <div>
+                          <div className="text-[15px] font-semibold text-[#0F1B3D]">{raw}</div>
+                          <div className="text-[12px] text-[#8E8E93] mt-0.5">Tap to re-scan if anything looks off</div>
+                        </div>
+                      </div>
+                    ) : isError ? (
+                      <span className="text-[#D94545] font-medium">{raw}</span>
+                    ) : hasValue ? (
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#34C759]">
+                          <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
+                        </span>
+                        <span className="text-[15px] font-semibold text-[#0F1B3D]">Photo uploaded</span>
+                      </div>
+                    ) : (
+                      <span className="text-[#AEAEB2] block text-center">
+                        {field.placeholder || "Tap to upload"}
+                      </span>
+                    )}
+                  </button>
+                );
+              })()
             ) : (
               <input
                 type={field.type === "date" ? "date" : field.type === "phone" ? "tel" : "text"}
