@@ -2209,6 +2209,8 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                             <input
                               type="text"
                               required
+                              name="given-name"
+                              autoComplete="given-name"
                               value={firstName}
                               onChange={(e) => setFirstName(capitalizeName(e.target.value))}
                               placeholder="Alex"
@@ -2223,6 +2225,8 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                             <input
                               type="text"
                               required
+                              name="family-name"
+                              autoComplete="family-name"
                               value={lastName}
                               onChange={(e) => setLastName(capitalizeName(e.target.value))}
                               placeholder="Smith"
@@ -2239,6 +2243,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                         <input
                           type="text"
                           inputMode="numeric"
+                          name="bday"
                           autoComplete="bday"
                           maxLength={10}
                           placeholder="MM/DD/YYYY"
@@ -2255,6 +2260,8 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                           type="text"
                           required
                           inputMode="numeric"
+                          name="postal-code"
+                          autoComplete="postal-code"
                           maxLength={5}
                           value={zipCode}
                           onChange={(e) => setZipCode(e.target.value.replace(/\D/g, "").slice(0, 5))}

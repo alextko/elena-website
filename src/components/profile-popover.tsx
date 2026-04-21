@@ -3383,22 +3383,32 @@ function PersonalDetailsPanel({
       </button>
       <h3 className="text-[20px] font-extrabold text-[#0F1B3D] mb-5">Edit Personal Details</h3>
       <div className="space-y-4">
-        {[
-          ["First Name", "first_name", "text"] as const,
-          ["Last Name", "last_name", "text"] as const,
-          ["Preferred Name", "preferred_name", "text"] as const,
-          ["Email", "email", "email"] as const,
-          ["Date of Birth", "date_of_birth", "date"] as const,
-          ["Phone", "phone_number", "tel"] as const,
-          ["Address", "home_address", "text"] as const,
-          ["City", "city", "text"] as const,
-          ["State", "state", "text"] as const,
-          ["Zip Code", "zip_code", "text"] as const,
-        ].map(([label, key, type]) => (
+        {([
+          // [label, form-key, input-type, autoComplete token]
+          // autoComplete values follow the WHATWG spec so browser + OS
+          // password-manager autofill (Safari Keychain, Chrome Autofill,
+          // 1Password) can offer saved values on focus.
+          ["First Name", "first_name", "text", "given-name"] as const,
+          ["Last Name", "last_name", "text", "family-name"] as const,
+          ["Preferred Name", "preferred_name", "text", "nickname"] as const,
+          ["Email", "email", "email", "email"] as const,
+          ["Date of Birth", "date_of_birth", "date", "bday"] as const,
+          ["Phone", "phone_number", "tel", "tel"] as const,
+          ["Address", "home_address", "text", "street-address"] as const,
+          ["City", "city", "text", "address-level2"] as const,
+          ["State", "state", "text", "address-level1"] as const,
+          ["Zip Code", "zip_code", "text", "postal-code"] as const,
+        ]).map(([label, key, type, ac]) => (
           <div key={key}>
             <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">{label}</label>
-            <input type={type} value={form[key]} onChange={(e) => set(key, e.target.value)}
-              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30" />
+            <input
+              type={type}
+              name={ac}
+              autoComplete={ac}
+              value={form[key] || ""}
+              onChange={(e) => set(key, e.target.value)}
+              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+            />
           </div>
         ))}
         <div>
