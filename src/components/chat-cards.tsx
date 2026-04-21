@@ -18,6 +18,9 @@ import {
   Plus,
   Pencil,
   Trash2,
+  Pill,
+  UserRound,
+  Lock,
 } from "lucide-react";
 import type {
   DoctorResult,
@@ -2688,6 +2691,140 @@ export function InsurancePlanComparisonCard({ data }: { data: InsurancePlanCompa
           <p className="text-[13px] font-semibold text-[var(--elena-text-primary)]">{data.recommendation_summary}</p>
         </div>
       )}
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// RefillPlanCreatedCard — receipt for medication save → refill planner.
+//
+// Mirrors the salmon Game Plan tile in the profile popover so users see
+// a consistent visual when calls land in chat versus on the Health tab.
+// Backend payload: ChatResponse.refill_plan_created (api_chat.py).
+// ──────────────────────────────────────────────────────────────────────
+
+export interface RefillPlanCreatedPayload {
+  medication: {
+    id?: string;
+    name?: string;
+    dosage_strength?: string | null;
+    pharmacy_name?: string | null;
+    refills_remaining?: string | null;
+  };
+  scheduled: number;
+  events: Array<{
+    scheduled_at?: string | null;
+    call_type?: string | null;
+    title?: string | null;
+    subtitle?: string | null;
+  }>;
+  hipaa_signed?: boolean | null;
+}
+
+function formatRefillDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  // scheduled_at can come in as "2026-04-26" or "2026-04-26T00:00:00".
+  const base = iso.slice(0, 10);
+  try {
+    const d = new Date(`${base}T12:00:00`);
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  } catch {
+    return base;
+  }
+}
+
+export function RefillPlanCreatedCard({ data }: { data: RefillPlanCreatedPayload }) {
+  const med = data.medication || {};
+  const events = (data.events || []).filter((e) => e?.scheduled_at);
+  const medLabel = [med.name, med.dosage_strength].filter(Boolean).join(" ");
+
+  return (
+    <div
+      className="mt-3 rounded-[20px] overflow-hidden"
+      style={{
+        background: "#F4B084",
+        boxShadow: "0 8px 30px rgba(0,0,0,0.10), 0 3px 10px rgba(0,0,0,0.05)",
+      }}
+    >
+      {/* Header */}
+      <div className="px-5 pt-4 pb-3">
+        <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wider" style={{ color: "#7A3040" }}>
+          <Pill className="h-3.5 w-3.5" />
+          <span>Refills scheduled</span>
+        </div>
+        <h3 className="mt-1 text-[20px] font-extrabold leading-tight" style={{ color: "#5C1A2A" }}>
+          {medLabel || "Medication added"}
+        </h3>
+        {med.pharmacy_name && (
+          <p className="text-[13px] font-medium mt-0.5" style={{ color: "#7A3040" }}>
+            Calls go to {med.pharmacy_name}
+          </p>
+        )}
+      </div>
+
+      {/* HIPAA-unsigned banner */}
+      {data.hipaa_signed === false && (
+        <div
+          className="mx-3 mb-2 rounded-xl px-3 py-2 flex items-start gap-2"
+          style={{ background: "rgba(255,255,255,0.55)", border: "1px solid rgba(92,26,42,0.18)" }}
+        >
+          <Lock className="h-4 w-4 mt-0.5 shrink-0" style={{ color: "#5C1A2A" }} />
+          <p className="text-[12px] leading-relaxed" style={{ color: "#5C1A2A" }}>
+            Calls are queued — sign the HIPAA authorization to let Elena make them on your behalf.
+          </p>
+        </div>
+      )}
+
+      {/* Game Plan-style event list */}
+      <div className="bg-white/95 mx-3 mb-3 rounded-xl overflow-hidden">
+        {events.map((ev, i) => {
+          const isRenewal = ev.call_type === "prescriber_renewal";
+          return (
+            <div key={i}>
+              {i > 0 && <div className="h-px mx-[14px]" style={{ background: "rgba(92,26,42,0.15)" }} />}
+              <div className="flex items-center gap-3 px-4 py-3">
+                {/* Icon circle — Game Plan uses a check circle; we use Pill or Doctor */}
+                <div
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                  style={{ background: "#F4B084" }}
+                >
+                  {isRenewal ? (
+                    <UserRound className="h-4 w-4 text-white" strokeWidth={2.5} />
+                  ) : (
+                    <Pill className="h-4 w-4 text-white" strokeWidth={2.5} />
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-[15px] font-semibold leading-tight" style={{ color: "#5C1A2A" }}>
+                    {ev.title || (isRenewal ? "Renew prescription" : "Refill")}
+                  </p>
+                  {ev.subtitle && (
+                    <p className="text-[12.5px] mt-[2px] leading-snug" style={{ color: "#7A3040" }}>
+                      {ev.subtitle}
+                    </p>
+                  )}
+                </div>
+
+                {/* Date pill on the right */}
+                <span
+                  className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide"
+                  style={{ background: "rgba(92,26,42,0.10)", color: "#5C1A2A" }}
+                >
+                  {formatRefillDate(ev.scheduled_at)}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer */}
+      <div className="px-5 pb-4 pt-1">
+        <p className="text-[11px] font-medium" style={{ color: "rgba(92,26,42,0.7)" }}>
+          You'll see these on your Game Plan in the Health tab.
+        </p>
+      </div>
     </div>
   );
 }

@@ -38,6 +38,8 @@ export interface ChatResponse {
   price_comparison_label?: string | null;
   insurance_plan_comparison?: InsurancePlanComparison | null;
   needs_hipaa_consent?: boolean | null;
+  todo_created?: boolean | null;
+  refill_plan_created?: import("@/components/chat-cards").RefillPlanCreatedPayload | null;
 }
 
 // --- Session History (api_chat.py:480-485) ---

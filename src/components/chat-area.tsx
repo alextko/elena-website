@@ -32,6 +32,7 @@ import {
   AppealTrackerCard,
   AssistanceProgramsCard,
   InsurancePlanComparisonCard,
+  RefillPlanCreatedCard,
 } from "@/components/chat-cards";
 import type {
   ChatMessageItem,
@@ -76,6 +77,7 @@ type Message = {
   priceComparisonLabel?: string | null;
   inviteAccepted?: { accepter_name: string; message: string } | null;
   insurancePlanComparison?: import("@/lib/types").InsurancePlanComparison | null;
+  refillPlanCreated?: import("@/components/chat-cards").RefillPlanCreatedPayload | null;
 };
 
 // Streaming text — reveals character by character, snapping to word boundaries.
@@ -888,6 +890,7 @@ export function ChatArea({
               assistanceResult: chatResult.assistance_result,
               priceComparisonLabel: chatResult.price_comparison_label,
               insurancePlanComparison: chatResult.insurance_plan_comparison,
+              refillPlanCreated: chatResult.refill_plan_created,
             },
           ]);
           setStreamingId(assistantId);
@@ -1198,6 +1201,9 @@ export function ChatArea({
                     )}
                     {msg.insurancePlanComparison && (
                       <InsurancePlanComparisonCard data={msg.insurancePlanComparison} />
+                    )}
+                    {msg.refillPlanCreated && (
+                      <RefillPlanCreatedCard data={msg.refillPlanCreated} />
                     )}
                     {msg.bookingResult && msg.bookingResult.status === "confirmed" && (
                       <>
