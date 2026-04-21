@@ -764,11 +764,24 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   // setup-for screen; captured here and written on profile create.
   const [dependentFirstName, setDependentFirstName] = useState(tourSnapshot.dependentFirstName ?? "");
   const [dependentLastName, setDependentLastName] = useState(tourSnapshot.dependentLastName ?? "");
+  // DOB + zip for the dependent, collected on the profile-form phase
+  // (separate from primary user's dob/zipCode state above). When the
+  // session is for a dependent, profile-form rebinds its DOB + zip
+  // inputs to these so the data saves to THEIR chart, not the
+  // caregiver's.
+  const [dependentDob, setDependentDob] = useState("");
+  const [dependentZip, setDependentZip] = useState("");
   // ID of the dependent profile once created — used to key downstream
   // apiFetch calls (conditions, medications, todos) to their chart
   // instead of the primary user's.
   const [dependentProfileId, setDependentProfileId] = useState<string | null>(tourSnapshot.dependentProfileId ?? null);
   const [creatingDependent, setCreatingDependent] = useState(false);
+
+  // Whether the current tour session is setting Elena up for a
+  // dependent instead of the primary user. Drives per-phase copy
+  // adaptation ("Let's get Linda set up", "What's top of mind for
+  // Linda?", etc.) and which DB endpoints handleProfileSubmit hits.
+  const isDependentSetup = !!setupForCareId && setupForCareId !== "myself";
 
   // Dev override: ?force_prompts=1 makes hasExistingData always return
   // false so the profile walkthrough's inline add-forms show even on
@@ -784,6 +797,14 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   const [zipCode, setZipCode] = useState(tourSnapshot.zipCode ?? "");
   const [savingProfile, setSavingProfile] = useState(false);
 
+  // The person this session is about. "Linda" when dependent-setup,
+  // else the primary user's first name (or a fallback). Used in
+  // headline templating throughout the tour. Declared here so it can
+  // reference `firstName` without hitting TDZ.
+  const managedFirstName = isDependentSetup
+    ? dependentFirstName.trim()
+    : (firstName.trim() || profileData?.firstName || "");
+
   // Sync form fields from profileData when it arrives (OAuth name, quiz-funnel DOB/zip).
   useEffect(() => {
     if (profileData?.firstName && !firstName) setFirstName(profileData.firstName);
@@ -794,10 +815,17 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   }, [profileData?.firstName, profileData?.lastName, profileData?.dob, profileData?.zipCode]);
 
   const hasOAuthName = !!(profileData?.firstName);
-  const canSubmitProfile =
-    firstName.trim().length > 0 &&
-    lastName.trim().length > 0 &&
-    zipCode.trim().length === 5;
+  // Profile-form submit gate depends on who the session is for. When
+  // setting up a dependent, the form asks for DEPENDENT's fields —
+  // first/last came from setup-for, DOB/zip from this phase. Self
+  // setup keeps the original primary-user gate.
+  const canSubmitProfile = isDependentSetup
+    ? dependentFirstName.trim().length > 0
+      && dependentLastName.trim().length > 0
+      && dependentZip.trim().length === 5
+    : firstName.trim().length > 0
+      && lastName.trim().length > 0
+      && zipCode.trim().length === 5;
   // Headline + subtitle stream with a typewriter effect; these gate the
   // reveal of the rest of the card's content. Reset whenever phase changes
   // so each step starts fresh.
@@ -1414,7 +1442,11 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       self: setupForCareId === "myself",
       has_name: dependentFirstName.trim().length > 0,
     });
-    setPhase("pain");
+    // Router comes next for everyone — dependents still need to pick
+    // whether it's condition / medications / money / staying_healthy
+    // for that person. Skipping router was the bug that made the
+    // dependent flow bypass situation + meds entirely.
+    setPhase("router");
   }, [setupForCareId, dependentFirstName]);
 
   const advanceFromPain = useCallback(() => {
@@ -1447,6 +1479,13 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     setCreatingDependent(true);
     try {
       const relationship = careIdToRelationship(setupForCareId);
+      // DOB/zip come from the profile-form phase that ran immediately
+      // before this call. They're the DEPENDENT's values (the form
+      // rebound to dependentDob / dependentZip when isDependentSetup
+      // was true). Both are optional — the dependent profile still
+      // gets created, user can fill in later via profile edit.
+      const isoDob = displayToIsoDate(dependentDob);
+      const zip = dependentZip.trim();
       const res = await apiFetch("/profiles", {
         method: "POST",
         body: JSON.stringify({
@@ -1454,6 +1493,8 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
           last_name: dependentLastName.trim(),
           label: relationship,
           relationship,
+          ...(isoDob ? { date_of_birth: isoDob } : {}),
+          ...(zip ? { zip_code: zip } : {}),
         }),
       });
       if (!res.ok) {
@@ -1490,7 +1531,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     } finally {
       setCreatingDependent(false);
     }
-  }, [setupForCareId, dependentFirstName, dependentLastName, careSelections, refreshProfiles, switchProfile]);
+  }, [setupForCareId, dependentFirstName, dependentLastName, dependentDob, dependentZip, careSelections, refreshProfiles, switchProfile]);
 
   const advanceFromValue = useCallback(async () => {
     analytics.track("Web Tour Value Step Continued" as any, { lp_variant: lpVariant || "homepage" });
@@ -1516,32 +1557,48 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   const handleProfileSubmit = useCallback(async () => {
     if (!canSubmitProfile) return;
     setSavingProfile(true);
-    analytics.track("Onboarding Completed" as any, {
-      fields_filled: [
-        firstName.trim() && "first_name",
-        lastName.trim() && "last_name",
-        dob && "dob",
-        zipCode.trim() && "zip_code",
-      ].filter(Boolean),
-      source: "tour",
-    });
     const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-    await completeOnboarding({
-      first_name: cap(firstName.trim()),
-      last_name: cap(lastName.trim()),
-      date_of_birth: displayToIsoDate(dob) || undefined,
-      home_address: zipCode.trim(),
-    });
-    // For dependent setups, create the dependent's profile and switch
-    // active so downstream situation/meds/care-plan write to their
-    // chart. Primary user's profile (just completed above) stays as
-    // the login owner; the switch is session-scoped.
-    if (setupForCareId && setupForCareId !== "myself") {
+    if (isDependentSetup) {
+      // Dependent setup — the form captured DEPENDENT's data. The
+      // primary user's profile still needs to exist and have
+      // onboarding_completed flipped, so we call completeOnboarding
+      // with whatever primary name we have (OAuth / signup). Then we
+      // create the dependent profile with the full set of captured
+      // fields and switch active to them. All downstream tour phases
+      // (situation / meds / care-plan / todos) operate on the
+      // dependent's chart from here.
+      analytics.track("Onboarding Completed" as any, {
+        fields_filled: ["first_name", "last_name", dependentDob && "dob", "zip_code"].filter(Boolean),
+        source: "tour",
+        setup_for: "dependent",
+      });
+      await completeOnboarding({
+        first_name: profileData?.firstName || firstName.trim() || "",
+        last_name: profileData?.lastName || lastName.trim() || "",
+      });
       await createDependentAndSwitch();
+    } else {
+      // Self setup — the form captured the PRIMARY user's data.
+      analytics.track("Onboarding Completed" as any, {
+        fields_filled: [
+          firstName.trim() && "first_name",
+          lastName.trim() && "last_name",
+          dob && "dob",
+          zipCode.trim() && "zip_code",
+        ].filter(Boolean),
+        source: "tour",
+        setup_for: "self",
+      });
+      await completeOnboarding({
+        first_name: cap(firstName.trim()),
+        last_name: cap(lastName.trim()),
+        date_of_birth: displayToIsoDate(dob) || undefined,
+        home_address: zipCode.trim(),
+      });
     }
     setSavingProfile(false);
     routeAfterProfile();
-  }, [canSubmitProfile, firstName, lastName, dob, zipCode, completeOnboarding, routeAfterProfile, setupForCareId, createDependentAndSwitch]);
+  }, [canSubmitProfile, firstName, lastName, dob, zipCode, dependentDob, isDependentSetup, profileData?.firstName, profileData?.lastName, completeOnboarding, routeAfterProfile, createDependentAndSwitch]);
 
   // Fire "Onboarding Modal Shown" analytics when the profile-form phase opens,
   // preserving data continuity with the prior OnboardingModal. (Event name kept
@@ -2053,11 +2110,11 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.22, ease: motionEase }}
-                  className="p-5 sm:p-7 flex flex-col gap-4 min-h-[380px] sm:min-h-[440px]"
+                  className="p-5 sm:p-7 max-md:p-4 flex flex-col gap-4 max-md:gap-2.5 min-h-[380px] sm:min-h-[440px] max-md:min-h-0"
                 >
-                  <div className="flex-1 flex flex-col justify-center gap-4">
+                  <div className="flex-1 flex flex-col justify-center gap-4 max-md:gap-2.5">
                     <div className="text-center">
-                      <h2 className="text-[22px] font-extrabold text-[#0F1B3D] mb-2 text-balance leading-tight">
+                      <h2 className="text-[22px] max-md:text-[19px] font-extrabold text-[#0F1B3D] mb-2 max-md:mb-1 text-balance leading-tight">
                         <StreamingText
                           text="Who do you want to set Elena up for first?"
                           onDone={() => setHeadlineDone(true)}
@@ -2067,13 +2124,13 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                         initial={{ opacity: 0 }}
                         animate={{ opacity: headlineDone ? 1 : 0 }}
                         transition={{ duration: 0.3, ease: motionEase }}
-                        className="text-[14px] text-[#8E8E93] font-light text-balance"
+                        className="text-[14px] max-md:text-[12.5px] text-[#8E8E93] font-light text-balance"
                       >
                         We can add the others later.
                       </motion.p>
                     </div>
                     {headlineDone && (
-                      <RevealStack visible className="flex flex-col gap-2">
+                      <RevealStack visible className="flex flex-col gap-2 max-md:gap-1.5">
                         {options.map((opt) => (
                           <SelectablePill
                             key={opt.id}
@@ -2092,10 +2149,16 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                         transition={{ duration: 0.3, ease: motionEase }}
                         className="flex flex-col gap-1.5"
                       >
-                        <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider px-1">
+                        <label className="text-[12px] max-md:text-[11px] font-semibold text-[#8E8E93] uppercase tracking-wider px-1">
                           Your {dependentLabel}
                         </label>
-                        <div className="flex gap-2">
+                        {/* Grid instead of flex so the inputs split 50/50
+                            regardless of their intrinsic widths — flex-1
+                            wasn't shrinking below the input's default size,
+                            so the right edge of "Last name" was clipping
+                            past the modal. `w-full min-w-0` on each input
+                            lets the grid cell fully control width. */}
+                        <div className="grid grid-cols-2 gap-2 w-full">
                           <input
                             type="text"
                             value={dependentFirstName}
@@ -2104,7 +2167,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                             autoComplete="off"
                             autoCorrect="off"
                             autoCapitalize="words"
-                            className="flex-1 rounded-xl border border-[#0F1B3D]/[0.08] bg-white px-3.5 py-2.5 text-base text-[#0F1B3D] placeholder:text-[#8E8E93] outline-none focus:border-[#2E6BB5] focus:ring-1 focus:ring-[#2E6BB5] transition-colors"
+                            className="w-full min-w-0 rounded-xl border border-[#0F1B3D]/[0.08] bg-white px-3 py-2.5 max-md:py-2 text-base max-md:text-[15px] text-[#0F1B3D] placeholder:text-[#8E8E93] outline-none focus:border-[#2E6BB5] focus:ring-1 focus:ring-[#2E6BB5] transition-colors"
                           />
                           <input
                             type="text"
@@ -2114,7 +2177,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                             autoComplete="off"
                             autoCorrect="off"
                             autoCapitalize="words"
-                            className="flex-1 rounded-xl border border-[#0F1B3D]/[0.08] bg-white px-3.5 py-2.5 text-base text-[#0F1B3D] placeholder:text-[#8E8E93] outline-none focus:border-[#2E6BB5] focus:ring-1 focus:ring-[#2E6BB5] transition-colors"
+                            className="w-full min-w-0 rounded-xl border border-[#0F1B3D]/[0.08] bg-white px-3 py-2.5 max-md:py-2 text-base max-md:text-[15px] text-[#0F1B3D] placeholder:text-[#8E8E93] outline-none focus:border-[#2E6BB5] focus:ring-1 focus:ring-[#2E6BB5] transition-colors"
                           />
                         </div>
                       </motion.div>
@@ -2124,7 +2187,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     <button
                       onClick={advanceFromSetupFor}
                       disabled={!canContinue}
-                      className="w-full py-3.5 rounded-full text-white font-semibold font-sans text-[15px] transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(15,27,61,0.25)]"
+                      className="w-full py-3.5 max-md:py-2.5 rounded-full text-white font-semibold font-sans text-[15px] max-md:text-[14px] transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(15,27,61,0.25)]"
                       style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%)" }}
                     >
                       {creatingDependent ? "Setting up..." : "Continue"}
@@ -2256,7 +2319,23 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               );
             })()}
 
-            {phase === "profile-form" && (
+            {phase === "profile-form" && (() => {
+              // Copy + field bindings adapt to who this session is
+              // about. Self-setup keeps the existing onboarding form
+              // (first/last/DOB/zip for the login user). Dependent
+              // setup shows the dependent's name read-only (already
+              // captured in setup-for) and asks for DOB/zip bound to
+              // dependentDob / dependentZip so the data saves to
+              // their chart. Either way, the submit button reads
+              // "Get started" and handleProfileSubmit handles the
+              // split at save time.
+              const formHeadline = isDependentSetup
+                ? `Let's get ${managedFirstName || "them"} set up.`
+                : "Let's get you set up.";
+              const formSubtitle = isDependentSetup
+                ? `Just a few details about ${managedFirstName || "them"}.`
+                : "Just a few quick details.";
+              return (
               <motion.div
                 key="profile-form"
                 initial={{ opacity: 0, y: 10 }}
@@ -2268,7 +2347,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 <div className="flex-1 flex flex-col justify-center gap-4">
                   <div className="text-center">
                     <h2 className="text-[22px] font-extrabold text-[#0F1B3D] text-balance leading-tight mb-2">
-                      <StreamingText text="Let's get you set up." onDone={() => setHeadlineDone(true)} />
+                      <StreamingText text={formHeadline} onDone={() => setHeadlineDone(true)} />
                     </h2>
                     <motion.p
                       initial={{ opacity: 0 }}
@@ -2277,12 +2356,12 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                       className="text-[14px] text-[#8E8E93] font-light"
                       onAnimationComplete={() => { if (headlineDone) setSubtitleDone(true); }}
                     >
-                      Just a few quick details.
+                      {formSubtitle}
                     </motion.p>
                   </div>
                   {subtitleDone && (
                     <RevealStack visible className="space-y-3">
-                      {!hasOAuthName && (
+                      {!isDependentSetup && !hasOAuthName && (
                         <motion.div variants={REVEAL_ITEM} className="flex gap-3">
                           <div className="flex-1 min-w-0">
                             <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">
@@ -2318,35 +2397,53 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                           </div>
                         </motion.div>
                       )}
+                      {isDependentSetup && (
+                        <motion.div
+                          variants={REVEAL_ITEM}
+                          className="rounded-xl bg-[#F6F7FB] ring-1 ring-[#0F1B3D]/[0.06] px-4 py-3"
+                        >
+                          <p className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Setting up for</p>
+                          <p className="text-[16px] font-semibold text-[#0F1B3D] mt-0.5">
+                            {`${dependentFirstName.trim()} ${dependentLastName.trim()}`.trim() || "(missing name)"}
+                          </p>
+                        </motion.div>
+                      )}
                       <motion.div variants={REVEAL_ITEM}>
                         <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">
-                          Date of birth
+                          {isDependentSetup ? `${managedFirstName || "Their"}'s date of birth` : "Date of birth"}
                         </label>
                         <input
                           type="text"
                           inputMode="numeric"
                           name="bday"
-                          autoComplete="bday"
+                          autoComplete={isDependentSetup ? "off" : "bday"}
                           maxLength={10}
                           placeholder="MM/DD/YYYY"
-                          value={dob}
-                          onChange={(e) => setDob(maskDateInput(e.target.value))}
+                          value={isDependentSetup ? dependentDob : dob}
+                          onChange={(e) => {
+                            const masked = maskDateInput(e.target.value);
+                            if (isDependentSetup) setDependentDob(masked); else setDob(masked);
+                          }}
                           className="mt-1 w-full rounded-full border border-[#E5E5EA] bg-white px-4 py-3 text-[16px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors"
                         />
                       </motion.div>
                       <motion.div variants={REVEAL_ITEM}>
                         <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">
-                          Zip code<span className="text-[#FF3B30] ml-0.5">*</span>
+                          {isDependentSetup ? `${managedFirstName || "Their"}'s zip code` : "Zip code"}
+                          <span className="text-[#FF3B30] ml-0.5">*</span>
                         </label>
                         <input
                           type="text"
                           required
                           inputMode="numeric"
                           name="postal-code"
-                          autoComplete="postal-code"
+                          autoComplete={isDependentSetup ? "off" : "postal-code"}
                           maxLength={5}
-                          value={zipCode}
-                          onChange={(e) => setZipCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                          value={isDependentSetup ? dependentZip : zipCode}
+                          onChange={(e) => {
+                            const digits = e.target.value.replace(/\D/g, "").slice(0, 5);
+                            if (isDependentSetup) setDependentZip(digits); else setZipCode(digits);
+                          }}
                           placeholder="10001"
                           className="mt-1 w-full rounded-full border border-[#E5E5EA] bg-white px-4 py-3 text-[16px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors"
                         />
@@ -2365,16 +2462,24 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   </button>
                 </RevealButton>
               </motion.div>
-            )}
+              );
+            })()}
 
             {phase === "router" && (() => {
-              const firstNamePrefix = firstName.trim() ? `${firstName.trim()}, ` : "";
-              // When there's no name prefix, capitalize the first letter so
-              // the sentence doesn't read as "what's top of mind...".
-              const base = "what's top of mind for you right now?";
-              const headline = firstNamePrefix
-                ? `${firstNamePrefix}${base}`
-                : `${base.charAt(0).toUpperCase()}${base.slice(1)}`;
+              // Headline pivots on who the session is for. Dependent
+              // setups read "What's top of mind for Linda right now?"
+              // — the caregiver answers on her behalf. Self setups
+              // keep the original first-name-prefixed version.
+              let headline: string;
+              if (isDependentSetup && managedFirstName) {
+                headline = `What's top of mind for ${managedFirstName} right now?`;
+              } else {
+                const firstNamePrefix = firstName.trim() ? `${firstName.trim()}, ` : "";
+                const base = "what's top of mind for you right now?";
+                headline = firstNamePrefix
+                  ? `${firstNamePrefix}${base}`
+                  : `${base.charAt(0).toUpperCase()}${base.slice(1)}`;
+              }
               // Short noun-phrase labels so the router reads as quick
               // answers to "What's top of mind?" rather than sentences.
               // Tighter rows also give the icons more visual breathing
@@ -2440,22 +2545,34 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               const chip = getChip(selectedSituation);
               const needsFreeform = !!chip && chip.conditionName === null;
               const canContinue = !!chip && (!needsFreeform || customSituation.trim().length > 1);
-              const firstNamePrefix = firstName.trim() ? `${firstName.trim()}, ` : "";
               // Router-aware prompt: continues the thread from the router
               // pick instead of re-asking a generic "what's going on."
-              let headlineBase: string;
-              if (routerChoice === "medications") {
-                headlineBase = "what are your meds for?";
-              } else if (routerChoice === "money") {
-                headlineBase = "what care are you paying for?";
+              // Dependent setups reframe the question in third person
+              // so the caregiver reads it as asking about Linda, not
+              // themselves.
+              let headline: string;
+              if (isDependentSetup && managedFirstName) {
+                if (routerChoice === "medications") {
+                  headline = `What are ${managedFirstName}'s meds for?`;
+                } else if (routerChoice === "money") {
+                  headline = `What care is ${managedFirstName} paying for?`;
+                } else {
+                  headline = `What condition is ${managedFirstName} managing?`;
+                }
               } else {
-                headlineBase = "what condition are you managing?";
+                const firstNamePrefix = firstName.trim() ? `${firstName.trim()}, ` : "";
+                let headlineBase: string;
+                if (routerChoice === "medications") {
+                  headlineBase = "what are your meds for?";
+                } else if (routerChoice === "money") {
+                  headlineBase = "what care are you paying for?";
+                } else {
+                  headlineBase = "what condition are you managing?";
+                }
+                headline = firstNamePrefix
+                  ? `${firstNamePrefix}${headlineBase}`
+                  : `${headlineBase.charAt(0).toUpperCase()}${headlineBase.slice(1)}`;
               }
-              // No-name fallback capitalizes the base so "what are..." reads
-              // as "What are..." when there's no first-name prefix.
-              const headline = firstNamePrefix
-                ? `${firstNamePrefix}${headlineBase}`
-                : `${headlineBase.charAt(0).toUpperCase()}${headlineBase.slice(1)}`;
               // Only surface alias suggestions on the generic "Something
               // else" path. injury_recovery already has its own template
               // and doesn't need matching.
@@ -2595,7 +2712,14 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   <div className="flex-1 flex flex-col justify-center gap-4">
                     <div className="text-center">
                       <h2 className="text-[20px] font-extrabold text-[#0F1B3D] mb-2 text-balance leading-tight">
-                        <StreamingText text={tpl.medsPrompt} onDone={() => setHeadlineDone(true)} />
+                        <StreamingText
+                          text={
+                            isDependentSetup && managedFirstName
+                              ? tpl.medsPrompt.replace(/Any yours\??$/i, `Any of these for ${managedFirstName}?`)
+                              : tpl.medsPrompt
+                          }
+                          onDone={() => setHeadlineDone(true)}
+                        />
                       </h2>
                       <motion.p
                         initial={{ opacity: 0 }}
