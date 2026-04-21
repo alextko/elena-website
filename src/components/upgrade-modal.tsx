@@ -22,15 +22,18 @@ interface UpgradeModalProps {
   featureName?: string;
 }
 
-type BillingPeriod = "monthly" | "annual";
+type BillingPeriod = "weekly" | "annual";
 type Tier = "standard" | "premium";
 
 const PLANS = {
   standard: {
-    name: "Standard",
-    monthly: 19.99,
+    name: "Pro",
+    weekly: 6.99,
+    monthly: 19.99, // shown via "prefer monthly" link
     annual: 179.99,
     annualMonthly: 15.0,
+    annualWeekly: 3.46, // 179.99 / 52, rounded
+    trial: true,
     features: [
       "10 calls per month",
       "Unlimited document uploads",
@@ -40,13 +43,16 @@ const PLANS = {
   },
   premium: {
     name: "Premium",
+    weekly: 0, // premium has no weekly; displays annual in weekly column
     monthly: 39.99,
     annual: 299.99,
     annualMonthly: 25.0,
+    annualWeekly: 5.77, // 299.99 / 52, rounded
+    trial: false,
     popular: true,
     features: [
       "Unlimited calls",
-      "Everything in Standard",
+      "Everything in Pro",
       "Up to 4 family profiles",
       "Lower negotiation fees (10%)",
     ],
@@ -105,10 +111,11 @@ export function UpgradeModal({
     ? featureDescriptions[featureName]
     : "Unlock the full power of Elena.";
 
-  async function handleUpgrade(tier: Tier) {
-    analytics.track("Upgrade Plan Selected", { plan_name: tier, billing_period: billing });
+  async function handleUpgrade(tier: Tier, period?: BillingPeriod | "monthly") {
+    const selectedPeriod = period ?? (tier === "premium" && billing === "weekly" ? "monthly" : billing);
+    analytics.track("Upgrade Plan Selected", { plan_name: tier, billing_period: selectedPeriod });
     setLoading(true);
-    const plan = `${tier}_${billing}` as const;
+    const plan = `${tier}_${selectedPeriod}`;
     try {
       const successUrl = `${window.location.origin}/chat?checkout=success`;
       const cancelUrl = `${window.location.origin}/chat`;
@@ -158,7 +165,7 @@ export function UpgradeModal({
 
             {/* Sliding pill toggle */}
             <div className="inline-flex items-center mt-3 sm:mt-4 rounded-full bg-white/10 p-1 backdrop-blur-sm border border-white/10">
-              {(["monthly", "annual"] as BillingPeriod[]).map((period) => (
+              {(["weekly", "annual"] as BillingPeriod[]).map((period) => (
                 <button
                   key={period}
                   onClick={() => setBilling(period)}
@@ -172,7 +179,7 @@ export function UpgradeModal({
                     />
                   )}
                   <span className={`relative z-10 ${billing === period ? "text-[#0F1B3D]" : "text-white/60"}`}>
-                    {period === "annual" ? "Annual (-25%)" : "Monthly"}
+                    {period === "annual" ? "Annual (-25%)" : "Weekly"}
                   </span>
                 </button>
               ))}
@@ -184,7 +191,18 @@ export function UpgradeModal({
         <div className="px-4 pb-4 pt-3 space-y-2.5 sm:px-5 sm:pb-5 sm:pt-4 sm:space-y-3">
           {tiers.map((tier, i) => {
             const plan = PLANS[tier];
-            const price = billing === "annual" ? plan.annualMonthly : plan[billing];
+            const showTrial = plan.trial;
+            // Pro: uses weekly toggle directly. Premium has no weekly — fall back to monthly in the "weekly" view.
+            // Annual: always display the weekly-equivalent price so the savings are obvious.
+            const effectivePeriod: "weekly" | "monthly" | "annual_weekly" =
+              billing === "annual" ? "annual_weekly" : tier === "premium" ? "monthly" : "weekly";
+            const price =
+              effectivePeriod === "annual_weekly"
+                ? plan.annualWeekly
+                : effectivePeriod === "weekly"
+                ? plan.weekly
+                : plan.monthly;
+            const unit = effectivePeriod === "monthly" ? "/mo" : "/wk";
             const isPopular = "popular" in plan && plan.popular;
 
             return (
@@ -200,9 +218,14 @@ export function UpgradeModal({
                 }`}
                 onClick={() => handleUpgrade(tier)}
               >
-                {isPopular && (
+                {isPopular && !showTrial && (
                   <span className="absolute -top-2.5 right-4 rounded-full bg-gradient-to-r from-[#E8956D] to-[#F4B084] px-3 py-0.5 text-[11px] font-semibold text-white shadow-sm">
                     Popular
+                  </span>
+                )}
+                {showTrial && (
+                  <span className="absolute -top-2.5 right-4 rounded-full bg-gradient-to-r from-[#2E6BB5] to-[#1A3A6E] px-3 py-0.5 text-[11px] font-semibold text-white shadow-sm">
+                    3-day free trial
                   </span>
                 )}
 
@@ -221,7 +244,7 @@ export function UpgradeModal({
                         ${price}
                       </motion.span>
                     </AnimatePresence>
-                    <span className="text-[13px] sm:text-sm text-[#8E8E93] ml-0.5">/mo</span>
+                    <span className="text-[13px] sm:text-sm text-[#8E8E93] ml-0.5">{unit}</span>
                   </div>
                 </div>
 
@@ -253,12 +276,21 @@ export function UpgradeModal({
                 <div
                   className="w-full rounded-full py-2 sm:py-2.5 text-center text-[13px] sm:text-sm font-bold tracking-tight text-white transition-all bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)] shadow-[0_4px_16px_rgba(46,107,181,0.25)] group-hover:shadow-[0_6px_24px_rgba(46,107,181,0.35)] group-hover:brightness-110"
                 >
-                  {loading ? "Redirecting..." : `Get ${plan.name}`}
+                  {loading ? "Redirecting..." : showTrial ? "Start 3-day free trial" : `Get ${plan.name}`}
                 </div>
               </motion.div>
             );
           })}
 
+          {!isStandardLimitReached && (
+            <button
+              type="button"
+              onClick={() => handleUpgrade("standard", "monthly")}
+              className="w-full text-center text-[11px] text-[#8E8E93] hover:text-[#0F1B3D] underline underline-offset-2 pt-1"
+            >
+              Prefer monthly? Pro for $19.99/mo without trial
+            </button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
