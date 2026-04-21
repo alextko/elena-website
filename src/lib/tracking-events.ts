@@ -161,7 +161,25 @@ export async function trackSignup(method: 'email' | 'google' | 'apple' | string,
   // optimization signal. See trackActivation() for the rationale.
 }
 
-export function trackSubscription(plan: string, value: number, currency: string = 'USD') {
+/**
+ * Fires Subscribe across Mixpanel + TikTok + Meta.
+ *
+ * eventId should be the server-issued `meta_subscribe_event_id` from
+ * /web/subscription. Passing it lets the backend's server-side CAPI fire
+ * (same event_id) dedup with this browser fire in Meta's 7-day window. Without
+ * it we're fine — Meta just treats the browser fire as a standalone event —
+ * but dedup is what keeps the count honest.
+ *
+ * Do NOT call this for a trial start. Use trackStartTrial() — Subscribe at $0
+ * poisons Meta value optimization. Subscribe is only for real paid conversions
+ * (direct-paid checkout, or trial→paid transition on day 3).
+ */
+export function trackSubscription(
+  plan: string,
+  value: number,
+  currency: string = 'USD',
+  eventId?: string,
+) {
   const attribution = getStoredAttribution();
 
   try {
@@ -171,6 +189,7 @@ export function trackSubscription(plan: string, value: number, currency: string 
         plan,
         value,
         currency,
+        ...(eventId ? { event_id: eventId } : {}),
         ...(attribution || {}),
       });
     }
@@ -202,11 +221,75 @@ export function trackSubscription(plan: string, value: number, currency: string 
   try {
     const fbq = (window as any).fbq;
     if (fbq) {
+      const options = eventId ? { eventID: eventId } : undefined;
       fbq('track', 'Subscribe', {
         value,
         currency,
         content_name: plan,
+      }, options);
+    }
+  } catch { /* Meta pixel error — safe to ignore */ }
+}
+
+/**
+ * Fires StartTrial across Mixpanel + TikTok + Meta at value=0.
+ *
+ * For the 3-day free trial on standard_weekly / standard_annual. Meta's
+ * primary in-window conversion signal while trials drive most signups —
+ * optimize ad sets on StartTrial, not Subscribe, until post-trial Subscribe
+ * volume is meaningful (~2 weeks in).
+ *
+ * eventId should be the server-issued `meta_start_trial_event_id` from
+ * /web/subscription — same dedup mechanic as trackSubscription. Uses a
+ * different prefix on the backend so the later Subscribe fire on day 3 has
+ * a distinct event_id.
+ */
+export function trackStartTrial(plan: string, currency: string = 'USD', eventId?: string) {
+  const attribution = getStoredAttribution();
+
+  try {
+    const mp = getMixpanelAny();
+    if (mp) {
+      mp.track('trial_started', {
+        plan,
+        value: 0,
+        currency,
+        ...(eventId ? { event_id: eventId } : {}),
+        ...(attribution || {}),
       });
+    }
+  } catch { /* safe to ignore */ }
+
+  try {
+    const mp = getMixpanelReal();
+    if (mp) {
+      mp.people.set({
+        plan,
+        trial_started_at: new Date().toISOString(),
+      });
+    }
+  } catch { /* safe to ignore */ }
+
+  try {
+    const ttq = (window as any).ttq;
+    if (ttq) {
+      ttq.track('StartTrial', {
+        content_name: plan,
+        value: 0,
+        currency,
+      });
+    }
+  } catch { /* safe to ignore */ }
+
+  try {
+    const fbq = (window as any).fbq;
+    if (fbq) {
+      const options = eventId ? { eventID: eventId } : undefined;
+      fbq('track', 'StartTrial', {
+        value: 0,
+        currency,
+        content_name: plan,
+      }, options);
     }
   } catch { /* Meta pixel error — safe to ignore */ }
 }
