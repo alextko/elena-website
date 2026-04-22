@@ -765,20 +765,34 @@ function LandingPage() {
     // use their own prefill; the homepage gets HOMEPAGE_DEFAULT_QUERY so the
     // agent doesn't land with "I don't have your data".
     const query = typed || hero?.prefill || HOMEPAGE_DEFAULT_QUERY;
-    // Check the late-signup flag up front — determines whether we post
-    // to pending_messages (the old claim flow) or skip it (the tour's
-    // action selection becomes the seed instead). Posting a landing
-    // pending message and then running the tour produces two competing
-    // seeds; the claim flow wins on /chat load and wipes the action
-    // seed from localStorage.
+    // Late-signup is the default funnel. The user goes through the onboarding
+    // tour first and is only prompted to sign up at the elena-plan Continue
+    // step (Phase 3). Early-signup (immediate AuthModal on landing CTA) is
+    // preserved for A/B testing via `?signup=first` and as a fallback if
+    // anything breaks in the tour pipeline.
+    //
+    // Flag resolution (in order of precedence):
+    //   1. `?signup=first` → force early-signup this session
+    //   2. `?signup=late`  → force late-signup this session (historical opt-in;
+    //      still honored so legacy share links keep working)
+    //   3. sessionStorage persists the last explicit choice
+    //   4. Default: late-signup
+    //
+    // Posting to pending_messages only happens in the early-signup path;
+    // in late-signup the tour's action selection is the seed that reaches
+    // /chat. Posting both produces two competing seeds.
     const lateSignupFlag = (() => {
-      if (typeof window === "undefined") return false;
+      if (typeof window === "undefined") return true;
       const sp = new URLSearchParams(window.location.search);
+      if (sp.get("signup") === "first") {
+        try { sessionStorage.setItem("elena_late_signup", "0"); } catch {}
+        return false;
+      }
       if (sp.get("signup") === "late") {
         try { sessionStorage.setItem("elena_late_signup", "1"); } catch {}
         return true;
       }
-      return sessionStorage.getItem("elena_late_signup") === "1";
+      return sessionStorage.getItem("elena_late_signup") !== "0";
     })();
     if (query) {
       analytics.track("Hero Input Submitted", { query_length: query.length });
