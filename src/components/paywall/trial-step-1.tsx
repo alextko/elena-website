@@ -149,7 +149,7 @@ export function TrialStep1({ open, onOpenChange, onContinue }: TrialStep1Props) 
                 loading="eager"
                 // @ts-expect-error — valid HTML attribute, not yet in TS DOM types
                 fetchpriority="high"
-                decoding="async"
+                decoding="sync"
               />
             </div>
           </div>

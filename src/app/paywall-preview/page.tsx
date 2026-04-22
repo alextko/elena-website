@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { TrialFlow } from "@/components/paywall/trial-flow";
 
@@ -27,6 +27,14 @@ function PreviewInner() {
   })();
 
   const [step, setStep] = useState<1 | 2 | 3 | null>(initialStep);
+
+  // Pre-decode the phone-screen image so the preview doesn't show the
+  // decode-flash the real funnel has been polished to avoid.
+  useEffect(() => {
+    const img = new Image();
+    img.src = "/images/IMG_0306.PNG";
+    img.decode?.().catch(() => undefined);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0F1B3D] via-[#1A3A6E] to-[#2E6BB5] flex items-center justify-center p-4">

@@ -62,12 +62,17 @@ function ChatPageInner() {
     return () => { if (meta) meta.setAttribute("content", "#0F1B3D"); };
   }, []);
 
-  // Preload the paywall phone-screen asset. By the time the user reaches the
-  // 2nd-message trigger (and the TrialStep1 modal opens), the image is
-  // already in the browser cache — no white flash inside the phone frame.
+  // Preload AND pre-decode the paywall phone-screen asset. `decode()` resolves
+  // only after the bitmap is in GPU-ready memory, so when TrialStep1's <img>
+  // mounts later it paints synchronously with no decode-flash. The PNG is
+  // 340×737 (~80KB), so decode is <5ms on any device.
   useEffect(() => {
     const img = new Image();
     img.src = "/images/IMG_0306.PNG";
+    img.decode?.().catch(() => {
+      // Older browsers without decode() fall back to native load; still
+      // cached by the download.
+    });
   }, []);
 
   const { session, loading, profileId, refreshSubscription, onboardingJustCompleted, needsOnboarding, profileChecked } = useAuth();
