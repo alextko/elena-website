@@ -147,8 +147,7 @@ export function TrialStep1({ open, onOpenChange, onContinue }: TrialStep1Props) 
                 src="/images/IMG_0306.PNG"
                 alt="Elena — Game plan"
                 loading="eager"
-                // @ts-expect-error — valid HTML attribute, not yet in TS DOM types
-                fetchpriority="high"
+                fetchPriority="high"
                 decoding="sync"
               />
             </div>
