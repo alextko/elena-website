@@ -8,14 +8,28 @@ Each item below has a corresponding GitHub issue labelled `paywall` +
 
 ---
 
+## Launch decision (2026-04-22): no trial-ending reminder for MVP
+
+Stripe's built-in customer trial-reminder email has a **fixed 7-day** lead time
+that cannot be changed. For our 3-day trial it never fires. The
+`customer.subscription.trial_will_end` webhook has the same hardcoded-3-day
+problem. See [#24](https://github.com/alextko/elena-website/issues/24).
+
+Shipping **option A** — no trial reminder. Revisit via #9 (custom Resend) or
+#10 (extend trial to 7 days) within 1-2 weeks post-launch.
+
+---
+
 ## Launch-adjacent (do before or alongside first paid traffic)
 
-- [ ] **Stripe Dashboard: enable trial-ending reminder email.**
-  Settings → Subscriptions → "Email customers a reminder to cancel their free
-  trial" → enable, set to 3 days before trial end (Stripe's max lead time).
-  Zero code. Addresses the 64% Day-0 cancel-to-avoid-forgetting pattern per
-  RevenueCat 2026. Ships a generic templated email; replaced by the branded
-  Resend version below when we have time.
+- [ ] **Stripe Dashboard: enable trial-ending reminder email** (#7, **noop for 3-day trial** — enable anyway for when we extend to 7 days).
+  URL: https://dashboard.stripe.com/settings/billing/automatic → "Send a reminder email 7 days before trial ends" toggle. No code.
+
+- [ ] **One real prod conversion to prove pipe** (#19). Charge yourself $6.99, refund. Verify `meta_event_log` row fires + Meta Test Events tab shows Browser+Server dedup.
+
+- [ ] **Set Subscribe = AEM slot 1 in Meta** (#20). Do after #19 so Subscribe is in the pickable-events list. Demote CompleteRegistration below.
+
+- [ ] **Domain verification check** (not a separate issue — likely already verified from prior CR campaign). URL: https://business.facebook.com/settings/owned-domains — confirm `elena-health.com` shows a green check.
 
 - [ ] **Verify mobile web viewport rendering on real devices.**
   Open the preview at `/paywall-preview` on an iPhone SE (375×667) and an
