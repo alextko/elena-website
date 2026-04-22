@@ -62,6 +62,14 @@ function ChatPageInner() {
     return () => { if (meta) meta.setAttribute("content", "#0F1B3D"); };
   }, []);
 
+  // Preload the paywall phone-screen asset. By the time the user reaches the
+  // 2nd-message trigger (and the TrialStep1 modal opens), the image is
+  // already in the browser cache — no white flash inside the phone frame.
+  useEffect(() => {
+    const img = new Image();
+    img.src = "/images/IMG_0306.PNG";
+  }, []);
+
   const { session, loading, profileId, refreshSubscription, onboardingJustCompleted, needsOnboarding, profileChecked } = useAuth();
   const { showAppCta } = useAppCta();
   const router = useRouter();
