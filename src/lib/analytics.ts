@@ -63,6 +63,16 @@ export type AnalyticsEvent =
   // Web tour inline data-entry prompts
   | "Web Tour Data Added"
   | "Web Tour Data Skipped"
+  // Debug / diagnostics (pre-existing events fired throughout onboard + chat)
+  | "Tour Buffer Flushed"
+  | "Onboard Auth Gate Hit"
+  | "Onboard Route Entered"
+  | "Form Missing From DOM"
+  | "Form Invisible In DOM"
+  | "Form Missing From State"
+  | "Form Request Received"
+  | "Hipaa Tool Not Called"
+  | "Hipaa Form Requested"
   // Paywall
   | "Soft Paywall Triggered"
   // Trial Paywall (post-onboarding 4-screen flow + exit intent)
