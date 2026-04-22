@@ -864,6 +864,17 @@ function LandingPage() {
     // elena-plan Continue (Phase 3). Flag resolution happened earlier
     // (before postPendingMessage) so both code paths see the same value.
     if (lateSignupFlag) {
+      // Arm the post-seed paywall gate the moment the user enters the
+      // late-signup funnel. Previously this flag was only set inside the
+      // tour's elena-plan "Continue" branch (web-onboarding-tour.tsx:1566),
+      // which required the user to pick an action AND for
+      // buildSeedMessageFromActions() to return a non-empty seed. Users
+      // who skipped action selection bypassed the gate entirely — their
+      // 2-message paywall trigger never fired on /chat, they could send
+      // unlimited messages without hitting the paywall. Arming it here
+      // guarantees every late-signup user is subject to the gate, and
+      // the tour's line-1566 setter becomes a no-op reinforcement.
+      try { sessionStorage.setItem("elena_tour_post_seed_gate", "1"); } catch {}
       analytics.track("Onboard Route Entered", { source: "landing_hero", landing_variant: ref || "homepage" });
       router.push("/onboard");
       return;
