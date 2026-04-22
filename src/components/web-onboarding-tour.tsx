@@ -1683,7 +1683,16 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     analytics.track("Web Tour Value Step Continued" as any, { lp_variant: lpVariant || "homepage" });
     // Fresh signup without pre-filled profile → collect name/DOB/zip first;
     // handleProfileSubmit then routes into the appropriate branch.
-    if (needsOnboarding) {
+    //
+    // Plan A anonymous tour: no auth-context session means needsOnboarding
+    // is false, but we DEFINITELY still need name/DOB/zip (nothing is
+    // saved server-side yet — it all rides on the buffer through signup
+    // to flushTourBuffer). Force the profile-form phase whenever the
+    // tour is anonymous OR we haven't captured those fields yet.
+    const hasName = !!(firstName.trim() || profileData?.firstName);
+    const hasDob = !!(dob.trim() || profileData?.dob);
+    const hasZip = !!(zipCode.trim() || profileData?.zipCode);
+    if (isAnonymousTour || needsOnboarding || !hasName || !hasDob || !hasZip) {
       setPhase("profile-form");
       return;
     }
@@ -1694,7 +1703,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       await createDependentAndSwitch();
     }
     routeAfterProfile();
-  }, [lpVariant, needsOnboarding, routeAfterProfile, setupForCareId, createDependentAndSwitch]);
+  }, [lpVariant, needsOnboarding, isAnonymousTour, firstName, dob, zipCode, profileData?.firstName, profileData?.dob, profileData?.zipCode, routeAfterProfile, setupForCareId, createDependentAndSwitch]);
 
   // Profile-form submit — migrates the OnboardingModal's handleSubmit.
   // completeOnboarding() handles: POST /profile, setProfileId, setProfileData,
