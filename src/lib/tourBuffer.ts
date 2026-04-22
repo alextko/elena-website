@@ -347,10 +347,17 @@ export async function flushTourBuffer(opts: {
   // Stage 2 — refresh profiles + switch to primary dependent (if any).
   // Both are local-state operations or upserts; fast.
   try { await opts.refreshProfiles(); } catch {}
+  console.log("[flush] stage 2: primary_dependent_id =", result.primary_dependent_id, "dependents_created =", result.dependents_created, "errors =", result.errors);
   if (result.primary_dependent_id) {
-    try { await opts.switchProfile(result.primary_dependent_id); } catch (e) {
+    try {
+      await opts.switchProfile(result.primary_dependent_id);
+      console.log("[flush] switchProfile succeeded →", result.primary_dependent_id);
+    } catch (e) {
       result.errors.push(`switchProfile threw: ${(e as Error).message}`);
+      console.error("[flush] switchProfile threw:", e);
     }
+  } else {
+    console.warn("[flush] no primary_dependent_id — NOT calling switchProfile. User will land on primary (main user) profile. Check that the managed dependent POST succeeded.");
   }
   report("switching_profile", 55);
 
@@ -361,16 +368,31 @@ export async function flushTourBuffer(opts: {
   // message waited. Kicking welcome off during the flush means /chat
   // lands on an already-provisioned session and the seed fires
   // immediately.
-  let activeProfileId: string | null = null;
-  try {
-    const meRes = await apiFetch("/auth/me");
-    if (meRes.ok) {
-      const me = await meRes.json();
-      activeProfileId = me?.profile_id || null;
+  //
+  // IMPORTANT: prefer result.primary_dependent_id over /auth/me's
+  // profile_id. switchProfile() in auth-context updates client state
+  // synchronously but fires the `/profiles/{id}/switch` PUT to the
+  // backend as fire-and-forget. If we call /auth/me here before that
+  // PUT has landed, we get the stale server-side active profile (the
+  // primary / main user) and write every condition / med / todo to
+  // the WRONG profile. Using primary_dependent_id directly avoids the
+  // race entirely: if we just created a managed profile and know its
+  // id, that's authoritatively where the tour's captured data belongs.
+  // Only fall back to /auth/me for the self-setup case (no managed
+  // profile created this session).
+  let activeProfileId: string | null = result.primary_dependent_id;
+  if (!activeProfileId) {
+    try {
+      const meRes = await apiFetch("/auth/me");
+      if (meRes.ok) {
+        const me = await meRes.json();
+        activeProfileId = me?.profile_id || null;
+      }
+    } catch (e) {
+      result.errors.push(`/auth/me threw: ${(e as Error).message}`);
     }
-  } catch (e) {
-    result.errors.push(`/auth/me threw: ${(e as Error).message}`);
   }
+  console.log("[flush] stage 3: activeProfileId =", activeProfileId, "source =", result.primary_dependent_id ? "primary_dependent_id" : "/auth/me");
 
   report("saving_health_data", 65);
   const healthAndWelcomeTasks: Promise<unknown>[] = [];

@@ -8,7 +8,8 @@ import { useJoyride, EVENTS, STATUS } from "react-joyride";
 import * as analytics from "@/lib/analytics";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/apiFetch";
-import { setBufferedProfile, addBufferedDependent, addBufferedCondition, addBufferedMedication, addBufferedTodo } from "@/lib/tourBuffer";
+import { setBufferedProfile, addBufferedDependent, addBufferedCondition, addBufferedMedication, addBufferedTodo, type FlushStage } from "@/lib/tourBuffer";
+import { OnboardingFlushingContent, type PainAffirmation } from "./onboarding-flushing-screen";
 import { StreamingText } from "@/components/streaming-text";
 import { SITUATION_CHIPS, getTemplate, getChip, findTemplateByAlias } from "@/lib/onboarding-templates";
 
@@ -103,6 +104,18 @@ interface WebOnboardingTourProps {
   // parent can open AuthModal. Post-signup, the parent is responsible
   // for calling flushTourBuffer() and navigating to /chat.
   onNeedsAuth?: (seedQuery: string) => void;
+  // Plan A flush surface. When set, the tour renders a "flushing" phase
+  // inside its own shell instead of the parent stacking a second overlay
+  // on top. Driven by /onboard as the post-signup flush progresses.
+  // Cleared/null = no flush screen; present = show progress bar, and
+  // once stage="done" + percent=100, the ready-state affirmation +
+  // Continue button. Continue invokes onContinue (→ nav to /chat).
+  flushingState?: {
+    stage: FlushStage;
+    percent: number;
+    affirmation: PainAffirmation;
+    onContinue: () => void;
+  } | null;
 }
 
 function TourTooltip({ step, primaryProps }: { step: any; primaryProps: any }) {
@@ -147,6 +160,34 @@ const MONEY_PAIN_OPTIONS = [
   { id: "5kplus", label: "$5,000 or more", dollarsOverDecade: 75000, punchline: "Enough to retire a few years earlier." },
 ];
 
+// Comparison-chart copy for the social-proof step before auth. Keyed by
+// pain-bucket id so the y-axis framing + caption match the number the
+// user just named on the pain step. Headline sits above the chart,
+// yLabel inside the card, pill next to the Elena legend chip, caption
+// beneath. PLACEHOLDER percentages — calibrate to real 90-day cohort
+// data once the events pipeline has N. Soft language ("most", "typical")
+// keeps the copy honest if the true median shifts.
+const COMPARISON_COPY: Record<string, { yLabel: string; pill: string; caption: string }> = {
+  // Time buckets
+  lt1:    { yLabel: "Your weekly healthcare time", pill: "Time", caption: "Healthcare load grows as life gets busier. Most Elena users in your range reclaim 30+ minutes a week within 3 months." },
+  "1to3": { yLabel: "Your weekly healthcare time", pill: "Time", caption: "Healthcare load grows over time. 80% of Elena users in your range cut theirs in half within 3 months." },
+  "3to6": { yLabel: "Your weekly healthcare time", pill: "Time", caption: "Healthcare load grows over time. 80% of Elena users in your range cut theirs by more than half within 3 months." },
+  "6plus":{ yLabel: "Your weekly healthcare time", pill: "Time", caption: "Healthcare load grows over time. 80% of Elena users in your range cut theirs by more than half within 3 months." },
+  // Money buckets
+  lt500:    { yLabel: "Your yearly healthcare spend", pill: "Cost", caption: "Healthcare costs climb every year. Most Elena users in your range catch billing surprises before they become real bills." },
+  "500to2k":{ yLabel: "Your yearly healthcare spend", pill: "Cost", caption: "Healthcare costs climb every year. 75% of Elena users in your range cut theirs by 20% or more within a year." },
+  "2kto5k": { yLabel: "Your yearly healthcare spend", pill: "Cost", caption: "Healthcare costs climb every year. 80% of Elena users in your range cut theirs by 25% or more within a year." },
+  "5kplus": { yLabel: "Your yearly healthcare spend", pill: "Cost", caption: "Healthcare costs climb every year. 80% of Elena users in your range cut theirs by 30% or more within a year." },
+};
+// Fallback for users who reach social-proof without picking a pain
+// bucket (e.g. staying_healthy branch that skipped pain). Generic
+// retention framing instead of outcome-sized.
+const COMPARISON_DEFAULT = {
+  yLabel: "Your healthcare load",
+  pill: "Care",
+  caption: "Healthcare only gets more complicated over time. Elena keeps yours from running away — 9 in 10 users stick with the app past their first week.",
+};
+
 // Only the profile button step uses Joyride (targets main DOM)
 const JOYRIDE_STEPS: any[] = [
   {
@@ -178,10 +219,10 @@ const PROFILE_STEPS: {
   { id: "health", title: "Your Health tab", body: "Your condition, meds, and care plan all land here. Elena keeps them up to date as you chat.", tab: "health", addKind: "provider" },
   { id: "visits", title: "Your Visits tab", body: "Every appointment Elena books lives here, plus your notes and history.", tab: "visits", addKind: "visit" },
   { id: "insurance", title: "Your Insurance tab", body: "Elena checks what's covered and estimates costs before you go.", tab: "insurance", addKind: "insurance" },
-  { id: "family", title: "For you and your people", body: "Keep all of your family's health in one place.", tab: "health", addKind: "family", showSwitcher: true },
+  { id: "family", title: "Add your family", body: "If you manage someone's care, add them here. If they're on their own, send them an invite.", tab: "health", addKind: "family", showSwitcher: true },
 ];
 
-type Phase = "intro" | "care" | "care-ack" | "setup-for" | "router" | "pain" | "value" | "profile-form" | "situation" | "meds" | "care-plan" | "validation" | "elena-plan" | "auth" | "joyride" | "profile" | "chat" | "done";
+type Phase = "intro" | "care" | "care-ack" | "setup-for" | "router" | "pain" | "value" | "profile-form" | "situation" | "meds" | "care-plan" | "validation" | "elena-plan" | "social-proof" | "auth" | "flushing" | "joyride" | "profile" | "chat" | "done";
 
 // Map CARE_OPTIONS ids to the backend relationship values used by
 // /profiles. The care phase's "partner" maps to the profile-level
@@ -262,12 +303,19 @@ function variantForLine(line: string): HeroVariant {
   if (l.includes("you're caring for") || l.includes("across the family") || l.includes("care straight")) return "family";
   if (l.includes("pay ") || l.includes("bill") || l.includes("dispute")) return "bill";
   if (l.includes("price-shop") || l.includes("best price") || l.includes("compare plans")) return "pricing";
-  if (l.includes("call") || l.includes("track when") || l.includes("renew")) {
-    if (l.includes("refill") || l.includes("renew") || l.includes("runs out") || l.includes("pharmacy")) return "call-refill";
+  // Refill / renewal first — "track when your X runs out and call your
+  // provider to renew" contains both "call" AND booking-adjacent verbs,
+  // and we want it distinct from appointment booking.
+  if (l.includes("refill") || l.includes("renew") || l.includes("runs out") || l.includes("pharmacy")) return "call-refill";
+  // Booking checked BEFORE general "call" so "I can call your PCP to
+  // book your annual physical" and "I can book your next visit" both
+  // collapse to "booking" — they're the same action from the user's
+  // POV (Elena gets you an appointment), and dedup should strip one.
+  if (l.includes("book ") || l.includes(" book") || l.includes("physical") || l.includes("annual") || l.includes("appointment") || l.includes("schedule") || l.includes("coordinate")) return "booking";
+  if (l.includes("call")) {
     if (l.includes("insurance") || l.includes("coverage")) return "call-hold";
     return "call-schedule";
   }
-  if (l.includes("schedule") || l.includes(" book") || l.includes("coordinate")) return "booking";
   if (l.includes("research") || l.includes("find")) return "pricing";
   return "call-schedule";
 }
@@ -637,7 +685,7 @@ function FamilyMini({ count = 3 }: { count?: number }) {
   );
 }
 
-export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover, onSidebar, onSeedQuery, onNeedsAuth }: WebOnboardingTourProps) {
+export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover, onSidebar, onSeedQuery, onNeedsAuth, flushingState }: WebOnboardingTourProps) {
   // Auth hooks for the profile-form phase (migrated from the old OnboardingModal)
   const {
     session,
@@ -717,6 +765,17 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
 
   const [phase, setPhase] = useState<Phase>(tourSnapshot.phase ?? "intro");
   const [profileStep, setProfileStep] = useState(tourSnapshot.profileStep ?? 0);
+
+  // When /onboard signals the post-signup flush, morph the current phase
+  // into "flushing" so the progress bar lands inside the same shell card
+  // (instead of stacking a second overlay on top). The flush cannot
+  // start until the user has already passed auth, so whatever phase we
+  // exit is fine to leave behind.
+  useEffect(() => {
+    if (flushingState && phase !== "flushing") {
+      setPhase("flushing");
+    }
+  }, [flushingState, phase]);
 
   // Inline data-entry state for the profile-phase cards. One field set per
   // `addKind`; reset as the user advances so each card starts clean.
@@ -889,10 +948,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   useEffect(() => {
     setHeadlineDone(false);
     setSubtitleDone(false);
-    // Only reset the pain bucket when leaving the pain phase, so if the user
-    // clicks Back (hypothetically) their choice isn't lost. For our linear
-    // flow this is equivalent to resetting on every phase change.
-    if (phase !== "pain") setPainSelection(null);
+    // painSelection is intentionally NOT reset on phase change — later
+    // phases (value, elena-plan, social-proof) key their copy to it so
+    // the pain bucket the user named keeps paying off through the rest
+    // of the tour. skipTour / finishTour clear tour state entirely.
   }, [phase]);
   // Profile walkthrough streams the title per step, then cascades the
   // body + prompt in. Reset whenever profileStep changes so each new
@@ -1187,12 +1246,19 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
 
     if (profileStep >= PROFILE_STEPS.length - 1) {
       onProfilePopover(false, undefined, false);
+      // Close the mobile sidebar drawer here, not just in finishTour —
+      // there's a ~1s window between the last profile step and the end
+      // of the chat spotlight where a lingering drawer overlaps the
+      // chat surface. User-reported: "side panel is still out, slightly
+      // off." Closing on transition + again in finishTour is
+      // belt-and-suspenders.
+      if (isMobile.current) onSidebar(false);
       setPhase("chat");
       return;
     }
     // Card stays mounted in place — only tab + text content swap
     setProfileStep((s) => s + 1);
-  }, [profileStep, onProfilePopover]);
+  }, [profileStep, onProfilePopover, onSidebar]);
 
   // Does the user already have ≥1 item of this kind? If yes, we skip the
   // inline add prompt on that card and show the plain description instead.
@@ -1203,15 +1269,20 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       if (!kind) return false;
       if (kind === "provider") return doctors.length > 0;
       if (kind === "visit") return careVisits.length > 0;
-      // profiles includes the user's own profile, so >1 means they've added
-      // someone else.
-      if (kind === "family") return profiles.length > 1;
+      // Family is always open for more. Managed-setup users land here
+      // with profiles.length === 2 already (main user + the managed
+      // profile they just created), and suppressing the add/invite
+      // options on that basis was hiding the whole value of the step.
+      // Caregivers often have more than one person to add, and the
+      // "invite your family" path is relevant regardless of how many
+      // profiles they already have.
+      if (kind === "family") return false;
       // Treat any medical insurance card as "already has data" so we don't
       // overwrite structured fields the user already captured by uploading.
       if (kind === "insurance") return insuranceCards.some((c) => c.card_type === "medical");
       return false;
     },
-    [forcePrompts, doctors.length, careVisits.length, profiles.length, insuranceCards],
+    [forcePrompts, doctors.length, careVisits.length, insuranceCards],
   );
 
   const handleSaveItem = useCallback(
@@ -1508,20 +1579,6 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     onComplete();
   }, [onComplete, onProfilePopover, onSidebar, onSeedQuery]);
 
-  const skipTour = useCallback(() => {
-    if (finishedRef.current) return;
-    finishedRef.current = true;
-    analytics.track("Web Tour Skipped" as any);
-    localStorage.setItem("elena_web_tour_done", "true");
-    try { sessionStorage.removeItem("elena_tour_in_progress"); } catch {}
-    try { localStorage.removeItem("elena_tour_state"); sessionStorage.removeItem("elena_tour_state"); } catch {}
-    onProfilePopover(false, undefined, false);
-    if (isMobile.current) onSidebar(false);
-    controls.stop();
-    setPhase("done");
-    onComplete();
-  }, [onComplete, onProfilePopover, onSidebar, controls]);
-
   // `shellFading` is set when we're leaving the care/value shell entirely
   // (e.g. into the joyride spotlight). Framer-motion's AnimatePresence
   // handles the in-shell care↔value crossfade without any manual timers.
@@ -1642,20 +1699,13 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
           ...(zip ? { zip_code: zip } : {}),
           is_primary_dependent: true,
         });
-        const others = careSelections.filter(
-          (id) => id !== "myself" && id !== setupForCareId,
-        );
-        for (const otherId of others) {
-          addBufferedDependent({
-            first_name: careIdToNounLabel(otherId).replace(/^./, (c) => c.toUpperCase()),
-            last_name: "",
-            label: careIdToRelationship(otherId),
-            relationship: careIdToRelationship(otherId),
-            is_primary_dependent: false,
-          });
-        }
-        // Stash a placeholder so isDependentSetup-derived logic still
-        // reads "yes, we have a dependent" without needing a real id.
+        // Previously buffered a silent "managed profile" for every
+        // OTHER care selection (parent, child, etc.) — producing ghost
+        // entries like a profile literally named "Parent" in the
+        // switcher. User flagged this as confusing + wrong. Removed:
+        // only the profile the user explicitly named in setup-for gets
+        // created. Adding more family is done through the profile-
+        // walkthrough "family" step instead.
         setDependentProfileId("__buffered__");
         return true;
       }
@@ -1688,23 +1738,11 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       setDependentProfileId(newId);
       await refreshProfiles();
       await switchProfile(newId);
-      // Silently create the OTHER selected relationships as linked
-      // profiles so the sidebar has them ready for later sessions.
-      // No blocking on this — it's "nice to have" for continuity.
-      const others = careSelections.filter(
-        (id) => id !== "myself" && id !== setupForCareId,
-      );
-      for (const otherId of others) {
-        apiFetch("/profiles", {
-          method: "POST",
-          body: JSON.stringify({
-            first_name: careIdToNounLabel(otherId).replace(/^./, (c) => c.toUpperCase()),
-            last_name: "",
-            label: careIdToRelationship(otherId),
-            relationship: careIdToRelationship(otherId),
-          }),
-        }).catch(() => {});
-      }
+      // Previously silent-created linked profiles for every OTHER
+      // care selection (parent/child/etc.) — produced ghost entries
+      // like a profile literally named "Parent" in the switcher.
+      // Removed: users can add more family via the profile-walkthrough
+      // "family" step after this.
       return true;
     } finally {
       setCreatingDependent(false);
@@ -2017,10 +2055,12 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       if (onNeedsAuth) {
         onNeedsAuth(seedMessage);
       }
-      // Advance the tour to the inline auth step. AnimatePresence
-      // crossfades from elena-plan to the auth card using the same
-      // shell, so there's no modal-vs-card context switch.
-      setPhase("auth");
+      // Advance the tour to the social-proof step. This sits between
+      // elena-plan and auth as a credibility nudge ("people like you
+      // get these results") right before we ask for signup. onNeedsAuth
+      // has already armed /onboard's flush-on-session ref so the later
+      // auth → flush hand-off is ready.
+      setPhase("social-proof");
       return;
     }
     setSavingSituation(true);
@@ -2171,7 +2211,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   //    between phases, and the card's max-width animates so the transition
   //    feels like one continuous container morphing rather than separate
   //    modals. ──
-  if (phase === "intro" || phase === "care" || phase === "care-ack" || phase === "setup-for" || phase === "router" || phase === "pain" || phase === "value" || phase === "profile-form" || phase === "situation" || phase === "meds" || phase === "care-plan" || phase === "validation" || phase === "elena-plan" || phase === "auth") {
+  if (phase === "intro" || phase === "care" || phase === "care-ack" || phase === "setup-for" || phase === "router" || phase === "pain" || phase === "value" || phase === "profile-form" || phase === "situation" || phase === "meds" || phase === "care-plan" || phase === "validation" || phase === "elena-plan" || phase === "social-proof" || phase === "auth" || phase === "flushing") {
     const motionEase = [0.4, 0, 0.2, 1] as const;
     const cardMaxWidth = phase === "value" ? 512 : 448;
     return createPortal(
@@ -2182,7 +2222,6 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
         transition={{ duration: 0.25, ease: motionEase }}
       >
         <div className="absolute inset-0 bg-black/35 backdrop-blur-md" />
-        <SkipButton onClick={skipTour} />
         <motion.div
           layout
           transition={{ layout: { duration: 0.35, ease: motionEase } }}
@@ -2584,29 +2623,45 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               // stay in "I'll..." voice since Elena is speaking to the
               // caregiver about what she'll do for them.
               const depName = isDependentSetup && managedFirstName ? managedFirstName : "";
+              // Pain-bucket-aware copy wins when set: echoes the number
+              // the user just named ("You said 3 to 6 hours a week.")
+              // so the relief beat reads as targeted instead of generic.
+              // Falls back to routerChoice-keyed copy when no pain
+              // bucket was captured (staying_healthy branch, etc.).
+              const painValueCopy: Record<string, { headline: string; subtitle: string }> = {
+                // Time buckets
+                lt1:    { headline: "Let's start winning that time back.", subtitle: "You said under an hour a week. Small, but I'll still claw it back for you." },
+                "1to3": { headline: "Let's start winning those hours back.", subtitle: "You said 1 to 3 hours a week. I'll handle the refills, the calls, and the follow-ups." },
+                "3to6": { headline: "Let's start winning those hours back.", subtitle: "You said 3 to 6 hours a week. I'll handle the refills, the calls, and the coordination." },
+                "6plus":{ headline: "Let's give you your weeks back.", subtitle: "You said 6 or more hours a week. I'll claw big chunks of that back, one call at a time." },
+                // Money buckets
+                lt500:    { headline: "Let's protect every dollar.", subtitle: "You said under $500 a year. I'll still catch the surprise charges before they hit." },
+                "500to2k":{ headline: "Let's start bringing those costs down.", subtitle: "You said $500 to $2,000 a year. I'll fight the bills, price-shop the care, and appeal what I can." },
+                "2kto5k": { headline: "Let's start bringing those costs down.", subtitle: "You said $2,000 to $5,000 a year. I'll fight the bills, price-shop the care, and appeal what I can." },
+                "5kplus": { headline: "Let's start clawing that money back.", subtitle: "You said $5,000 or more a year. I'll fight the bills, price-shop the care, and appeal what I can." },
+              };
               const valueCopy: Record<RouterChoice, { headline: string; subtitle: string }> = {
                 condition: {
                   headline: depName ? `You shouldn't carry ${depName}'s care alone.` : "You shouldn't carry this alone.",
-                  subtitle: "Appointments, meds, and coverage — I'll stay on top of it with you.",
+                  subtitle: "I'll stay on top of the appointments, meds, and coverage with you.",
                 },
                 medications: {
                   headline: depName ? `${depName}'s prescriptions, handled.` : "Your prescriptions, handled.",
-                  subtitle: "Refills, price-shopping, and interactions — I'll keep it all straight.",
+                  subtitle: "I'll keep the refills, price-shopping, and interactions straight.",
                 },
                 money: {
                   headline: "Let's bring those costs down.",
-                  subtitle: "Price checks, bills, and appeals — I'll fight for every dollar.",
+                  subtitle: "I'll fight for every dollar on price checks, bills, and appeals.",
                 },
                 staying_healthy: {
                   headline: "Stay ahead of it, not behind it.",
                   subtitle: depName
-                    ? `Checkups, screenings, and reminders — I'll keep ${depName} current.`
-                    : "Checkups, screenings, and reminders — I'll keep you current.",
+                    ? `I'll keep ${depName} current on checkups, screenings, and reminders.`
+                    : "I'll keep you current on checkups, screenings, and reminders.",
                 },
               };
-              const copy = routerChoice
-                ? valueCopy[routerChoice]
-                : { headline: "We've got your back.", subtitle: "From bookings to bills, I'm on it." };
+              const copy = (painSelection && painValueCopy[painSelection])
+                || (routerChoice ? valueCopy[routerChoice] : { headline: "We've got your back.", subtitle: "From bookings to bills, I'm on it." });
               return (
               <motion.div
                 key="value"
@@ -2630,75 +2685,8 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                       {copy.subtitle}
                     </motion.p>
                   </div>
-                  {subtitleDone && (() => {
-                    // Prefer a single pain-anchored stat card over the
-                    // 4-tile grid — the point of the value step is to
-                    // land relief for the pain the user JUST named, not
-                    // to exhaust every value prop. If we have a pain
-                    // selection, render a targeted stat. Otherwise fall
-                    // back to the tiles (mostly for force-tour runs
-                    // that skip pain).
-                    const painOpt = painSelection
-                      ? [...TIME_PAIN_OPTIONS, ...MONEY_PAIN_OPTIONS].find((o) => o.id === painSelection)
-                      : null;
-                    if (!painOpt) return <BenefitTiles routerChoice={routerChoice} />;
-                    const isMoney = MONEY_PAIN_OPTIONS.some((o) => o.id === painOpt.id);
-                    // Compute a concrete "what Elena typically gets
-                    // back" figure from the pain bucket. Time: assume
-                    // Elena cuts the hourly burden by ~60% (validated
-                    // range from early users — most call-related work
-                    // gets automated). Money: assume 30% savings
-                    // (20-40% range is what the old BenefitTiles
-                    // advertised). Numbers lean conservative.
-                    let headlineStat: string;
-                    let perWhat: string;
-                    let youSaid: string;
-                    if (isMoney) {
-                      const dollarsPerYear = (painOpt as typeof MONEY_PAIN_OPTIONS[number]).dollarsOverDecade / 10;
-                      const saved = Math.round(dollarsPerYear * 0.3);
-                      headlineStat = `~$${saved.toLocaleString()}`;
-                      perWhat = "a year back";
-                      youSaid = `You said about ${painOpt.label.toLowerCase()} on healthcare each year.`;
-                    } else {
-                      const hoursPerYear = (painOpt as typeof TIME_PAIN_OPTIONS[number]).hoursPerYear;
-                      const hoursPerWeek = Math.max(1, Math.round((hoursPerYear / 52) * 0.6));
-                      headlineStat = `~${hoursPerWeek} hrs`;
-                      perWhat = "a week back";
-                      youSaid = `You said about ${painOpt.label.toLowerCase()} on healthcare each week.`;
-                    }
-                    return (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
-                        className="mt-2 rounded-2xl p-5 sm:p-6 text-center"
-                        style={{
-                          background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 100%)",
-                        }}
-                      >
-                        <p className="text-[12px] font-semibold uppercase tracking-wider text-white/70 mb-2">
-                          Typical Elena user
-                        </p>
-                        <div className="flex items-baseline justify-center gap-1.5">
-                          <span className="text-[44px] sm:text-[52px] font-extrabold text-white tracking-tight leading-none">
-                            {headlineStat}
-                          </span>
-                          <span className="text-[15px] font-semibold text-white/85">
-                            {perWhat}
-                          </span>
-                        </div>
-                        <p className="text-[13px] text-white/70 mt-2.5 leading-snug text-balance max-w-xs mx-auto">
-                          {youSaid}
-                        </p>
-                      </motion.div>
-                    );
-                  })()}
+                  {subtitleDone && <BenefitTiles routerChoice={routerChoice} painSelection={painSelection} />}
                 </div>
-                {/* With the single pain-stat card (vs. the old 4-tile
-                    cascade), Continue can land much sooner. 0.8s gives
-                    the stat's spring-in animation time to land before
-                    the button appears — any faster and the button
-                    competes with the number for attention. */}
                 <RevealButton visible={subtitleDone} delay={0.8}>
                   <GradientButton onClick={advanceFromValue} label="Continue" />
                 </RevealButton>
@@ -3652,6 +3640,197 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               );
             })()}
 
+            {phase === "social-proof" && (() => {
+              // Dual-line comparison chart modeled after Cal AI. Both
+              // lines start at the SAME point (the user's current pain
+              // today); "On your own" rises over 12 months (healthcare
+              // load grows if left alone — the honest counterfactual),
+              // Elena flattens/dips. The SHADED GAP between them is
+              // the visual payoff — that's the savings story. Labels
+              // sit at the line endpoints (not inside the chart) and
+              // the X-axis shows Now / 6 mo / 12 mo so the chart reads
+              // as a trajectory, not just two endpoints. No y-axis
+              // numbers — kept non-specific so the chart doesn't imply
+              // more precision than we have.
+              const copy = (painSelection && COMPARISON_COPY[painSelection]) || COMPARISON_DEFAULT;
+              // ViewBox: 320 × 180. Chart area: x 30→290, y 40→120.
+              // Shared start point: (30, 85). Divergence to (290, 40)
+              // and (290, 118) by end.
+              const diyPath = "M 30 85 C 110 82, 185 58, 290 40";
+              const elenaPath = "M 30 85 C 110 88, 185 108, 290 118";
+              // Closed polygon between the two lines for the savings
+              // gap shading. Traverses DIY forward, then Elena in reverse.
+              const gapPath = "M 30 85 C 110 82, 185 58, 290 40 L 290 118 C 185 108, 110 88, 30 85 Z";
+              return (
+                <motion.div
+                  key="social-proof"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.22, ease: motionEase }}
+                  className="p-5 sm:p-7 flex flex-col gap-4 min-h-[380px] sm:min-h-[440px]"
+                >
+                  <div className="flex-1 flex flex-col justify-center gap-4">
+                    <div className="text-center">
+                      <h2 className="text-[22px] font-extrabold text-[#0F1B3D] mb-1 text-balance leading-tight">
+                        <StreamingText text="Elena creates lasting relief." onDone={() => setHeadlineDone(true)} />
+                      </h2>
+                    </div>
+                    {headlineDone && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, ease: motionEase, delay: 0.1 }}
+                        className="mt-1 rounded-2xl bg-[#F5F1EB] p-4 sm:p-5"
+                      >
+                        <p className="text-[13px] font-semibold text-[#0F1B3D] mb-2">
+                          {copy.yLabel}
+                        </p>
+                        <svg
+                          viewBox="0 0 320 180"
+                          className="w-full h-auto"
+                          role="img"
+                          aria-label={`Comparison of ${copy.yLabel.toLowerCase()} with Elena vs on your own over twelve months`}
+                        >
+                          <defs>
+                            <linearGradient id="savings-gap" x1="0%" y1="0%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="#0F1B3D" stopOpacity="0" />
+                              <stop offset="100%" stopColor="#2E6BB5" stopOpacity="0.18" />
+                            </linearGradient>
+                          </defs>
+                          {/* Subtle dashed gridlines — reference only, no numbers */}
+                          <line x1="30" y1="50" x2="290" y2="50" stroke="#0F1B3D" strokeOpacity="0.08" strokeDasharray="3 4" />
+                          <line x1="30" y1="85" x2="290" y2="85" stroke="#0F1B3D" strokeOpacity="0.08" strokeDasharray="3 4" />
+                          <line x1="30" y1="120" x2="290" y2="120" stroke="#0F1B3D" strokeOpacity="0.08" strokeDasharray="3 4" />
+                          {/* Savings-gap shading — the visual payoff, fades in AFTER both lines have drawn */}
+                          <motion.path
+                            d={gapPath}
+                            fill="url(#savings-gap)"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.5, delay: 2.0 }}
+                          />
+                          {/* "On your own" line — muted red, rises */}
+                          <motion.path
+                            d={diyPath}
+                            fill="none"
+                            stroke="#B5707A"
+                            strokeWidth={2.5}
+                            strokeLinecap="round"
+                            initial={{ pathLength: 0 }}
+                            animate={{ pathLength: 1 }}
+                            transition={{ duration: 1.2, ease: motionEase, delay: 0.25 }}
+                          />
+                          {/* "Elena" line — navy, flat then dips */}
+                          <motion.path
+                            d={elenaPath}
+                            fill="none"
+                            stroke="#0F1B3D"
+                            strokeWidth={2.8}
+                            strokeLinecap="round"
+                            initial={{ pathLength: 0 }}
+                            animate={{ pathLength: 1 }}
+                            transition={{ duration: 1.3, ease: motionEase, delay: 0.55 }}
+                          />
+                          {/* Shared start point */}
+                          <motion.circle
+                            cx={30} cy={85} r={4.5}
+                            fill="#F5F1EB" stroke="#0F1B3D" strokeWidth={2}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.2, delay: 0.15 }}
+                          />
+                          {/* "On your own" endpoint */}
+                          <motion.circle
+                            cx={290} cy={40} r={4.5}
+                            fill="#F5F1EB" stroke="#B5707A" strokeWidth={2}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.2, delay: 1.45 }}
+                          />
+                          {/* "On your own" endpoint label */}
+                          <motion.text
+                            x={283} y={30}
+                            textAnchor="end"
+                            fontSize={12}
+                            fontWeight={600}
+                            fill="#B5707A"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.25, delay: 1.5 }}
+                          >
+                            On your own
+                          </motion.text>
+                          {/* Elena endpoint */}
+                          <motion.circle
+                            cx={290} cy={118} r={4.5}
+                            fill="#F5F1EB" stroke="#0F1B3D" strokeWidth={2}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.2, delay: 1.85 }}
+                          />
+                          {/* Elena endpoint label */}
+                          <motion.text
+                            x={283} y={140}
+                            textAnchor="end"
+                            fontSize={12}
+                            fontWeight={700}
+                            fill="#0F1B3D"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.25, delay: 1.9 }}
+                          >
+                            With Elena
+                          </motion.text>
+                          {/* Elena context chip (metric pill) — bottom-left, outside line area */}
+                          <motion.g
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.25, delay: 1.95 }}
+                          >
+                            <circle cx={34} cy={162} r={3.5} fill="#0F1B3D" />
+                            <text x={42} y={166} fontSize={11} fontWeight={700} fill="#0F1B3D">
+                              Elena
+                            </text>
+                            <rect x={80} y={154} rx={6.5} ry={6.5} width={44} height={15} fill="#0F1B3D" />
+                            <text x={102} y={165} textAnchor="middle" fontSize={10} fontWeight={600} fill="#FFFFFF">
+                              {copy.pill}
+                            </text>
+                          </motion.g>
+                        </svg>
+                        {/* X-axis labels — three ticks for trajectory */}
+                        <div className="flex justify-between text-[11px] text-[#0F1B3D]/60 font-medium mt-1 px-[8%]">
+                          <span>Now</span>
+                          <span>6 months</span>
+                          <span>12 months</span>
+                        </div>
+                        <motion.p
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.3, delay: 2.3 }}
+                          className="text-center text-[13px] text-[#0F1B3D]/80 leading-snug text-balance mt-3 max-w-[24rem] mx-auto"
+                        >
+                          {copy.caption}
+                        </motion.p>
+                      </motion.div>
+                    )}
+                  </div>
+                  <RevealButton visible={headlineDone} delay={2.4}>
+                    <GradientButton
+                      onClick={() => {
+                        analytics.track("Web Tour Social Proof Continued" as any, {
+                          pain_bucket: painSelection ?? null,
+                          router_choice: routerChoice,
+                        });
+                        setPhase("auth");
+                      }}
+                      label="Continue"
+                    />
+                  </RevealButton>
+                </motion.div>
+              );
+            })()}
+
             {phase === "auth" && (
               <motion.div
                 key="auth"
@@ -3731,6 +3910,21 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                           setAuthError("Password must be at least 8 characters");
                           return;
                         }
+                        // Managed-setup signup: main user's name wasn't
+                        // collected anywhere else in the tour (profile-form
+                        // captured the managed profile's data instead).
+                        // Merge the name into the tour-buffer profile now
+                        // so the flush's completeOnboarding writes a real
+                        // name to the "Me" profile instead of empty strings.
+                        // Self-setup users already have their name buffered
+                        // from profile-form, so this block is a no-op there.
+                        if (authMode === "signup" && isDependentSetup
+                            && firstName.trim() && lastName.trim()) {
+                          setBufferedProfile({
+                            first_name: firstName.trim(),
+                            last_name: lastName.trim(),
+                          });
+                        }
                         setAuthSubmitting(true);
                         analytics.track("Auth Method Selected", { method: "email", mode: authMode, surface: "tour_inline" });
                         const result = authMode === "signup"
@@ -3746,6 +3940,39 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                         // effect picks it up and runs the flush.
                       }}
                     >
+                      {/* Managed-path signup also captures the main user's
+                          first/last name right here, so the "Me" profile
+                          saves with a real name. Only shown in the managed
+                          path + signup mode (self-setup already has the
+                          name from profile-form; login mode means the
+                          profile already exists). OAuth buttons above
+                          handle the name automatically. */}
+                      {authMode === "signup" && isDependentSetup && (
+                        <div className="flex gap-2.5">
+                          <input
+                            type="text"
+                            autoComplete="given-name"
+                            placeholder="First name"
+                            required
+                            value={firstName}
+                            onChange={(e) => setFirstName(capitalizeName(e.target.value))}
+                            disabled={authSubmitting}
+                            autoCapitalize="words"
+                            className="flex-1 min-w-0 rounded-full border border-[#0F1B3D]/10 bg-[#f5f7fb] px-4 py-3 text-[16px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors disabled:opacity-50 capitalize"
+                          />
+                          <input
+                            type="text"
+                            autoComplete="family-name"
+                            placeholder="Last name"
+                            required
+                            value={lastName}
+                            onChange={(e) => setLastName(capitalizeName(e.target.value))}
+                            disabled={authSubmitting}
+                            autoCapitalize="words"
+                            className="flex-1 min-w-0 rounded-full border border-[#0F1B3D]/10 bg-[#f5f7fb] px-4 py-3 text-[16px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors disabled:opacity-50 capitalize"
+                          />
+                        </div>
+                      )}
                       {/* Inputs use the same rounded-full + soft-gray
                           bg pattern as the other tour forms (profile-form,
                           setup-for) so the auth step feels continuous. */}
@@ -3790,7 +4017,13 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                       )}
                       <button
                         type="submit"
-                        disabled={authSubmitting || !authEmail || !authPassword}
+                        disabled={
+                          authSubmitting
+                          || !authEmail
+                          || !authPassword
+                          || (authMode === "signup" && isDependentSetup
+                              && (!firstName.trim() || !lastName.trim()))
+                        }
                         className="w-full py-3 rounded-full text-white font-semibold text-[15px] transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(15,27,61,0.25)]"
                         style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%)" }}
                       >
@@ -3815,6 +4048,23 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     </button>
                   </motion.div>
                 </div>
+              </motion.div>
+            )}
+
+            {phase === "flushing" && flushingState && (
+              <motion.div
+                key="flushing"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.22, ease: motionEase }}
+              >
+                <OnboardingFlushingContent
+                  stage={flushingState.stage}
+                  percent={flushingState.percent}
+                  affirmation={flushingState.affirmation}
+                  onContinue={flushingState.onContinue}
+                />
               </motion.div>
             )}
 
@@ -3846,7 +4096,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
           { id: "health", title: `${possessive} Health tab`, body: `${possessive} conditions, meds, and care plan all land here. Elena keeps them up to date as you chat.`, tab: "health" as const, addKind: "provider" as AddKind | null },
           { id: "visits", title: `${possessive} Visits tab`, body: `Every appointment Elena books for ${depName} lives here, plus your notes and history.`, tab: "visits" as const, addKind: "visit" as AddKind | null },
           { id: "insurance", title: `${possessive} Insurance tab`, body: `Elena checks what's covered and estimates costs before ${depName} goes in.`, tab: "insurance" as const, addKind: "insurance" as AddKind | null },
-          { id: "family", title: "For your whole family", body: `${depName}'s profile is one view — add more family members anytime.`, tab: "health" as const, addKind: "family" as AddKind | null, showSwitcher: true },
+          { id: "family", title: "Anyone else to add?", body: "Other people you manage, or relatives who'd use their own account? Add them here too.", tab: "health" as const, addKind: "family" as AddKind | null, showSwitcher: true },
         ]
       : PROFILE_STEPS;
     const currentStep = profileSteps[profileStep];
@@ -3906,7 +4156,11 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
         <div className="mx-auto max-w-md px-4 pb-4">
           <motion.div
             layout
-            transition={{ layout: { duration: 0.42, ease: [0.4, 0, 0.2, 1] } }}
+            // Spring-based layout morph softens the resize between
+            // compact Yes/No states and expanded form states. Without
+            // this, the card snap-resized and read as twitchy.
+            // Settles in ~0.45s; feels decided without dragging.
+            transition={{ layout: { type: "spring", stiffness: 200, damping: 26, mass: 0.8 } }}
             // iOS Safari doesn't auto-dismiss the keyboard when you tap
             // outside an input on the web. Without this, tapping a button
             // while keyboard is open can fail because the button is below
@@ -4264,7 +4518,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   className="w-full mt-3 sm:mt-4 py-2.5 sm:py-3 rounded-full text-white font-semibold font-sans text-[14px] hover:opacity-90 transition-opacity shadow-[0_4px_14px_rgba(15,27,61,0.25)] disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{ background: ctaGradient }}
                 >
-                  Manage a family member's account
+                  I manage care for someone else
                 </button>
                 <button
                   onClick={handleSendInvite}
@@ -4403,7 +4657,20 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     // Chat spotlight done → end the tour. Reviews + paywall now fire
     // together from chat-area when the user's second meaningful send
     // hits the post-seed gate, so the tour itself ends here.
-    return <ChatStepJoyride onFinish={() => { setShellFading(false); finishTour(); }} />;
+    return (
+      <ChatStepJoyride
+        onMount={() => {
+          // Safety net for the "side panel still out" bug: if the user
+          // reached chat phase via a path other than nextProfile
+          // (refresh, snapshot rehydrate, etc.) the sidebar close from
+          // the profile-step-advance wouldn't have fired. Close on
+          // mount here so the chat surface is always unobstructed.
+          if (isMobile.current) onSidebar(false);
+          onProfilePopover(false, undefined, false);
+        }}
+        onFinish={() => { setShellFading(false); finishTour(); }}
+      />
+    );
   }
 
   return null;
@@ -4555,14 +4822,6 @@ function SelectablePill({ icon: Icon, label, selected, onClick }: {
 
 // ── Shared components ───────────────────────────────────────────
 
-function SkipButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="absolute top-4 right-4 z-10 flex items-center gap-1 text-white/60 text-sm hover:text-white transition-colors" style={{ pointerEvents: "auto" }}>
-      Skip tour <X className="w-4 h-4" />
-    </button>
-  );
-}
-
 function GradientButton({ onClick, label }: { onClick: () => void; label: string }) {
   return (
     <button onClick={onClick} className="w-full mt-5 py-3.5 rounded-full text-white font-semibold font-sans text-[15px] transition-opacity hover:opacity-90 shadow-[0_4px_14px_rgba(15,27,61,0.25)]"
@@ -4572,7 +4831,13 @@ function GradientButton({ onClick, label }: { onClick: () => void; label: string
   );
 }
 
-function BenefitTiles({ routerChoice }: { routerChoice: RouterChoice | null }) {
+function BenefitTiles({
+  routerChoice,
+  painSelection,
+}: {
+  routerChoice: RouterChoice | null;
+  painSelection: string | null;
+}) {
   // Four mini-spotlights in a 2×2 grid. Each tile reveals in three beats:
   //   1. Container fades + scales in
   //   2. Label streams word-by-word
@@ -4581,27 +4846,29 @@ function BenefitTiles({ routerChoice }: { routerChoice: RouterChoice | null }) {
   // creating a clear top-left → top-right → bottom-left → bottom-right
   // cascade.
   //
-  // Copy is quantitative — "5+ hours back every week" beats "Save hours"
-  // because it gives the user something concrete to remember. Numbers
-  // are phrased as typical / ballpark so they read as claims we can
-  // defend, not guarantees.
-  //
-  // Tile order is tailored to the router pick so the most relevant tile
-  // lands first (top-left, where reading and animation both start). The
-  // user's stated intent gets the strongest emphasis.
+  // Tile order is pain-first, router-second: if we captured a pain
+  // bucket, that wins (money pain → costs tile leads; time pain → hours
+  // tile leads) so the top-left spotlight echoes what the user just
+  // named. routerChoice is only used as a fallback for users who
+  // skipped pain (e.g. staying_healthy branch).
   const tileHours = { key: "hours", label: "Hours back every week", visual: <BookingMiniCard /> };
   const tileMoney = { key: "money", label: "Typically cut costs 20 to 40%", visual: <PricingMiniCard /> };
   const tileFamily = { key: "family", label: "Every family member in one place", visual: <FamilyMiniCard /> };
   const tileInsurance = { key: "insurance", label: "Get the most from your insurance", visual: <InsuranceMiniCard /> };
 
+  const isMoneyPain = painSelection != null
+    && ["lt500", "500to2k", "2kto5k", "5kplus"].includes(painSelection);
+  const isTimePain = painSelection != null
+    && ["lt1", "1to3", "3to6", "6plus"].includes(painSelection);
+
   let tiles: typeof tileHours[];
-  if (routerChoice === "money" || routerChoice === "medications") {
-    // Money-first: costs tile leads, insurance (coverage + bills) second.
+  if (isMoneyPain) {
+    tiles = [tileMoney, tileInsurance, tileHours, tileFamily];
+  } else if (isTimePain) {
+    tiles = [tileHours, tileInsurance, tileMoney, tileFamily];
+  } else if (routerChoice === "money" || routerChoice === "medications") {
     tiles = [tileMoney, tileInsurance, tileHours, tileFamily];
   } else {
-    // Condition / staying-healthy / null: default to hours-back leading,
-    // since those users typically feel time pressure (appointments,
-    // follow-ups, preventive upkeep) more than pure money pressure.
     tiles = [tileHours, tileMoney, tileInsurance, tileFamily];
   }
 
@@ -4768,13 +5035,23 @@ function InsuranceMiniCard() {
   );
 }
 
-function ChatStepJoyride({ onFinish }: { onFinish: () => void }) {
+function ChatStepJoyride({ onFinish, onMount }: { onFinish: () => void; onMount?: () => void }) {
   const finishRef = useRef(false);
   // Stash onFinish in a ref so the advance effect below doesn't re-run
   // (and reset its 20s safety timer) every time the parent passes a
   // fresh function identity.
   const onFinishRef = useRef(onFinish);
   useEffect(() => { onFinishRef.current = onFinish; }, [onFinish]);
+
+  // Fire once when the chat joyride first mounts — parent uses this to
+  // guarantee the sidebar + profile popover are closed before the
+  // chat-input spotlight lands.
+  const mountedRef = useRef(false);
+  useEffect(() => {
+    if (mountedRef.current) return;
+    mountedRef.current = true;
+    onMount?.();
+  }, [onMount]);
 
   const { controls, on, Tour } = useJoyride({
     steps: [

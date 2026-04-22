@@ -15,9 +15,63 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { WebOnboardingTour } from "@/components/web-onboarding-tour";
-import { OnboardingFlushingScreen } from "@/components/onboarding-flushing-screen";
+import type { PainAffirmation } from "@/components/onboarding-flushing-screen";
 import { flushTourBuffer, type FlushStage } from "@/lib/tourBuffer";
 import * as analytics from "@/lib/analytics";
+
+// Pain-bucket labels mirrored from web-onboarding-tour. Duplicated (not
+// imported) so this page stays cheap — the tour file is ~4k lines. Only
+// the label is needed to phrase the post-flush affirmation.
+const TIME_PAIN_LABEL: Record<string, string> = {
+  lt1: "less than 1 hour a week",
+  "1to3": "1 to 3 hours a week",
+  "3to6": "3 to 6 hours a week",
+  "6plus": "6 or more hours a week",
+};
+const MONEY_PAIN_LABEL: Record<string, string> = {
+  lt500: "less than $500 a year",
+  "500to2k": "$500 to $2,000 a year",
+  "2kto5k": "$2,000 to $5,000 a year",
+  "5kplus": "$5,000 or more a year",
+};
+
+const DEFAULT_AFFIRMATION: PainAffirmation = {
+  headline: "You're all set.",
+  subtitle: "Elena is ready to help you stay on top of everything.",
+};
+
+function deriveAffirmation(): PainAffirmation {
+  if (typeof window === "undefined") return DEFAULT_AFFIRMATION;
+  try {
+    const raw =
+      localStorage.getItem("elena_tour_state") ||
+      sessionStorage.getItem("elena_tour_state");
+    if (!raw) return DEFAULT_AFFIRMATION;
+    const s = JSON.parse(raw) as {
+      routerChoice?: string;
+      painSelection?: string | null;
+    };
+    const isMoney = s.routerChoice === "money" || s.routerChoice === "medications";
+    const id = s.painSelection;
+    if (!id) return DEFAULT_AFFIRMATION;
+    if (isMoney) {
+      const label = MONEY_PAIN_LABEL[id];
+      if (!label) return DEFAULT_AFFIRMATION;
+      return {
+        headline: "Ready to start bringing those costs down?",
+        subtitle: `You said about ${label}. Elena's going to help you chip away at that.`,
+      };
+    }
+    const label = TIME_PAIN_LABEL[id];
+    if (!label) return DEFAULT_AFFIRMATION;
+    return {
+      headline: "Ready to start getting that time back?",
+      subtitle: `You said about ${label}. Elena's going to help you take those hours back.`,
+    };
+  } catch {
+    return DEFAULT_AFFIRMATION;
+  }
+}
 
 export default function OnboardPage() {
   const router = useRouter();
@@ -47,6 +101,11 @@ export default function OnboardPage() {
   const [flushingVisible, setFlushingVisible] = useState(false);
   const [flushStage, setFlushStage] = useState<FlushStage>("saving_profile");
   const [flushPercent, setFlushPercent] = useState(8);
+  // Pain affirmation is snapshotted the moment the flush starts so it
+  // survives any downstream clears of elena_tour_state (finishTour,
+  // skipTour). Defaulted to generic copy; replaced with pain-targeted
+  // copy in the flush effect below.
+  const [affirmation, setAffirmation] = useState<PainAffirmation>(DEFAULT_AFFIRMATION);
   // Mirror the latest auth functions in refs so the flush effect can
   // depend ONLY on `session` without re-running whenever useAuth
   // recreates its callbacks. Without this, completeOnboarding's
@@ -89,7 +148,42 @@ export default function OnboardPage() {
     console.log("[onboard] flush starting");
     flushingRef.current = true;
     setFlushingVisible(true);
+    // Capture the pain-targeted affirmation now, while elena_tour_state is
+    // still populated. The flushing screen shows it on the "ready" beat
+    // after the progress bar hits 100%.
+    setAffirmation(deriveAffirmation());
     (async () => {
+      // OAuth fallback for the main user's name. Email signup populates
+      // the buffer in the auth-step form handler; OAuth (Google/Apple)
+      // skips that handler entirely but leaves name data on the
+      // Supabase user_metadata. Merge it into the buffer here so
+      // flushTourBuffer's completeOnboarding writes a real name to the
+      // primary profile instead of saving it blank. Only patches the
+      // fields we actually have — won't clobber email-signup values
+      // with empty OAuth strings if the metadata is missing.
+      try {
+        const meta = (session.user?.user_metadata || {}) as Record<string, unknown>;
+        const fullName =
+          typeof meta.full_name === "string" ? meta.full_name :
+          typeof meta.name === "string" ? meta.name : "";
+        let firstName = typeof meta.given_name === "string" ? meta.given_name : "";
+        let lastName = typeof meta.family_name === "string" ? meta.family_name : "";
+        if (!firstName && !lastName && fullName) {
+          const parts = fullName.trim().split(/\s+/);
+          firstName = parts[0] || "";
+          lastName = parts.slice(1).join(" ") || "";
+        }
+        const patch: { first_name?: string; last_name?: string } = {};
+        if (firstName) patch.first_name = firstName;
+        if (lastName) patch.last_name = lastName;
+        if (patch.first_name || patch.last_name) {
+          const { setBufferedProfile } = await import("@/lib/tourBuffer");
+          setBufferedProfile(patch);
+          console.log("[onboard] populated main-user name from OAuth metadata", patch);
+        }
+      } catch (e) {
+        console.warn("[onboard] OAuth name merge failed:", e);
+      }
       try {
         const result = await flushTourBuffer({
           switchProfile: switchProfileRef.current,
@@ -115,13 +209,13 @@ export default function OnboardPage() {
         if (result.errors.length > 0) {
           console.warn("[onboard] flushTourBuffer partial errors:", result.errors);
         }
-        console.log("[onboard] flush done, redirecting to /chat");
+        console.log("[onboard] flush done, waiting on Continue");
       } catch (e) {
         console.error("[onboard] flushTourBuffer threw:", e);
       }
-      pendingSignupRef.current = false;
-      try { sessionStorage.removeItem(PENDING_SIGNUP_KEY); } catch {}
-      router.replace("/chat");
+      // Intentionally NOT redirecting here anymore. The flushing screen
+      // transitions to its "ready" state once stage=done + percent=100;
+      // the user presses Continue, which fires handleFlushContinue below.
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
@@ -136,18 +230,27 @@ export default function OnboardPage() {
 
   return (
     <div className="h-dvh bg-[#F7F6F2]">
-      {/* Loading screen during flush — stays up from signup success
-          through the redirect to /chat. Under Plan A the flush runs
-          several authenticated writes in sequence (profile, dependents,
-          conditions, meds, todos, chat welcome pre-warm); without this
-          the user would stare at a frozen elena-plan card for 1-3s.
-          The branded layout + progress bar gives the wait a clear
-          narrative — "we're setting things up FOR YOU" — which reads
-          better than the visual dead-stop of a spinner. */}
-      {flushingVisible && (
-        <OnboardingFlushingScreen stage={flushStage} percent={flushPercent} />
-      )}
+      {/* Flushing state flows INTO the tour modal as a phase, not as a
+          separate overlay — same card, same backdrop, content morphs
+          from auth → progress bar → pain-targeted affirmation →
+          Continue. Driven by the flushingState prop below; the tour
+          swaps its own AnimatePresence content when it's non-null. */}
       <WebOnboardingTour
+        flushingState={
+          flushingVisible
+            ? {
+                stage: flushStage,
+                percent: flushPercent,
+                affirmation,
+                onContinue: () => {
+                  analytics.track("Onboard Flush Continue Clicked" as any);
+                  pendingSignupRef.current = false;
+                  try { sessionStorage.removeItem(PENDING_SIGNUP_KEY); } catch {}
+                  router.replace("/chat");
+                },
+              }
+            : null
+        }
         onComplete={() => {
           // Anonymous tour's onComplete is a no-op — the real completion
           // pathway is onNeedsAuth → signup → flush → /chat. This fires
