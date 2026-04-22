@@ -610,6 +610,17 @@ function LandingPage() {
     typeof window !== "undefined" && sessionStorage.getItem("elena_demo_mode") === "true"
   );
 
+  // Prefetch the /onboard route on landing-page mount. `/onboard` statically
+  // imports WebOnboardingTour (~5k-line component), which is the heaviest
+  // chunk in the whole app. Without prefetch, clicking "Get Started" blocks
+  // the user on network fetch + parse of that chunk — felt like 300ms-2s
+  // depending on connection. Prefetching in an effect starts the background
+  // download the moment the user sees the landing page, so by the time they
+  // tap the CTA the bundle is already parsed and navigation is instant.
+  useEffect(() => {
+    router.prefetch("/onboard");
+  }, [router]);
+
   // Support both ?ref=bills (direct) and /lp/bills (rewrite).
   // Rewrites keep the browser URL as /lp/bills but serve /?ref=bills internally.
   // useSearchParams reads the browser URL, so we also extract ref from the path.
