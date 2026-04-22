@@ -16,12 +16,12 @@ import { motion } from "framer-motion";
 import type { FlushStage } from "@/lib/tourBuffer";
 
 const STAGE_LABELS: Record<FlushStage, string> = {
-  saving_profile: "Saving your information…",
-  creating_family: "Creating your family's profiles…",
-  switching_profile: "Switching to the right profile…",
-  saving_health_data: "Saving your health data…",
-  loading_chat: "Loading your chat…",
-  done: "All set — opening Elena…",
+  saving_profile: "Setting up your profile…",
+  creating_family: "Adding your family…",
+  switching_profile: "Pulling everything together…",
+  saving_health_data: "Building your care plan…",
+  loading_chat: "Getting Elena ready to help…",
+  done: "All set — let's get going…",
 };
 
 export function OnboardingFlushingScreen({
@@ -68,11 +68,11 @@ export function OnboardingFlushingScreen({
 
         <div className="text-center">
           <h2 className="text-[22px] font-extrabold text-[#0F1B3D] text-balance leading-tight mb-2">
-            Setting up your profile
+            Building your care plan
           </h2>
           <p className="text-[14px] text-[#8E8E93] font-light leading-relaxed text-balance max-w-[18rem] mx-auto">
-            Hang tight — Elena's getting everything organized so you can hit
-            the ground running.
+            Pulling your profile, meds, and game plan together so Elena can
+            pick up exactly where we left off.
           </p>
         </div>
 

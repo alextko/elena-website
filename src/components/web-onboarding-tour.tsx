@@ -3,7 +3,7 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronRight, ChevronDown, Heart, Users, User, Baby, HelpCircle, DollarSign, Clock, HeartPulse, Phone, Check, Send, Plus } from "lucide-react";
+import { X, ChevronRight, ChevronDown, Heart, Users, User, Baby, HelpCircle, DollarSign, Clock, HeartPulse, Phone, Check, Send, Plus, Eye, EyeOff } from "lucide-react";
 import { useJoyride, EVENTS, STATUS } from "react-joyride";
 import * as analytics from "@/lib/analytics";
 import { useAuth } from "@/lib/auth-context";
@@ -762,6 +762,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   const [authPassword, setAuthPassword] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSubmitting, setAuthSubmitting] = useState(false);
+  const [authShowPassword, setAuthShowPassword] = useState(false);
   const [inviteBusy, setInviteBusy] = useState(false);
   const [inviteFeedback, setInviteFeedback] = useState<string | null>(null);
   const [savingItem, setSavingItem] = useState(false);
@@ -899,6 +900,16 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   useEffect(() => {
     if (phase !== "profile") return;
     setHeadlineDone(false);
+  }, [phase, profileStep]);
+
+  // Each profile walkthrough step asks Yes/No before showing the add
+  // form. "pending" = show the Yes/No buttons; "yes" = expand into the
+  // existing prompt; "no" = user declined (caller skips to next step).
+  // Reset per step so each new card starts with the prompt closed.
+  const [stepChoice, setStepChoice] = useState<"pending" | "yes" | "no">("pending");
+  useEffect(() => {
+    if (phase !== "profile") return;
+    setStepChoice("pending");
   }, [phase, profileStep]);
 
   // Value phase chains headline → subtitle → body. Once headline finishes,
@@ -3639,6 +3650,9 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                         // effect picks it up and runs the flush.
                       }}
                     >
+                      {/* Inputs use the same rounded-full + soft-gray
+                          bg pattern as the other tour forms (profile-form,
+                          setup-for) so the auth step feels continuous. */}
                       <input
                         type="email"
                         inputMode="email"
@@ -3648,19 +3662,33 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                         value={authEmail}
                         onChange={(e) => setAuthEmail(e.target.value)}
                         disabled={authSubmitting}
-                        className="w-full rounded-xl border border-[#E5E5EA] bg-white px-4 py-3 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors disabled:opacity-50"
+                        className="w-full rounded-full border border-[#0F1B3D]/10 bg-[#f5f7fb] px-4 py-3 text-[16px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors disabled:opacity-50"
                       />
-                      <input
-                        type="password"
-                        autoComplete={authMode === "signup" ? "new-password" : "current-password"}
-                        placeholder={authMode === "signup" ? "Create a password" : "Password"}
-                        required
-                        minLength={authMode === "signup" ? 8 : undefined}
-                        value={authPassword}
-                        onChange={(e) => setAuthPassword(e.target.value)}
-                        disabled={authSubmitting}
-                        className="w-full rounded-xl border border-[#E5E5EA] bg-white px-4 py-3 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors disabled:opacity-50"
-                      />
+                      <div className="relative">
+                        <input
+                          type={authShowPassword ? "text" : "password"}
+                          autoComplete={authMode === "signup" ? "new-password" : "current-password"}
+                          placeholder={authMode === "signup" ? "Create a password" : "Password"}
+                          required
+                          minLength={authMode === "signup" ? 8 : undefined}
+                          value={authPassword}
+                          onChange={(e) => setAuthPassword(e.target.value)}
+                          disabled={authSubmitting}
+                          className="w-full rounded-full border border-[#0F1B3D]/10 bg-[#f5f7fb] px-4 py-3 pr-12 text-[16px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors disabled:opacity-50"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setAuthShowPassword((v) => !v)}
+                          disabled={authSubmitting}
+                          tabIndex={-1}
+                          aria-label={authShowPassword ? "Hide password" : "Show password"}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-[#0F1B3D]/40 hover:text-[#0F1B3D]/70 transition-colors disabled:opacity-50"
+                        >
+                          {authShowPassword
+                            ? <EyeOff className="w-4 h-4" strokeWidth={2} />
+                            : <Eye className="w-4 h-4" strokeWidth={2} />}
+                        </button>
+                      </div>
                       {authError && (
                         <p className="text-[13px] text-[#D94545] px-1">{authError}</p>
                       )}
@@ -3743,7 +3771,11 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     // reserve room on the right so the text doesn't sit behind the custom
     // chevron we overlay. Always pair with a ChevronDown icon absolutely
     // positioned inside a wrapping relative div.
-    const selectClass = `${inputClass} appearance-none pr-10 bg-no-repeat`;
+    // iOS Safari occasionally ignores `appearance: none` from Tailwind
+    // and renders both the native arrow AND our custom ChevronDown. The
+    // explicit -webkit/-moz properties + extra right-padding give the
+    // dropdown consistent spacing regardless.
+    const selectClass = `${inputClass} appearance-none pr-12 bg-no-repeat [appearance:none] [-webkit-appearance:none] [-moz-appearance:none]`;
 
     const canSave = (() => {
       if (addKind === "provider") {
@@ -3838,9 +3870,53 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   </motion.p>
                 </div>
 
-                {showPrompt && headlineDone && addKind ==="provider" && (
+                {/* Yes / No gate — for provider / visit / insurance
+                    steps we ask first, then only expand the add form
+                    if the user says yes. Keeps each card scannable
+                    (nobody wants to stare at a specialty chip grid if
+                    they just want to move on). "No thanks" calls
+                    handleSkipItem which advances to the next step. */}
+                {showPrompt && headlineDone && stepChoice === "pending" &&
+                  (addKind === "provider" || addKind === "visit" || addKind === "insurance") && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, ease: motionEase, delay: 0.15 }}
+                      className="mt-4 flex flex-col gap-2"
+                    >
+                      <p className="text-[14px] font-semibold text-[#0F1B3D] text-center">
+                        {addKind === "provider"
+                          ? (isDependentSetup && managedFirstName ? `Any doctors ${managedFirstName} sees?` : "Have any doctors you like?")
+                          : addKind === "visit"
+                          ? (isDependentSetup && managedFirstName ? `Any recent visits for ${managedFirstName}?` : "Any recent visits to log?")
+                          : (isDependentSetup && managedFirstName ? `Want to add ${managedFirstName}'s insurance?` : "Want to add your insurance?")}
+                      </p>
+                      <div className="flex gap-2 mt-1">
+                        <button
+                          type="button"
+                          onClick={() => setStepChoice("yes")}
+                          className="flex-1 py-2.5 rounded-full text-white font-semibold text-[14px] hover:opacity-90 transition-opacity shadow-[0_4px_14px_rgba(15,27,61,0.25)]"
+                          style={{ background: ctaGradient }}
+                        >
+                          Yes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setStepChoice("no"); handleSkipItem(addKind!); }}
+                          className="flex-1 py-2.5 rounded-full font-semibold text-[14px] text-[#0F1B3D] bg-[#0F1B3D]/[0.06] hover:bg-[#0F1B3D]/[0.10] transition-colors"
+                        >
+                          No thanks
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+
+                {showPrompt && headlineDone && stepChoice === "yes" && addKind ==="provider" && (
                   <div className="mt-3 text-left space-y-2">
-                    <p className="text-[13px] font-semibold text-[#0F1B3D]">{isDependentSetup && managedFirstName ? `Any doctors ${managedFirstName} sees?` : "Have any doctors you like?"}</p>
+                    {/* The "Any doctors ..." prompt is already shown on
+                        the Yes/No gate above, so the expanded form
+                        skips the title and goes straight to specialty
+                        + name. */}
                     <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-0.5 scrollbar-hide sm:flex-wrap sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0">
                       {TOUR_SPECIALTY_OPTIONS.map((s) => {
                         const active = providerSpecialty === s;
@@ -3927,9 +4003,9 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     )}
                   </div>
                 )}
-                {showPrompt && headlineDone && addKind ==="visit" && lastAddedProvider && !visitUseChipMode && (
+                {showPrompt && headlineDone && stepChoice === "yes" && addKind ==="visit" && lastAddedProvider && !visitUseChipMode && (
                   <div className="mt-3 text-left space-y-2">
-                    <p className="text-[13px] font-semibold text-[#0F1B3D]">Have any visits with {lastAddedProvider.name} to log?</p>
+                    <p className="text-[13px] font-semibold text-[#0F1B3D]">When did you see {lastAddedProvider.name}?</p>
                     <input
                       className={inputClass}
                       type="text"
@@ -3949,9 +4025,9 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     </button>
                   </div>
                 )}
-                {showPrompt && headlineDone && addKind ==="visit" && (!lastAddedProvider || visitUseChipMode) && (
+                {showPrompt && headlineDone && stepChoice === "yes" && addKind ==="visit" && (!lastAddedProvider || visitUseChipMode) && (
                   <div className="mt-3 text-left space-y-2">
-                    <p className="text-[13px] font-semibold text-[#0F1B3D]">Any recent or upcoming appointments?</p>
+                    <p className="text-[13px] font-semibold text-[#0F1B3D]">What kind of visit?</p>
                     <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-0.5 scrollbar-hide sm:flex-wrap sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0">
                       {VISIT_TYPE_CHIPS.map((chip) => {
                         const isOther = chip === "Other";
@@ -4001,9 +4077,9 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     />
                   </div>
                 )}
-                {showPrompt && headlineDone && addKind ==="insurance" && (
+                {showPrompt && headlineDone && stepChoice === "yes" && addKind ==="insurance" && (
                   <div className="mt-3 text-left space-y-2">
-                    <p className="text-[13px] font-semibold text-[#0F1B3D]">{isDependentSetup && managedFirstName ? `Who's ${managedFirstName}'s insurance?` : "Who's your insurance?"}</p>
+                    <p className="text-[13px] font-semibold text-[#0F1B3D]">Who's the carrier?</p>
                     <div className="relative">
                       <select
                         className={selectClass}
