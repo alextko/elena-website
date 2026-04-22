@@ -3418,25 +3418,37 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               // what the user just told us (med name, pain number) over
               // generic branch boilerplate.
               const derived: string[] = [];
-              // Rank 1 — pain callout (money branch): quotes their own
-              // words back, most specific hook possible.
+              // Rank 1 — prescription refill/renewal. This is our
+              // strongest "aha" moment: Elena autonomously calling the
+              // pharmacy before your Rx runs out and the prescriber
+              // when refills expire. When the user named a specific
+              // prescription med, anchoring the top action to THAT
+              // med ("I can track when your Lisinopril runs out…")
+              // lands way harder than any generic first option. Only
+              // fires on branches that collected meds (condition,
+              // medications, money); staying_healthy typically didn't
+              // name a specific Rx, and when it did it still benefits
+              // from this being option 1.
+              if (primaryRxMed && (routerChoice === "condition" || routerChoice === "medications" || routerChoice === "staying_healthy")) {
+                derived.push(`I can track when your ${primaryRxMed} runs out and call your provider to renew it.`);
+              } else if (primaryRxMed && routerChoice === "money") {
+                // Money branch: lead with the price-shop pitch on
+                // their med since "save money" is the framing they
+                // picked, but still put it FIRST — the refill mechanic
+                // is the value proof either way.
+                derived.push(`I can price-shop your ${primaryRxMed} refills every month.`);
+              }
+              // Rank 2 — pain callout (money branch). Quotes their own
+              // words back. Specific but abstract relative to a named
+              // med, so it drops below the Rx action when both exist.
               if (routerChoice === "money" && painSelection) {
                 const painOpt = [...TIME_PAIN_OPTIONS, ...MONEY_PAIN_OPTIONS].find((o) => o.id === painSelection);
                 if (painOpt) {
                   derived.push(`You said ${painOpt.label.toLowerCase()}. I can help bring that down.`);
                 }
               }
-              // Rank 2 — named prescription action. Anchored to a real
-              // medication they just entered.
-              if (primaryRxMed && (routerChoice === "condition" || routerChoice === "medications")) {
-                derived.push(`I can track when your ${primaryRxMed} runs out and call your provider to renew it.`);
-              } else if (primaryRxMed && routerChoice === "money") {
-                derived.push(`I can price-shop your ${primaryRxMed} refills every month.`);
-              }
-              // Rank 3 — generic dependent framing. Useful but the least
-              // specific of the derived lines, so it goes last among
-              // them — the more specific derived lines (pain / named med)
-              // should always outrank "book their next visit."
+              // Rank 3 — generic dependent framing. Useful but least
+              // specific, stays last among the derived lines.
               if (setupForCareId && setupForCareId !== "myself" && dependentFirstName.trim()) {
                 const first = dependentFirstName.trim();
                 derived.push(`I can book ${first}'s next visit.`);
