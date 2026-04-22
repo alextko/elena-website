@@ -15,7 +15,6 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { WebOnboardingTour } from "@/components/web-onboarding-tour";
-import { AuthModal } from "@/components/auth-modal";
 import { OnboardingFlushingScreen } from "@/components/onboarding-flushing-screen";
 import { flushTourBuffer, type FlushStage } from "@/lib/tourBuffer";
 import * as analytics from "@/lib/analytics";
@@ -24,7 +23,6 @@ export default function OnboardPage() {
   const router = useRouter();
   const { session, loading, refreshProfiles, switchProfile, completeOnboarding } = useAuth();
 
-  const [authOpen, setAuthOpen] = useState(false);
   // Flipped true when the tour has reached elena-plan Continue. Controls
   // whether the session-becoming-truthy effect should flush + redirect,
   // vs just let the authed user through (e.g. they signed in mid-tour
@@ -181,34 +179,21 @@ export default function OnboardPage() {
           analytics.track("Onboard Auth Gate Hit", { source: "elena_plan_continue" });
           pendingSignupRef.current = true;
           try { sessionStorage.setItem(PENDING_SIGNUP_KEY, "1"); } catch {}
-          setAuthOpen(true);
+          // Auth UI now renders inline as a tour phase ("auth"). The
+          // tour component handles the transition via setPhase("auth")
+          // right after firing this callback. AuthModal is kept mounted
+          // below as a recovery affordance but not opened here — the
+          // inline flow is the primary path.
         }}
       />
 
-      <AuthModal
-        open={authOpen}
-        onOpenChange={(v) => {
-          setAuthOpen(v);
-          // Intentionally NOT clearing pendingSignupRef here even if
-          // (!v && !session). AuthModal fires onOpenChange(false) right
-          // after a successful signup, but the session state from
-          // Supabase hasn't propagated to this callback's closure yet,
-          // so !session reads true and we'd clobber the pending-signup
-          // flag. The flush effect wouldn't fire and the user would be
-          // stranded on elena-plan. Instead: pendingSignupRef is
-          // cleared only at the end of a completed flush (in the
-          // session-becomes-truthy effect above). If the user truly
-          // dismisses without signing up, they stay on elena-plan and
-          // re-clicking Continue re-opens the modal via onNeedsAuth.
-        }}
-        defaultMode="signup"
-        // Keep the OAuth flow on /onboard so it can detect the returning
-        // session and run flushTourBuffer. /chat would skip the flush.
-        oauthRedirectTo={typeof window !== "undefined" ? `${window.location.origin}/onboard` : undefined}
-        // Tour shell sits at z-[99999]; without this flag the modal
-        // renders behind it and only the backdrop is visible.
-        elevateAboveHighZIndex
-      />
+      {/* Previously an <AuthModal> lived here for the signup gate. That
+          path moved inside the tour as phase="auth" — same shell, same
+          animations — so the signup step doesn't read as a foreign
+          modal. /onboard still owns the flush-on-session effect above
+          because that part's surface-agnostic: as long as Supabase
+          flips session truthy, the flush runs regardless of which UI
+          collected the credentials. */}
     </div>
   );
 }
