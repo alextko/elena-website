@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Sparkles } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
 import * as analytics from "@/lib/analytics";
@@ -52,7 +53,19 @@ export function HipaaConsentModal({ open, onOpenChange, onSigned }: HipaaConsent
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[420px] p-0 overflow-hidden rounded-2xl">
+      {/* z-[400] beats the profile popover's z-[350] fallback AND the
+          default z-50 of both the overlay and content. overlayClassName
+          matches so the backdrop sits between the profile popover and
+          this modal — without it the overlay stays at z-50 and the
+          profile popover (z-50 or z-350) visually bleeds through.
+          w-[calc(100%-2rem)] ensures the modal fills mobile viewports
+          properly — without it the DialogContent defaults to intrinsic
+          content width on mobile, which produces a narrow column that
+          force-wraps bullets into a cramped stack. */}
+      <DialogContent
+        className="w-[calc(100%-2rem)] max-w-[420px] max-h-[calc(100svh-2rem)] overflow-y-auto p-0 rounded-2xl !z-[400]"
+        overlayClassName="!z-[395]"
+      >
         {step === "sign" ? (
           <>
             <div className="p-6 pb-0">
@@ -148,13 +161,26 @@ export function HipaaConsentModal({ open, onOpenChange, onSigned }: HipaaConsent
               </DialogDescription>
             </DialogHeader>
 
-            <div className="mt-5 rounded-xl bg-[#f5f7fb] border border-[#0F1B3D]/[0.06] p-4">
-              <p className="text-sm font-semibold text-[#0F1B3D] mb-1">
-                One more thing to know
-              </p>
-              <p className="text-sm text-[#0F1B3D]/70 leading-relaxed">
-                Some insurers require their own authorization form before sharing your information. If that comes up when we call on your behalf, we'll let you know and walk you through it.
-              </p>
+            <div
+              className="mt-5 rounded-2xl p-4 pl-5 flex gap-3"
+              style={{
+                background: "linear-gradient(135deg, #FFF5EC 0%, #FFEADB 100%)",
+                border: "1px solid rgba(244, 176, 132, 0.35)",
+              }}
+            >
+              <div className="shrink-0 mt-0.5">
+                <div className="h-8 w-8 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #F4B084, #E8956D)" }}>
+                  <Sparkles className="h-4 w-4 text-white" strokeWidth={2.5} />
+                </div>
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-[#0F1B3D] mb-1">
+                  A quick heads up
+                </p>
+                <p className="text-[13px] text-[#0F1B3D]/75 leading-relaxed">
+                  Some insurers require their own authorization form before sharing your information. If that comes up when we call on your behalf, we'll let you know and walk you through it.
+                </p>
+              </div>
             </div>
 
             <button

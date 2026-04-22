@@ -58,8 +58,8 @@ export function FeedbackModal({ open, onOpenChange }: FeedbackModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[340px] p-0 overflow-hidden rounded-2xl">
-        <div className="p-8">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-[22rem] sm:w-full sm:max-w-[340px] max-h-[calc(100svh-1rem)] overflow-y-auto overflow-x-hidden p-0 rounded-2xl">
+        <div className="p-6 sm:p-8">
           {phase === "ask" ? (
             <>
               <h2 className="text-xl font-bold text-[#0F1B3D] text-center mb-6">

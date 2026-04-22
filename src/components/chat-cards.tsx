@@ -18,6 +18,12 @@ import {
   Plus,
   Pencil,
   Trash2,
+  Pill,
+  UserRound,
+  Lock,
+  ClipboardList,
+  CircleCheck,
+  Calendar,
 } from "lucide-react";
 import type {
   DoctorResult,
@@ -36,6 +42,7 @@ import type {
   InsurancePlan,
 } from "@/lib/types";
 import { apiFetch } from "@/lib/apiFetch";
+import { useAuth } from "@/lib/auth-context";
 
 // ────────────────────────────────────────────────────────────────
 //  Shared helpers
@@ -150,11 +157,33 @@ function useInlineMap({
 
   // Initialize map once
   useEffect(() => {
-    if (!containerRef.current || !MAPBOX_TOKEN || items.length === 0) return;
+    // Token first — when it's empty, <InlineMapView> returns null and
+    // the ref never attaches. Checking containerRef first would have
+    // misleadingly reported "containerRef not attached" for what is
+    // really a missing-env-var problem.
+    if (!MAPBOX_TOKEN) {
+      console.log("[map-debug] useInlineMap skipped: NEXT_PUBLIC_MAPBOX_TOKEN missing at build time (value is empty string)");
+      return;
+    }
+    if (items.length === 0) {
+      console.log("[map-debug] useInlineMap skipped: no map items");
+      return;
+    }
+    if (!containerRef.current) {
+      console.log("[map-debug] useInlineMap skipped: containerRef not attached");
+      return;
+    }
+    console.log("[map-debug] useInlineMap init", { token_prefix: MAPBOX_TOKEN.slice(0, 6), items: items.length });
     let cancelled = false;
 
     (async () => {
-      const mapboxgl = (await import("mapbox-gl")).default;
+      let mapboxgl;
+      try {
+        mapboxgl = (await import("mapbox-gl")).default;
+      } catch (err) {
+        console.error("[map-debug] mapbox-gl dynamic import failed", err);
+        return;
+      }
 
       if (!document.getElementById("mapbox-gl-css")) {
         const link = document.createElement("link");
@@ -176,16 +205,23 @@ function useInlineMap({
       const bounds = new mapboxgl.LngLatBounds();
       items.forEach((m) => bounds.extend([m.lng, m.lat]));
 
-      const map = new mapboxgl.Map({
-        container: containerRef.current,
-        style: "mapbox://styles/mapbox/standard",
-        bounds,
-        fitBoundsOptions: { padding: 50, maxZoom: items.length === 1 ? 12 : 14 },
-        attributionControl: false,
-        dragRotate: false,
-        pitchWithRotate: false,
-        touchZoomRotate: true,
-      });
+      let map;
+      try {
+        map = new mapboxgl.Map({
+          container: containerRef.current,
+          style: "mapbox://styles/mapbox/standard",
+          bounds,
+          fitBoundsOptions: { padding: 50, maxZoom: items.length === 1 ? 12 : 14 },
+          attributionControl: false,
+          dragRotate: false,
+          pitchWithRotate: false,
+          touchZoomRotate: true,
+        });
+      } catch (err) {
+        console.error("[map-debug] mapboxgl.Map() constructor threw", err);
+        return;
+      }
+      map.on("error", (e) => console.error("[map-debug] mapbox map error event", e));
       // Disable rotation via touch
       map.touchZoomRotate.disableRotation();
 
@@ -918,7 +954,7 @@ export function BookingStatusBubble({
   const label = getBookingLabel(status.phase);
 
   return (
-    <div className="flex items-start gap-3 animate-in fade-in duration-300">
+    <div className="flex items-start gap-3">
       <span className="text-xs font-semibold text-[#0F1B3D]/50 uppercase tracking-wider mt-0.5 shrink-0">
         {label}
       </span>
@@ -1238,7 +1274,7 @@ export function BookingQuestionCard({
   };
 
   return (
-    <div className="mt-3 rounded-2xl border border-[#0F1B3D]/[0.06] bg-white p-4 shadow-[0_2px_8px_rgba(15,27,61,0.06)] animate-in fade-in duration-300">
+    <div className="mt-3 rounded-2xl border border-[#0F1B3D]/[0.06] bg-white p-4 shadow-[0_2px_8px_rgba(15,27,61,0.06)]">
       <p className="text-sm text-[#0F1B3D]/70 mb-3">{question}</p>
       <div className="flex gap-2">
         <input
@@ -1294,9 +1330,17 @@ export function SourcesFooter({ sources }: { sources: SourcePayload[] }) {
 export function FormRequestCard({
   form,
   onSubmitted,
+  onOpenHipaa,
+  hipaaSignedAt,
 }: {
   form: FormRequest;
   onSubmitted?: (data: Record<string, string>) => void;
+  /** Called when the user clicks a `hipaa_consent` field. Parent opens the
+   *  shared HIPAA modal. When signing completes, parent updates
+   *  `hipaaSignedAt` (a monotonically increasing marker) and the form
+   *  auto-submits on the next render. */
+  onOpenHipaa?: () => void;
+  hipaaSignedAt?: number;
 }) {
   // Initialize values from default_value fields
   const [values, setValues] = useState<Record<string, string>>(() => {
@@ -1310,6 +1354,11 @@ export function FormRequestCard({
   const [submitted, setSubmitted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeImageField, setActiveImageField] = useState<string | null>(null);
+  // Tracks which image field is currently uploading/OCR-processing so the
+  // corresponding button can show a spinner. Without this the user hits
+  // "scan" and sees nothing change for several seconds.
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Multi-page support
   const pages = useMemo(() => {
@@ -1351,42 +1400,163 @@ export function FormRequestCard({
     setSubmitting(false);
   }
 
+  // Core upload routine used by both the hidden file input and drag-and-drop.
+  // Sets uploadingField around the async work so the UI can show a spinner.
+  async function uploadImageForField(file: File, fieldKey: string) {
+    setUploadingField(fieldKey);
+    try {
+      // For insurance images, use OCR endpoint
+      if (form.save_to === "insurance") {
+        const formData = new FormData();
+        formData.append("image", file);
+        formData.append("card_type", values.card_type || "medical");
+        formData.append("side", fieldKey.includes("back") ? "back" : "front");
+        try {
+          const res = await apiFetch("/insurance/ocr", { method: "POST", body: formData });
+          if (res.ok) {
+            setValue(fieldKey, "Uploaded");
+          }
+        } catch {}
+      } else if (form.save_to === "medication") {
+        // Pill-bottle OCR. Same pattern as the mobile flow — send to
+        // /medications/ocr, merge the extracted fields into the form's values
+        // so they ride the subsequent /chat/form-submit back to the agent as
+        // its tool result. The agent then calls update_health_profile with
+        // the fields.
+        const formData = new FormData();
+        formData.append("image", file);
+        try {
+          const res = await apiFetch("/medications/ocr", { method: "POST", body: formData });
+          if (res.ok) {
+            const data = await res.json();
+            setValues((prev) => {
+              const next = { ...prev };
+              for (const [k, v] of Object.entries(data)) {
+                if (v != null && v !== "") next[k] = String(v);
+              }
+              next[fieldKey] = data.name ? `Scanned: ${data.name}` : "Scanned";
+              return next;
+            });
+          } else {
+            setValue(fieldKey, "Could not read the label. Try again?");
+          }
+        } catch {
+          setValue(fieldKey, "Could not read the label. Try again?");
+        }
+      } else {
+        // Generic file upload via presigned URL
+        try {
+          const urlRes = await apiFetch("/documents/upload-url", {
+            method: "POST",
+            body: JSON.stringify({ session_id: "form", filename: file.name }),
+          });
+          if (urlRes.ok) {
+            const { upload_url, key, content_type, required_headers } = await urlRes.json();
+            await fetch(upload_url, {
+              method: "PUT",
+              body: file,
+              headers: { "Content-Type": content_type, ...required_headers },
+            });
+            setValue(fieldKey, key);
+          }
+        } catch {}
+      }
+    } finally {
+      setUploadingField(null);
+    }
+  }
+
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>, fieldKey: string) {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = "";
-
-    // For insurance images, use OCR endpoint
-    if (form.save_to === "insurance") {
-      const formData = new FormData();
-      formData.append("image", file);
-      formData.append("card_type", values.card_type || "medical");
-      formData.append("side", fieldKey.includes("back") ? "back" : "front");
-      try {
-        const res = await apiFetch("/insurance/ocr", { method: "POST", body: formData });
-        if (res.ok) {
-          setValue(fieldKey, "Uploaded");
-        }
-      } catch {}
-    } else {
-      // Generic file upload via presigned URL
-      try {
-        const urlRes = await apiFetch("/documents/upload-url", {
-          method: "POST",
-          body: JSON.stringify({ session_id: "form", filename: file.name }),
-        });
-        if (urlRes.ok) {
-          const { upload_url, key, content_type, required_headers } = await urlRes.json();
-          await fetch(upload_url, {
-            method: "PUT",
-            body: file,
-            headers: { "Content-Type": content_type, ...required_headers },
-          });
-          setValue(fieldKey, key);
-        }
-      } catch {}
-    }
+    await uploadImageForField(file, fieldKey);
   }
+
+  // Drag-and-drop anywhere on the form card uploads into the current image
+  // field (or the first image field on the page if none is active). Only
+  // wired up when the form actually has an image field.
+  const imageFields = useMemo(
+    () => form.fields.filter((f) => f.type === "image"),
+    [form.fields],
+  );
+  const hasImageField = imageFields.length > 0;
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setIsDragging(false);
+    if (!hasImageField) return;
+    const file = e.dataTransfer.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    const target = activeImageField || imageFields[0]?.key;
+    if (!target) return;
+    setActiveImageField(target);
+    void uploadImageForField(file, target);
+  }
+
+  // All hooks must run before any early return below. When the form submits
+  // successfully we render a "saved" card, which previously skipped the
+  // useRef/useEffect calls further down and triggered "Rendered fewer hooks
+  // than expected."
+  const hipaaFields = form.fields.filter((f) => f.type === "hipaa_consent");
+  const lastSeenHipaaRef = useRef(hipaaSignedAt);
+  useEffect(() => {
+    if (!hipaaSignedAt || hipaaSignedAt === lastSeenHipaaRef.current || hipaaFields.length === 0) return;
+    lastSeenHipaaRef.current = hipaaSignedAt;
+    // Build the signed payload inline rather than relying on handleSubmit's
+    // stale closure — setValues won't have flushed by the time we'd call it.
+    const signedValues = { ...values };
+    for (const f of hipaaFields) signedValues[f.key] = "signed";
+    setValues(signedValues);
+    (async () => {
+      setSubmitting(true);
+      try {
+        await apiFetch("/chat/form-submit", {
+          method: "POST",
+          body: JSON.stringify({
+            form_id: form.form_id,
+            save_to: form.save_to,
+            data: signedValues,
+          }),
+        });
+        setSubmitted(true);
+        onSubmitted?.(signedValues);
+      } catch {}
+      setSubmitting(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hipaaSignedAt]);
+
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    console.log("[form-debug] 4/5 FormRequestCard mounted", {
+      form_id: form.form_id, save_to: form.save_to, title: form.title,
+      field_count: form.fields?.length,
+    });
+    const raf = requestAnimationFrame(() => {
+      const el = rootRef.current;
+      if (!el) {
+        console.error("[form-debug] 4/5 FormRequestCard mounted but ref is null", { form_id: form.form_id });
+        return;
+      }
+      const rect = el.getBoundingClientRect();
+      const style = window.getComputedStyle(el);
+      const visible = rect.width > 0 && rect.height > 0
+        && style.display !== "none" && style.visibility !== "hidden"
+        && parseFloat(style.opacity) > 0;
+      console.log("[form-debug] 4/5 FormRequestCard DOM measurement", {
+        form_id: form.form_id, width: rect.width, height: rect.height,
+        top: rect.top, display: style.display, visibility: style.visibility,
+        opacity: style.opacity, visible,
+      });
+      if (!visible) {
+        console.error("[form-debug] 4/5 FormRequestCard rendered but NOT VISIBLE", {
+          form_id: form.form_id, rect, display: style.display,
+          visibility: style.visibility, opacity: style.opacity,
+        });
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [form.form_id, form.save_to, form.title, form.fields?.length]);
 
   if (submitted) {
     return (
@@ -1411,7 +1581,24 @@ export function FormRequestCard({
   const fieldCls = "mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30";
 
   return (
-    <div className="mt-3 rounded-2xl border border-[#0F1B3D]/[0.06] bg-white p-5 shadow-[0_2px_8px_rgba(15,27,61,0.06)] animate-in fade-in duration-300">
+    <div
+      ref={rootRef}
+      data-form-id={form.form_id}
+      data-form-save-to={form.save_to}
+      onDragEnter={hasImageField ? (e) => {
+        if (e.dataTransfer.types.includes("Files")) { e.preventDefault(); setIsDragging(true); }
+      } : undefined}
+      onDragOver={hasImageField ? (e) => {
+        if (e.dataTransfer.types.includes("Files")) { e.preventDefault(); setIsDragging(true); }
+      } : undefined}
+      onDragLeave={hasImageField ? (e) => {
+        if (!rootRef.current?.contains(e.relatedTarget as Node)) setIsDragging(false);
+      } : undefined}
+      onDrop={hasImageField ? handleDrop : undefined}
+      className={`mt-3 rounded-2xl border bg-white p-5 shadow-[0_2px_8px_rgba(15,27,61,0.06)] transition-colors ${
+        isDragging ? "border-[#0F1B3D]/40 ring-2 ring-[#0F1B3D]/10" : "border-[#0F1B3D]/[0.06]"
+      }`}
+    >
       <h4 className="text-[16px] font-bold text-[#0F1B3D] mb-1">
         {currentPageTitle || form.title}
       </h4>
@@ -1432,10 +1619,17 @@ export function FormRequestCard({
       <div className="space-y-3">
         {currentPageFields.map((field) => (
           <div key={field.key}>
-            <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">
-              {field.label}
-              {field.required && <span className="text-red-400 ml-0.5">*</span>}
-            </label>
+            {/* Hide the field label for hipaa_consent — the form title
+                ("Sign HIPAA authorization") + the button label ("Open
+                Authorization Form") already tell the user what they're
+                signing; a "HIPAA AUTHORIZATION" field label above the
+                button is triple-redundant. */}
+            {field.type !== "hipaa_consent" && (
+              <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">
+                {field.label}
+                {field.required && <span className="text-red-400 ml-0.5">*</span>}
+              </label>
+            )}
 
             {field.type === "textarea" ? (
               <textarea
@@ -1457,12 +1651,120 @@ export function FormRequestCard({
                 ))}
               </select>
             ) : field.type === "image" ? (
-              <button
-                onClick={() => { setActiveImageField(field.key); fileInputRef.current?.click(); }}
-                className="mt-1 w-full rounded-xl border-2 border-dashed border-[#E5E5EA] bg-[#FAFAFA] px-3.5 py-4 text-[14px] text-[#AEAEB2] hover:border-[#0F1B3D]/20 hover:text-[#0F1B3D]/50 transition-colors text-center"
-              >
-                {values[field.key] ? "Uploaded" : field.placeholder || "Tap to upload"}
-              </button>
+              (() => {
+                // OCR paths set the value to "Scanned: {name}" on success
+                // (medication flow) or an error string on failure. Non-OCR
+                // uploads get a storage key. Each deserves its own state so
+                // the user can tell what actually happened.
+                const raw = values[field.key] || "";
+                const isUploading = uploadingField === field.key;
+                const isScanned = raw.startsWith("Scanned");
+                const isError = raw.startsWith("Could not");
+                const hasValue = raw.length > 0;
+                const base = "mt-1 w-full rounded-xl border-2 px-3.5 py-4 text-[14px] transition-colors text-left";
+                const variant = isUploading
+                  ? "border-solid border-[#0F1B3D]/30 bg-[#F5F7FF]"
+                  : isScanned
+                  ? "border-solid border-[#34C759] bg-[#F0FAF3]"
+                  : isError
+                  ? "border-solid border-[#FF6B6B] bg-[#FFF5F5]"
+                  : hasValue
+                  ? "border-solid border-[#34C759] bg-[#F0FAF3]"
+                  : "border-dashed border-[#E5E5EA] bg-[#FAFAFA] hover:border-[#0F1B3D]/20";
+                const uploadLabel = form.save_to === "medication"
+                  ? "Reading the bottle label…"
+                  : form.save_to === "insurance"
+                  ? "Reading your card…"
+                  : "Uploading…";
+                return (
+                  <button
+                    onClick={() => { setActiveImageField(field.key); fileInputRef.current?.click(); }}
+                    disabled={isUploading}
+                    className={`${base} ${variant} ${isUploading ? "cursor-wait" : ""}`}
+                  >
+                    {isUploading ? (
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          aria-hidden
+                          className="h-5 w-5 shrink-0 rounded-full border-2 border-[#0F1B3D]/20 border-t-[#0F1B3D] animate-spin"
+                        />
+                        <div>
+                          <div className="text-[15px] font-semibold text-[#0F1B3D]">{uploadLabel}</div>
+                          <div className="text-[12px] text-[#0F1B3D]/50 mt-0.5">Elena is processing your photo</div>
+                        </div>
+                      </div>
+                    ) : isScanned ? (
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#34C759]">
+                          <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
+                        </span>
+                        <div>
+                          <div className="text-[15px] font-semibold text-[#0F1B3D]">{raw}</div>
+                          <div className="text-[12px] text-[#8E8E93] mt-0.5">Tap to re-scan if anything looks off</div>
+                        </div>
+                      </div>
+                    ) : isError ? (
+                      <span className="text-[#D94545] font-medium">{raw}</span>
+                    ) : hasValue ? (
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#34C759]">
+                          <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
+                        </span>
+                        <span className="text-[15px] font-semibold text-[#0F1B3D]">Photo uploaded</span>
+                      </div>
+                    ) : (
+                      <span className="text-[#AEAEB2] block text-center">
+                        {field.placeholder || "Tap or drop an image here to upload"}
+                      </span>
+                    )}
+                  </button>
+                );
+              })()
+            ) : field.type === "hipaa_consent" ? (
+              (() => {
+                const signed = values[field.key] === "signed";
+                if (typeof window !== "undefined") {
+                  const w = window as unknown as { __hipaaFieldLogged?: Set<string> };
+                  w.__hipaaFieldLogged = w.__hipaaFieldLogged || new Set();
+                  const key = `${form.form_id}:${field.key}`;
+                  if (!w.__hipaaFieldLogged.has(key)) {
+                    w.__hipaaFieldLogged.add(key);
+                    console.log("[hipaa-debug] rendering hipaa_consent field", {
+                      form_id: form.form_id, field_key: field.key, signed,
+                      has_onOpenHipaa: typeof onOpenHipaa === "function",
+                    });
+                    if (typeof onOpenHipaa !== "function") {
+                      console.error("[hipaa-debug] onOpenHipaa callback is missing — button click will be a no-op", {
+                        form_id: form.form_id,
+                      });
+                    }
+                  }
+                }
+                return signed ? (
+                  <div className="mt-1 flex items-center gap-2.5 rounded-xl border-2 border-solid border-[#34C759] bg-[#F0FAF3] px-3.5 py-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#34C759]">
+                      <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
+                    </span>
+                    <span className="text-[15px] font-semibold text-[#0F1B3D]">HIPAA authorization signed</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      console.log("[hipaa-debug] HIPAA button clicked", {
+                        form_id: form.form_id, has_onOpenHipaa: typeof onOpenHipaa === "function",
+                      });
+                      if (typeof onOpenHipaa === "function") {
+                        onOpenHipaa();
+                      } else {
+                        console.error("[hipaa-debug] onOpenHipaa prop not provided — modal won't open");
+                      }
+                    }}
+                    className="mt-1 w-full rounded-full bg-[#0F1B3D] px-5 py-3 text-[15px] font-semibold text-white shadow-md transition-all hover:bg-[#0F1B3D]/90 hover:-translate-y-px"
+                  >
+                    Open Authorization Form
+                  </button>
+                );
+              })()
             ) : (
               <input
                 type={field.type === "date" ? "date" : field.type === "phone" ? "tel" : "text"}
@@ -1476,40 +1778,47 @@ export function FormRequestCard({
         ))}
       </div>
 
-      <div className="flex gap-2 mt-4">
-        {isMultiPage && currentPage > 0 && (
-          <button
-            onClick={() => setCurrentPage((p) => p - 1)}
-            className="rounded-xl px-4 py-2.5 text-[14px] font-medium text-[#8E8E93] hover:text-[#0F1B3D] transition-colors"
-          >
-            Back
-          </button>
-        )}
-        {isLastPage ? (
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="flex-1 rounded-xl bg-[#0F1B3D] px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-[#0F1B3D]/90 disabled:opacity-40 transition-colors"
-          >
-            {submitting ? "Submitting..." : "Submit"}
-          </button>
-        ) : (
-          <button
-            onClick={() => setCurrentPage((p) => p + 1)}
-            className="flex-1 rounded-xl bg-[#0F1B3D] px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-[#0F1B3D]/90 transition-colors"
-          >
-            Next
-          </button>
-        )}
-        {isLastPage && (
-          <button
-            onClick={() => { setSubmitted(true); onSubmitted?.({}); }}
-            className="rounded-xl px-4 py-2.5 text-[14px] font-medium text-[#8E8E93] hover:text-[#0F1B3D] transition-colors"
-          >
-            Skip
-          </button>
-        )}
-      </div>
+      {/* HIPAA-only forms don't need a Submit/Skip footer — the
+          "Open Authorization Form" button itself triggers the sign flow,
+          and auto-submit handles sending once HIPAA completes. A
+          secondary Submit row is redundant and invites users to hit it
+          before signing (which would submit with empty values). */}
+      {!(form.fields.length === 1 && form.fields[0].type === "hipaa_consent") && (
+        <div className="flex gap-2 mt-4">
+          {isMultiPage && currentPage > 0 && (
+            <button
+              onClick={() => setCurrentPage((p) => p - 1)}
+              className="rounded-xl px-4 py-2.5 text-[14px] font-medium text-[#8E8E93] hover:text-[#0F1B3D] transition-colors"
+            >
+              Back
+            </button>
+          )}
+          {isLastPage ? (
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="flex-1 rounded-xl bg-[#0F1B3D] px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-[#0F1B3D]/90 disabled:opacity-40 transition-colors"
+            >
+              {submitting ? "Submitting..." : "Submit"}
+            </button>
+          ) : (
+            <button
+              onClick={() => setCurrentPage((p) => p + 1)}
+              className="flex-1 rounded-xl bg-[#0F1B3D] px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-[#0F1B3D]/90 transition-colors"
+            >
+              Next
+            </button>
+          )}
+          {isLastPage && (
+            <button
+              onClick={() => { setSubmitted(true); onSubmitted?.({}); }}
+              className="rounded-xl px-4 py-2.5 text-[14px] font-medium text-[#8E8E93] hover:text-[#0F1B3D] transition-colors"
+            >
+              Skip
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1691,6 +2000,7 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
   form: FormRequest;
   onSubmitted?: (data: Record<string, string>) => void;
 }) {
+  const { profileId } = useAuth();
   const sections = form.sections || ["conditions", "medications", "allergies"];
   const existing = form.existing || {};
 
@@ -1710,6 +2020,17 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
   const [allergyForm, setAllergyForm] = useState({ name: "", type: "", reaction: "", severity: "" });
   const [doctorForm, setDoctorForm] = useState({ name: "", specialty: "", practice_name: "", phone: "", address: "" });
   const [visitForm, setVisitForm] = useState({ provider_name: "", visit_type: "", visit_date: "", notes: "" });
+  // Basics section: single form with profile fundamentals. Pre-populates
+  // from existing profile data so a caregiver who already entered name
+  // during tour just needs to fill in DOB/zip. Saved via /profile/:id
+  // PUT on submit (handled alongside the normal /chat/form-submit flow).
+  const basicsExisting = (existing.basics || {}) as { first_name?: string; last_name?: string; date_of_birth?: string; zip_code?: string };
+  const [basicsForm, setBasicsForm] = useState({
+    first_name: basicsExisting.first_name || "",
+    last_name: basicsExisting.last_name || "",
+    date_of_birth: basicsExisting.date_of_birth || "",
+    zip_code: basicsExisting.zip_code || "",
+  });
 
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -1717,6 +2038,7 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
   const currentSection = sections[currentPage];
   const isLastPage = currentPage === sections.length - 1;
   const sectionLabels: Record<string, string> = {
+    basics: "Basics",
     conditions: "Conditions",
     medications: "Medications",
     allergies: "Allergies",
@@ -1801,6 +2123,26 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
     try {
       const data: Record<string, string> = {};
       const stripId = (items: AnyItem[]) => items.map(({ id, ...rest }) => rest);
+      // Basics save separately to /profile/:id — it's the user_profiles
+      // table, not the health_profile composite endpoint. Do it first so
+      // the name is saved before the agent processes the summary message.
+      if (sections.includes("basics") && profileId) {
+        const hasAny = Object.values(basicsForm).some((v) => (v || "").toString().trim());
+        if (hasAny) {
+          try {
+            await apiFetch(`/profile/${profileId}`, {
+              method: "PUT",
+              body: JSON.stringify({
+                first_name: basicsForm.first_name.trim() || undefined,
+                last_name: basicsForm.last_name.trim() || undefined,
+                date_of_birth: basicsForm.date_of_birth || undefined,
+                zip_code: basicsForm.zip_code.trim() || undefined,
+              }),
+            });
+          } catch {}
+          data.basics = JSON.stringify(basicsForm);
+        }
+      }
       if (sections.includes("conditions") && conditions.length > 0) data.conditions = JSON.stringify(stripId(conditions));
       if (sections.includes("medications") && medications.length > 0) data.medications = JSON.stringify(stripId(medications));
       if (sections.includes("allergies") && allergies.length > 0) data.allergies = JSON.stringify(stripId(allergies));
@@ -1839,8 +2181,45 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
     : currentSection === "visits" ? "a past visit"
     : "an item";
 
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    console.log("[form-debug] 4/5 HealthProfileIntakeCard mounted", {
+      form_id: form.form_id, save_to: form.save_to, title: form.title,
+      sections: sections,
+    });
+    const raf = requestAnimationFrame(() => {
+      const el = rootRef.current;
+      if (!el) {
+        console.error("[form-debug] 4/5 HealthProfileIntakeCard mounted but ref is null", { form_id: form.form_id });
+        return;
+      }
+      const rect = el.getBoundingClientRect();
+      const style = window.getComputedStyle(el);
+      const visible = rect.width > 0 && rect.height > 0
+        && style.display !== "none" && style.visibility !== "hidden"
+        && parseFloat(style.opacity) > 0;
+      console.log("[form-debug] 4/5 HealthProfileIntakeCard DOM measurement", {
+        form_id: form.form_id, width: rect.width, height: rect.height,
+        top: rect.top, display: style.display, visibility: style.visibility,
+        opacity: style.opacity, visible,
+      });
+      if (!visible) {
+        console.error("[form-debug] 4/5 HealthProfileIntakeCard rendered but NOT VISIBLE", {
+          form_id: form.form_id, rect, display: style.display,
+          visibility: style.visibility, opacity: style.opacity,
+        });
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [form.form_id, form.save_to, form.title, sections]);
+
   return (
-    <div className="mt-3 rounded-2xl border border-[#0F1B3D]/[0.06] bg-white p-5 shadow-[0_2px_8px_rgba(15,27,61,0.06)] animate-in fade-in duration-300">
+    <div
+      ref={rootRef}
+      data-form-id={form.form_id}
+      data-form-save-to={form.save_to}
+      className="mt-3 rounded-2xl border border-[#0F1B3D]/[0.06] bg-white p-5 shadow-[0_2px_8px_rgba(15,27,61,0.06)]"
+    >
       <h4 className="text-[16px] font-bold text-[#0F1B3D] mb-1">{form.title || "Your Health Profile"}</h4>
       {form.description && <p className="text-[13px] text-[#8E8E93] mb-4">{form.description}</p>}
 
@@ -1854,17 +2233,71 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
 
       <h5 className="text-[15px] font-bold text-[#0F1B3D] mb-3">{sectionLabels[currentSection] || currentSection}</h5>
 
-      {items.map((item) => (
-        <ItemPill key={item.id} label={itemLabel(item)} onEdit={() => startEdit(item.id)} onDelete={() => handleDelete(item.id)} />
-      ))}
+      {/* Basics is a single inline form (no items list). Renders above
+          the items/add UI and short-circuits the ItemPill pattern. */}
+      {currentSection === "basics" ? (
+        <div className="space-y-2.5">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">First Name</label>
+              <input
+                value={basicsForm.first_name}
+                onChange={(e) => setBasicsForm({ ...basicsForm, first_name: e.target.value })}
+                placeholder="First"
+                autoComplete="given-name"
+                className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+              />
+            </div>
+            <div>
+              <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Last Name</label>
+              <input
+                value={basicsForm.last_name}
+                onChange={(e) => setBasicsForm({ ...basicsForm, last_name: e.target.value })}
+                placeholder="Last"
+                autoComplete="family-name"
+                className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Date of Birth</label>
+            <input
+              type="date"
+              value={basicsForm.date_of_birth}
+              onChange={(e) => setBasicsForm({ ...basicsForm, date_of_birth: e.target.value })}
+              autoComplete="bday"
+              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+            />
+          </div>
+          <div>
+            <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Zip Code</label>
+            <input
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={5}
+              value={basicsForm.zip_code}
+              onChange={(e) => setBasicsForm({ ...basicsForm, zip_code: e.target.value.replace(/\D/g, "") })}
+              placeholder="10001"
+              autoComplete="postal-code"
+              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+            />
+          </div>
+        </div>
+      ) : (
+        <>
+          {items.map((item) => (
+            <ItemPill key={item.id} label={itemLabel(item)} onEdit={() => startEdit(item.id)} onDelete={() => handleDelete(item.id)} />
+          ))}
 
-      {!showForm && (
-        <button type="button" onClick={startAdd} className="flex items-center gap-1.5 mt-2 text-[14px] font-semibold text-[#0F1B3D] hover:opacity-70 transition-opacity">
-          <Plus className="h-4 w-4" />Add {addLabel}
-        </button>
+          {!showForm && (
+            <button type="button" onClick={startAdd} className="flex items-center gap-1.5 mt-2 text-[14px] font-semibold text-[#0F1B3D] hover:opacity-70 transition-opacity">
+              <Plus className="h-4 w-4" />Add {addLabel}
+            </button>
+          )}
+        </>
       )}
 
-      {showForm && (
+      {showForm && currentSection !== "basics" && (
         <div className="mt-2 rounded-xl border border-[#E5E5EA] bg-[#FAFAFC] p-4">
           {currentSection === "conditions" && <ConditionFormFields form={condForm} onChange={setCondForm} />}
           {currentSection === "medications" && <MedicationFormFields form={medForm} onChange={setMedForm} />}
@@ -2619,6 +3052,353 @@ export function InsurancePlanComparisonCard({ data }: { data: InsurancePlanCompa
           <p className="text-[13px] font-semibold text-[var(--elena-text-primary)]">{data.recommendation_summary}</p>
         </div>
       )}
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// RefillPlanCreatedCard — receipt for medication save → refill planner.
+//
+// Mirrors the salmon Game Plan tile in the profile popover so users see
+// a consistent visual when calls land in chat versus on the Health tab.
+// Backend payload: ChatResponse.refill_plan_created (api_chat.py).
+// ──────────────────────────────────────────────────────────────────────
+
+export interface RefillPlanCreatedPayload {
+  medication: {
+    id?: string;
+    name?: string;
+    dosage_strength?: string | null;
+    pharmacy_name?: string | null;
+    refills_remaining?: string | null;
+  };
+  scheduled: number;
+  events: Array<{
+    scheduled_at?: string | null;
+    call_type?: string | null;
+    title?: string | null;
+    subtitle?: string | null;
+  }>;
+  hipaa_signed?: boolean | null;
+}
+
+function formatRefillDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  // scheduled_at can come in as "2026-04-26" or "2026-04-26T00:00:00".
+  const base = iso.slice(0, 10);
+  try {
+    const d = new Date(`${base}T12:00:00`);
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  } catch {
+    return base;
+  }
+}
+
+export function RefillPlanCreatedCard({ data }: { data: RefillPlanCreatedPayload }) {
+  const med = data.medication || {};
+  const events = (data.events || []).filter((e) => e?.scheduled_at);
+  const medLabel = [med.name, med.dosage_strength].filter(Boolean).join(" ");
+
+  return (
+    <div
+      className="mt-3 rounded-[20px] overflow-hidden"
+      style={{
+        background: "#F4B084",
+        boxShadow: "0 8px 30px rgba(0,0,0,0.10), 0 3px 10px rgba(0,0,0,0.05)",
+      }}
+    >
+      {/* Header */}
+      <div className="px-5 pt-4 pb-3">
+        <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wider" style={{ color: "#7A3040" }}>
+          <Pill className="h-3.5 w-3.5" />
+          <span>Refills scheduled</span>
+        </div>
+        <h3 className="mt-1 text-[20px] font-extrabold leading-tight" style={{ color: "#5C1A2A" }}>
+          {medLabel || "Medication added"}
+        </h3>
+        {med.pharmacy_name && (
+          <p className="text-[13px] font-medium mt-0.5" style={{ color: "#7A3040" }}>
+            Calls go to {med.pharmacy_name}
+          </p>
+        )}
+      </div>
+
+      {/* HIPAA-unsigned banner */}
+      {data.hipaa_signed === false && (
+        <div
+          className="mx-3 mb-2 rounded-xl px-3 py-2 flex items-start gap-2"
+          style={{ background: "rgba(255,255,255,0.55)", border: "1px solid rgba(92,26,42,0.18)" }}
+        >
+          <Lock className="h-4 w-4 mt-0.5 shrink-0" style={{ color: "#5C1A2A" }} />
+          <p className="text-[12px] leading-relaxed" style={{ color: "#5C1A2A" }}>
+            Calls are queued — sign the HIPAA authorization to let Elena make them on your behalf.
+          </p>
+        </div>
+      )}
+
+      {/* Game Plan-style event list */}
+      <div className="bg-white/95 mx-3 mb-3 rounded-xl overflow-hidden">
+        {events.map((ev, i) => {
+          const isRenewal = ev.call_type === "prescriber_renewal";
+          return (
+            <div key={i}>
+              {i > 0 && <div className="h-px mx-[14px]" style={{ background: "rgba(92,26,42,0.15)" }} />}
+              <div className="flex items-center gap-3 px-4 py-3">
+                {/* Icon circle — Game Plan uses a check circle; we use Pill or Doctor */}
+                <div
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                  style={{ background: "#F4B084" }}
+                >
+                  {isRenewal ? (
+                    <UserRound className="h-4 w-4 text-white" strokeWidth={2.5} />
+                  ) : (
+                    <Pill className="h-4 w-4 text-white" strokeWidth={2.5} />
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-[15px] font-semibold leading-tight" style={{ color: "#5C1A2A" }}>
+                    {ev.title || (isRenewal ? "Renew prescription" : "Refill")}
+                  </p>
+                  {ev.subtitle && (
+                    <p className="text-[12.5px] mt-[2px] leading-snug" style={{ color: "#7A3040" }}>
+                      {ev.subtitle}
+                    </p>
+                  )}
+                </div>
+
+                {/* Date pill on the right */}
+                <span
+                  className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide"
+                  style={{ background: "rgba(92,26,42,0.10)", color: "#5C1A2A" }}
+                >
+                  {formatRefillDate(ev.scheduled_at)}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer */}
+      <div className="px-5 pb-4 pt-1">
+        <p className="text-[11px] font-medium" style={{ color: "rgba(92,26,42,0.7)" }}>
+          You'll see these on your Game Plan in the Health tab.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// CarePlanCard — Game-Plan-styled card for a curated condition care plan.
+//
+// Emitted by the backend whenever `get_care_plan_for_condition` matches
+// the user's stated condition against the template library. Visually
+// echoes the Game Plan tile in the profile popover (same salmon, same
+// white inner card, same row layout) so users see "oh, this is the plan
+// that lives in my Health tab" without the agent having to explain.
+// Backend payload: ChatResponse.care_plan_shown (api_chat.py).
+// ──────────────────────────────────────────────────────────────────────
+
+export interface CarePlanItemPayload {
+  id: string;
+  label: string;
+  todo_text: string;
+}
+
+export interface CarePlanShownPayload {
+  key: string;
+  condition_name: string;
+  plan_items: CarePlanItemPayload[];
+  source?: string | null;
+}
+
+export function CarePlanCard({ data }: { data: CarePlanShownPayload }) {
+  const items = data.plan_items || [];
+
+  return (
+    <div
+      className="mt-3 rounded-[20px] overflow-hidden"
+      style={{
+        background: "#F4B084",
+        boxShadow: "0 8px 30px rgba(0,0,0,0.10), 0 3px 10px rgba(0,0,0,0.05)",
+      }}
+    >
+      {/* Header */}
+      <div className="px-5 pt-4 pb-3">
+        <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wider" style={{ color: "#7A3040" }}>
+          <ClipboardList className="h-3.5 w-3.5" />
+          <span>Care plan</span>
+        </div>
+        <h3 className="mt-1 text-[20px] font-extrabold leading-tight" style={{ color: "#5C1A2A" }}>
+          {data.condition_name}
+        </h3>
+        <p className="text-[13px] font-medium mt-0.5" style={{ color: "#7A3040" }}>
+          {items.length} next step{items.length === 1 ? "" : "s"} I can help with
+        </p>
+      </div>
+
+      {/* Game Plan-style item list */}
+      {items.length > 0 && (
+        <div className="bg-white/95 mx-3 mb-3 rounded-xl overflow-hidden">
+          {items.map((item, i) => (
+            <div key={item.id || i}>
+              {i > 0 && <div className="h-px mx-[14px]" style={{ background: "rgba(92,26,42,0.15)" }} />}
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                  style={{ background: "#F4B084" }}
+                >
+                  <CircleCheck className="h-4 w-4 text-white" strokeWidth={2.5} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[15px] font-semibold leading-tight" style={{ color: "#5C1A2A" }}>
+                    {item.todo_text}
+                  </p>
+                  <p className="text-[12.5px] mt-[2px] leading-snug" style={{ color: "#7A3040" }}>
+                    {item.label}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Footer — source citation for clinical provenance */}
+      <div className="px-5 pb-4 pt-1">
+        <p className="text-[11px] font-medium" style={{ color: "rgba(92,26,42,0.7)" }}>
+          {data.source
+            ? `Based on ${data.source}. I can add any of these to your Game Plan.`
+            : "I can add any of these to your Game Plan."}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// ScheduledActionCard — Game-Plan-styled receipt for a single scheduled
+// action: a future call (schedule_call), a timed/dated todo
+// (manage_care_todos with a due_date), or a logged visit (manage_care_visit).
+//
+// Backend payload: ChatResponse.scheduled_action_created (api_chat.py).
+// Shape: { kind: "call" | "todo" | "visit", title, subtitle?, scheduled_at?,
+//          hipaa_signed?, call_type?, category? }
+// ──────────────────────────────────────────────────────────────────────
+
+export interface ScheduledActionCreatedPayload {
+  kind: "call" | "todo" | "visit";
+  title: string;
+  subtitle?: string | null;
+  scheduled_at?: string | null;
+  hipaa_signed?: boolean | null;
+  call_type?: string | null;
+  category?: string | null;
+}
+
+function formatScheduledAt(iso: string | null | undefined): {
+  date: string;
+  time: string | null;
+} {
+  if (!iso) return { date: "", time: null };
+  const hasTime = iso.length > 10 && iso.includes("T");
+  try {
+    const d = hasTime ? new Date(iso) : new Date(`${iso.slice(0, 10)}T12:00:00`);
+    const date = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const time = hasTime
+      ? d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+      : null;
+    return { date, time };
+  } catch {
+    return { date: iso.slice(0, 10), time: null };
+  }
+}
+
+export function ScheduledActionCard({ data }: { data: ScheduledActionCreatedPayload }) {
+  const { date, time } = formatScheduledAt(data.scheduled_at);
+  const showHipaaBanner = data.kind === "call" && data.hipaa_signed === false;
+  // Make the card header tell the truth: when HIPAA is unsigned the call
+  // isn't truly scheduled — it's queued until the user signs. Historic
+  // bug: users saw "Call scheduled" + a subtle banner, dismissed the
+  // banner, and didn't realize the call wouldn't fire. Moving the status
+  // into the header (the biggest text they see) fixes that at the source.
+  const kindLabel =
+    data.kind === "call"
+      ? (showHipaaBanner ? "Call queued — needs HIPAA" : "Call scheduled")
+      : data.kind === "visit" ? "Visit added" : "Reminder set";
+  const Icon = data.kind === "call" ? Phone : data.kind === "visit" ? Calendar : CircleCheck;
+
+  return (
+    <div
+      className="mt-3 rounded-[20px] overflow-hidden"
+      style={{
+        background: "#F4B084",
+        boxShadow: "0 8px 30px rgba(0,0,0,0.10), 0 3px 10px rgba(0,0,0,0.05)",
+      }}
+    >
+      <div className="px-5 pt-4 pb-3">
+        <div
+          className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wider"
+          style={{ color: "#7A3040" }}
+        >
+          <Icon className="h-3.5 w-3.5" />
+          <span>{kindLabel}</span>
+        </div>
+        <h3 className="mt-1 text-[20px] font-extrabold leading-tight" style={{ color: "#5C1A2A" }}>
+          {data.title}
+        </h3>
+      </div>
+
+      {showHipaaBanner && (
+        <div
+          className="mx-3 mb-2 rounded-xl px-3 py-2 flex items-start gap-2"
+          style={{ background: "rgba(255,255,255,0.55)", border: "1px solid rgba(92,26,42,0.18)" }}
+        >
+          <Lock className="h-4 w-4 mt-0.5 shrink-0" style={{ color: "#5C1A2A" }} />
+          <p className="text-[12px] leading-relaxed" style={{ color: "#5C1A2A" }}>
+            Call is queued, sign the HIPAA authorization to let Elena place it on your behalf.
+          </p>
+        </div>
+      )}
+
+      <div className="bg-white/95 mx-3 mb-3 rounded-xl overflow-hidden">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+            style={{ background: "#F4B084" }}
+          >
+            <Icon className="h-4 w-4 text-white" strokeWidth={2.5} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[15px] font-semibold leading-tight" style={{ color: "#5C1A2A" }}>
+              {data.title}
+            </p>
+            {data.subtitle && (
+              <p className="text-[12.5px] mt-[2px] leading-snug" style={{ color: "#7A3040" }}>
+                {data.subtitle}
+              </p>
+            )}
+          </div>
+          {date && (
+            <span
+              className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide"
+              style={{ background: "rgba(92,26,42,0.10)", color: "#5C1A2A" }}
+            >
+              {time ? `${date} · ${time}` : date}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="px-5 pb-4 pt-1">
+        <p className="text-[11px] font-medium" style={{ color: "rgba(92,26,42,0.7)" }}>
+          {data.kind === "visit"
+            ? "You'll see this on your Visits tab."
+            : "You'll see this on your Game Plan in the Health tab."}
+        </p>
+      </div>
     </div>
   );
 }

@@ -38,6 +38,10 @@ export interface ChatResponse {
   price_comparison_label?: string | null;
   insurance_plan_comparison?: InsurancePlanComparison | null;
   needs_hipaa_consent?: boolean | null;
+  todo_created?: boolean | null;
+  refill_plan_created?: import("@/components/chat-cards").RefillPlanCreatedPayload | null;
+  care_plan_shown?: import("@/components/chat-cards").CarePlanShownPayload | null;
+  scheduled_action_created?: import("@/components/chat-cards").ScheduledActionCreatedPayload | null;
 }
 
 // --- Session History (api_chat.py:480-485) ---
@@ -414,7 +418,7 @@ export interface CareTodoCreate {
 export interface FormField {
   key: string;
   label: string;
-  type: "text" | "date" | "phone" | "address" | "select" | "textarea" | "image";
+  type: "text" | "date" | "phone" | "address" | "select" | "textarea" | "image" | "hipaa_consent";
   placeholder?: string;
   required?: boolean;
   options?: string[];
@@ -428,7 +432,7 @@ export interface FormRequest {
   title: string;
   description?: string;
   fields: FormField[];
-  save_to: "profile" | "insurance" | "none" | "health_profile" | "dme" | "insurance_intake";
+  save_to: "profile" | "insurance" | "medication" | "none" | "health_profile" | "dme" | "insurance_intake";
   /** For health_profile forms: which sections to show */
   sections?: string[];
   /** For health_profile forms: existing data to pre-populate */
@@ -449,6 +453,7 @@ export interface PersonalInfo {
   city: string;
   state: string;
   zip_code: string;
+  hipaa_consent_signed_at?: string | null;
 }
 
 export interface SavedCondition {
@@ -465,6 +470,30 @@ export interface SavedMedication {
   dosage_strength: string;
   frequency: string;
   indication: string;
+  // Optional — populated progressively via chat-driven pill-bottle OCR
+  // (/medications/ocr) or manual edit. The refill-tracking block is what
+  // the auto-refill agent needs to call the pharmacy on the user's behalf.
+  dosage_form?: string;
+  route?: string;
+  dose?: string;
+  time_of_day?: string;
+  quantity_dispensed?: string;
+  start_date?: string;
+  special_instructions?: string;
+  prescribing_doctor?: string;
+  is_otc?: boolean;
+  // Refill-tracking fields from the pharmacy label.
+  rx_number?: string;
+  pharmacy_name?: string;
+  pharmacy_phone?: string;
+  last_filled_date?: string;
+  days_supply?: string;
+  quantity?: string;
+  refills_remaining?: string;
+  refills_total?: string;
+  prescriber_name?: string;
+  prescriber_phone?: string;
+  discard_by_date?: string;
 }
 
 export interface SavedSurgery {

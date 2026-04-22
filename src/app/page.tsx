@@ -765,6 +765,21 @@ function LandingPage() {
     // use their own prefill; the homepage gets HOMEPAGE_DEFAULT_QUERY so the
     // agent doesn't land with "I don't have your data".
     const query = typed || hero?.prefill || HOMEPAGE_DEFAULT_QUERY;
+    // Check the late-signup flag up front — determines whether we post
+    // to pending_messages (the old claim flow) or skip it (the tour's
+    // action selection becomes the seed instead). Posting a landing
+    // pending message and then running the tour produces two competing
+    // seeds; the claim flow wins on /chat load and wipes the action
+    // seed from localStorage.
+    const lateSignupFlag = (() => {
+      if (typeof window === "undefined") return false;
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get("signup") === "late") {
+        try { sessionStorage.setItem("elena_late_signup", "1"); } catch {}
+        return true;
+      }
+      return sessionStorage.getItem("elena_late_signup") === "1";
+    })();
     if (query) {
       analytics.track("Hero Input Submitted", { query_length: query.length });
       analytics.track("Message Sent", {
@@ -779,13 +794,19 @@ function LandingPage() {
       if (session?.user?.id) {
         trackActivation(session.user.id);
       }
+      // Always stash in localStorage — tour reads it for the value/care
+      // step taglines. Only post to pending_messages on the OLD flow
+      // (signup-first). For the late-signup flow, skip the server-side
+      // row so claim doesn't fire on /chat and wipe the tour's seed.
       localStorage.setItem("elena_pending_query", query);
-      void postPendingMessage({
-        content: query,
-        source: typed ? (madlib ? "madlib" : "landing_hero") : "landing_default",
-        landing_variant: ref || "homepage",
-        pending_doc_name: pendingDocFile?.name ?? null,
-      });
+      if (!lateSignupFlag) {
+        void postPendingMessage({
+          content: query,
+          source: typed ? (madlib ? "madlib" : "landing_hero") : "landing_default",
+          landing_variant: ref || "homepage",
+          pending_doc_name: pendingDocFile?.name ?? null,
+        });
+      }
     }
     // In demo mode with an attached file but no text query, use a default query
     if (!query && pendingDocFile && demoMode) {
@@ -810,6 +831,19 @@ function LandingPage() {
     // Stash the LP variant so the onboarding tour can tailor the value step
     // (e.g. skip it for bill_fighting / prices where the hero already is the pitch).
     localStorage.setItem("elena_lp_variant", ref || "homepage");
+
+    // Plan A rollout: when the late-signup flag is on, route to the
+    // anonymous /onboard surface instead of immediately gating with
+    // AuthModal. The tour captures the rest of the funnel (care, router,
+    // pain, profile, meds, care plan) and only triggers signup at
+    // elena-plan Continue (Phase 3). Flag resolution happened earlier
+    // (before postPendingMessage) so both code paths see the same value.
+    if (lateSignupFlag) {
+      analytics.track("Onboard Route Entered", { source: "landing_hero", landing_variant: ref || "homepage" });
+      router.push("/onboard");
+      return;
+    }
+
     setAuthDefaultMode("signup");
     setChatPreviewQuery(query || "");
     setChatPreviewVisible(true);
@@ -890,7 +924,7 @@ function LandingPage() {
 
         {/* Content wrapper — viewport-height centered for bills, inline for others */}
         <div className="min-h-[80dvh] flex flex-col items-center justify-center w-full shrink-0 pb-8" style={{ paddingTop: "max(6rem, 12vh)" }}>
-        <div className="relative z-[4] text-center max-w-[700px] w-full px-6 max-md:px-5">
+        <div className="relative z-[4] text-center max-w-[700px] md:max-w-[880px] w-full px-6 max-md:px-5">
           <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[2.15rem] font-light leading-[1.15] tracking-tight text-white">
             {hero ? (
               <>
@@ -906,14 +940,16 @@ function LandingPage() {
                 })() : hero.headline[1]}
               </>
             ) : (
-              <>What can I help you<br />with <em className="italic font-normal font-[family-name:var(--font-dm-serif)]">today?</em></>
+              <>
+                <span className="block md:whitespace-nowrap">Better healthcare starts with</span>
+                <span className="block md:whitespace-nowrap">an <em className="italic font-normal font-[family-name:var(--font-dm-serif)]">advocate.</em> Meet Elena.</span>
+              </>
             )}
           </h1>
           <p className="text-[0.95rem] max-md:text-[0.75rem] font-light text-white/85 mt-4 max-md:mt-2.5 tracking-wide">
-            {hero ? hero.subtitle : (<>
-              <span className="hidden md:inline">Elena is your personal health assistant. She&apos;s like ChatGPT, but she can make calls and is an expert in navigating the healthcare system.</span>
-              <span className="md:hidden">Elena is your personal health assistant. She&apos;s like ChatGPT, but she can make calls and navigate the healthcare system.</span>
-            </>)}
+            {hero ? hero.subtitle : (
+              <>Elena makes the calls, fights the bills, and finds in-network care. So you don&apos;t have to.</>
+            )}
           </p>
 
           {/* Chat input bar (desktop only — mobile gets a single CTA button below) */}

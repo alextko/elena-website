@@ -12,6 +12,7 @@ import { ChatArea } from "@/components/chat-area";
 import { ChatErrorBoundary } from "@/components/error-boundary";
 import { WebOnboardingTour } from "@/components/web-onboarding-tour";
 import { UpgradeModal } from "@/components/upgrade-modal";
+import { TrialFlow } from "@/components/paywall/trial-flow";
 import { useAppCta } from "@/lib/app-cta-context";
 import type { ChatSessionItem } from "@/lib/types";
 import { trackSubscription, trackStartTrial, trackActivation } from "@/lib/tracking-events";
@@ -60,6 +61,7 @@ function ChatPageInner() {
     if (meta) meta.setAttribute("content", "#FFFFFF");
     return () => { if (meta) meta.setAttribute("content", "#0F1B3D"); };
   }, []);
+
 
   const { session, loading, profileId, refreshSubscription, onboardingJustCompleted, needsOnboarding, profileChecked } = useAuth();
   const { showAppCta } = useAppCta();
@@ -343,6 +345,9 @@ function ChatPageInner() {
   const [tourPopoverOpen, setTourPopoverOpen] = useState(false);
   const [tourPopoverShowSwitcher, setTourPopoverShowSwitcher] = useState(false);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  // Tour-end paywall: launches the 4-screen trial flow (Cal-AI-style). Replaces
+  // the legacy upgrade-modal route for the post-onboarding entry point.
+  const [tourTrialStep, setTourTrialStep] = useState<1 | 2 | 3 | null>(null);
   const [tourPopoverTab, setTourPopoverTab] = useState<"health" | "visits" | "insurance">("health");
 
   // Tour handles onboarding end-to-end now — profile form (name/DOB/zip) is a
@@ -425,12 +430,32 @@ function ChatPageInner() {
   return (
     <div className="flex h-dvh overflow-hidden relative">
       <UpgradeModal open={upgradeModalOpen} onOpenChange={setUpgradeModalOpen} reason="soft" />
+      <TrialFlow step={tourTrialStep} onStepChange={setTourTrialStep} reason="post_onboarding" />
       {showTour && (
         <WebOnboardingTour
           onComplete={() => { setShowTour(false); setTourPopoverOpen(false); }}
-          onShowPaywall={() => setUpgradeModalOpen(true)}
+          onShowPaywall={() => setTourTrialStep(1)}
           onProfilePopover={(open, tab, showSwitcher) => { setTourPopoverOpen(open); if (tab) setTourPopoverTab(tab); setTourPopoverShowSwitcher(!!showSwitcher); }}
           onSidebar={(open) => setSidebarOpen(open)}
+          onSeedQuery={(msg) => {
+            // Tour finished with user-picked actions. Seed the chat
+            // directly — localStorage wouldn't work here because the
+            // chat page's one-time pending-query pickup has already
+            // run, so force-tour users would never see it.
+            //
+            // We deliberately do NOT call setIsNewChat(true) here.
+            // By the time the tour finishes, chat-area has already
+            // established a session (fetchWelcome ran when the active
+            // profile settled). Flipping isNewChat would re-trigger
+            // chat-area's session effect, reset sessionIdRef to null,
+            // and strand the auto-send effect waiting for a session
+            // that never gets re-created in time. The initialQuery
+            // prop change (via pendingQuery) is already in the
+            // auto-send effect's deps, so the seed flows through
+            // without tearing down the live session.
+            setPendingQuery(msg);
+            try { localStorage.removeItem("elena_pending_query"); } catch {}
+          }}
         />
       )}
       {/* Checkout success banner */}

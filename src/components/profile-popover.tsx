@@ -35,11 +35,14 @@ import {
   User,
   Activity,
   ChevronUp,
+  ShieldCheck,
+  Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
 import { AddFamilyModal } from "@/components/add-family-modal";
+import { HipaaConsentModal } from "@/components/hipaa-consent-modal";
 import { PhotoCropModal } from "@/components/photo-crop-modal";
 import { AvatarPhoto } from "@/components/avatar-photo";
 import type { CareTodo, CareTodoCreate, CareVisit, DoctorItem, Habit, ProfileSummary, PersonalInfo, HealthData, StructuredDocument as ProfileDocument, SavedCondition, SavedMedication, SavedSurgery, SavedAllergy, SavedFamilyHistory, SavedSocialHistory } from "@/lib/types";
@@ -206,6 +209,10 @@ export function ProfilePopover({
     onExternalOpenChange?.(v);
   };
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  // HIPAA sign modal — rendered as a sibling of the outer Dialog so it
+  // escapes the popover's focus trap. Lifted out of PersonalDetailsPanel
+  // where it was nested and couldn't open reliably.
+  const [hipaaOpen, setHipaaOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>(initialTab || "health");
 
   // Respond to initialTab changes from the tour
@@ -334,6 +341,7 @@ export function ProfilePopover({
           date_of_birth: p.date_of_birth || "", gender: p.gender || "",
           phone_number: p.phone_number || "", home_address: p.home_address || "",
           city: p.city || "", state: p.state || "", zip_code: p.zip_code || "",
+          hipaa_consent_signed_at: p.hipaa_consent_signed_at || null,
         });
       }
       const hd: HealthData = { conditions: [], medications: [], surgeries: [], allergies: [], familyHistory: [], socialHistory: [] };
@@ -438,10 +446,12 @@ export function ProfilePopover({
     setShowTodayBtn(!nearToday);
   }
 
-  const displayName =
-    profileData?.firstName && profileData?.lastName
-      ? `${profileData.firstName} ${profileData.lastName}`
-      : user?.email?.split("@")[0] || "User";
+  // Display priority: full name → first name only → email prefix → "User".
+  // See sidebar.tsx for rationale — the strict first+last gate was hiding
+  // dependent profiles behind the caregiver's email prefix during the tour.
+  const displayName = profileData?.firstName
+    ? (profileData.lastName ? `${profileData.firstName} ${profileData.lastName}` : profileData.firstName)
+    : (user?.email?.split("@")[0] || "User");
   const initials = profileData?.firstName
     ? `${profileData.firstName[0]}${profileData.lastName?.[0] || ""}`.toUpperCase()
     : (user?.email?.[0] || "U").toUpperCase();
@@ -483,13 +493,26 @@ export function ProfilePopover({
   return (
     <>
     <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} />
+    <HipaaConsentModal
+      open={hipaaOpen}
+      onOpenChange={setHipaaOpen}
+      onSigned={() => {
+        // Reflect in personalInfo so the panel's "Signed on" chip + date
+        // appear without waiting for a full profile refetch. Subsequent
+        // loadProfileDetails calls will pick up the real server value.
+        const now = new Date().toISOString();
+        if (personalInfo) {
+          setPersonalInfo({ ...personalInfo, hipaa_consent_signed_at: now });
+        }
+      }}
+    />
     <PhotoCropModal
       open={!!cropImageSrc}
       imageSrc={cropImageSrc}
       onCancel={closeCropModal}
       onCrop={handleCroppedPhoto}
     />
-    <Dialog open={open} onOpenChange={setOpen} modal={externalOpen ? false : undefined}>
+    <Dialog open={open} onOpenChange={setOpen} modal={(externalOpen || hipaaOpen || upgradeOpen) ? false : undefined}>
       <DialogTrigger render={children as React.ReactElement}></DialogTrigger>
       <DialogContent
         showCloseButton
@@ -536,6 +559,7 @@ export function ProfilePopover({
               personalInfo={personalInfo}
               onClose={() => setPersonalPanel(null)}
               onUpdated={(updated) => setPersonalInfo(updated)}
+              onOpenHipaa={() => setHipaaOpen(true)}
             />
           )}
           {personalPanel === "health" && !selectedProvider && !selectedVisit && !addingProvider && !editingTodo && (
@@ -961,12 +985,8 @@ export function ProfilePopover({
                                             : day.dots.map((color, di) => (
                                                 <div
                                                   key={di}
-                                                  className="w-[6px] h-[6px] rounded-full"
-                                                  style={{
-                                                    background: day.isFuture ? "transparent" : color,
-                                                    border: day.isFuture ? `1.5px solid ${color}` : "none",
-                                                    opacity: day.isFuture ? 0.8 : 1,
-                                                  }}
+                                                  className="w-[7px] h-[7px] rounded-full ring-1 ring-[#5C1A2A]/40"
+                                                  style={{ background: color }}
                                                 />
                                               ))}
                                         </div>
@@ -1020,12 +1040,8 @@ export function ProfilePopover({
                                         {day.dots.map((color, di) => (
                                           <div
                                             key={di}
-                                            className="w-[6px] h-[6px] rounded-full"
-                                            style={{
-                                              background: day.isFuture ? "transparent" : color,
-                                              border: day.isFuture ? `1.5px solid ${color}` : "none",
-                                              opacity: day.isFuture ? 0.6 : 0.9,
-                                            }}
+                                            className="w-[7px] h-[7px] rounded-full ring-1 ring-[#5C1A2A]/40"
+                                            style={{ background: color }}
                                           />
                                         ))}
                                       </div>
@@ -1106,8 +1122,26 @@ export function ProfilePopover({
                       // Care todos: for today use backend-filtered todayTodos,
                       // for other dates use the shared helper.
                       const todoSource = isViewingToday ? todayTodos : todos;
+                      // Overload control: when the tour (or Elena) has
+                      // populated the game plan with 4+ tactical
+                      // care_plan todos, hide the two profile-completion
+                      // todos that read as chores ("Add your providers
+                      // and visit history", "Fill out your health
+                      // profile"). Keep "Add your insurance" — it's a
+                      // quick, high-value add and unblocks coverage
+                      // checks. Threshold is on care_plan-category
+                      // todos specifically so pure profile-completion
+                      // flows (user did the simple onboarding with no
+                      // tactical picks) still see the full set.
+                      const carePlanTodoCount = todoSource.filter(
+                        (t) => t.category === "care_plan" && t.status !== "dismissed" && t.frequency !== "daily",
+                      ).length;
+                      const hideProfileChores = carePlanTodoCount >= 4;
                       const dayTodos: GamePlanItem[] = todoSource
                         .filter((t) => {
+                          if (hideProfileChores && (t.category === "providers" || t.category === "health_profile")) {
+                            return false;
+                          }
                           if (isViewingToday) {
                             // Backend already filtered to today's items; just exclude dismissed + daily.
                             if (t.status === "dismissed") return false;
@@ -1124,10 +1158,21 @@ export function ProfilePopover({
 
                       const items: GamePlanItem[] = [...dayVisits, ...dayHabits, ...dayTodos];
 
-                      // Sort: visits first, then by sort order (don't reorder on completion)
+                      // Sort: visits first, then care-plan todos (from
+                      // onboarding — condition-specific labs, exams,
+                      // screenings), then habits, then profile-completion
+                      // todos ("Add your insurance", "Add a doctor") at
+                      // the bottom. Within each group, respect sort_order.
+                      const todoTier = (item: GamePlanItem): number => {
+                        if (item.type !== "todo") return item.type === "habit" ? 1 : 0;
+                        return item.todo.category === "care_plan" ? 0 : 2;
+                      };
                       items.sort((a, b) => {
                         if (a.type === "visit" && b.type !== "visit") return -1;
                         if (a.type !== "visit" && b.type === "visit") return 1;
+                        const tierA = todoTier(a);
+                        const tierB = todoTier(b);
+                        if (tierA !== tierB) return tierA - tierB;
                         return a.sortOrder - b.sortOrder;
                       });
 
@@ -1195,18 +1240,18 @@ export function ProfilePopover({
                                 {i > 0 && (
                                   <div className="h-px mx-[14px]" style={{ background: "rgba(92,26,42,0.2)" }} />
                                 )}
-                                <div className="flex items-center gap-3 py-[10px]">
-                                  {/* Checkbox */}
+                                <div className="flex items-center gap-3 max-md:gap-2 py-[10px]">
+                                  {/* Checkbox — smaller on mobile to leave more room for the title */}
                                   <button
                                     onClick={() => isHabit ? toggleHabit(item.id) : toggleTodo(item.todo.id)}
-                                    className="w-8 h-8 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors duration-200"
+                                    className="w-8 h-8 max-md:w-[22px] max-md:h-[22px] rounded-full border-2 max-md:border flex-shrink-0 flex items-center justify-center transition-colors duration-200"
                                     style={{
                                       borderColor: completed ? "#5C1A2A" : "#7A3040",
                                       background: completed ? "#5C1A2A" : "transparent",
                                     }}
                                   >
                                     {completed && (
-                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                      <svg className="w-4 h-4 max-md:w-3 max-md:h-3" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                         <polyline points="20 6 9 17 4 12" />
                                       </svg>
                                     )}
@@ -1218,7 +1263,7 @@ export function ProfilePopover({
                                     onClick={!isHabit ? () => setEditingTodo({ mode: "edit", todo: item.todo }) : undefined}
                                   >
                                     <div
-                                      className="text-[15px] font-semibold transition-all duration-200 truncate"
+                                      className="text-[15px] max-md:text-[14px] font-semibold transition-all duration-200 truncate"
                                       style={{
                                         color: completed ? "#7A3040" : "#5C1A2A",
                                         textDecoration: completed ? "line-through" : "none",
@@ -1227,18 +1272,18 @@ export function ProfilePopover({
                                       {title}
                                     </div>
                                     {(subtitle || dueTime) && (
-                                      <div className="text-[13px] mt-[1px] truncate" style={{ color: "#7A3040" }}>
+                                      <div className="text-[13px] max-md:text-[12px] mt-[1px] truncate" style={{ color: "#7A3040" }}>
                                         {dueTime && <span>{dueTime.replace(/^0/, "")} · </span>}
                                         {subtitle}
                                       </div>
                                     )}
                                   </button>
 
-                                  {/* Start button (matches mobile game plan) */}
+                                  {/* Start button — shrink on mobile so the title gets more horizontal real estate */}
                                   {!completed && bookMsg && onBookMessage && (
                                     <button
                                       onClick={() => { onBookMessage(bookMsg); setOpen(false); }}
-                                      className="shrink-0 rounded-full px-4 py-[7px] text-[13px] font-semibold text-white transition-colors"
+                                      className="shrink-0 rounded-full px-4 py-[7px] text-[13px] max-md:px-2.5 max-md:py-1 max-md:text-[12px] font-semibold text-white transition-colors"
                                       style={{ background: "#5C1A2A" }}
                                     >
                                       Start
@@ -3225,17 +3270,24 @@ function PersonalDetailsPanel({
   personalInfo,
   onClose,
   onUpdated,
+  onOpenHipaa,
 }: {
   profileId: string | null;
   personalInfo: PersonalInfo | null;
   onClose: () => void;
   onUpdated: (info: PersonalInfo) => void;
+  // Hoisted up to ProfilePopover so the HipaaConsentModal renders
+  // OUTSIDE the popover's Dialog (sibling, not nested). Radix nested
+  // dialogs with modal={true} on the parent block the child's open,
+  // so rendering the modal inside this panel would trap it invisibly.
+  onOpenHipaa: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<PersonalInfo>(personalInfo || {
     first_name: "", last_name: "", preferred_name: "", email: "",
     date_of_birth: "", gender: "", phone_number: "",
     home_address: "", city: "", state: "", zip_code: "",
+    hipaa_consent_signed_at: null,
   });
   const [saving, setSaving] = useState(false);
 
@@ -3286,28 +3338,92 @@ function PersonalDetailsPanel({
           </div>
           <p className="text-[18px] font-extrabold text-[#0F1B3D]">Personal Details</p>
         </div>
-        <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
-          {fields.map(([label, key], i) => {
-            let val = form[key];
-            if (key === "date_of_birth" && val) {
-              try { val = new Date(val + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }); } catch {}
-            }
-            if (!val) return null;
+        {(() => {
+          // Check whether any displayable field has content. personalInfo
+          // can be a non-null object with all empty strings (fresh dependent
+          // profile the caregiver just created) — in that case the
+          // !personalInfo guard doesn't catch it and every row gets filtered
+          // by the !val check, leaving a blank card with no obvious action.
+          const anyFilled = fields.some(([, key]) => {
+            const v = (form[key] || "") as string;
+            return v.trim().length > 0;
+          });
+          if (!anyFilled) {
             return (
-              <React.Fragment key={key}>
-                {i > 0 && <div className="h-px bg-[#E5E5EA] mx-4" />}
-                <div className="flex items-center justify-between px-4 py-3.5">
-                  <span className="text-[14px] text-[#8E8E93]">{label}</span>
-                  <span className="text-[14px] font-medium text-[#0F1B3D] text-right max-w-[60%] truncate">{val}</span>
-                </div>
-              </React.Fragment>
+              <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] px-5 py-8 text-center">
+                <p className="text-[15px] font-semibold text-[#0F1B3D] mb-1">No personal details yet</p>
+                <p className="text-[13px] text-[#8E8E93] mb-4 leading-snug">
+                  Add a few basics so Elena can call providers on their behalf.
+                </p>
+                <button
+                  onClick={() => setEditing(true)}
+                  className="rounded-full bg-[#0F1B3D] px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-[#0F1B3D]/90 transition-colors"
+                >
+                  Fill in details
+                </button>
+              </div>
             );
-          }).filter(Boolean)}
-          {!personalInfo && (
-            <div className="px-3.5 py-10 text-center">
-              <p className="text-sm text-[#8E8E93]">No personal details yet.</p>
+          }
+          return (
+            <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
+              {fields.map(([label, key], i) => {
+                let val = (form[key] || "") as string;
+                if (key === "date_of_birth" && val) {
+                  try { val = new Date(val + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }); } catch {}
+                }
+                if (!val) return null;
+                return (
+                  <React.Fragment key={key}>
+                    {i > 0 && <div className="h-px bg-[#E5E5EA] mx-4" />}
+                    <div className="flex items-center justify-between px-4 py-3.5">
+                      <span className="text-[14px] text-[#8E8E93]">{label}</span>
+                      <span className="text-[14px] font-medium text-[#0F1B3D] text-right max-w-[60%] truncate">{val}</span>
+                    </div>
+                  </React.Fragment>
+                );
+              }).filter(Boolean)}
             </div>
-          )}
+          );
+        })()}
+
+        {/* HIPAA authorization — Elena needs a signed form to call
+            providers and insurers on the user's behalf. Shown alongside
+            Personal Details so users can re-open and sign at any time,
+            including after the "Open Authorization Form" button in chat
+            is missed or dismissed. */}
+        <div className="mt-4 flex items-center gap-3 mb-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0F1B3D]/[0.06]">
+            <ShieldCheck className="h-5 w-5 text-[#0F1B3D]" />
+          </div>
+          <p className="text-[18px] font-extrabold text-[#0F1B3D]">Authorization</p>
+        </div>
+        <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
+          <div className="px-4 py-3.5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-[14px] font-medium text-[#0F1B3D]">HIPAA authorization</p>
+                  {form.hipaa_consent_signed_at && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#34C759]/12 px-2 py-0.5 text-[11px] font-semibold text-[#248A3D]">
+                      <Check className="h-3 w-3" strokeWidth={3} />
+                      Signed
+                    </span>
+                  )}
+                </div>
+                <p className="text-[12px] text-[#8E8E93] mt-0.5 leading-snug">
+                  {form.hipaa_consent_signed_at
+                    ? `Signed on ${(() => { try { return new Date(form.hipaa_consent_signed_at!).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }); } catch { return "file"; } })()}`
+                    : "Required for Elena to call providers and insurers for you."}
+                </p>
+              </div>
+              <button
+                onClick={onOpenHipaa}
+                className="shrink-0 rounded-full bg-[#0F1B3D] px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#0F1B3D]/90 transition-colors"
+              >
+                {form.hipaa_consent_signed_at ? "Re-sign" : "Sign now"}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -3320,22 +3436,32 @@ function PersonalDetailsPanel({
       </button>
       <h3 className="text-[20px] font-extrabold text-[#0F1B3D] mb-5">Edit Personal Details</h3>
       <div className="space-y-4">
-        {[
-          ["First Name", "first_name", "text"] as const,
-          ["Last Name", "last_name", "text"] as const,
-          ["Preferred Name", "preferred_name", "text"] as const,
-          ["Email", "email", "email"] as const,
-          ["Date of Birth", "date_of_birth", "date"] as const,
-          ["Phone", "phone_number", "tel"] as const,
-          ["Address", "home_address", "text"] as const,
-          ["City", "city", "text"] as const,
-          ["State", "state", "text"] as const,
-          ["Zip Code", "zip_code", "text"] as const,
-        ].map(([label, key, type]) => (
+        {([
+          // [label, form-key, input-type, autoComplete token]
+          // autoComplete values follow the WHATWG spec so browser + OS
+          // password-manager autofill (Safari Keychain, Chrome Autofill,
+          // 1Password) can offer saved values on focus.
+          ["First Name", "first_name", "text", "given-name"] as const,
+          ["Last Name", "last_name", "text", "family-name"] as const,
+          ["Preferred Name", "preferred_name", "text", "nickname"] as const,
+          ["Email", "email", "email", "email"] as const,
+          ["Date of Birth", "date_of_birth", "date", "bday"] as const,
+          ["Phone", "phone_number", "tel", "tel"] as const,
+          ["Address", "home_address", "text", "street-address"] as const,
+          ["City", "city", "text", "address-level2"] as const,
+          ["State", "state", "text", "address-level1"] as const,
+          ["Zip Code", "zip_code", "text", "postal-code"] as const,
+        ]).map(([label, key, type, ac]) => (
           <div key={key}>
             <label className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">{label}</label>
-            <input type={type} value={form[key]} onChange={(e) => set(key, e.target.value)}
-              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30" />
+            <input
+              type={type}
+              name={ac}
+              autoComplete={ac}
+              value={form[key] || ""}
+              onChange={(e) => set(key, e.target.value)}
+              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+            />
           </div>
         ))}
         <div>
