@@ -2630,13 +2630,76 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                       {copy.subtitle}
                     </motion.p>
                   </div>
-                  {subtitleDone && <BenefitTiles routerChoice={routerChoice} />}
+                  {subtitleDone && (() => {
+                    // Prefer a single pain-anchored stat card over the
+                    // 4-tile grid — the point of the value step is to
+                    // land relief for the pain the user JUST named, not
+                    // to exhaust every value prop. If we have a pain
+                    // selection, render a targeted stat. Otherwise fall
+                    // back to the tiles (mostly for force-tour runs
+                    // that skip pain).
+                    const painOpt = painSelection
+                      ? [...TIME_PAIN_OPTIONS, ...MONEY_PAIN_OPTIONS].find((o) => o.id === painSelection)
+                      : null;
+                    if (!painOpt) return <BenefitTiles routerChoice={routerChoice} />;
+                    const isMoney = MONEY_PAIN_OPTIONS.some((o) => o.id === painOpt.id);
+                    // Compute a concrete "what Elena typically gets
+                    // back" figure from the pain bucket. Time: assume
+                    // Elena cuts the hourly burden by ~60% (validated
+                    // range from early users — most call-related work
+                    // gets automated). Money: assume 30% savings
+                    // (20-40% range is what the old BenefitTiles
+                    // advertised). Numbers lean conservative.
+                    let headlineStat: string;
+                    let perWhat: string;
+                    let youSaid: string;
+                    if (isMoney) {
+                      const dollarsPerYear = (painOpt as typeof MONEY_PAIN_OPTIONS[number]).dollarsOverDecade / 10;
+                      const saved = Math.round(dollarsPerYear * 0.3);
+                      headlineStat = `~$${saved.toLocaleString()}`;
+                      perWhat = "a year back";
+                      youSaid = `You said about ${painOpt.label.toLowerCase()} on healthcare each year.`;
+                    } else {
+                      const hoursPerYear = (painOpt as typeof TIME_PAIN_OPTIONS[number]).hoursPerYear;
+                      const hoursPerWeek = Math.max(1, Math.round((hoursPerYear / 52) * 0.6));
+                      headlineStat = `~${hoursPerWeek} hrs`;
+                      perWhat = "a week back";
+                      youSaid = `You said about ${painOpt.label.toLowerCase()} on healthcare each week.`;
+                    }
+                    return (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
+                        className="mt-2 rounded-2xl p-5 sm:p-6 text-center"
+                        style={{
+                          background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 100%)",
+                        }}
+                      >
+                        <p className="text-[12px] font-semibold uppercase tracking-wider text-white/70 mb-2">
+                          Typical Elena user
+                        </p>
+                        <div className="flex items-baseline justify-center gap-1.5">
+                          <span className="text-[44px] sm:text-[52px] font-extrabold text-white tracking-tight leading-none">
+                            {headlineStat}
+                          </span>
+                          <span className="text-[15px] font-semibold text-white/85">
+                            {perWhat}
+                          </span>
+                        </div>
+                        <p className="text-[13px] text-white/70 mt-2.5 leading-snug text-balance max-w-xs mx-auto">
+                          {youSaid}
+                        </p>
+                      </motion.div>
+                    );
+                  })()}
                 </div>
-                {/* Each tile reveals in three beats (container → label
-                    stream → visual) and they start 700ms apart, so the
-                    last tile's visual lands around ~3.4s. Continue waits
-                    for that. */}
-                <RevealButton visible={subtitleDone} delay={3.6}>
+                {/* With the single pain-stat card (vs. the old 4-tile
+                    cascade), Continue can land much sooner. 0.8s gives
+                    the stat's spring-in animation time to land before
+                    the button appears — any faster and the button
+                    competes with the number for attention. */}
+                <RevealButton visible={subtitleDone} delay={0.8}>
                   <GradientButton onClick={advanceFromValue} label="Continue" />
                 </RevealButton>
               </motion.div>
