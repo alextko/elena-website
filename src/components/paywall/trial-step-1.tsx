@@ -1,6 +1,7 @@
 "use client";
 
 import { TrialStepShell } from "./trial-step-shell";
+import { PHONE_SCREEN_DATA_URL } from "./phone-screen-data";
 
 interface TrialStep1Props {
   open: boolean;
@@ -142,12 +143,15 @@ export function TrialStep1({ open, onOpenChange, onContinue }: TrialStep1Props) 
             <div className="btn-vol-down" />
             <div className="btn-power" />
             <div className="device-screen">
+              {/* Inlined as a base64 data URL (see phone-screen-data.ts)
+                  so it paints synchronously with the component — no network
+                  request, no cache timing, no decode race with Dialog
+                  transition animations. Adds ~55KB to the bundle; acceptable
+                  cost for a zero-flash paywall-critical asset. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/images/IMG_0306.PNG"
+                src={PHONE_SCREEN_DATA_URL}
                 alt="Elena — Game plan"
-                loading="eager"
-                fetchPriority="high"
                 decoding="sync"
               />
             </div>
