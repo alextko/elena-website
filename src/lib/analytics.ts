@@ -64,7 +64,17 @@ export type AnalyticsEvent =
   | "Web Tour Data Added"
   | "Web Tour Data Skipped"
   // Paywall
-  | "Soft Paywall Triggered";
+  | "Soft Paywall Triggered"
+  // Trial Paywall (post-onboarding 4-screen flow + exit intent)
+  | "Paywall Screen Viewed"
+  | "Paywall Continue Clicked"
+  | "Paywall Back Clicked"
+  | "Paywall Plan Selected"
+  | "Paywall Trial Started"
+  | "Paywall Maybe Later Clicked"
+  | "Paywall Exit Offer Shown"
+  | "Paywall Exit Offer Accepted"
+  | "Paywall Exit Offer Dismissed";
 
 let initialized = false;
 let disabled = false;
@@ -97,6 +107,12 @@ function init() {
 
 export function track(event: AnalyticsEvent, properties?: Record<string, unknown>) {
   init();
+  // Test-only spy hook — Playwright can set window.__analytics_spy before
+  // page load to capture every track() call without needing real Mixpanel.
+  if (typeof window !== "undefined") {
+    const spy = (window as unknown as { __analytics_spy?: (ev: string, props?: Record<string, unknown>) => void }).__analytics_spy;
+    if (spy) spy(event, properties);
+  }
   if (disabled) return;
   console.log(`[mp] track: ${event}`, properties || "", `distinct_id=${mixpanel.get_distinct_id?.() || "?"}`);
   mixpanel.track(event, properties);

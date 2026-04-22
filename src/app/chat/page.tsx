@@ -12,6 +12,7 @@ import { ChatArea } from "@/components/chat-area";
 import { ChatErrorBoundary } from "@/components/error-boundary";
 import { WebOnboardingTour } from "@/components/web-onboarding-tour";
 import { UpgradeModal } from "@/components/upgrade-modal";
+import { TrialFlow } from "@/components/paywall/trial-flow";
 import { useAppCta } from "@/lib/app-cta-context";
 import type { ChatSessionItem } from "@/lib/types";
 import { trackSubscription, trackStartTrial, trackActivation } from "@/lib/tracking-events";
@@ -343,6 +344,9 @@ function ChatPageInner() {
   const [tourPopoverOpen, setTourPopoverOpen] = useState(false);
   const [tourPopoverShowSwitcher, setTourPopoverShowSwitcher] = useState(false);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  // Tour-end paywall: launches the 4-screen trial flow (Cal-AI-style). Replaces
+  // the legacy upgrade-modal route for the post-onboarding entry point.
+  const [tourTrialStep, setTourTrialStep] = useState<1 | 2 | 3 | null>(null);
   const [tourPopoverTab, setTourPopoverTab] = useState<"health" | "visits" | "insurance">("health");
 
   // Tour handles onboarding end-to-end now — profile form (name/DOB/zip) is a
@@ -425,10 +429,11 @@ function ChatPageInner() {
   return (
     <div className="flex h-dvh overflow-hidden relative">
       <UpgradeModal open={upgradeModalOpen} onOpenChange={setUpgradeModalOpen} reason="soft" />
+      <TrialFlow step={tourTrialStep} onStepChange={setTourTrialStep} reason="post_onboarding" />
       {showTour && (
         <WebOnboardingTour
           onComplete={() => { setShowTour(false); setTourPopoverOpen(false); }}
-          onShowPaywall={() => setUpgradeModalOpen(true)}
+          onShowPaywall={() => setTourTrialStep(1)}
           onProfilePopover={(open, tab, showSwitcher) => { setTourPopoverOpen(open); if (tab) setTourPopoverTab(tab); setTourPopoverShowSwitcher(!!showSwitcher); }}
           onSidebar={(open) => setSidebarOpen(open)}
           onSeedQuery={(msg) => {

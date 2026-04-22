@@ -12,6 +12,7 @@ import { usePollChat } from "@/hooks/usePollChat";
 import { useBookingPoll } from "@/hooks/useBookingPoll";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import { ReviewsModal } from "@/components/reviews-modal";
+import { TrialFlow } from "@/components/paywall/trial-flow";
 import { HipaaConsentModal } from "@/components/hipaa-consent-modal";
 import { FeedbackModal } from "@/components/feedback-modal";
 import {
@@ -215,11 +216,13 @@ export function ChatArea({
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState<"upgrade_required" | "limit_reached" | "feature_blocked" | "document_limit" | "soft">("document_limit");
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>(undefined);
-  // Post-seed tour paywall: the review modal precedes the upgrade
-  // modal and fires on the first real value-moment Elena delivers
-  // (booking_id, bill_analysis, appeal_script, etc., or a successful
-  // todo creation). One-shot: consumes the sessionStorage gate flag.
+  // Post-seed tour paywall: the review modal precedes the trial flow
+  // (4-screen Cal-AI-style funnel) and fires on the first real value-moment
+  // Elena delivers (booking_id, bill_analysis, appeal_script, etc., or a
+  // successful todo creation). One-shot: consumes the sessionStorage gate flag.
   const [reviewsOpen, setReviewsOpen] = useState(false);
+  // TrialFlow step state. null = closed. Reviews → 1 → 2 → 3 → Stripe checkout.
+  const [trialStep, setTrialStep] = useState<1 | 2 | 3 | null>(null);
   const [hipaaConsentOpen, setHipaaConsentOpen] = useState(false);
   // Monotonic marker that bumps each time HIPAA is signed. Passed to every
   // FormRequestCard so any form with a hipaa_consent field can detect the
@@ -1064,7 +1067,6 @@ export function ChatArea({
           userTypedCountRef.current === 2
           && tourGateFlag
           && isFreeTier
-          && message.length >= 10
         ) {
           analytics.track("Tour Post-Seed Paywall Hit" as any, {
             trigger: "second_message",
@@ -1415,8 +1417,13 @@ export function ChatArea({
         onOpenChange={setReviewsOpen}
         onContinue={() => {
           setReviewsOpen(false);
-          setUpgradeOpen(true);
+          setTrialStep(1);
         }}
+      />
+      <TrialFlow
+        step={trialStep}
+        onStepChange={setTrialStep}
+        reason="post_onboarding"
       />
       <HipaaConsentModal
         open={hipaaConsentOpen}
