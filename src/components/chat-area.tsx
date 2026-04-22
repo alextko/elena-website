@@ -607,6 +607,43 @@ export function ChatArea({
       flushPendingSeedRef.current?.("fetchWelcome-skip");
       return;
     }
+    // Plan A pre-warm: the /onboard flush fires /chat/welcome before
+    // redirecting here, stashing the session_id + welcome payload in
+    // sessionStorage. Reading it here skips an entire authenticated
+    // round-trip and lets the seed auto-send fire immediately on
+    // mount instead of waiting for /chat/welcome.
+    if (typeof window !== "undefined") {
+      try {
+        const prewarmRaw = sessionStorage.getItem("elena_prewarmed_welcome");
+        if (prewarmRaw) {
+          const prewarm = JSON.parse(prewarmRaw) as {
+            session_id?: string;
+            heading?: string;
+            message?: string;
+            suggestions?: string[];
+          };
+          if (prewarm.session_id) {
+            console.log("[chat-area] using pre-warmed welcome session:", prewarm.session_id);
+            sessionIdRef.current = prewarm.session_id;
+            if (!silent) {
+              setWelcomeHeading(prewarm.heading || null);
+              setWelcomeMessage(prewarm.message || null);
+              setSuggestions(prewarm.suggestions || []);
+            }
+            setSessionReady(true);
+            welcomeInFlightRef.current = false;
+            // Notify sidebar of the session so it appears in the list.
+            if (!hasCreatedSessionRef.current) {
+              hasCreatedSessionRef.current = true;
+              onSessionCreated(prewarm.session_id, silent ? "New conversation" : undefined);
+            }
+            try { sessionStorage.removeItem("elena_prewarmed_welcome"); } catch {}
+            queueMicrotask(() => flushPendingSeedRef.current("prewarm"));
+            return;
+          }
+        }
+      } catch {}
+    }
     // In-flight guard. Released on BOTH success and failure below so
     // one failed fetch never permanently locks the component out.
     if (welcomeInFlightRef.current) {

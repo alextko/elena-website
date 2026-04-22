@@ -194,8 +194,19 @@ export interface FlushResult {
   profile_saved: boolean;
   dependents_created: number;
   primary_dependent_id: string | null;
+  prewarmed_session_id: string | null;
   errors: string[];
 }
+
+/** Progress stages the flush reports as it runs. Consumers show these
+ *  as labels on a loading screen so the user sees something happening. */
+export type FlushStage =
+  | "saving_profile"
+  | "creating_family"
+  | "switching_profile"
+  | "saving_health_data"
+  | "loading_chat"
+  | "done";
 
 export async function flushTourBuffer(opts: {
   switchProfile: (id: string) => Promise<void> | void;
@@ -210,11 +221,15 @@ export async function flushTourBuffer(opts: {
     date_of_birth?: string;
     home_address?: string;
   }) => Promise<void>;
+  /** Called as each flush stage starts so the loading screen can show
+   *  a running label + progress bar. */
+  onProgress?: (stage: FlushStage, percent: number) => void;
 }): Promise<FlushResult> {
   const result: FlushResult = {
     profile_saved: false,
     dependents_created: 0,
     primary_dependent_id: null,
+    prewarmed_session_id: null,
     errors: [],
   };
   const buf = readTourBuffer();
@@ -225,88 +240,91 @@ export async function flushTourBuffer(opts: {
   }
 
   const { apiFetch } = await import("./apiFetch");
+  const report = (stage: FlushStage, percent: number) => {
+    try { opts.onProgress?.(stage, percent); } catch {}
+  };
 
-  // 1) Primary profile (user_profiles row). Go through completeOnboarding
-  //    rather than raw apiFetch so auth-context state updates (profileId,
-  //    profileData, needsOnboarding=false, onboardingJustCompleted=true).
-  //    /chat reads these to decide whether to re-mount the tour; without
-  //    the state flip it would loop the tour on every visit.
-  //    home_address on completeOnboarding maps to zip_code in the DB
-  //    (legacy naming — see auth-context.tsx:825).
-  if (buf.profile) {
-    try {
-      await opts.completeOnboarding({
-        first_name: buf.profile.first_name,
-        last_name: buf.profile.last_name,
-        date_of_birth: buf.profile.date_of_birth,
-        home_address: buf.profile.zip_code || buf.profile.home_address,
-      });
-      result.profile_saved = true;
-    } catch (e) {
-      result.errors.push(`completeOnboarding threw: ${(e as Error).message}`);
-    }
-  }
-
-  // 2) Dependents. Primary dependent goes first so we can switchProfile
-  //    to its id before creating silent ones (the silent-creation flow
-  //    in the live tour uses fire-and-forget; we preserve that behavior
-  //    but with await so errors get captured).
-  const primary = buf.dependents.find((d) => d.is_primary_dependent);
-  const secondaries = buf.dependents.filter((d) => !d.is_primary_dependent);
-  const ordered = primary ? [primary, ...secondaries] : secondaries;
-  for (const dep of ordered) {
-    try {
-      const body: Record<string, string> = {
-        first_name: dep.first_name,
-        last_name: dep.last_name || "",
-        relationship: dep.relationship,
-      };
-      if (dep.label) body.label = dep.label;
-      if (dep.date_of_birth) body.date_of_birth = dep.date_of_birth;
-      if (dep.zip_code) body.zip_code = dep.zip_code;
-      const res = await apiFetch("/profiles", {
-        method: "POST",
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        result.errors.push(`dependent ${dep.first_name} POST ${res.status}`);
-        continue;
-      }
-      const created = await res.json();
-      const newId: string | null = created?.id || created?.profile_id || null;
-      if (newId) {
-        result.dependents_created++;
-        if (dep.is_primary_dependent) {
-          result.primary_dependent_id = newId;
+  // Stage 1 — primary profile + dependents in parallel. Both hit
+  // different DB tables and don't depend on each other's output, so
+  // racing them cuts ~300-600ms on the typical caregiver flow.
+  report("saving_profile", 10);
+  const dependentTask = (async () => {
+    // Primary dependent first in the response order so we can pick
+    // its id out synchronously after Promise.all.
+    const primary = buf.dependents.find((d) => d.is_primary_dependent);
+    const secondaries = buf.dependents.filter((d) => !d.is_primary_dependent);
+    const ordered = primary ? [primary, ...secondaries] : secondaries;
+    const responses = await Promise.all(
+      ordered.map(async (dep) => {
+        try {
+          const body: Record<string, string> = {
+            first_name: dep.first_name,
+            last_name: dep.last_name || "",
+            relationship: dep.relationship,
+          };
+          if (dep.label) body.label = dep.label;
+          if (dep.date_of_birth) body.date_of_birth = dep.date_of_birth;
+          if (dep.zip_code) body.zip_code = dep.zip_code;
+          const res = await apiFetch("/profiles", {
+            method: "POST",
+            body: JSON.stringify(body),
+          });
+          if (!res.ok) {
+            result.errors.push(`dependent ${dep.first_name} POST ${res.status}`);
+            return null;
+          }
+          const created = await res.json();
+          const newId: string | null = created?.id || created?.profile_id || null;
+          if (newId) {
+            result.dependents_created++;
+            if (dep.is_primary_dependent) result.primary_dependent_id = newId;
+          }
+          return newId;
+        } catch (e) {
+          result.errors.push(`dependent ${dep.first_name} threw: ${(e as Error).message}`);
+          return null;
         }
-      }
-    } catch (e) {
-      result.errors.push(`dependent ${dep.first_name} threw: ${(e as Error).message}`);
-    }
-  }
+      }),
+    );
+    return responses;
+  })();
 
-  // 3) Refresh profiles so the sidebar sees the new ones, then switch
-  //    active profile to the primary dependent. Downstream tour state
-  //    (situation, meds, care plan) all gets associated with this
-  //    dependent when the chat loads — same semantics as the authed
-  //    tour path.
+  const primaryProfileTask = buf.profile
+    ? (async () => {
+        try {
+          await opts.completeOnboarding({
+            first_name: buf.profile!.first_name,
+            last_name: buf.profile!.last_name,
+            date_of_birth: buf.profile!.date_of_birth,
+            home_address: buf.profile!.zip_code || buf.profile!.home_address,
+          });
+          result.profile_saved = true;
+        } catch (e) {
+          result.errors.push(`completeOnboarding threw: ${(e as Error).message}`);
+        }
+      })()
+    : Promise.resolve();
+
+  await Promise.all([primaryProfileTask, dependentTask]);
+  report("creating_family", 40);
+
+  // Stage 2 — refresh profiles + switch to primary dependent (if any).
+  // Both are local-state operations or upserts; fast.
   try { await opts.refreshProfiles(); } catch {}
   if (result.primary_dependent_id) {
     try { await opts.switchProfile(result.primary_dependent_id); } catch (e) {
       result.errors.push(`switchProfile threw: ${(e as Error).message}`);
     }
   }
+  report("switching_profile", 55);
 
-  // 4) Health data writes — condition, medications, care-plan todos,
-  //    action todos. These parity with the writes advanceFromElenaPlan
-  //    does in the authed tour path. Target profile: the primary
-  //    dependent if one exists (since the tour's situation/meds/care
-  //    plan was about them), else the primary user.
-  //
-  //    Get the active profile_id via /auth/me. A fresh profile POST
-  //    created it, but we haven't refetched yet — going through /auth/me
-  //    reads active_profile which switchProfile just updated (or the
-  //    freshly-created primary profile if no dependent).
+  // Stage 3 — resolve activeProfileId, then fire health-data writes
+  // AND chat welcome pre-warm in parallel. The welcome pre-warm is the
+  // big latency win: under the old flow chat-area fetched welcome only
+  // after /chat mounted, producing a visible blank while the seed
+  // message waited. Kicking welcome off during the flush means /chat
+  // lands on an already-provisioned session and the seed fires
+  // immediately.
   let activeProfileId: string | null = null;
   try {
     const meRes = await apiFetch("/auth/me");
@@ -318,66 +336,114 @@ export async function flushTourBuffer(opts: {
     result.errors.push(`/auth/me threw: ${(e as Error).message}`);
   }
 
+  report("saving_health_data", 65);
+  const healthAndWelcomeTasks: Promise<unknown>[] = [];
+
   if (activeProfileId) {
-    // Conditions.
+    // Conditions — now parallel (was sequential in for-loop previously).
     for (const c of buf.conditions) {
-      try {
-        const body: Record<string, string> = { name: c.name };
-        if (c.status) body.status = c.status;
-        if (c.diagnosed_date) body.diagnosed_date = c.diagnosed_date;
-        if (c.notes) body.notes = c.notes;
-        const res = await apiFetch(`/profile/${activeProfileId}/conditions/add`, {
-          method: "POST",
-          body: JSON.stringify(body),
-        });
-        if (!res.ok) result.errors.push(`condition ${c.name} POST ${res.status}`);
-      } catch (e) {
-        result.errors.push(`condition ${c.name} threw: ${(e as Error).message}`);
-      }
+      healthAndWelcomeTasks.push(
+        (async () => {
+          try {
+            const body: Record<string, string> = { name: c.name };
+            if (c.status) body.status = c.status;
+            if (c.diagnosed_date) body.diagnosed_date = c.diagnosed_date;
+            if (c.notes) body.notes = c.notes;
+            const res = await apiFetch(`/profile/${activeProfileId}/conditions/add`, {
+              method: "POST",
+              body: JSON.stringify(body),
+            });
+            if (!res.ok) result.errors.push(`condition ${c.name} POST ${res.status}`);
+          } catch (e) {
+            result.errors.push(`condition ${c.name} threw: ${(e as Error).message}`);
+          }
+        })(),
+      );
     }
-    // Medications — fire in parallel like the authed path does.
-    await Promise.all(
-      buf.medications.map(async (m) => {
-        try {
-          const body: Record<string, string> = { name: m.name };
-          if (m.indication) body.indication = m.indication;
-          if (m.dosage_strength) body.dosage_strength = m.dosage_strength;
-          if (m.frequency) body.frequency = m.frequency;
-          const res = await apiFetch(`/profile/${activeProfileId}/medications/add`, {
-            method: "POST",
-            body: JSON.stringify(body),
-          });
-          if (!res.ok) result.errors.push(`med ${m.name} POST ${res.status}`);
-        } catch (e) {
-          result.errors.push(`med ${m.name} threw: ${(e as Error).message}`);
-        }
-      }),
-    );
-    // Todos — parallel.
-    await Promise.all(
-      buf.todos.map(async (t) => {
-        try {
-          const body: Record<string, string> = { title: t.title };
-          if (t.subtitle) body.subtitle = t.subtitle;
-          if (t.category) body.category = t.category;
-          if (t.frequency) body.frequency = t.frequency;
-          if (t.due_date) body.due_date = t.due_date;
-          if (t.book_message) body.book_message = t.book_message;
-          const res = await apiFetch("/todos", {
-            method: "POST",
-            body: JSON.stringify(body),
-          });
-          if (!res.ok) result.errors.push(`todo ${t.title} POST ${res.status}`);
-        } catch (e) {
-          result.errors.push(`todo ${t.title} threw: ${(e as Error).message}`);
-        }
-      }),
-    );
+    for (const m of buf.medications) {
+      healthAndWelcomeTasks.push(
+        (async () => {
+          try {
+            const body: Record<string, string> = { name: m.name };
+            if (m.indication) body.indication = m.indication;
+            if (m.dosage_strength) body.dosage_strength = m.dosage_strength;
+            if (m.frequency) body.frequency = m.frequency;
+            const res = await apiFetch(`/profile/${activeProfileId}/medications/add`, {
+              method: "POST",
+              body: JSON.stringify(body),
+            });
+            if (!res.ok) result.errors.push(`med ${m.name} POST ${res.status}`);
+          } catch (e) {
+            result.errors.push(`med ${m.name} threw: ${(e as Error).message}`);
+          }
+        })(),
+      );
+    }
+    for (const t of buf.todos) {
+      healthAndWelcomeTasks.push(
+        (async () => {
+          try {
+            const body: Record<string, string> = { title: t.title };
+            if (t.subtitle) body.subtitle = t.subtitle;
+            if (t.category) body.category = t.category;
+            if (t.frequency) body.frequency = t.frequency;
+            if (t.due_date) body.due_date = t.due_date;
+            if (t.book_message) body.book_message = t.book_message;
+            const res = await apiFetch("/todos", {
+              method: "POST",
+              body: JSON.stringify(body),
+            });
+            if (!res.ok) result.errors.push(`todo ${t.title} POST ${res.status}`);
+          } catch (e) {
+            result.errors.push(`todo ${t.title} threw: ${(e as Error).message}`);
+          }
+        })(),
+      );
+    }
   } else if (buf.conditions.length > 0 || buf.medications.length > 0 || buf.todos.length > 0) {
     result.errors.push(
       `health_data_skipped: no active_profile_id (conditions=${buf.conditions.length}, meds=${buf.medications.length}, todos=${buf.todos.length})`,
     );
   }
+
+  // Pre-warm chat — fires POST /chat/welcome now, races with health
+  // writes. The returned session_id is stashed in sessionStorage so
+  // /chat picks it up as activeSessionId on mount and skips its own
+  // welcome fetch. Silent=true because the real welcome UI shows in
+  // chat-area; we just want the session to exist + the cached messages
+  // primed.
+  healthAndWelcomeTasks.push(
+    (async () => {
+      try {
+        const res = await apiFetch("/chat/welcome", {
+          method: "POST",
+          body: JSON.stringify({}),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const sid: string | null = data?.session_id || null;
+        if (sid) {
+          result.prewarmed_session_id = sid;
+          try { sessionStorage.setItem("elena_active_session_id", sid); } catch {}
+          // Also seed the welcome-message cache chat-area reads so it
+          // doesn't re-fetch on mount. Key matches chat-area's convention.
+          try {
+            if (data.heading || data.message) {
+              sessionStorage.setItem(
+                "elena_prewarmed_welcome",
+                JSON.stringify({ session_id: sid, heading: data.heading, message: data.message, suggestions: data.suggestions || [] }),
+              );
+            }
+          } catch {}
+        }
+      } catch (e) {
+        result.errors.push(`welcome prewarm threw: ${(e as Error).message}`);
+      }
+    })(),
+  );
+
+  await Promise.all(healthAndWelcomeTasks);
+  report("loading_chat", 90);
 
   // 5) Tour-resume handoff. Tour state was persisted with phase="elena-plan"
   //    when the user clicked Continue (since we short-circuited before
@@ -426,5 +492,6 @@ export async function flushTourBuffer(opts: {
   // + elena_tour_seeded_actions stay (finishTour consumes them at the
   // end of the resumed profile walkthrough).
   clearTourBuffer();
+  report("done", 100);
   return result;
 }

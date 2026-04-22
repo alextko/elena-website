@@ -16,7 +16,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { WebOnboardingTour } from "@/components/web-onboarding-tour";
 import { AuthModal } from "@/components/auth-modal";
-import { flushTourBuffer } from "@/lib/tourBuffer";
+import { OnboardingFlushingScreen } from "@/components/onboarding-flushing-screen";
+import { flushTourBuffer, type FlushStage } from "@/lib/tourBuffer";
 import * as analytics from "@/lib/analytics";
 
 export default function OnboardPage() {
@@ -43,9 +44,11 @@ export default function OnboardPage() {
   // would trigger re-render + effect re-run; ref just sets in place.)
   const flushingRef = useRef(false);
   // Separate state to force a re-render when flush starts — purely for
-  // showing the "Setting things up..." loading overlay. The ref above
-  // is the functional gate; this is the display signal.
+  // showing the branded loading screen. The ref above is the functional
+  // gate; this is the display signal.
   const [flushingVisible, setFlushingVisible] = useState(false);
+  const [flushStage, setFlushStage] = useState<FlushStage>("saving_profile");
+  const [flushPercent, setFlushPercent] = useState(8);
   // Mirror the latest auth functions in refs so the flush effect can
   // depend ONLY on `session` without re-running whenever useAuth
   // recreates its callbacks. Without this, completeOnboarding's
@@ -94,6 +97,10 @@ export default function OnboardPage() {
           switchProfile: switchProfileRef.current,
           refreshProfiles: refreshProfilesRef.current,
           completeOnboarding: completeOnboardingRef.current,
+          onProgress: (stage, percent) => {
+            setFlushStage(stage);
+            setFlushPercent(percent);
+          },
         });
         analytics.track("Tour Buffer Flushed", {
           profile_saved: result.profile_saved,
@@ -125,15 +132,16 @@ export default function OnboardPage() {
 
   return (
     <div className="h-dvh bg-[#F7F6F2]">
-      {/* Loading overlay during flush — stays up from signup success
-          through the redirect to /chat. Without it the user sees the
-          elena-plan card frozen for 1-2s while the flush fires off
-          profile + dependents + conditions + meds + todos POSTs. */}
+      {/* Loading screen during flush — stays up from signup success
+          through the redirect to /chat. Under Plan A the flush runs
+          several authenticated writes in sequence (profile, dependents,
+          conditions, meds, todos, chat welcome pre-warm); without this
+          the user would stare at a frozen elena-plan card for 1-3s.
+          The branded layout + progress bar gives the wait a clear
+          narrative — "we're setting things up FOR YOU" — which reads
+          better than the visual dead-stop of a spinner. */}
       {flushingVisible && (
-        <div className="fixed inset-0 z-[100002] flex flex-col items-center justify-center gap-4 bg-[#F7F6F2]">
-          <div className="h-10 w-10 rounded-full border-2 border-[#0F1B3D]/20 border-t-[#0F1B3D] animate-spin" />
-          <p className="text-[14px] font-medium text-[#0F1B3D]/60">Setting up your account…</p>
-        </div>
+        <OnboardingFlushingScreen stage={flushStage} percent={flushPercent} />
       )}
       <WebOnboardingTour
         onComplete={() => {
