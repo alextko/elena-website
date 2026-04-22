@@ -506,12 +506,15 @@ export async function flushTourBuffer(opts: {
   //    timing is "seed fires on finishTour" — we preserve that.
   if (typeof window !== "undefined") {
     try {
-      const raw = sessionStorage.getItem("elena_tour_state");
+      // Tour state moved to localStorage for cross-tab durability;
+      // fall back to sessionStorage for any in-flight sessions that
+      // still have old keys.
+      const raw = localStorage.getItem("elena_tour_state") || sessionStorage.getItem("elena_tour_state");
       if (raw) {
         const state = JSON.parse(raw);
         state.phase = "joyride";
         state.profileStep = 0;
-        sessionStorage.setItem("elena_tour_state", JSON.stringify(state));
+        localStorage.setItem("elena_tour_state", JSON.stringify(state));
       }
     } catch {}
     // Ensure finishTour (at the end of profile walkthrough) has an

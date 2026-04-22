@@ -698,7 +698,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   }> => {
     if (typeof window === "undefined") return {};
     try {
-      const raw = sessionStorage.getItem("elena_tour_state");
+      const raw = (localStorage.getItem("elena_tour_state") || sessionStorage.getItem("elena_tour_state"));
       if (!raw) return {};
       const s = JSON.parse(raw);
       // Previously we fell back joyride→profile here on the theory that
@@ -986,7 +986,12 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   useEffect(() => {
     if (phase === "done" || phase === "intro") return;
     try {
-      sessionStorage.setItem(
+      // localStorage (not sessionStorage) so the tour survives tab
+      // closures — users expect "pick up where I left off" to work
+      // across browser restarts, not just same-tab refreshes. Cleared
+      // in finishTour/skipTour so no stale state persists past a
+      // completed tour.
+      localStorage.setItem(
         "elena_tour_state",
         JSON.stringify({
           phase,
@@ -1175,6 +1180,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     setFamilyMode("choose");
     setInviteFeedback(null);
     setSuccessOverlay(null);
+    // Safety reset — if an earlier invite attempt left inviteBusy true
+    // (e.g. success overlay fired but network timing out), step change
+    // frees the UI.
+    setInviteBusy(false);
 
     if (profileStep >= PROFILE_STEPS.length - 1) {
       onProfilePopover(false, undefined, false);
@@ -1370,11 +1379,19 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       tour_step: profileStep,
       phase: "started",
     });
+    // Hard timeout so a hung /family/invite doesn't strand the tour on
+    // "Generating link..." indefinitely. 8s is generous — the endpoint
+    // normally responds in <1s. AbortController cancels the request;
+    // the catch below resets inviteBusy + shows the error.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
     try {
       const res = await apiFetch("/family/invite", {
         method: "POST",
         body: JSON.stringify({ invitee_name: "", relationship: "other" }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
       if (!res.ok) throw new Error("Couldn't create invite link");
       const data = await res.json();
       const code = data.invite_code;
@@ -1407,7 +1424,9 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
         detail: feedback,
       });
     } catch (e: any) {
-      setItemError(e?.message || "Something went wrong");
+      clearTimeout(timeoutId);
+      const isAbort = e?.name === "AbortError" || controller.signal.aborted;
+      setItemError(isAbort ? "That took too long. Try again or skip for now." : (e?.message || "Something went wrong"));
       setInviteBusy(false);
       return;
     }
@@ -1439,7 +1458,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     analytics.track("Web Tour Completed" as any);
     localStorage.setItem("elena_web_tour_done", "true");
     try { sessionStorage.removeItem("elena_tour_in_progress"); } catch {}
-    try { sessionStorage.removeItem("elena_tour_state"); } catch {}
+    try { localStorage.removeItem("elena_tour_state"); sessionStorage.removeItem("elena_tour_state"); } catch {}
     // Phase 2 handoff: if the user picked actions on elena-plan, build a
     // first-message and stash it in elena_pending_query. The chat page
     // picks this up on mount and auto-sends it as the user's opener so
@@ -1495,7 +1514,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     analytics.track("Web Tour Skipped" as any);
     localStorage.setItem("elena_web_tour_done", "true");
     try { sessionStorage.removeItem("elena_tour_in_progress"); } catch {}
-    try { sessionStorage.removeItem("elena_tour_state"); } catch {}
+    try { localStorage.removeItem("elena_tour_state"); sessionStorage.removeItem("elena_tour_state"); } catch {}
     onProfilePopover(false, undefined, false);
     if (isMobile.current) onSidebar(false);
     controls.stop();
@@ -1579,16 +1598,18 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     setPhase("value");
   }, [painSelection, lpVariant]);
 
-  // Post-profile routing: condition / medications / money collect
-  // what's going on first via situation. Staying-healthy has no
-  // domain-specific capture and goes straight to elena-plan.
+  // Post-profile routing: every branch now collects a condition via
+  // the situation phase. "Staying organized" was previously a
+  // shortcut to elena-plan, but going straight from "Let's get you
+  // set up" to "Which one do you want me to start on?" reads as a
+  // jarring leap — users need one beat of "what are we working
+  // with?" to calibrate. Situation phase for staying_healthy still
+  // makes sense: they can pick an active condition if they have one,
+  // or type something in, and the elena-plan proposals read more
+  // personally.
   const routeAfterProfile = useCallback(() => {
-    if (routerChoice === "staying_healthy") {
-      setPhase("elena-plan");
-    } else {
-      setPhase("situation");
-    }
-  }, [routerChoice]);
+    setPhase("situation");
+  }, []);
 
   // Create the dependent profile and switch the active profile to it
   // so all downstream data (conditions/medications/todos) saves to
@@ -2799,7 +2820,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 { key: "condition", label: "Managing a condition", icon: HeartPulse },
                 { key: "medications", label: medsLabel, icon: Heart },
                 { key: "money", label: "Saving money", icon: DollarSign },
-                { key: "staying_healthy", label: "Staying on top of it", icon: HelpCircle },
+                { key: "staying_healthy", label: "Staying organized", icon: HelpCircle },
               ];
               return (
                 <motion.div
@@ -3823,7 +3844,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 document.activeElement.blur();
               }
             }}
-            className={`relative rounded-2xl bg-white p-4 sm:p-5 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-[0_-4px_30px_rgba(15,27,61,0.15)] border border-[#E5E5EA] overflow-hidden flex flex-col min-h-[360px] sm:min-h-[420px] max-h-[80vh] ${successOverlay ? "h-[240px] sm:h-[300px]" : ""}`}
+            className={`relative rounded-2xl bg-white p-4 sm:p-5 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-[0_-4px_30px_rgba(15,27,61,0.15)] border border-[#E5E5EA] overflow-hidden flex flex-col max-h-[80vh] ${successOverlay ? "h-[240px] sm:h-[300px]" : ""}`}
           >
             {/* Progress dots — tiny row showing how many profile-walkthrough
                 cards remain. Keeps late-stage dropout in check. */}
@@ -3847,7 +3868,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 "Continue") was visibly morphing under the fading overlay,
                 reading as a flicker during step transitions. */}
             <div className={`flex-1 flex flex-col min-h-0 transition-opacity duration-200 ${successOverlay ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
-            <div className="flex-1 flex flex-col justify-center min-h-0 overflow-y-auto">
+            <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={profileStep}
@@ -3870,42 +3891,48 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   </motion.p>
                 </div>
 
-                {/* Yes / No gate — for provider / visit / insurance
-                    steps we ask first, then only expand the add form
-                    if the user says yes. Keeps each card scannable
-                    (nobody wants to stare at a specialty chip grid if
-                    they just want to move on). "No thanks" calls
-                    handleSkipItem which advances to the next step. */}
-                {showPrompt && headlineDone && stepChoice === "pending" &&
-                  (addKind === "provider" || addKind === "visit" || addKind === "insurance") && (
+                {/* Inline Yes/No chips for provider + visit steps. Yes
+                    expands the add form; No just DESELECTS (doesn't
+                    advance — Continue still goes to next step). Styled
+                    like the specialty chips so they read as "pick one"
+                    rather than "primary action". Insurance skips this
+                    gate entirely — the carrier dropdown below is one
+                    question, not worth a pre-gate. */}
+                {showPrompt && headlineDone &&
+                  (addKind === "provider" || addKind === "visit") && (
                     <motion.div
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, ease: motionEase, delay: 0.15 }}
-                      className="mt-4 flex flex-col gap-2"
+                      className="mt-4 flex items-center justify-between gap-3"
                     >
-                      <p className="text-[14px] font-semibold text-[#0F1B3D] text-center">
+                      <p className="text-[13px] font-semibold text-[#0F1B3D] flex-1 min-w-0">
                         {addKind === "provider"
                           ? (isDependentSetup && managedFirstName ? `Any doctors ${managedFirstName} sees?` : "Have any doctors you like?")
-                          : addKind === "visit"
-                          ? (isDependentSetup && managedFirstName ? `Any recent visits for ${managedFirstName}?` : "Any recent visits to log?")
-                          : (isDependentSetup && managedFirstName ? `Want to add ${managedFirstName}'s insurance?` : "Want to add your insurance?")}
+                          : (isDependentSetup && managedFirstName ? `Any recent visits for ${managedFirstName}?` : "Any recent visits to log?")}
                       </p>
-                      <div className="flex gap-2 mt-1">
+                      <div className="flex gap-1.5 shrink-0">
                         <button
                           type="button"
-                          onClick={() => setStepChoice("yes")}
-                          className="flex-1 py-2.5 rounded-full text-white font-semibold text-[14px] hover:opacity-90 transition-opacity shadow-[0_4px_14px_rgba(15,27,61,0.25)]"
-                          style={{ background: ctaGradient }}
+                          onClick={() => setStepChoice((s) => s === "yes" ? "pending" : "yes")}
+                          className={`px-3 py-1 rounded-full text-[12px] font-medium transition-colors ${
+                            stepChoice === "yes"
+                              ? "bg-[#0F1B3D] text-white"
+                              : "bg-[#0F1B3D]/[0.06] text-[#0F1B3D] hover:bg-[#0F1B3D]/[0.10]"
+                          }`}
                         >
                           Yes
                         </button>
                         <button
                           type="button"
-                          onClick={() => { setStepChoice("no"); handleSkipItem(addKind!); }}
-                          className="flex-1 py-2.5 rounded-full font-semibold text-[14px] text-[#0F1B3D] bg-[#0F1B3D]/[0.06] hover:bg-[#0F1B3D]/[0.10] transition-colors"
+                          onClick={() => setStepChoice((s) => s === "no" ? "pending" : "no")}
+                          className={`px-3 py-1 rounded-full text-[12px] font-medium transition-colors ${
+                            stepChoice === "no"
+                              ? "bg-[#0F1B3D] text-white"
+                              : "bg-[#0F1B3D]/[0.06] text-[#0F1B3D] hover:bg-[#0F1B3D]/[0.10]"
+                          }`}
                         >
-                          No thanks
+                          No
                         </button>
                       </div>
                     </motion.div>
@@ -4077,7 +4104,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     />
                   </div>
                 )}
-                {showPrompt && headlineDone && stepChoice === "yes" && addKind ==="insurance" && (
+                {showPrompt && headlineDone && addKind ==="insurance" && (
                   <div className="mt-3 text-left space-y-2">
                     <p className="text-[13px] font-semibold text-[#0F1B3D]">Who's the carrier?</p>
                     <div className="relative">
