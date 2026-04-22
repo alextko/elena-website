@@ -925,13 +925,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Update UI immediately (optimistic) — don't wait for the network call
     setProfileId(newProfileId);
 
-    const profile = profiles.find((p) => p.id === newProfileId);
+    // Resolve the profile display data from the cached list if we have
+    // it. When this is called immediately after creating a new linked
+    // profile, the `profiles` closure is stale (set before the
+    // refreshProfiles call landed), so `find` returns undefined and
+    // the UI keeps showing the old user's name. Fetch directly from
+    // the backend as a fallback so name + picture update reliably.
+    let profile = profiles.find((p) => p.id === newProfileId);
+    if (!profile) {
+      try {
+        const res = await apiFetch(`/profile/${newProfileId}`);
+        if (res?.ok) {
+          const data = await res.json();
+          profile = {
+            id: data.id || newProfileId,
+            label: data.label || "",
+            relationship: data.relationship || "",
+            first_name: data.first_name || "",
+            last_name: data.last_name || "",
+            is_primary: false,
+            is_linked: true,
+            profile_picture_url: data.profile_picture_url || null,
+            date_of_birth: data.date_of_birth || null,
+            zip_code: data.zip_code || null,
+          };
+        }
+      } catch {
+        // Non-fatal — header will show email prefix until profiles refresh.
+      }
+    }
     if (profile) {
       setProfileData((prev) => ({
-        firstName: profile.first_name,
-        lastName: profile.last_name,
+        firstName: profile!.first_name,
+        lastName: profile!.last_name,
         email: prev?.email || "",
-        profilePictureUrl: profile.profile_picture_url,
+        profilePictureUrl: profile!.profile_picture_url,
       }));
     }
 

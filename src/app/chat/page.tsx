@@ -409,8 +409,18 @@ function ChatPageInner() {
             // directly — localStorage wouldn't work here because the
             // chat page's one-time pending-query pickup has already
             // run, so force-tour users would never see it.
+            //
+            // We deliberately do NOT call setIsNewChat(true) here.
+            // By the time the tour finishes, chat-area has already
+            // established a session (fetchWelcome ran when the active
+            // profile settled). Flipping isNewChat would re-trigger
+            // chat-area's session effect, reset sessionIdRef to null,
+            // and strand the auto-send effect waiting for a session
+            // that never gets re-created in time. The initialQuery
+            // prop change (via pendingQuery) is already in the
+            // auto-send effect's deps, so the seed flows through
+            // without tearing down the live session.
             setPendingQuery(msg);
-            setIsNewChat(true);
             try { localStorage.removeItem("elena_pending_query"); } catch {}
           }}
         />

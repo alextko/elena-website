@@ -36,6 +36,7 @@ import {
   Activity,
   ChevronUp,
   ShieldCheck,
+  Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiFetch } from "@/lib/apiFetch";
@@ -208,6 +209,10 @@ export function ProfilePopover({
     onExternalOpenChange?.(v);
   };
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  // HIPAA sign modal — rendered as a sibling of the outer Dialog so it
+  // escapes the popover's focus trap. Lifted out of PersonalDetailsPanel
+  // where it was nested and couldn't open reliably.
+  const [hipaaOpen, setHipaaOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>(initialTab || "health");
 
   // Respond to initialTab changes from the tour
@@ -441,10 +446,12 @@ export function ProfilePopover({
     setShowTodayBtn(!nearToday);
   }
 
-  const displayName =
-    profileData?.firstName && profileData?.lastName
-      ? `${profileData.firstName} ${profileData.lastName}`
-      : user?.email?.split("@")[0] || "User";
+  // Display priority: full name → first name only → email prefix → "User".
+  // See sidebar.tsx for rationale — the strict first+last gate was hiding
+  // dependent profiles behind the caregiver's email prefix during the tour.
+  const displayName = profileData?.firstName
+    ? (profileData.lastName ? `${profileData.firstName} ${profileData.lastName}` : profileData.firstName)
+    : (user?.email?.split("@")[0] || "User");
   const initials = profileData?.firstName
     ? `${profileData.firstName[0]}${profileData.lastName?.[0] || ""}`.toUpperCase()
     : (user?.email?.[0] || "U").toUpperCase();
@@ -486,13 +493,26 @@ export function ProfilePopover({
   return (
     <>
     <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} />
+    <HipaaConsentModal
+      open={hipaaOpen}
+      onOpenChange={setHipaaOpen}
+      onSigned={() => {
+        // Reflect in personalInfo so the panel's "Signed on" chip + date
+        // appear without waiting for a full profile refetch. Subsequent
+        // loadProfileDetails calls will pick up the real server value.
+        const now = new Date().toISOString();
+        if (personalInfo) {
+          setPersonalInfo({ ...personalInfo, hipaa_consent_signed_at: now });
+        }
+      }}
+    />
     <PhotoCropModal
       open={!!cropImageSrc}
       imageSrc={cropImageSrc}
       onCancel={closeCropModal}
       onCrop={handleCroppedPhoto}
     />
-    <Dialog open={open} onOpenChange={setOpen} modal={externalOpen ? false : undefined}>
+    <Dialog open={open} onOpenChange={setOpen} modal={(externalOpen || hipaaOpen || upgradeOpen) ? false : undefined}>
       <DialogTrigger render={children as React.ReactElement}></DialogTrigger>
       <DialogContent
         showCloseButton
@@ -539,6 +559,7 @@ export function ProfilePopover({
               personalInfo={personalInfo}
               onClose={() => setPersonalPanel(null)}
               onUpdated={(updated) => setPersonalInfo(updated)}
+              onOpenHipaa={() => setHipaaOpen(true)}
             />
           )}
           {personalPanel === "health" && !selectedProvider && !selectedVisit && !addingProvider && !editingTodo && (
@@ -964,7 +985,7 @@ export function ProfilePopover({
                                             : day.dots.map((color, di) => (
                                                 <div
                                                   key={di}
-                                                  className="w-[6px] h-[6px] rounded-full"
+                                                  className="w-[7px] h-[7px] rounded-full ring-1 ring-[#5C1A2A]/40"
                                                   style={{ background: color }}
                                                 />
                                               ))}
@@ -1019,7 +1040,7 @@ export function ProfilePopover({
                                         {day.dots.map((color, di) => (
                                           <div
                                             key={di}
-                                            className="w-[6px] h-[6px] rounded-full"
+                                            className="w-[7px] h-[7px] rounded-full ring-1 ring-[#5C1A2A]/40"
                                             style={{ background: color }}
                                           />
                                         ))}
@@ -3243,11 +3264,17 @@ function PersonalDetailsPanel({
   personalInfo,
   onClose,
   onUpdated,
+  onOpenHipaa,
 }: {
   profileId: string | null;
   personalInfo: PersonalInfo | null;
   onClose: () => void;
   onUpdated: (info: PersonalInfo) => void;
+  // Hoisted up to ProfilePopover so the HipaaConsentModal renders
+  // OUTSIDE the popover's Dialog (sibling, not nested). Radix nested
+  // dialogs with modal={true} on the parent block the child's open,
+  // so rendering the modal inside this panel would trap it invisibly.
+  onOpenHipaa: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<PersonalInfo>(personalInfo || {
@@ -3257,7 +3284,6 @@ function PersonalDetailsPanel({
     hipaa_consent_signed_at: null,
   });
   const [saving, setSaving] = useState(false);
-  const [hipaaOpen, setHipaaOpen] = useState(false);
 
   useEffect(() => {
     if (personalInfo) setForm(personalInfo);
@@ -3306,29 +3332,53 @@ function PersonalDetailsPanel({
           </div>
           <p className="text-[18px] font-extrabold text-[#0F1B3D]">Personal Details</p>
         </div>
-        <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
-          {fields.map(([label, key], i) => {
-            let val = (form[key] || "") as string;
-            if (key === "date_of_birth" && val) {
-              try { val = new Date(val + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }); } catch {}
-            }
-            if (!val) return null;
+        {(() => {
+          // Check whether any displayable field has content. personalInfo
+          // can be a non-null object with all empty strings (fresh dependent
+          // profile the caregiver just created) — in that case the
+          // !personalInfo guard doesn't catch it and every row gets filtered
+          // by the !val check, leaving a blank card with no obvious action.
+          const anyFilled = fields.some(([, key]) => {
+            const v = (form[key] || "") as string;
+            return v.trim().length > 0;
+          });
+          if (!anyFilled) {
             return (
-              <React.Fragment key={key}>
-                {i > 0 && <div className="h-px bg-[#E5E5EA] mx-4" />}
-                <div className="flex items-center justify-between px-4 py-3.5">
-                  <span className="text-[14px] text-[#8E8E93]">{label}</span>
-                  <span className="text-[14px] font-medium text-[#0F1B3D] text-right max-w-[60%] truncate">{val}</span>
-                </div>
-              </React.Fragment>
+              <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] px-5 py-8 text-center">
+                <p className="text-[15px] font-semibold text-[#0F1B3D] mb-1">No personal details yet</p>
+                <p className="text-[13px] text-[#8E8E93] mb-4 leading-snug">
+                  Add a few basics so Elena can call providers on their behalf.
+                </p>
+                <button
+                  onClick={() => setEditing(true)}
+                  className="rounded-full bg-[#0F1B3D] px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-[#0F1B3D]/90 transition-colors"
+                >
+                  Fill in details
+                </button>
+              </div>
             );
-          }).filter(Boolean)}
-          {!personalInfo && (
-            <div className="px-3.5 py-10 text-center">
-              <p className="text-sm text-[#8E8E93]">No personal details yet.</p>
+          }
+          return (
+            <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
+              {fields.map(([label, key], i) => {
+                let val = (form[key] || "") as string;
+                if (key === "date_of_birth" && val) {
+                  try { val = new Date(val + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }); } catch {}
+                }
+                if (!val) return null;
+                return (
+                  <React.Fragment key={key}>
+                    {i > 0 && <div className="h-px bg-[#E5E5EA] mx-4" />}
+                    <div className="flex items-center justify-between px-4 py-3.5">
+                      <span className="text-[14px] text-[#8E8E93]">{label}</span>
+                      <span className="text-[14px] font-medium text-[#0F1B3D] text-right max-w-[60%] truncate">{val}</span>
+                    </div>
+                  </React.Fragment>
+                );
+              }).filter(Boolean)}
             </div>
-          )}
-        </div>
+          );
+        })()}
 
         {/* HIPAA authorization — Elena needs a signed form to call
             providers and insurers on the user's behalf. Shown alongside
@@ -3343,9 +3393,17 @@ function PersonalDetailsPanel({
         </div>
         <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
           <div className="px-4 py-3.5">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-[14px] font-medium text-[#0F1B3D]">HIPAA authorization</p>
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-[14px] font-medium text-[#0F1B3D]">HIPAA authorization</p>
+                  {form.hipaa_consent_signed_at && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#34C759]/12 px-2 py-0.5 text-[11px] font-semibold text-[#248A3D]">
+                      <Check className="h-3 w-3" strokeWidth={3} />
+                      Signed
+                    </span>
+                  )}
+                </div>
                 <p className="text-[12px] text-[#8E8E93] mt-0.5 leading-snug">
                   {form.hipaa_consent_signed_at
                     ? `Signed on ${(() => { try { return new Date(form.hipaa_consent_signed_at!).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }); } catch { return "file"; } })()}`
@@ -3353,7 +3411,7 @@ function PersonalDetailsPanel({
                 </p>
               </div>
               <button
-                onClick={() => setHipaaOpen(true)}
+                onClick={onOpenHipaa}
                 className="shrink-0 rounded-full bg-[#0F1B3D] px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#0F1B3D]/90 transition-colors"
               >
                 {form.hipaa_consent_signed_at ? "Re-sign" : "Sign now"}
@@ -3361,17 +3419,6 @@ function PersonalDetailsPanel({
             </div>
           </div>
         </div>
-        <HipaaConsentModal
-          open={hipaaOpen}
-          onOpenChange={setHipaaOpen}
-          onSigned={() => {
-            // Reflect the new signature locally so the panel updates
-            // without waiting for a full profile refetch.
-            const now = new Date().toISOString();
-            setForm((prev) => ({ ...prev, hipaa_consent_signed_at: now }));
-            onUpdated({ ...form, hipaa_consent_signed_at: now });
-          }}
-        />
       </div>
     );
   }

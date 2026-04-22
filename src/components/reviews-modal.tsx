@@ -41,7 +41,7 @@ export function ReviewsModal({ open, onOpenChange, onContinue }: ReviewsModalPro
   const springEase = [0.34, 1.56, 0.64, 1] as const;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-2rem)] max-w-[22rem] sm:w-full sm:max-w-md max-h-[calc(100svh-1rem)] overflow-y-auto overflow-x-hidden rounded-2xl border-0 bg-white p-0 shadow-[0_24px_80px_rgba(15,27,61,0.25)]">
+      <DialogContent showCloseButton={false} className="w-[calc(100%-2rem)] max-w-[22rem] sm:w-full sm:max-w-md max-h-[calc(100svh-1rem)] overflow-y-auto overflow-x-hidden rounded-2xl border-0 bg-white p-0 shadow-[0_24px_80px_rgba(15,27,61,0.25)]">
         <DialogHeader className="sr-only">
           <DialogTitle>What people are saying</DialogTitle>
           <DialogDescription>Testimonials from Elena users</DialogDescription>

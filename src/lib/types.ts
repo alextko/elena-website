@@ -418,7 +418,7 @@ export interface CareTodoCreate {
 export interface FormField {
   key: string;
   label: string;
-  type: "text" | "date" | "phone" | "address" | "select" | "textarea" | "image";
+  type: "text" | "date" | "phone" | "address" | "select" | "textarea" | "image" | "hipaa_consent";
   placeholder?: string;
   required?: boolean;
   options?: string[];

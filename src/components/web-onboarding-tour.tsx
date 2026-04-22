@@ -8,6 +8,7 @@ import { useJoyride, EVENTS, STATUS } from "react-joyride";
 import * as analytics from "@/lib/analytics";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/apiFetch";
+import { setBufferedProfile, addBufferedDependent, addBufferedCondition, addBufferedMedication, addBufferedTodo } from "@/lib/tourBuffer";
 import { StreamingText } from "@/components/streaming-text";
 import { SITUATION_CHIPS, getTemplate, getChip, findTemplateByAlias } from "@/lib/onboarding-templates";
 
@@ -97,6 +98,11 @@ interface WebOnboardingTourProps {
   // This callback bypasses that and sets the pending query in parent
   // state immediately.
   onSeedQuery?: (message: string) => void;
+  // Plan A: fired on elena-plan Continue when the user is unauthenticated.
+  // Receives the seed message (already stashed in the tour buffer) so the
+  // parent can open AuthModal. Post-signup, the parent is responsible
+  // for calling flushTourBuffer() and navigating to /chat.
+  onNeedsAuth?: (seedQuery: string) => void;
 }
 
 function TourTooltip({ step, primaryProps }: { step: any; primaryProps: any }) {
@@ -380,64 +386,44 @@ function ElenaPlanRow({
   selected: boolean;
   onToggle: () => void;
 }) {
-  const [cardShown, setCardShown] = useState(false);
-  const [visualShown, setVisualShown] = useState(false);
-  const [textShown, setTextShown] = useState(false);
-  const ease = [0.4, 0, 0.2, 1] as const;
+  const [shown, setShown] = useState(false);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setCardShown(true), startDelayMs);
-    const t2 = setTimeout(() => setVisualShown(true), startDelayMs + 240);
-    const t3 = setTimeout(() => setTextShown(true), startDelayMs + 420);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    const t = setTimeout(() => setShown(true), startDelayMs);
+    return () => clearTimeout(t);
   }, [startDelayMs]);
 
+  // Simple selectable row with a radio-style indicator on the left.
+  // Earlier iterations stacked a mini-mockup preview above the action
+  // text — testing showed users didn't register this was a multiple-
+  // choice list. Moved the mini-mockups to the validation step where
+  // they land as proof-of-value rather than decoration here.
   return (
     <motion.button
       type="button"
       onClick={onToggle}
-      initial={{ opacity: 0, y: 12, scale: 0.96 }}
-      animate={cardShown ? { opacity: 1, y: 0, scale: 1 } : undefined}
+      initial={{ opacity: 0, y: 10 }}
+      animate={shown ? { opacity: 1, y: 0 } : undefined}
       whileTap={{ scale: 0.985 }}
-      transition={{ duration: 0.42, ease: [0.34, 1.56, 0.64, 1] }}
-      className={`relative flex flex-col gap-3 max-md:gap-1.5 p-4 max-md:p-2.5 rounded-2xl text-left transition-colors duration-200 ${
+      transition={{ duration: 0.32, ease: [0.34, 1.56, 0.64, 1] }}
+      className={`flex items-center gap-3 max-md:gap-2.5 px-4 py-3.5 max-md:px-3 max-md:py-3 rounded-2xl text-left transition-colors duration-200 ${
         selected
-          ? "bg-gradient-to-br from-[#34C759]/[0.12] to-[#34C759]/[0.04] ring-2 ring-[#34C759]/45 shadow-[0_3px_14px_rgba(52,199,89,0.18)]"
+          ? "bg-gradient-to-br from-[#34C759]/[0.14] to-[#34C759]/[0.04] ring-2 ring-[#34C759]/50 shadow-[0_3px_14px_rgba(52,199,89,0.18)]"
           : "bg-[#F6F7FB] ring-1 ring-[#0F1B3D]/[0.07] shadow-[0_3px_14px_rgba(15,27,61,0.06)] hover:ring-[#0F1B3D]/[0.15]"
       }`}
     >
-      <AnimatePresence>
-        {selected && (
-          <motion.span
-            key="check-badge"
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.5 }}
-            transition={{ duration: 0.25, ease: [0.34, 1.56, 0.64, 1] }}
-            className="absolute top-2.5 right-2.5 max-md:top-1.5 max-md:right-1.5 w-7 h-7 max-md:w-5 max-md:h-5 rounded-full bg-[#34C759] flex items-center justify-center shadow-[0_2px_6px_rgba(52,199,89,0.4)]"
-          >
-            <Check className="w-4 h-4 max-md:w-3 max-md:h-3 text-white" strokeWidth={3} />
-          </motion.span>
-        )}
-      </AnimatePresence>
-      <div className="min-h-[80px] max-md:min-h-[48px] flex items-center justify-center px-1">
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={visualShown ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
-          transition={{ duration: 0.34, ease }}
-          className="w-full max-md:scale-[0.78] max-md:origin-center"
-        >
-          {visualForHeroLine(line)}
-        </motion.div>
-      </div>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={textShown ? { opacity: 1 } : { opacity: 0 }}
-        transition={{ duration: 0.3, ease }}
-        className={`text-[14px] max-md:text-[12.5px] leading-snug font-semibold text-center text-balance ${selected ? "text-[#0F1B3D]" : "text-[#0F1B3D]"}`}
+      <span
+        className={`shrink-0 w-6 h-6 max-md:w-[22px] max-md:h-[22px] rounded-full flex items-center justify-center transition-colors ${
+          selected
+            ? "bg-[#34C759] shadow-[0_2px_6px_rgba(52,199,89,0.4)]"
+            : "border-2 border-[#0F1B3D]/25 bg-white"
+        }`}
       >
+        {selected && <Check className="w-3.5 h-3.5 max-md:w-3 max-md:h-3 text-white" strokeWidth={3} />}
+      </span>
+      <span className="text-[15px] max-md:text-[14px] leading-snug font-semibold text-[#0F1B3D] text-balance flex-1">
         {line}
-      </motion.div>
+      </span>
     </motion.button>
   );
 }
@@ -513,14 +499,17 @@ function CallMini({
 }
 
 function BookingMini() {
+  // Compact two-line confirmation chip — "Booked with Dr. Chen / Thu
+  // Apr 18 10am". Sized to fit the narrow column on care-ack's 2-col
+  // top row without its content wrapping awkwardly.
   return (
-    <div className="w-full max-w-[300px] mx-auto bg-white rounded-xl shadow-[0_2px_10px_rgba(15,27,61,0.10)] border border-[#E5E5EA] px-3 py-2.5 flex items-center gap-3">
-      <div className="w-8 h-8 rounded-full bg-[#34C759] flex items-center justify-center flex-shrink-0">
-        <Check className="w-4 h-4 text-white" strokeWidth={3} />
+    <div className="w-full bg-white rounded-xl shadow-[0_2px_10px_rgba(15,27,61,0.10)] border border-[#E5E5EA] px-2.5 py-2 flex items-center gap-2">
+      <div className="w-7 h-7 rounded-full bg-[#34C759] flex items-center justify-center flex-shrink-0">
+        <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-[13px] font-bold text-[#0F1B3D] truncate">Booked with Dr. Chen</div>
-        <div className="text-[11px] font-semibold text-[#34C759] mt-[2px]">Thu · Apr 18 · 10am</div>
+        <div className="text-[11px] font-bold text-[#0F1B3D] truncate leading-tight">Booked with Dr. Chen</div>
+        <div className="text-[9.5px] font-semibold text-[#34C759] mt-[1px] truncate">Thu · Apr 18 · 10am</div>
       </div>
     </div>
   );
@@ -577,6 +566,40 @@ function PainDropMini() {
 // selected state (matches the app's profile popover); subsequent rows
 // are placeholder people with warm color chips. Size `count` trims or
 // grows the list to match the user's care selections.
+function MedsMini({ rows = 2 }: { rows?: number }) {
+  // Compact med list — mirrors the Game Plan "next refill on {date}" row
+  // style. Used on caregiver care-ack to communicate "Elena handles
+  // refills across the family." Default is 2 rows for tighter visual
+  // density; pass rows={3} to expand.
+  const all = [
+    { name: "Lisinopril", refill: "Apr 28", owner: "Mom" },
+    { name: "Ozempic", refill: "May 3", owner: "Dad" },
+    { name: "Metformin", refill: "May 12", owner: "Mom" },
+  ];
+  const shown = all.slice(0, Math.max(1, Math.min(rows, all.length)));
+  return (
+    <div className="w-full flex flex-col gap-1">
+      {shown.map((r) => (
+        <div
+          key={r.name}
+          className="bg-white rounded-lg border border-[#E5E5EA] px-2 py-1 flex items-center gap-2"
+        >
+          <div className="w-5 h-5 rounded-md bg-[#0F1B3D]/[0.08] flex items-center justify-center flex-shrink-0">
+            <span className="text-[10px]">💊</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] font-semibold text-[#0F1B3D] truncate">{r.name}</div>
+            <div className="text-[9px] text-[#8E8E93] truncate">{r.owner} · refill {r.refill}</div>
+          </div>
+          <span className="shrink-0 rounded-full bg-[#34C759]/15 px-1 py-[1px] text-[8px] font-bold text-[#248A3D] uppercase tracking-wide">
+            on it
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function FamilyMini({ count = 3 }: { count?: number }) {
   const allMembers = [
     { initials: "Me", bg: "#0F1B3D", fg: "#ffffff", label: "Me" },
@@ -587,33 +610,37 @@ function FamilyMini({ count = 3 }: { count?: number }) {
   ];
   const n = Math.max(2, Math.min(count, allMembers.length));
   const members = allMembers.slice(0, n);
+  // Compact profile-switcher — "Me" highlighted as active. Sized to fit
+  // the narrower care-ack column while still reading as a sidebar
+  // switcher. Row height tightened vs. the earlier standalone version.
   return (
-    <div className="w-full max-w-[300px] mx-auto flex flex-col gap-1">
+    <div className="w-full flex flex-col gap-[3px]">
       {members.map((m, i) => (
         <div
           key={m.label}
-          className={`flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 ${
+          className={`flex items-center gap-1.5 rounded-md px-1.5 py-1 ${
             i === 0
-              ? "bg-white border border-[#0F1B3D]/20 shadow-[0_1px_4px_rgba(15,27,61,0.08)]"
+              ? "bg-white border border-[#0F1B3D]/20 shadow-[0_1px_3px_rgba(15,27,61,0.08)]"
               : ""
           }`}
         >
           <div
-            className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold"
+            className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-[9px] font-bold"
             style={{ background: m.bg, color: m.fg }}
           >
             {m.initials}
           </div>
-          <div className="text-[12px] font-semibold text-[#0F1B3D] truncate">{m.label}</div>
+          <div className="text-[11px] font-semibold text-[#0F1B3D] truncate">{m.label}</div>
         </div>
       ))}
     </div>
   );
 }
 
-export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover, onSidebar, onSeedQuery }: WebOnboardingTourProps) {
+export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover, onSidebar, onSeedQuery, onNeedsAuth }: WebOnboardingTourProps) {
   // Auth hooks for the profile-form phase (migrated from the old OnboardingModal)
   const {
+    session,
     needsOnboarding,
     completeOnboarding,
     profileData,
@@ -628,6 +655,11 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     refreshInsurance,
     switchProfile,
   } = useAuth();
+  // Plan A: when the tour runs on /onboard (pre-signup), all API writes
+  // are buffered to sessionStorage and flushed on signup. The boolean
+  // below is the "are we in anonymous mode?" switch that gates the
+  // buffer-vs-API decision in every write path.
+  const isAnonymousTour = !session;
 
   // Resume-on-refresh: tour state is persisted to sessionStorage on every
   // change and restored here on mount. Snapshot is computed once (useMemo
@@ -663,7 +695,14 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       const raw = sessionStorage.getItem("elena_tour_state");
       if (!raw) return {};
       const s = JSON.parse(raw);
-      if (s.phase === "joyride") s.phase = "profile";
+      // Previously we fell back joyride→profile here on the theory that
+      // joyride controls don't survive a refresh. Under Plan A the tour
+      // intentionally resumes at joyride after the /onboard→/chat
+      // handoff — the useJoyride controls instance is fresh because
+      // the tour component is newly mounted on /chat. The phase effect
+      // below calls controls.start() to kick off the spotlight, and the
+      // 20s safety timeout in the joyride-advance effect covers the
+      // edge case where the target DOM element never appears.
       return s;
     } catch {
       return {};
@@ -839,6 +878,13 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     // flow this is equivalent to resetting on every phase change.
     if (phase !== "pain") setPainSelection(null);
   }, [phase]);
+  // Profile walkthrough streams the title per step, then cascades the
+  // body + prompt in. Reset whenever profileStep changes so each new
+  // card's title streams again from scratch.
+  useEffect(() => {
+    if (phase !== "profile") return;
+    setHeadlineDone(false);
+  }, [phase, profileStep]);
 
   // Value phase chains headline → subtitle → body. Once headline finishes,
   // let the subtitle fade land (~450ms: 100ms delay + 350ms duration) then
@@ -857,8 +903,28 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   // any async work so a second invocation short-circuits cleanly.
   const advanceFromElenaPlanRef = useRef(false);
 
+  // Joyride steps adapt to dependent setup so the "This is your profile"
+  // spotlight reads as "This is Linda's profile" when the caregiver is
+  // setting up for someone else. Kept as useMemo so the step objects
+  // have stable identity (useJoyride doesn't like new arrays every
+  // render — triggers its own internal resets).
+  const joyrideSteps = useMemo(() => {
+    const depName = isDependentSetup && managedFirstName ? managedFirstName : "";
+    const title = depName ? `This is ${depName}'s profile` : "This is your profile";
+    const content = depName
+      ? `All of ${depName}'s health data, doctors, insurance, and appointments live here. Let's take a look inside — you can add to it as we go.`
+      : "All your health data, doctors, insurance, and appointments live here. Let's take a look inside — you can add to it as we go.";
+    return [
+      {
+        ...JOYRIDE_STEPS[0],
+        title,
+        content,
+      },
+    ];
+  }, [isDependentSetup, managedFirstName]);
+
   const { controls, on, Tour } = useJoyride({
-    steps: JOYRIDE_STEPS,
+    steps: joyrideSteps,
     continuous: true,
     styles: {
       // No backdrop-filter here: the spotlight cutout is SVG-masked but
@@ -947,6 +1013,20 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   // collapsed) — without it the tour would silently hang at "joyride".
   useEffect(() => {
     if (phase !== "joyride") return;
+    // Kick off the spotlight. beginJoyride (authed flow) already calls
+    // controls.start() after the shell-fade timing. But under Plan A
+    // the user lands here fresh from a /chat remount (tour state said
+    // phase="joyride"), and beginJoyride was never invoked. A direct
+    // controls.start() here covers that path. controls.start() on an
+    // already-started joyride is a no-op, so it's safe to run either way.
+    // Delay matches beginJoyride's mobile/desktop values so the sidebar /
+    // chat shell has time to settle before the spotlight positions.
+    // Mobile-specific: open the sidebar drawer first so the profile
+    // button — the spotlight target — is actually on-screen. Without
+    // this, joyride spotlights an off-canvas element and the user sees
+    // a floating tooltip pointing at nothing.
+    if (isMobile.current) onSidebarRef.current(true);
+    const startTimer = setTimeout(() => controls.start(), isMobile.current ? 600 : 300);
     let fired = false;
     const fire = () => {
       if (fired) return;
@@ -956,10 +1036,13 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       setPhase("profile");
       setProfileStep(0);
     };
+    // The "This is your profile" spotlight waits for user interaction
+    // (click "Show me" / dismiss / tap the overlay). No auto-advance —
+    // this is the first orientation moment post-signup and the user
+    // should control the pace.
     const unsub = on(EVENTS.TOUR_END, fire);
-    const timer = setTimeout(fire, 20000);
-    return () => { unsub(); clearTimeout(timer); };
-  }, [phase, on]);
+    return () => { unsub(); clearTimeout(startTimer); };
+  }, [phase, on, controls]);
 
   // Profile popover tab control
   useEffect(() => {
@@ -1188,6 +1271,15 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
           // ("optional" in the UI), default to "other" so the save
           // succeeds. Users can refine the relationship later in chat.
           const relation = familyRelation || "other";
+          // POST /profiles creates the new managed profile AND (on the
+          // backend) calls set_active_profile to switch to it — which
+          // we do NOT want here. The tour is populating data against
+          // the profile the user just set up for (themselves or a
+          // dependent). Switching to the just-added family member at
+          // this step would send the seed message + todos to the wrong
+          // profile. Capture the pre-call active profile, then restore
+          // it immediately after the POST.
+          const previousActiveProfileId = profileId;
           const res = await apiFetch("/profiles", {
             method: "POST",
             body: JSON.stringify({
@@ -1198,10 +1290,13 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
             }),
           });
           if (!res.ok) throw new Error("Couldn't save. Try again.");
-          // Refresh the profiles dropdown so the new family member appears
-          // without switching the active profile (refreshProfiles does not
-          // touch profileId).
+          // Refresh the profiles list so the new member appears in the
+          // sidebar dropdown, then restore the active profile so the
+          // tour continues populating data on the original chart.
           await refreshProfiles();
+          if (previousActiveProfileId && previousActiveProfileId !== profileId) {
+            try { await switchProfile(previousActiveProfileId); } catch {}
+          }
           setSuccessOverlay({
             kind: "family",
             title: "Family member added",
@@ -1335,15 +1430,18 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
         if (actions.length > 0) {
           const seedMessage = buildSeedMessageFromActions(actions);
           if (seedMessage) {
-            // Prefer the callback path: force-tour users already have
-            // the chat page mounted, and its one-time pending-query
-            // pickup has already run — they'd never see a localStorage
-            // write. localStorage stays as a fallback for the rare
-            // case where the parent doesn't wire the callback.
+            // Belt + suspenders: write localStorage AND fire the
+            // callback. Callback propagates via parent state → chat
+            // area's initialQuery prop for the immediate handoff.
+            // localStorage is a safety net — if the callback path
+            // silently fails (profile-switch thrash mid-tour, stale
+            // closure in parent, page reload during tour), chat-area
+            // falls back to reading localStorage when sessionReady
+            // flips and no seed has fired. Chat page clears the
+            // localStorage key once the seed actually sends.
+            try { localStorage.setItem("elena_pending_query", seedMessage); } catch {}
             if (onSeedQuery) {
               onSeedQuery(seedMessage);
-            } else {
-              localStorage.setItem("elena_pending_query", seedMessage);
             }
             // Post-tour paywall gate: let the seeded first message run
             // end-to-end for free (activation moment), then gate the
@@ -1353,7 +1451,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
           }
           analytics.track("Web Tour Seed Query Written" as any, {
             action_count: actions.length,
-            via: onSeedQuery ? "callback" : "localStorage",
+            via: onSeedQuery ? "callback+localStorage" : "localStorage",
           });
         }
         sessionStorage.removeItem("elena_tour_seeded_actions");
@@ -1479,13 +1577,46 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     setCreatingDependent(true);
     try {
       const relationship = careIdToRelationship(setupForCareId);
+      const isoDob = displayToIsoDate(dependentDob);
+      const zip = dependentZip.trim();
+      // Plan A anonymous path: buffer the dependent instead of POSTing.
+      // The flush step (Phase 3) will create the profile, switchProfile
+      // to it, and mark it primary post-signup. dependentProfileId stays
+      // null during the tour, so any downstream code that gates on it
+      // needs to tolerate the null — which it already does (same flow
+      // a self-setup user has).
+      if (isAnonymousTour) {
+        addBufferedDependent({
+          first_name: first,
+          last_name: dependentLastName.trim(),
+          label: relationship,
+          relationship,
+          ...(isoDob ? { date_of_birth: isoDob } : {}),
+          ...(zip ? { zip_code: zip } : {}),
+          is_primary_dependent: true,
+        });
+        const others = careSelections.filter(
+          (id) => id !== "myself" && id !== setupForCareId,
+        );
+        for (const otherId of others) {
+          addBufferedDependent({
+            first_name: careIdToNounLabel(otherId).replace(/^./, (c) => c.toUpperCase()),
+            last_name: "",
+            label: careIdToRelationship(otherId),
+            relationship: careIdToRelationship(otherId),
+            is_primary_dependent: false,
+          });
+        }
+        // Stash a placeholder so isDependentSetup-derived logic still
+        // reads "yes, we have a dependent" without needing a real id.
+        setDependentProfileId("__buffered__");
+        return true;
+      }
       // DOB/zip come from the profile-form phase that ran immediately
       // before this call. They're the DEPENDENT's values (the form
       // rebound to dependentDob / dependentZip when isDependentSetup
       // was true). Both are optional — the dependent profile still
       // gets created, user can fill in later via profile edit.
-      const isoDob = displayToIsoDate(dependentDob);
-      const zip = dependentZip.trim();
       const res = await apiFetch("/profiles", {
         method: "POST",
         body: JSON.stringify({
@@ -1561,21 +1692,29 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     if (isDependentSetup) {
       // Dependent setup — the form captured DEPENDENT's data. The
       // primary user's profile still needs to exist and have
-      // onboarding_completed flipped, so we call completeOnboarding
-      // with whatever primary name we have (OAuth / signup). Then we
-      // create the dependent profile with the full set of captured
-      // fields and switch active to them. All downstream tour phases
-      // (situation / meds / care-plan / todos) operate on the
-      // dependent's chart from here.
+      // onboarding_completed flipped (authed path), OR the primary's
+      // name gets captured in the buffer for post-signup flush (anon
+      // path). Then we create/buffer the dependent with the full set
+      // of captured fields and switch active to them.
       analytics.track("Onboarding Completed" as any, {
         fields_filled: ["first_name", "last_name", dependentDob && "dob", "zip_code"].filter(Boolean),
         source: "tour",
         setup_for: "dependent",
       });
-      await completeOnboarding({
-        first_name: profileData?.firstName || firstName.trim() || "",
-        last_name: profileData?.lastName || lastName.trim() || "",
-      });
+      if (isAnonymousTour) {
+        // Primary name might be empty (we don't collect it in dependent
+        // setup — OAuth name isn't available until post-signup). Buffer
+        // what we have; flush step will merge in the OAuth name.
+        setBufferedProfile({
+          first_name: firstName.trim() || "",
+          last_name: lastName.trim() || "",
+        });
+      } else {
+        await completeOnboarding({
+          first_name: profileData?.firstName || firstName.trim() || "",
+          last_name: profileData?.lastName || lastName.trim() || "",
+        });
+      }
       await createDependentAndSwitch();
     } else {
       // Self setup — the form captured the PRIMARY user's data.
@@ -1589,16 +1728,25 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
         source: "tour",
         setup_for: "self",
       });
-      await completeOnboarding({
-        first_name: cap(firstName.trim()),
-        last_name: cap(lastName.trim()),
-        date_of_birth: displayToIsoDate(dob) || undefined,
-        home_address: zipCode.trim(),
-      });
+      if (isAnonymousTour) {
+        setBufferedProfile({
+          first_name: cap(firstName.trim()),
+          last_name: cap(lastName.trim()),
+          date_of_birth: displayToIsoDate(dob) || undefined,
+          zip_code: zipCode.trim(),
+        });
+      } else {
+        await completeOnboarding({
+          first_name: cap(firstName.trim()),
+          last_name: cap(lastName.trim()),
+          date_of_birth: displayToIsoDate(dob) || undefined,
+          home_address: zipCode.trim(),
+        });
+      }
     }
     setSavingProfile(false);
     routeAfterProfile();
-  }, [canSubmitProfile, firstName, lastName, dob, zipCode, dependentDob, isDependentSetup, profileData?.firstName, profileData?.lastName, completeOnboarding, routeAfterProfile, createDependentAndSwitch]);
+  }, [canSubmitProfile, firstName, lastName, dob, zipCode, dependentDob, isDependentSetup, isAnonymousTour, profileData?.firstName, profileData?.lastName, completeOnboarding, routeAfterProfile, createDependentAndSwitch]);
 
   // Fire "Onboarding Modal Shown" analytics when the profile-form phase opens,
   // preserving data continuity with the prior OnboardingModal. (Event name kept
@@ -1731,6 +1879,87 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
         }));
       }
     } catch {}
+    // Plan A anonymous path: build the seed message, stash it in the
+    // tour buffer, and hand control to the /onboard page so it can open
+    // AuthModal. After signup the page calls flushTourBuffer() which
+    // replays all the tour writes against the authed session — no need
+    // to perform any of the API work here. advanceFromElenaPlanRef is
+    // cleared so if AuthModal is cancelled and the user clicks Continue
+    // again, the handler re-fires.
+    if (isAnonymousTour) {
+      advanceFromElenaPlanRef.current = false;
+      // Parity with the authed write block below: derive the condition,
+      // meds, care-plan template todos, and action todos from tour state
+      // and buffer them. flushTourBuffer replays these POSTs post-signup
+      // so the health profile + game plan land populated, same as the
+      // authed flow.
+      const chip = getChip(selectedSituation);
+      const tpl = getTemplate(selectedSituation);
+      const conditionName = chip?.conditionName || customSituation.trim();
+      const collectedCondition = routerChoice === "condition" || routerChoice === "medications" || routerChoice === "money";
+      if (collectedCondition && conditionName) {
+        addBufferedCondition({ name: conditionName, status: "active" });
+      }
+      if (tpl && (routerChoice === "condition" || routerChoice === "medications" || routerChoice === "money")) {
+        const allMeds = [...selectedMeds, ...customMeds.map((m) => m.trim()).filter(Boolean)];
+        for (const name of allMeds) {
+          addBufferedMedication({ name, indication: tpl.conditionName });
+        }
+      }
+      // Todo dedup — mirrors the authed path's seenTitles set. Lowercase,
+      // strip punctuation so "Schedule A1C check" and "Schedule A1C check."
+      // collapse into one.
+      const seenTodoTitles = new Set<string>();
+      const normTitle = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+      const pushTodo = (spec: { title: string; subtitle?: string; book_message: string }) => {
+        const key = normTitle(spec.title);
+        if (!key || seenTodoTitles.has(key)) return;
+        seenTodoTitles.add(key);
+        addBufferedTodo({ ...spec, category: "care_plan" });
+      };
+      // Care-plan template items (condition branch only).
+      if (tpl && routerChoice === "condition") {
+        const remaining = tpl.planItems.filter((it) => !checkedPlanItems.includes(it.id));
+        for (const it of remaining) {
+          pushTodo({
+            title: it.todoText,
+            subtitle: tpl.conditionName,
+            book_message: `Help me ${it.todoText.charAt(0).toLowerCase() + it.todoText.slice(1)}`,
+          });
+        }
+      }
+      // User-selected action todos (every branch).
+      if (seededActions.length > 0) {
+        const actionSubtitle =
+          (routerChoice === "condition" || routerChoice === "medications" || routerChoice === "money")
+            ? (tpl?.conditionName || customSituation.trim() || undefined)
+            : undefined;
+        for (const raw of seededActions) {
+          const cleanedTitle = cleanActionToUserVoice(raw);
+          if (!cleanedTitle) continue;
+          const lowered = cleanedTitle.charAt(0).toLowerCase() + cleanedTitle.slice(1);
+          const bookStem = lowered.startsWith("help ") ? lowered.slice(5) : lowered;
+          pushTodo({
+            title: cleanedTitle,
+            ...(actionSubtitle ? { subtitle: actionSubtitle } : {}),
+            book_message: `Help me ${bookStem}`,
+          });
+        }
+      }
+      const seedMessage = buildSeedMessageFromActions(seededActions);
+      if (seedMessage) {
+        try {
+          const { setBufferedSeedQuery } = await import("@/lib/tourBuffer");
+          setBufferedSeedQuery(seedMessage);
+        } catch {}
+      }
+      if (onNeedsAuth) {
+        onNeedsAuth(seedMessage);
+      } else {
+        console.warn("[tour] anonymous elena-plan Continue but onNeedsAuth not wired — tour is stuck");
+      }
+      return;
+    }
     setSavingSituation(true);
     const chip = getChip(selectedSituation);
     const tpl = getTemplate(selectedSituation);
@@ -1837,7 +2066,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       setSavingSituation(false);
       leaveShellThen(beginJoyride);
     }
-  }, [savingSituation, selectedSituation, customSituation, selectedMeds, customMeds, checkedPlanItems, profileId, routerChoice, confirmedActions, customActionText, beginJoyride, leaveShellThen]);
+  }, [savingSituation, isAnonymousTour, onNeedsAuth, selectedSituation, customSituation, selectedMeds, customMeds, checkedPlanItems, profileId, routerChoice, confirmedActions, customActionText, beginJoyride, leaveShellThen]);
 
   // Fire the validation-shown event once when the phase enters (it's the
   // "wow" beat, so we track regardless of what the user does next).
@@ -2044,35 +2273,39 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                         You&apos;ll set up a profile for each person. Same Elena, all in one place. We&apos;ll get there in a minute.
                       </motion.p>
                     </motion.div>
-                    {/* Overlapping avatar stack: reads as "a group of people"
-                        instead of a labeled grid, and sidesteps the "My X /
-                        My Y" copy repetition that felt awkward when each icon
-                        had its own caption. Each circle springs in with a
-                        slight x-offset so the stack assembles left-to-right. */}
-                    <div className="flex items-center justify-center">
-                      {picked.map((opt, i) => {
-                        const Icon = opt.icon;
-                        return (
-                          <motion.div
-                            key={opt.id}
-                            initial={{ opacity: 0, scale: 0.4, x: -12 }}
-                            animate={headlineDone ? { opacity: 1, scale: 1, x: 0 } : { opacity: 0, scale: 0.4, x: -12 }}
-                            transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1], delay: 0.15 + i * 0.09 }}
-                            className="w-16 h-16 rounded-full flex items-center justify-center shadow-[0_4px_14px_rgba(15,27,61,0.22)]"
-                            style={{
-                              background: "linear-gradient(135deg, #0F1B3D 0%, #2E6BB5 100%)",
-                              border: "3px solid white",
-                              marginLeft: i === 0 ? 0 : -14,
-                              zIndex: picked.length - i,
-                            }}
-                          >
-                            <Icon className="w-7 h-7 text-white" />
-                          </motion.div>
-                        );
-                      })}
+                    {/* 2-row layout: profile switcher + booked call side
+                        by side up top (the "many people, handled" beat),
+                        compact meds row underneath (the "refills too"
+                        beat). More visual weight on the caregiver story
+                        without the vertical bloat of three full tiles. */}
+                    <div className="flex flex-col gap-2 w-full max-w-[340px]">
+                      <div className="grid grid-cols-2 gap-2">
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={headlineDone ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+                          transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1], delay: 0.2 }}
+                        >
+                          <FamilyMini count={Math.max(2, Math.min(picked.length + 1, 4))} />
+                        </motion.div>
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={headlineDone ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+                          transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1], delay: 0.34 }}
+                          className="flex items-center"
+                        >
+                          <BookingMini />
+                        </motion.div>
+                      </div>
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={headlineDone ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+                        transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1], delay: 0.48 }}
+                      >
+                        <MedsMini rows={2} />
+                      </motion.div>
                     </div>
                   </div>
-                  <RevealButton visible={headlineDone} delay={0.15 + picked.length * 0.09 + 0.15}>
+                  <RevealButton visible={headlineDone} delay={0.8}>
                     <GradientButton onClick={advanceFromCareAck} label="Continue" />
                   </RevealButton>
                 </motion.div>
@@ -2162,7 +2395,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                           <input
                             type="text"
                             value={dependentFirstName}
-                            onChange={(e) => setDependentFirstName(e.target.value)}
+                            onChange={(e) => setDependentFirstName(capitalizeName(e.target.value))}
                             placeholder="First name"
                             autoComplete="off"
                             autoCorrect="off"
@@ -2172,7 +2405,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                           <input
                             type="text"
                             value={dependentLastName}
-                            onChange={(e) => setDependentLastName(e.target.value)}
+                            onChange={(e) => setDependentLastName(capitalizeName(e.target.value))}
                             placeholder="Last name"
                             autoComplete="off"
                             autoCorrect="off"
@@ -2201,11 +2434,31 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               // Variant derived from the router pick: money-centric
               // intents (money, medications) show the dollars-over-decade
               // panic; everything else shows the hours-per-year panic.
+              //
+              // Dependent setups reframe the question around the dependent
+              // ("How much do you spend on Linda's healthcare each year?")
+              // since the caregiver is the one answering but the spending
+              // is for the dependent. Makes the number they're giving you
+              // feel less like a self-audit and more like a care-load
+              // reality check.
               const isMoney = routerChoice === "money" || routerChoice === "medications";
               const options = isMoney ? MONEY_PAIN_OPTIONS : TIME_PAIN_OPTIONS;
+              const possessive = isDependentSetup && managedFirstName
+                ? `${managedFirstName}'s `
+                : "";
+              // For dependent setups, drop the "you spend" framing because
+              // the caregiver may not be the payer — it could be the
+              // dependent themselves, a spouse, Medicare, etc. "How much
+              // goes toward Linda's healthcare" keeps the question
+              // answerable without assuming who's paying. Time framing
+              // stays "do you spend" since the caregiver IS the one
+              // spending time coordinating care even when they aren't
+              // footing the bill.
               const headline = isMoney
-                ? "How much do you spend on healthcare out-of-pocket each year?"
-                : "How much time do you spend on healthcare each week?";
+                ? (isDependentSetup && managedFirstName
+                    ? `How much goes toward ${managedFirstName}'s healthcare out-of-pocket each year?`
+                    : `How much do you spend on healthcare out-of-pocket each year?`)
+                : `How much time do you spend on ${possessive || ""}healthcare each week?`;
               const bucketIcon = isMoney ? DollarSign : Clock;
               const selected = options.find((o) => o.id === painSelection) || null;
               return (
@@ -2262,13 +2515,19 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               // about in the router + pain steps) instead of the generic
               // "We've got your back." Generic copy stays as the fallback
               // for edge cases where routerChoice is null.
+              // Reframe the headlines when the caregiver is setting up
+              // for someone else — the prescriptions / coverage / screenings
+              // belong to the dependent, not the caregiver. The subtitles
+              // stay in "I'll..." voice since Elena is speaking to the
+              // caregiver about what she'll do for them.
+              const depName = isDependentSetup && managedFirstName ? managedFirstName : "";
               const valueCopy: Record<RouterChoice, { headline: string; subtitle: string }> = {
                 condition: {
-                  headline: "You shouldn't carry this alone.",
+                  headline: depName ? `You shouldn't carry ${depName}'s care alone.` : "You shouldn't carry this alone.",
                   subtitle: "Appointments, meds, and coverage — I'll stay on top of it with you.",
                 },
                 medications: {
-                  headline: "Your prescriptions, handled.",
+                  headline: depName ? `${depName}'s prescriptions, handled.` : "Your prescriptions, handled.",
                   subtitle: "Refills, price-shopping, and interactions — I'll keep it all straight.",
                 },
                 money: {
@@ -2277,7 +2536,9 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 },
                 staying_healthy: {
                   headline: "Stay ahead of it, not behind it.",
-                  subtitle: "Checkups, screenings, and reminders — I'll keep you current.",
+                  subtitle: depName
+                    ? `Checkups, screenings, and reminders — I'll keep ${depName} current.`
+                    : "Checkups, screenings, and reminders — I'll keep you current.",
                 },
               };
               const copy = routerChoice
@@ -2484,9 +2745,17 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               // answers to "What's top of mind?" rather than sentences.
               // Tighter rows also give the icons more visual breathing
               // room on mobile, where the longer strings wrapped.
+              // Second-person framing when the session is for a dependent
+              // — otherwise the buttons read "my medications" under the
+              // headline "what's top of mind for Mom to manage?" which
+              // breaks the grammar. Labels stay short noun phrases in
+              // both modes.
+              const medsLabel = isDependentSetup && managedFirstName
+                ? `${managedFirstName}'s medications`
+                : "My medications";
               const ROUTER_OPTIONS: { key: RouterChoice; label: string; icon: typeof HeartPulse }[] = [
                 { key: "condition", label: "Managing a condition", icon: HeartPulse },
-                { key: "medications", label: "My medications", icon: Heart },
+                { key: "medications", label: medsLabel, icon: Heart },
                 { key: "money", label: "Saving money", icon: DollarSign },
                 { key: "staying_healthy", label: "Staying on top of it", icon: HelpCircle },
               ];
@@ -2700,6 +2969,14 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
             {phase === "meds" && (() => {
               const tpl = getTemplate(selectedSituation);
               if (!tpl) return null;
+              // Short prompt — the template's medsPrompt is encyclopedic
+              // ("People managing type 2 diabetes are often on one of
+              // these. Any yours?") which takes four lines on mobile.
+              // The user just picked the condition in the prior phase, so
+              // context is already established. Keep the prompt tight.
+              const medsHeadline = isDependentSetup && managedFirstName
+                ? `Any of these meds for ${managedFirstName}?`
+                : "Any of these your meds?";
               return (
                 <motion.div
                   key="meds"
@@ -2707,32 +2984,25 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.22, ease: motionEase }}
-                  className="p-5 sm:p-7 flex flex-col gap-4 min-h-[380px] sm:min-h-[440px]"
+                  className="p-5 sm:p-7 max-md:p-4 flex flex-col gap-4 max-md:gap-2.5 min-h-[380px] sm:min-h-[440px] max-md:min-h-0"
                 >
-                  <div className="flex-1 flex flex-col justify-center gap-4">
+                  <div className="flex-1 flex flex-col justify-center gap-4 max-md:gap-2.5">
                     <div className="text-center">
-                      <h2 className="text-[20px] font-extrabold text-[#0F1B3D] mb-2 text-balance leading-tight">
-                        <StreamingText
-                          text={
-                            isDependentSetup && managedFirstName
-                              ? tpl.medsPrompt.replace(/Any yours\??$/i, `Any of these for ${managedFirstName}?`)
-                              : tpl.medsPrompt
-                          }
-                          onDone={() => setHeadlineDone(true)}
-                        />
+                      <h2 className="text-[20px] max-md:text-[18px] font-extrabold text-[#0F1B3D] mb-2 max-md:mb-1 text-balance leading-tight">
+                        <StreamingText text={medsHeadline} onDone={() => setHeadlineDone(true)} />
                       </h2>
                       <motion.p
                         initial={{ opacity: 0 }}
                         animate={{ opacity: headlineDone ? 1 : 0 }}
                         transition={{ duration: 0.3, ease: motionEase }}
-                        className="text-[14px] text-[#8E8E93] font-light"
+                        className="text-[14px] max-md:text-[12.5px] text-[#8E8E93] font-light text-balance"
                       >
-                        Tap what you take. We&apos;ll add them to your profile.
+                        Tap what {isDependentSetup && managedFirstName ? `${managedFirstName} takes` : "you take"}. We&apos;ll add them to the profile.
                       </motion.p>
                     </div>
                     {headlineDone && (
                       <>
-                        <RevealStack visible className="flex flex-wrap gap-2 justify-center">
+                        <RevealStack visible className="flex flex-wrap gap-2 max-md:gap-1.5 justify-center">
                           {tpl.medOptions.map((m) => {
                             const active = selectedMeds.includes(m);
                             return (
@@ -2743,7 +3013,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                                 onClick={() =>
                                   setSelectedMeds((p) => (p.includes(m) ? p.filter((x) => x !== m) : [...p, m]))
                                 }
-                                className={`px-3.5 py-2 rounded-full border text-[14px] transition-all duration-200 ${
+                                className={`px-3.5 py-2 max-md:px-3 max-md:py-1.5 rounded-full border text-[14px] max-md:text-[13px] transition-all duration-200 ${
                                   active
                                     ? "border-[#0F1B3D] bg-[#0F1B3D] text-white"
                                     : "border-[#E5E5EA] bg-white text-[#0F1B3D] hover:border-[#0F1B3D]/30"
@@ -2755,11 +3025,11 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                           })}
                         </RevealStack>
                         {customMeds.length > 0 && (
-                          <div className="flex flex-wrap gap-2 justify-center">
+                          <div className="flex flex-wrap gap-2 max-md:gap-1.5 justify-center">
                             {customMeds.map((m, i) => (
                               <span
                                 key={`${m}-${i}`}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0F1B3D]/5 text-[13px] text-[#0F1B3D]"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 max-md:px-2.5 max-md:py-1 rounded-full bg-[#0F1B3D]/5 text-[13px] max-md:text-[12px] text-[#0F1B3D]"
                               >
                                 {m}
                                 <button
@@ -2785,7 +3055,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                               }
                             }}
                             placeholder="Add another medication"
-                            className="flex-1 min-w-0 rounded-full border border-[#E5E5EA] bg-white px-4 py-2.5 text-[14px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors"
+                            className="flex-1 min-w-0 rounded-full border border-[#E5E5EA] bg-white px-4 py-2.5 max-md:px-3.5 max-md:py-2 text-[14px] max-md:text-[13px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors"
                           />
                           <button
                             onClick={() => {
@@ -2794,7 +3064,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                               setNewMedDraft("");
                             }}
                             disabled={!newMedDraft.trim()}
-                            className="px-4 rounded-full border border-[#E5E5EA] text-[14px] text-[#0F1B3D] hover:border-[#0F1B3D]/30 disabled:opacity-40"
+                            className="px-4 max-md:px-3 rounded-full border border-[#E5E5EA] text-[14px] max-md:text-[13px] text-[#0F1B3D] hover:border-[#0F1B3D]/30 disabled:opacity-40"
                           >
                             <Plus className="w-4 h-4" />
                           </button>
@@ -2803,7 +3073,13 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     )}
                   </div>
                   <RevealButton visible={headlineDone} delay={0.1}>
-                    <GradientButton onClick={advanceFromMeds} label="Continue" />
+                    <button
+                      onClick={advanceFromMeds}
+                      className="w-full py-3.5 max-md:py-2.5 rounded-full text-white font-semibold font-sans text-[15px] max-md:text-[14px] transition-opacity hover:opacity-90 shadow-[0_4px_14px_rgba(15,27,61,0.25)]"
+                      style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%)" }}
+                    >
+                      Continue
+                    </button>
                   </RevealButton>
                   {headlineDone && (
                     <button
@@ -2812,9 +3088,9 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                         setCustomMeds([]);
                         advanceFromMeds();
                       }}
-                      className="text-[13px] text-[#8E8E93] hover:text-[#0F1B3D] self-center"
+                      className="text-[13px] max-md:text-[12px] text-[#8E8E93] hover:text-[#0F1B3D] self-center"
                     >
-                      I&apos;m not on anything
+                      {isDependentSetup && managedFirstName ? `${managedFirstName} isn't on anything` : "I'm not on anything"}
                     </button>
                   )}
                 </motion.div>
@@ -3074,30 +3350,33 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               // Derived data-grounded lines: a prescription med pitch for
               // any branch that collected meds (condition / medications),
               // and a pain-number callout for the money branch if they
-              // gave one earlier.
+              // gave one earlier. Order them most-specific-first so the
+              // 3-line cap preserves the lines most directly anchored to
+              // what the user just told us (med name, pain number) over
+              // generic branch boilerplate.
               const derived: string[] = [];
-              if (primaryRxMed && (routerChoice === "condition" || routerChoice === "medications")) {
-                derived.push(`I can track when your ${primaryRxMed} runs out and call your provider to renew it.`);
-              } else if (primaryRxMed && routerChoice === "money") {
-                // Money branch got a specific med — promise price action
-                // on *that* med, reinforcing the "find best price" pitch.
-                derived.push(`I can price-shop your ${primaryRxMed} refills every month.`);
-              }
+              // Rank 1 — pain callout (money branch): quotes their own
+              // words back, most specific hook possible.
               if (routerChoice === "money" && painSelection) {
                 const painOpt = [...TIME_PAIN_OPTIONS, ...MONEY_PAIN_OPTIONS].find((o) => o.id === painSelection);
                 if (painOpt) {
-                  derived.unshift(`You said ${painOpt.label.toLowerCase()}. I can help bring that down.`);
+                  derived.push(`You said ${painOpt.label.toLowerCase()}. I can help bring that down.`);
                 }
               }
-              // Dependent-setup derivation: when the user is setting
-              // Elena up for someone else, prepend a name-specific line
-              // so the elena-plan card speaks to THEM by name. Because
-              // the active profile is already the dependent at this
-              // point, this is framing-only (no separate caregiver data
-              // channel needed).
+              // Rank 2 — named prescription action. Anchored to a real
+              // medication they just entered.
+              if (primaryRxMed && (routerChoice === "condition" || routerChoice === "medications")) {
+                derived.push(`I can track when your ${primaryRxMed} runs out and call your provider to renew it.`);
+              } else if (primaryRxMed && routerChoice === "money") {
+                derived.push(`I can price-shop your ${primaryRxMed} refills every month.`);
+              }
+              // Rank 3 — generic dependent framing. Useful but the least
+              // specific of the derived lines, so it goes last among
+              // them — the more specific derived lines (pain / named med)
+              // should always outrank "book their next visit."
               if (setupForCareId && setupForCareId !== "myself" && dependentFirstName.trim()) {
                 const first = dependentFirstName.trim();
-                derived.unshift(`I can book ${first}'s next visit.`);
+                derived.push(`I can book ${first}'s next visit.`);
               }
               // Cap at 3 AND dedupe by visual variant. Two cards that map
               // to the same mockup (e.g. derived "track your Fluoxetine
@@ -3114,7 +3393,36 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 seenVariants.add(v);
                 dedupedLines.push(l);
               }
-              const lines = dedupedLines.slice(0, 3);
+              // When onboarding is running for a dependent, rewrite each
+              // line so "your X" reads as "{Name}'s X" / subsequent "your"
+              // as "their", and "you" as "them" / "they". The copy lives
+              // in one place (base constants + derived generators) so we
+              // do the rewrite downstream rather than fork every string.
+              // Lines WITHOUT "you"/"your" (e.g. "I can price-shop labs")
+              // are safe to leave untouched — caregiver context is implied
+              // by the rest of the tour.
+              const isDepSetup = !!setupForCareId && setupForCareId !== "myself";
+              const depName = isDepSetup ? dependentFirstName.trim() : "";
+              function personalizeForDependent(line: string): string {
+                if (!isDepSetup || !depName) return line;
+                // "{Name}'s next visit" / "{Name}'s {med}" lines already
+                // contain the name — skip to avoid "{Name}'s {Name}'s X".
+                if (line.includes(`${depName}'s`)) return line;
+                let firstYourDone = false;
+                let out = line.replace(/\byour\b/g, () => {
+                  if (!firstYourDone) { firstYourDone = true; return `${depName}'s`; }
+                  return "their";
+                });
+                out = out.replace(/\byou're\b/g, "they're");
+                // Subject-position "you" after common particles → "they"
+                out = out.replace(/\b(before|after|when|while|if|so)\s+you\b/g, "$1 they");
+                // Verbs following "you" as subject → "they"
+                out = out.replace(/\byou\s+(go|need|want|have|get|pay|can|should|will)\b/g, "they $1");
+                // Remaining "you" (almost always object position) → "them"
+                out = out.replace(/\byou\b/g, "them");
+                return out;
+              }
+              const lines = dedupedLines.slice(0, 3).map(personalizeForDependent);
               const hasCustomAction = customActionText.trim().length >= 3;
               const canContinue = !savingSituation && (confirmedActions.length > 0 || hasCustomAction);
               return (
@@ -3130,7 +3438,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     <div className="text-center">
                       <h2 className="text-[22px] max-md:text-[19px] font-extrabold text-[#0F1B3D] mb-2 max-md:mb-1 text-balance leading-tight">
                         <StreamingText
-                          text="Want me to start on one of these?"
+                          text="Which one do you want me to start on?"
                           onDone={() => setHeadlineDone(true)}
                         />
                       </h2>
@@ -3140,7 +3448,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                         transition={{ duration: 0.3, ease: motionEase }}
                         className="text-[14px] max-md:text-[12.5px] text-[#8E8E93] font-light text-balance"
                       >
-                        Pick the one that matters most. We can do the others next.
+                        Pick one — we can come back to the others after.
                       </motion.p>
                     </div>
                     {headlineDone && (
@@ -3222,8 +3530,23 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   //    Same pattern as care/value shell: outer card morphs via `layout`,
   //    AnimatePresence crossfades title/body between steps.
   if (phase === "profile") {
-    const currentStep = PROFILE_STEPS[profileStep];
-    const isLast = profileStep >= PROFILE_STEPS.length - 1;
+    // When managing a dependent, replace "Your X tab" with "{Name}'s X tab"
+    // so the tour copy matches the rest of the onboarding. For the
+    // family step, switch from the caregiver-invitation framing to a
+    // per-dependent organization framing (you already have a
+    // dependent — the step is about adding more, not getting started).
+    const depName = isDependentSetup && managedFirstName ? managedFirstName : "";
+    const possessive = depName ? `${depName}'s` : "Your";
+    const profileSteps = depName
+      ? [
+          { id: "health", title: `${possessive} Health tab`, body: `${possessive} conditions, meds, and care plan all land here. Elena keeps them up to date as you chat.`, tab: "health" as const, addKind: "provider" as AddKind | null },
+          { id: "visits", title: `${possessive} Visits tab`, body: `Every appointment Elena books for ${depName} lives here, plus your notes and history.`, tab: "visits" as const, addKind: "visit" as AddKind | null },
+          { id: "insurance", title: `${possessive} Insurance tab`, body: `Elena checks what's covered and estimates costs before ${depName} goes in.`, tab: "insurance" as const, addKind: "insurance" as AddKind | null },
+          { id: "family", title: "For your whole family", body: `${depName}'s profile is one view — add more family members anytime.`, tab: "health" as const, addKind: "family" as AddKind | null, showSwitcher: true },
+        ]
+      : PROFILE_STEPS;
+    const currentStep = profileSteps[profileStep];
+    const isLast = profileStep >= profileSteps.length - 1;
     const motionEase = [0.4, 0, 0.2, 1] as const;
     const addKind = currentStep.addKind;
     const showPrompt = addKind != null && !hasExistingData(addKind);
@@ -3288,7 +3611,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 document.activeElement.blur();
               }
             }}
-            className={`relative rounded-2xl bg-white p-4 sm:p-5 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-[0_-4px_30px_rgba(15,27,61,0.15)] border border-[#E5E5EA] overflow-hidden flex flex-col max-h-[80vh] ${successOverlay ? "h-[240px] sm:h-[300px]" : ""}`}
+            className={`relative rounded-2xl bg-white p-4 sm:p-5 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-[0_-4px_30px_rgba(15,27,61,0.15)] border border-[#E5E5EA] overflow-hidden flex flex-col min-h-[360px] sm:min-h-[420px] max-h-[80vh] ${successOverlay ? "h-[240px] sm:h-[300px]" : ""}`}
           >
             {/* Progress dots — tiny row showing how many profile-walkthrough
                 cards remain. Keeps late-stage dropout in check. */}
@@ -3322,13 +3645,22 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 transition={{ duration: 0.26, ease: motionEase }}
               >
                 <div className="text-center">
-                  <h3 className="text-[16px] sm:text-[18px] font-extrabold text-[#0F1B3D] mb-1.5 sm:mb-2">{currentStep.title}</h3>
-                  <p className="text-[13px] sm:text-[14px] text-[#5a6a82] font-light leading-relaxed">{currentStep.body}</p>
+                  <h3 className="text-[16px] sm:text-[18px] font-extrabold text-[#0F1B3D] mb-1.5 sm:mb-2">
+                    <StreamingText text={currentStep.title} onDone={() => setHeadlineDone(true)} />
+                  </h3>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: headlineDone ? 1 : 0 }}
+                    transition={{ duration: 0.32, ease: motionEase, delay: 0.05 }}
+                    className="text-[13px] sm:text-[14px] text-[#5a6a82] font-light leading-relaxed"
+                  >
+                    {currentStep.body}
+                  </motion.p>
                 </div>
 
-                {showPrompt && addKind === "provider" && (
+                {showPrompt && headlineDone && addKind ==="provider" && (
                   <div className="mt-3 text-left space-y-2">
-                    <p className="text-[13px] font-semibold text-[#0F1B3D]">Have any doctors you like?</p>
+                    <p className="text-[13px] font-semibold text-[#0F1B3D]">{isDependentSetup && managedFirstName ? `Any doctors ${managedFirstName} sees?` : "Have any doctors you like?"}</p>
                     <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-0.5 scrollbar-hide sm:flex-wrap sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0">
                       {TOUR_SPECIALTY_OPTIONS.map((s) => {
                         const active = providerSpecialty === s;
@@ -3415,7 +3747,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     )}
                   </div>
                 )}
-                {showPrompt && addKind === "visit" && lastAddedProvider && !visitUseChipMode && (
+                {showPrompt && headlineDone && addKind ==="visit" && lastAddedProvider && !visitUseChipMode && (
                   <div className="mt-3 text-left space-y-2">
                     <p className="text-[13px] font-semibold text-[#0F1B3D]">Have any visits with {lastAddedProvider.name} to log?</p>
                     <input
@@ -3437,7 +3769,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     </button>
                   </div>
                 )}
-                {showPrompt && addKind === "visit" && (!lastAddedProvider || visitUseChipMode) && (
+                {showPrompt && headlineDone && addKind ==="visit" && (!lastAddedProvider || visitUseChipMode) && (
                   <div className="mt-3 text-left space-y-2">
                     <p className="text-[13px] font-semibold text-[#0F1B3D]">Any recent or upcoming appointments?</p>
                     <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-0.5 scrollbar-hide sm:flex-wrap sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0">
@@ -3489,9 +3821,9 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     />
                   </div>
                 )}
-                {showPrompt && addKind === "insurance" && (
+                {showPrompt && headlineDone && addKind ==="insurance" && (
                   <div className="mt-3 text-left space-y-2">
-                    <p className="text-[13px] font-semibold text-[#0F1B3D]">Who's your insurance?</p>
+                    <p className="text-[13px] font-semibold text-[#0F1B3D]">{isDependentSetup && managedFirstName ? `Who's ${managedFirstName}'s insurance?` : "Who's your insurance?"}</p>
                     <div className="relative">
                       <select
                         className={selectClass}
@@ -3521,7 +3853,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     )}
                   </div>
                 )}
-                {showPrompt && addKind === "family" && familyMode === "manage" && (
+                {showPrompt && headlineDone && addKind ==="family" && familyMode === "manage" && (
                   <div className="mt-3 text-left space-y-2">
                     <div className="flex gap-2">
                       <input
@@ -3555,7 +3887,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     </div>
                   </div>
                 )}
-                {showPrompt && addKind === "family" && familyMode === "choose" && inviteFeedback && (
+                {showPrompt && headlineDone && addKind ==="family" && familyMode === "choose" && inviteFeedback && (
                   <p className="mt-3 text-[12px] text-[#2E6BB5] text-center">{inviteFeedback}</p>
                 )}
 
@@ -3566,7 +3898,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
             </AnimatePresence>
             </div>
 
-            {showPrompt && addKind === "family" && familyMode === "choose" ? (
+            {headlineDone && showPrompt && addKind === "family" && familyMode === "choose" ? (
               <>
                 <button
                   onClick={() => { setFamilyMode("manage"); setInviteFeedback(null); }}
@@ -3591,7 +3923,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   I'm just managing my own care
                 </button>
               </>
-            ) : showPrompt && addKind === "family" && familyMode === "manage" ? (
+            ) : headlineDone && showPrompt && addKind === "family" && familyMode === "manage" ? (
               <>
                 <button
                   onClick={() => canSave ? handleSaveItem("family") : handleSkipItem("family")}
@@ -3609,7 +3941,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   Back to options
                 </button>
               </>
-            ) : showPrompt ? (
+            ) : headlineDone && showPrompt ? (
               <button
                 onClick={() => canSave ? handleSaveItem(addKind!) : handleSkipItem(addKind!)}
                 disabled={savingItem}
@@ -3618,7 +3950,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               >
                 {savingItem ? "Saving..." : canSave ? "Save and continue" : "Continue"}
               </button>
-            ) : (
+            ) : headlineDone ? (
               <button
                 onClick={nextProfile}
                 className="w-full mt-3 sm:mt-4 py-2.5 sm:py-3 rounded-full text-white font-semibold font-sans text-[14px] hover:opacity-90 transition-opacity shadow-[0_4px_14px_rgba(15,27,61,0.25)]"
@@ -3626,7 +3958,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               >
                 {isLast ? "Got it" : "Next"}
               </button>
-            )}
+            ) : null}
             </div>
 
             {/* Success overlay — covers the card briefly after a save or an

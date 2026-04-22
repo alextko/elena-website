@@ -42,6 +42,7 @@ import type {
   InsurancePlan,
 } from "@/lib/types";
 import { apiFetch } from "@/lib/apiFetch";
+import { useAuth } from "@/lib/auth-context";
 
 // ────────────────────────────────────────────────────────────────
 //  Shared helpers
@@ -953,7 +954,7 @@ export function BookingStatusBubble({
   const label = getBookingLabel(status.phase);
 
   return (
-    <div className="flex items-start gap-3 animate-in fade-in duration-300">
+    <div className="flex items-start gap-3">
       <span className="text-xs font-semibold text-[#0F1B3D]/50 uppercase tracking-wider mt-0.5 shrink-0">
         {label}
       </span>
@@ -1273,7 +1274,7 @@ export function BookingQuestionCard({
   };
 
   return (
-    <div className="mt-3 rounded-2xl border border-[#0F1B3D]/[0.06] bg-white p-4 shadow-[0_2px_8px_rgba(15,27,61,0.06)] animate-in fade-in duration-300">
+    <div className="mt-3 rounded-2xl border border-[#0F1B3D]/[0.06] bg-white p-4 shadow-[0_2px_8px_rgba(15,27,61,0.06)]">
       <p className="text-sm text-[#0F1B3D]/70 mb-3">{question}</p>
       <div className="flex gap-2">
         <input
@@ -1329,9 +1330,17 @@ export function SourcesFooter({ sources }: { sources: SourcePayload[] }) {
 export function FormRequestCard({
   form,
   onSubmitted,
+  onOpenHipaa,
+  hipaaSignedAt,
 }: {
   form: FormRequest;
   onSubmitted?: (data: Record<string, string>) => void;
+  /** Called when the user clicks a `hipaa_consent` field. Parent opens the
+   *  shared HIPAA modal. When signing completes, parent updates
+   *  `hipaaSignedAt` (a monotonically increasing marker) and the form
+   *  auto-submits on the next render. */
+  onOpenHipaa?: () => void;
+  hipaaSignedAt?: number;
 }) {
   // Initialize values from default_value fields
   const [values, setValues] = useState<Record<string, string>>(() => {
@@ -1471,8 +1480,78 @@ export function FormRequestCard({
 
   const fieldCls = "mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30";
 
+  // When the parent signals a fresh HIPAA signature (hipaaSignedAt bumps),
+  // fill any hipaa_consent fields with "signed" and auto-submit. This is
+  // the glue between the shared HIPAA modal (lives in chat-area) and the
+  // form's submission pipeline — no separate signal path, no drift.
+  const hipaaFields = form.fields.filter((f) => f.type === "hipaa_consent");
+  const lastSeenHipaaRef = useRef(hipaaSignedAt);
+  useEffect(() => {
+    if (!hipaaSignedAt || hipaaSignedAt === lastSeenHipaaRef.current || hipaaFields.length === 0) return;
+    lastSeenHipaaRef.current = hipaaSignedAt;
+    // Build the signed payload inline rather than relying on handleSubmit's
+    // stale closure — setValues won't have flushed by the time we'd call it.
+    const signedValues = { ...values };
+    for (const f of hipaaFields) signedValues[f.key] = "signed";
+    setValues(signedValues);
+    (async () => {
+      setSubmitting(true);
+      try {
+        await apiFetch("/chat/form-submit", {
+          method: "POST",
+          body: JSON.stringify({
+            form_id: form.form_id,
+            save_to: form.save_to,
+            data: signedValues,
+          }),
+        });
+        setSubmitted(true);
+        onSubmitted?.(signedValues);
+      } catch {}
+      setSubmitting(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hipaaSignedAt]);
+
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    console.log("[form-debug] 4/5 FormRequestCard mounted", {
+      form_id: form.form_id, save_to: form.save_to, title: form.title,
+      field_count: form.fields?.length,
+    });
+    const raf = requestAnimationFrame(() => {
+      const el = rootRef.current;
+      if (!el) {
+        console.error("[form-debug] 4/5 FormRequestCard mounted but ref is null", { form_id: form.form_id });
+        return;
+      }
+      const rect = el.getBoundingClientRect();
+      const style = window.getComputedStyle(el);
+      const visible = rect.width > 0 && rect.height > 0
+        && style.display !== "none" && style.visibility !== "hidden"
+        && parseFloat(style.opacity) > 0;
+      console.log("[form-debug] 4/5 FormRequestCard DOM measurement", {
+        form_id: form.form_id, width: rect.width, height: rect.height,
+        top: rect.top, display: style.display, visibility: style.visibility,
+        opacity: style.opacity, visible,
+      });
+      if (!visible) {
+        console.error("[form-debug] 4/5 FormRequestCard rendered but NOT VISIBLE", {
+          form_id: form.form_id, rect, display: style.display,
+          visibility: style.visibility, opacity: style.opacity,
+        });
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [form.form_id, form.save_to, form.title, form.fields?.length]);
+
   return (
-    <div className="mt-3 rounded-2xl border border-[#0F1B3D]/[0.06] bg-white p-5 shadow-[0_2px_8px_rgba(15,27,61,0.06)] animate-in fade-in duration-300">
+    <div
+      ref={rootRef}
+      data-form-id={form.form_id}
+      data-form-save-to={form.save_to}
+      className="mt-3 rounded-2xl border border-[#0F1B3D]/[0.06] bg-white p-5 shadow-[0_2px_8px_rgba(15,27,61,0.06)]"
+    >
       <h4 className="text-[16px] font-bold text-[#0F1B3D] mb-1">
         {currentPageTitle || form.title}
       </h4>
@@ -1493,10 +1572,17 @@ export function FormRequestCard({
       <div className="space-y-3">
         {currentPageFields.map((field) => (
           <div key={field.key}>
-            <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">
-              {field.label}
-              {field.required && <span className="text-red-400 ml-0.5">*</span>}
-            </label>
+            {/* Hide the field label for hipaa_consent — the form title
+                ("Sign HIPAA authorization") + the button label ("Open
+                Authorization Form") already tell the user what they're
+                signing; a "HIPAA AUTHORIZATION" field label above the
+                button is triple-redundant. */}
+            {field.type !== "hipaa_consent" && (
+              <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">
+                {field.label}
+                {field.required && <span className="text-red-400 ml-0.5">*</span>}
+              </label>
+            )}
 
             {field.type === "textarea" ? (
               <textarea
@@ -1567,6 +1653,51 @@ export function FormRequestCard({
                   </button>
                 );
               })()
+            ) : field.type === "hipaa_consent" ? (
+              (() => {
+                const signed = values[field.key] === "signed";
+                if (typeof window !== "undefined") {
+                  const w = window as unknown as { __hipaaFieldLogged?: Set<string> };
+                  w.__hipaaFieldLogged = w.__hipaaFieldLogged || new Set();
+                  const key = `${form.form_id}:${field.key}`;
+                  if (!w.__hipaaFieldLogged.has(key)) {
+                    w.__hipaaFieldLogged.add(key);
+                    console.log("[hipaa-debug] rendering hipaa_consent field", {
+                      form_id: form.form_id, field_key: field.key, signed,
+                      has_onOpenHipaa: typeof onOpenHipaa === "function",
+                    });
+                    if (typeof onOpenHipaa !== "function") {
+                      console.error("[hipaa-debug] onOpenHipaa callback is missing — button click will be a no-op", {
+                        form_id: form.form_id,
+                      });
+                    }
+                  }
+                }
+                return signed ? (
+                  <div className="mt-1 flex items-center gap-2.5 rounded-xl border-2 border-solid border-[#34C759] bg-[#F0FAF3] px-3.5 py-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#34C759]">
+                      <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
+                    </span>
+                    <span className="text-[15px] font-semibold text-[#0F1B3D]">HIPAA authorization signed</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      console.log("[hipaa-debug] HIPAA button clicked", {
+                        form_id: form.form_id, has_onOpenHipaa: typeof onOpenHipaa === "function",
+                      });
+                      if (typeof onOpenHipaa === "function") {
+                        onOpenHipaa();
+                      } else {
+                        console.error("[hipaa-debug] onOpenHipaa prop not provided — modal won't open");
+                      }
+                    }}
+                    className="mt-1 w-full rounded-full bg-[#0F1B3D] px-5 py-3 text-[15px] font-semibold text-white shadow-md transition-all hover:bg-[#0F1B3D]/90 hover:-translate-y-px"
+                  >
+                    Open Authorization Form
+                  </button>
+                );
+              })()
             ) : (
               <input
                 type={field.type === "date" ? "date" : field.type === "phone" ? "tel" : "text"}
@@ -1580,40 +1711,47 @@ export function FormRequestCard({
         ))}
       </div>
 
-      <div className="flex gap-2 mt-4">
-        {isMultiPage && currentPage > 0 && (
-          <button
-            onClick={() => setCurrentPage((p) => p - 1)}
-            className="rounded-xl px-4 py-2.5 text-[14px] font-medium text-[#8E8E93] hover:text-[#0F1B3D] transition-colors"
-          >
-            Back
-          </button>
-        )}
-        {isLastPage ? (
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="flex-1 rounded-xl bg-[#0F1B3D] px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-[#0F1B3D]/90 disabled:opacity-40 transition-colors"
-          >
-            {submitting ? "Submitting..." : "Submit"}
-          </button>
-        ) : (
-          <button
-            onClick={() => setCurrentPage((p) => p + 1)}
-            className="flex-1 rounded-xl bg-[#0F1B3D] px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-[#0F1B3D]/90 transition-colors"
-          >
-            Next
-          </button>
-        )}
-        {isLastPage && (
-          <button
-            onClick={() => { setSubmitted(true); onSubmitted?.({}); }}
-            className="rounded-xl px-4 py-2.5 text-[14px] font-medium text-[#8E8E93] hover:text-[#0F1B3D] transition-colors"
-          >
-            Skip
-          </button>
-        )}
-      </div>
+      {/* HIPAA-only forms don't need a Submit/Skip footer — the
+          "Open Authorization Form" button itself triggers the sign flow,
+          and auto-submit handles sending once HIPAA completes. A
+          secondary Submit row is redundant and invites users to hit it
+          before signing (which would submit with empty values). */}
+      {!(form.fields.length === 1 && form.fields[0].type === "hipaa_consent") && (
+        <div className="flex gap-2 mt-4">
+          {isMultiPage && currentPage > 0 && (
+            <button
+              onClick={() => setCurrentPage((p) => p - 1)}
+              className="rounded-xl px-4 py-2.5 text-[14px] font-medium text-[#8E8E93] hover:text-[#0F1B3D] transition-colors"
+            >
+              Back
+            </button>
+          )}
+          {isLastPage ? (
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="flex-1 rounded-xl bg-[#0F1B3D] px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-[#0F1B3D]/90 disabled:opacity-40 transition-colors"
+            >
+              {submitting ? "Submitting..." : "Submit"}
+            </button>
+          ) : (
+            <button
+              onClick={() => setCurrentPage((p) => p + 1)}
+              className="flex-1 rounded-xl bg-[#0F1B3D] px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-[#0F1B3D]/90 transition-colors"
+            >
+              Next
+            </button>
+          )}
+          {isLastPage && (
+            <button
+              onClick={() => { setSubmitted(true); onSubmitted?.({}); }}
+              className="rounded-xl px-4 py-2.5 text-[14px] font-medium text-[#8E8E93] hover:text-[#0F1B3D] transition-colors"
+            >
+              Skip
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1795,6 +1933,7 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
   form: FormRequest;
   onSubmitted?: (data: Record<string, string>) => void;
 }) {
+  const { profileId } = useAuth();
   const sections = form.sections || ["conditions", "medications", "allergies"];
   const existing = form.existing || {};
 
@@ -1814,6 +1953,17 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
   const [allergyForm, setAllergyForm] = useState({ name: "", type: "", reaction: "", severity: "" });
   const [doctorForm, setDoctorForm] = useState({ name: "", specialty: "", practice_name: "", phone: "", address: "" });
   const [visitForm, setVisitForm] = useState({ provider_name: "", visit_type: "", visit_date: "", notes: "" });
+  // Basics section: single form with profile fundamentals. Pre-populates
+  // from existing profile data so a caregiver who already entered name
+  // during tour just needs to fill in DOB/zip. Saved via /profile/:id
+  // PUT on submit (handled alongside the normal /chat/form-submit flow).
+  const basicsExisting = (existing.basics || {}) as { first_name?: string; last_name?: string; date_of_birth?: string; zip_code?: string };
+  const [basicsForm, setBasicsForm] = useState({
+    first_name: basicsExisting.first_name || "",
+    last_name: basicsExisting.last_name || "",
+    date_of_birth: basicsExisting.date_of_birth || "",
+    zip_code: basicsExisting.zip_code || "",
+  });
 
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -1821,6 +1971,7 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
   const currentSection = sections[currentPage];
   const isLastPage = currentPage === sections.length - 1;
   const sectionLabels: Record<string, string> = {
+    basics: "Basics",
     conditions: "Conditions",
     medications: "Medications",
     allergies: "Allergies",
@@ -1905,6 +2056,26 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
     try {
       const data: Record<string, string> = {};
       const stripId = (items: AnyItem[]) => items.map(({ id, ...rest }) => rest);
+      // Basics save separately to /profile/:id — it's the user_profiles
+      // table, not the health_profile composite endpoint. Do it first so
+      // the name is saved before the agent processes the summary message.
+      if (sections.includes("basics") && profileId) {
+        const hasAny = Object.values(basicsForm).some((v) => (v || "").toString().trim());
+        if (hasAny) {
+          try {
+            await apiFetch(`/profile/${profileId}`, {
+              method: "PUT",
+              body: JSON.stringify({
+                first_name: basicsForm.first_name.trim() || undefined,
+                last_name: basicsForm.last_name.trim() || undefined,
+                date_of_birth: basicsForm.date_of_birth || undefined,
+                zip_code: basicsForm.zip_code.trim() || undefined,
+              }),
+            });
+          } catch {}
+          data.basics = JSON.stringify(basicsForm);
+        }
+      }
       if (sections.includes("conditions") && conditions.length > 0) data.conditions = JSON.stringify(stripId(conditions));
       if (sections.includes("medications") && medications.length > 0) data.medications = JSON.stringify(stripId(medications));
       if (sections.includes("allergies") && allergies.length > 0) data.allergies = JSON.stringify(stripId(allergies));
@@ -1943,8 +2114,45 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
     : currentSection === "visits" ? "a past visit"
     : "an item";
 
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    console.log("[form-debug] 4/5 HealthProfileIntakeCard mounted", {
+      form_id: form.form_id, save_to: form.save_to, title: form.title,
+      sections: sections,
+    });
+    const raf = requestAnimationFrame(() => {
+      const el = rootRef.current;
+      if (!el) {
+        console.error("[form-debug] 4/5 HealthProfileIntakeCard mounted but ref is null", { form_id: form.form_id });
+        return;
+      }
+      const rect = el.getBoundingClientRect();
+      const style = window.getComputedStyle(el);
+      const visible = rect.width > 0 && rect.height > 0
+        && style.display !== "none" && style.visibility !== "hidden"
+        && parseFloat(style.opacity) > 0;
+      console.log("[form-debug] 4/5 HealthProfileIntakeCard DOM measurement", {
+        form_id: form.form_id, width: rect.width, height: rect.height,
+        top: rect.top, display: style.display, visibility: style.visibility,
+        opacity: style.opacity, visible,
+      });
+      if (!visible) {
+        console.error("[form-debug] 4/5 HealthProfileIntakeCard rendered but NOT VISIBLE", {
+          form_id: form.form_id, rect, display: style.display,
+          visibility: style.visibility, opacity: style.opacity,
+        });
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [form.form_id, form.save_to, form.title, sections]);
+
   return (
-    <div className="mt-3 rounded-2xl border border-[#0F1B3D]/[0.06] bg-white p-5 shadow-[0_2px_8px_rgba(15,27,61,0.06)] animate-in fade-in duration-300">
+    <div
+      ref={rootRef}
+      data-form-id={form.form_id}
+      data-form-save-to={form.save_to}
+      className="mt-3 rounded-2xl border border-[#0F1B3D]/[0.06] bg-white p-5 shadow-[0_2px_8px_rgba(15,27,61,0.06)]"
+    >
       <h4 className="text-[16px] font-bold text-[#0F1B3D] mb-1">{form.title || "Your Health Profile"}</h4>
       {form.description && <p className="text-[13px] text-[#8E8E93] mb-4">{form.description}</p>}
 
@@ -1958,17 +2166,71 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
 
       <h5 className="text-[15px] font-bold text-[#0F1B3D] mb-3">{sectionLabels[currentSection] || currentSection}</h5>
 
-      {items.map((item) => (
-        <ItemPill key={item.id} label={itemLabel(item)} onEdit={() => startEdit(item.id)} onDelete={() => handleDelete(item.id)} />
-      ))}
+      {/* Basics is a single inline form (no items list). Renders above
+          the items/add UI and short-circuits the ItemPill pattern. */}
+      {currentSection === "basics" ? (
+        <div className="space-y-2.5">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">First Name</label>
+              <input
+                value={basicsForm.first_name}
+                onChange={(e) => setBasicsForm({ ...basicsForm, first_name: e.target.value })}
+                placeholder="First"
+                autoComplete="given-name"
+                className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+              />
+            </div>
+            <div>
+              <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Last Name</label>
+              <input
+                value={basicsForm.last_name}
+                onChange={(e) => setBasicsForm({ ...basicsForm, last_name: e.target.value })}
+                placeholder="Last"
+                autoComplete="family-name"
+                className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Date of Birth</label>
+            <input
+              type="date"
+              value={basicsForm.date_of_birth}
+              onChange={(e) => setBasicsForm({ ...basicsForm, date_of_birth: e.target.value })}
+              autoComplete="bday"
+              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+            />
+          </div>
+          <div>
+            <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">Zip Code</label>
+            <input
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={5}
+              value={basicsForm.zip_code}
+              onChange={(e) => setBasicsForm({ ...basicsForm, zip_code: e.target.value.replace(/\D/g, "") })}
+              placeholder="10001"
+              autoComplete="postal-code"
+              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+            />
+          </div>
+        </div>
+      ) : (
+        <>
+          {items.map((item) => (
+            <ItemPill key={item.id} label={itemLabel(item)} onEdit={() => startEdit(item.id)} onDelete={() => handleDelete(item.id)} />
+          ))}
 
-      {!showForm && (
-        <button type="button" onClick={startAdd} className="flex items-center gap-1.5 mt-2 text-[14px] font-semibold text-[#0F1B3D] hover:opacity-70 transition-opacity">
-          <Plus className="h-4 w-4" />Add {addLabel}
-        </button>
+          {!showForm && (
+            <button type="button" onClick={startAdd} className="flex items-center gap-1.5 mt-2 text-[14px] font-semibold text-[#0F1B3D] hover:opacity-70 transition-opacity">
+              <Plus className="h-4 w-4" />Add {addLabel}
+            </button>
+          )}
+        </>
       )}
 
-      {showForm && (
+      {showForm && currentSection !== "basics" && (
         <div className="mt-2 rounded-xl border border-[#E5E5EA] bg-[#FAFAFC] p-4">
           {currentSection === "conditions" && <ConditionFormFields form={condForm} onChange={setCondForm} />}
           {currentSection === "medications" && <MedicationFormFields form={medForm} onChange={setMedForm} />}
@@ -2989,10 +3251,17 @@ function formatScheduledAt(iso: string | null | undefined): {
 
 export function ScheduledActionCard({ data }: { data: ScheduledActionCreatedPayload }) {
   const { date, time } = formatScheduledAt(data.scheduled_at);
-  const kindLabel =
-    data.kind === "call" ? "Call scheduled" : data.kind === "visit" ? "Visit added" : "Reminder set";
-  const Icon = data.kind === "call" ? Phone : data.kind === "visit" ? Calendar : CircleCheck;
   const showHipaaBanner = data.kind === "call" && data.hipaa_signed === false;
+  // Make the card header tell the truth: when HIPAA is unsigned the call
+  // isn't truly scheduled — it's queued until the user signs. Historic
+  // bug: users saw "Call scheduled" + a subtle banner, dismissed the
+  // banner, and didn't realize the call wouldn't fire. Moving the status
+  // into the header (the biggest text they see) fixes that at the source.
+  const kindLabel =
+    data.kind === "call"
+      ? (showHipaaBanner ? "Call queued — needs HIPAA" : "Call scheduled")
+      : data.kind === "visit" ? "Visit added" : "Reminder set";
+  const Icon = data.kind === "call" ? Phone : data.kind === "visit" ? Calendar : CircleCheck;
 
   return (
     <div

@@ -53,7 +53,19 @@ export function HipaaConsentModal({ open, onOpenChange, onSigned }: HipaaConsent
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[420px] p-0 overflow-hidden rounded-2xl">
+      {/* z-[400] beats the profile popover's z-[350] fallback AND the
+          default z-50 of both the overlay and content. overlayClassName
+          matches so the backdrop sits between the profile popover and
+          this modal — without it the overlay stays at z-50 and the
+          profile popover (z-50 or z-350) visually bleeds through.
+          w-[calc(100%-2rem)] ensures the modal fills mobile viewports
+          properly — without it the DialogContent defaults to intrinsic
+          content width on mobile, which produces a narrow column that
+          force-wraps bullets into a cramped stack. */}
+      <DialogContent
+        className="w-[calc(100%-2rem)] max-w-[420px] max-h-[calc(100svh-2rem)] overflow-y-auto p-0 rounded-2xl !z-[400]"
+        overlayClassName="!z-[395]"
+      >
         {step === "sign" ? (
           <>
             <div className="p-6 pb-0">

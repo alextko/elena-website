@@ -83,6 +83,7 @@ type Message = {
   refillPlanCreated?: import("@/components/chat-cards").RefillPlanCreatedPayload | null;
   carePlanShown?: import("@/components/chat-cards").CarePlanShownPayload | null;
   scheduledActionCreated?: import("@/components/chat-cards").ScheduledActionCreatedPayload | null;
+  needsHipaaConsent?: boolean;
 };
 
 // Streaming text — reveals character by character, snapping to word boundaries.
@@ -195,12 +196,14 @@ export function ChatArea({
   const [messages, setMessages] = useState<Message[]>([]);
   const messagesRef = useRef<Message[]>([]);
   useEffect(() => { messagesRef.current = messages; }, [messages]);
+  const streamingIdRef = useRef<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [toolLabel, setToolLabel] = useState<string | null>(null);
   const [welcomeHeading, setWelcomeHeading] = useState<string | null>(null);
   const [welcomeMessage, setWelcomeMessage] = useState<string | null>(null);
   const [streamingId, setStreamingId] = useState<string | null>(null);
+  useEffect(() => { streamingIdRef.current = streamingId; }, [streamingId]);
   const [chatTitle, setChatTitle] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadingMessages, setLoadingMessages] = useState(false);
@@ -210,7 +213,7 @@ export function ChatArea({
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dragCounterRef = useRef(0);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
-  const [upgradeReason, setUpgradeReason] = useState<"upgrade_required" | "limit_reached" | "feature_blocked" | "document_limit">("document_limit");
+  const [upgradeReason, setUpgradeReason] = useState<"upgrade_required" | "limit_reached" | "feature_blocked" | "document_limit" | "soft">("document_limit");
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>(undefined);
   // Post-seed tour paywall: the review modal precedes the upgrade
   // modal and fires on the first real value-moment Elena delivers
@@ -218,7 +221,10 @@ export function ChatArea({
   // todo creation). One-shot: consumes the sessionStorage gate flag.
   const [reviewsOpen, setReviewsOpen] = useState(false);
   const [hipaaConsentOpen, setHipaaConsentOpen] = useState(false);
-  const [showHipaaButton, setShowHipaaButton] = useState(false);
+  // Monotonic marker that bumps each time HIPAA is signed. Passed to every
+  // FormRequestCard so any form with a hipaa_consent field can detect the
+  // signature, mark the field "signed," and auto-submit.
+  const [hipaaSignedAt, setHipaaSignedAt] = useState<number>(0);
 
   // Auto-open HIPAA consent modal via ?hipaa=1 URL param
   useEffect(() => {
@@ -231,6 +237,13 @@ export function ChatArea({
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [softPaywallOpen, setSoftPaywallOpen] = useState(false);
   const userMessageCountRef = useRef(0);
+  // Counts ONLY user-typed sends (excludes the auto-sent seed from the
+  // tour handoff). When the post-seed tour gate is armed, hitting the
+  // 2nd typed send opens reviews → upgrade. Turn-count-based because
+  // response-signal triggers (booking_id / bill_analysis / todo_created)
+  // were unreliable — they only fire when Elena actually runs a gated
+  // tool, which many seeded actions don't.
+  const userTypedCountRef = useRef(0);
 
   // Soft paywall: show upgrade modal once on first value-moment action (free users)
   const triggerSoftPaywall = useCallback(() => {
@@ -258,14 +271,66 @@ export function ChatArea({
   // to reset the sent/sending guards so the new seed can still reach
   // Elena. Without this, the stuck flags silently swallow the seed.
   const lastAutoSentQuery = useRef<string | null>(null);
+  // Ref mirror of the initialQuery prop so flushPendingSeed (called from
+  // fetchWelcome and other non-effect contexts) always sees the latest
+  // value without depending on render / effect order.
+  const initialQueryRef = useRef(initialQuery);
+  useEffect(() => { initialQueryRef.current = initialQuery; }, [initialQuery]);
   const scrollEndRef = useRef<HTMLDivElement>(null);
   const { sendAndPoll, cancel } = usePollChat(demoMode);
   const booking = useBookingPoll();
   const msgIdCounter = useRef(0);
+  const msgIdMountToken = useRef(Date.now().toString(36));
 
   const nextId = () => {
     msgIdCounter.current++;
-    return `msg-${msgIdCounter.current}`;
+    return `msg-${msgIdMountToken.current}-${msgIdCounter.current}`;
+  };
+
+  // Form-presence sentinel. When the backend emits a form_request, we
+  // start a timer and verify the card actually landed in the DOM within
+  // 2s. If it didn't, we've got a silent render bug — emit a loud
+  // console.error AND an analytics event so we can see aggregate rates
+  // and correlate to the agent's next turn. 2s is generous enough to
+  // cover the streaming-text animation (~1s for typical replies) and
+  // the raf scheduling inside the card's mount effect.
+  const scheduleFormPresenceCheck = (formId?: string, saveTo?: string, msgId?: string) => {
+    if (!formId || typeof window === "undefined") return;
+    const deadline = 2500;
+    const timer = window.setTimeout(() => {
+      const el = document.querySelector(`[data-form-id="${formId}"]`);
+      if (!el) {
+        const diag = {
+          form_id: formId, save_to: saveTo, msg_id: msgId,
+          messages_count: messagesRef.current.length,
+          msg_has_form: messagesRef.current.some((m) => m.formRequest?.form_id === formId),
+          streaming_id: streamingIdRef.current,
+          timestamp: Date.now(),
+        };
+        console.error("[form-debug] 5/5 FORM MISSING FROM DOM after 2.5s — render bug", diag);
+        analytics.track("Form Missing From DOM", diag);
+        return;
+      }
+      const rect = el.getBoundingClientRect();
+      const style = window.getComputedStyle(el);
+      const visible = rect.width > 0 && rect.height > 0
+        && style.display !== "none" && style.visibility !== "hidden"
+        && parseFloat(style.opacity) > 0;
+      if (!visible) {
+        const diag = {
+          form_id: formId, save_to: saveTo, msg_id: msgId,
+          width: rect.width, height: rect.height, display: style.display,
+          visibility: style.visibility, opacity: style.opacity,
+        };
+        console.error("[form-debug] 5/5 FORM IN DOM BUT INVISIBLE after 2.5s", diag);
+        analytics.track("Form Invisible In DOM", diag);
+      } else {
+        console.log("[form-debug] 5/5 form sentinel OK — form is in DOM and visible", {
+          form_id: formId, save_to: saveTo, width: rect.width, height: rect.height,
+        });
+      }
+    }, deadline);
+    return () => window.clearTimeout(timer);
   };
 
   // Scroll to bottom when messages change
@@ -352,13 +417,33 @@ export function ChatArea({
       // Landing on an existing session counts as completing the current welcome
       // cycle — future transitions back to a new chat are free to fetch again.
       welcomeInFlightRef.current = false;
+      setSessionReady(true);
       loadMessages(activeSessionId, requestId);
+      // Eager seed flush — the existing-session path never calls
+      // fetchWelcome, so the only trigger for the seed is the auto-send
+      // effect. When post-tour handoff sets pendingQuery after this
+      // effect already fired, the initialQuery-dep re-run might race
+      // with handleSendRef assignment; call directly here and with a
+      // short retry to cover both orderings.
+      queueMicrotask(() => flushPendingSeedRef.current("loadMessages"));
+      setTimeout(() => flushPendingSeedRef.current("loadMessages-delayed"), 80);
     } else if (isNewChat || profileChanged) {
       const pending = initialQuery || localStorage.getItem("elena_pending_query");
       console.log("[chat-area] fetching welcome, silent:", !!pending, "isNewChat:", isNewChat, "profileChanged:", profileChanged);
       setLoadingMessages(false);
       // Start a fresh welcome session for the active profile
       fetchWelcome(!!pending);
+    } else if (initialQuery || (typeof window !== "undefined" && localStorage.getItem("elena_pending_query") && sessionStorage.getItem("elena_tour_post_seed_gate") === "1")) {
+      // Seed is waiting but no session exists yet and no explicit
+      // "new chat" signal has been raised. Fetch welcome eagerly so
+      // the seed can actually land. This is the tour's "self"
+      // handoff case: the user went through the whole tour without
+      // switching profiles, so no fetchWelcome was ever triggered
+      // during the tour. Without this branch the auto-send effect
+      // spins forever with sessionId=null.
+      console.log("[chat-area] eager welcome fetch for pending seed (no session yet)");
+      setLoadingMessages(false);
+      fetchWelcome(true);
     } else {
       console.log("[chat-area] no action — waiting for sessions to load");
       setLoadingMessages(false);
@@ -417,6 +502,21 @@ export function ChatArea({
           inviteAccepted: m.invite_accepted ? { accepter_name: m.invite_accepted.accepter_name, message: m.text } : undefined,
           insurancePlanComparison: m.insurance_plan_comparison,
         }));
+      // Form-request diagnostic for replayed history. Same payload
+      // shape as the live-response log — so a refresh mid-debug still
+      // shows whether forms were stored in chat_messages.
+      raw.forEach((m) => {
+        if (m.formRequest) {
+          const fr = m.formRequest as unknown as { form_id?: string; save_to?: string; title?: string; fields?: Array<{ key: string; type: string }> };
+          console.log("[form-debug] form_request (history)", {
+            form_id: fr.form_id,
+            save_to: fr.save_to,
+            title: fr.title,
+            field_count: fr.fields?.length || 0,
+            field_types: (fr.fields || []).map((f) => `${f.key}:${f.type}`),
+          });
+        }
+      });
       // Deduplicate consecutive identical user messages (from retries after errors)
       const mapped = raw.filter((m, i) => {
         if (i === 0 || m.role !== "user") return true;
@@ -465,6 +565,7 @@ export function ChatArea({
                 reviewResults: chatResult.review_results,
                 webSources: chatResult.web_sources,
                 formRequest: chatResult.form_request,
+                needsHipaaConsent: !!chatResult.needs_hipaa_consent,
               },
             ]);
             setStreamingId(assistantId);
@@ -497,13 +598,19 @@ export function ChatArea({
 
   async function fetchWelcome(silent = false) {
     console.log("[chat-area] fetchWelcome called, silent:", silent);
-    // Guard against StrictMode / effect re-runs spawning multiple welcome sessions.
-    // Once a welcome call is in flight (or completed) for this mount cycle,
-    // subsequent calls are no-ops. The dispatch effect at the top of the component
-    // resets this ref via setSessionReady(false)/sessionIdRef.current=null when
-    // the user actually switches to a new chat.
+    // If we already have a live session for this profile, don't create
+    // another one — just flush any pending seed against it. This is the
+    // belt-and-suspenders guard against the auto-send effect's eager
+    // fetch racing with the session effect's fetch.
+    if (sessionIdRef.current) {
+      console.log("[chat-area] fetchWelcome SKIPPED — session already exists:", sessionIdRef.current);
+      flushPendingSeedRef.current?.("fetchWelcome-skip");
+      return;
+    }
+    // In-flight guard. Released on BOTH success and failure below so
+    // one failed fetch never permanently locks the component out.
     if (welcomeInFlightRef.current) {
-      console.log("[chat-area] fetchWelcome SKIPPED — already in flight / completed");
+      console.log("[chat-area] fetchWelcome SKIPPED — already in flight");
       return;
     }
     welcomeInFlightRef.current = true;
@@ -532,6 +639,12 @@ export function ChatArea({
         // Fallback — still usable, just no personalized welcome
         setWelcomeHeading("What can I help you with?");
         setSuggestions(["What can you help me with?", "Find a cheaper pharmacy", "Help with my insurance"]);
+        // Release the in-flight guard so a retry (eager re-fetch from
+        // the auto-send effect when a seed is waiting, or a profile
+        // switch) can actually hit the endpoint again. Without this,
+        // one failed welcome call permanently locks the component out
+        // of session creation and the pending seed hangs forever.
+        welcomeInFlightRef.current = false;
         return;
       }
       const data: WelcomeResponse = await res.json();
@@ -544,17 +657,36 @@ export function ChatArea({
       }
       sessionIdRef.current = data.session_id;
       setSessionReady(true);
+      // Release the in-flight guard now that we have a session. Future
+      // fetches (profile switch, new chat) get to run. The session-exists
+      // guard at the top of fetchWelcome prevents unnecessary duplicates.
+      welcomeInFlightRef.current = false;
       // Notify sidebar immediately so the session appears
       if (!hasCreatedSessionRef.current && data.session_id) {
         hasCreatedSessionRef.current = true;
         onSessionCreated(data.session_id, silent ? "New conversation" : undefined);
       }
+      // Eager seed flush — don't wait on React effect scheduling.
+      // sessionIdRef is set synchronously above; handleSendRef should be
+      // assigned by this point (set during the first render). If the
+      // refs aren't ready yet (very early mount race), the standard
+      // effect-driven path will catch it when sessionReady flips true.
+      // Microtask delay lets any pending state flushes settle so
+      // handleSend sees up-to-date session state.
+      queueMicrotask(() => flushPendingSeedRef.current("fetchWelcome"));
+      // Extra safety net — 50ms after welcome lands, try one more time
+      // for any case where handleSendRef.current wasn't assigned yet at
+      // the microtask point (first render of the chat layout).
+      setTimeout(() => flushPendingSeedRef.current("fetchWelcome-delayed"), 50);
     } catch {
       // Fallback -- show generic welcome so the page is never blank
       if (!silent) {
         setWelcomeHeading("What can I help you with?");
         setSuggestions(["What can you help me with?", "Find a cheaper pharmacy", "Help with my insurance"]);
       }
+      // See comment on the !res.ok branch above — release the guard on
+      // network/parse errors too, so a retry can actually run.
+      welcomeInFlightRef.current = false;
     }
   }
 
@@ -571,37 +703,98 @@ export function ChatArea({
     }
   }, [initialDocName]);
 
+  // Single source of truth for seed auto-send. Reads all guards via refs
+  // so it can be called from anywhere — the auto-send effect (React
+  // lifecycle driven) AND directly at the end of fetchWelcome (synchronous
+  // hook into the moment the session actually becomes ready). Belt +
+  // suspenders approach: the post-tour seed regressing has been a
+  // recurring bug because of the many paths that can race profile switch
+  // vs. session creation vs. StrictMode double-invocation. Calling this
+  // from multiple observation points makes it robust to any single one
+  // of those paths silently misfiring.
+  const flushPendingSeed = (source: string) => {
+    const state = {
+      source,
+      sent: initialQuerySentRef.current,
+      sending: initialQuerySending.current,
+      sessionId: sessionIdRef.current,
+      hasHandleSend: !!handleSendRef.current,
+      initialQueryRef: !!initialQueryRef.current,
+      lastAutoSent: lastAutoSentQuery.current?.slice(0, 30),
+    };
+    if (initialQuerySentRef.current || initialQuerySending.current) {
+      console.log(`[chat-area] flushPendingSeed BLOCKED (already sent/sending)`, state);
+      return;
+    }
+    if (!sessionIdRef.current) {
+      console.log(`[chat-area] flushPendingSeed BLOCKED (no sessionId)`, state);
+      return;
+    }
+    if (!handleSendRef.current) {
+      console.log(`[chat-area] flushPendingSeed BLOCKED (no handleSend)`, state);
+      return;
+    }
+
+    let seed = initialQueryRef.current as string | null | undefined;
+    let seedSource: "prop" | "stash" | "none" = seed ? "prop" : "none";
+    if (!seed && typeof window !== "undefined") {
+      try {
+        const stashed = localStorage.getItem("elena_pending_query");
+        const tourGateFlag = sessionStorage.getItem("elena_tour_post_seed_gate") === "1";
+        console.log(`[chat-area] flushPendingSeed stash check`, { stashed: !!stashed, tourGateFlag });
+        if (stashed && tourGateFlag) { seed = stashed; seedSource = "stash"; }
+      } catch {}
+    }
+    if (!seed) {
+      console.log(`[chat-area] flushPendingSeed BLOCKED (no seed)`, state);
+      return;
+    }
+    if (seed === lastAutoSentQuery.current) {
+      console.log(`[chat-area] flushPendingSeed BLOCKED (seed matches lastAutoSent)`, { ...state, seedPreview: seed.slice(0, 40) });
+      return;
+    }
+
+    console.log(`[chat-area] flushPendingSeed FIRING (source=${source}, seedSource=${seedSource}):`, seed.slice(0, 50));
+    initialQuerySending.current = true;
+    initialQuerySentRef.current = true;
+    lastAutoSentQuery.current = seed;
+    try { localStorage.removeItem("elena_pending_query"); } catch {}
+    handleSendRef.current(seed);
+  };
+  const flushPendingSeedRef = useRef(flushPendingSeed);
+  flushPendingSeedRef.current = flushPendingSeed;
+
   useEffect(() => {
     // Reset the sent/sending guards when initialQuery changes to a new
-    // value. Covers the tour's second-seed handoff (landing query was
-    // already auto-sent on mount, tour's onSeedQuery then hands a new
-    // seed through pendingQuery → initialQuery) and the "reuse the
-    // same chat" flow where a stuck ref would otherwise eat the seed.
-    const isNewQuery = !!initialQuery && initialQuery !== lastAutoSentQuery.current;
+    // value (tour's second-seed handoff, reuse-the-same-chat flow).
+    let effectiveSeed = initialQuery;
+    if (!effectiveSeed && typeof window !== "undefined") {
+      try {
+        const stashed = localStorage.getItem("elena_pending_query");
+        const tourGateFlag = sessionStorage.getItem("elena_tour_post_seed_gate") === "1";
+        if (stashed && tourGateFlag && stashed !== lastAutoSentQuery.current) {
+          effectiveSeed = stashed;
+        }
+      } catch {}
+    }
+    const isNewQuery = !!effectiveSeed && effectiveSeed !== lastAutoSentQuery.current;
     if (isNewQuery) {
       initialQuerySentRef.current = false;
       initialQuerySending.current = false;
     }
     console.log(
-      `[chat-area] auto-send check: hasInitialQuery=${!!initialQuery} alreadySent=${initialQuerySentRef.current} sending=${initialQuerySending.current} sessionId=${sessionIdRef.current || "null"} hasHandleSend=${!!handleSendRef.current} sessionReady=${sessionReady} isLoading=${isLoading} isNewQuery=${isNewQuery} initialQueryPreview=${initialQuery ? JSON.stringify(initialQuery.slice(0, 40)) : "null"}`,
+      `[chat-area] auto-send check: hasInitialQuery=${!!initialQuery} fromStash=${!!effectiveSeed && !initialQuery} alreadySent=${initialQuerySentRef.current} sending=${initialQuerySending.current} sessionId=${sessionIdRef.current || "null"} hasHandleSend=${!!handleSendRef.current} sessionReady=${sessionReady} isLoading=${isLoading} isNewQuery=${isNewQuery} seedPreview=${effectiveSeed ? JSON.stringify(effectiveSeed.slice(0, 40)) : "null"}`,
     );
-    // Guard on isLoading: if a prior send is still in flight, handleSend
-    // would early-return silently and the seed would be lost. When
-    // isLoading flips back to false the effect re-runs and picks it up.
     if (isLoading) return;
-    if (
-      initialQuery &&
-      !initialQuerySentRef.current &&
-      !initialQuerySending.current &&
-      sessionIdRef.current &&
-      handleSendRef.current
-    ) {
-      console.log("[chat-area] AUTO-SENDING initial query:", initialQuery.slice(0, 50));
-      initialQuerySending.current = true;
-      initialQuerySentRef.current = true;
-      lastAutoSentQuery.current = initialQuery;
-      localStorage.removeItem("elena_pending_query");
-      handleSendRef.current(initialQuery);
+    flushPendingSeedRef.current("effect");
+    // If we have a seed but no session yet, kick off a welcome fetch
+    // eagerly. The session effect only runs when activeSessionId /
+    // isNewChat / profileId change — none of which change on the tour's
+    // seed handoff. Without this eager fallback, seed arrives after
+    // session effect already settled and nothing else triggers fetch.
+    if (effectiveSeed && !sessionIdRef.current && !welcomeInFlightRef.current) {
+      console.log("[chat-area] auto-send effect: seed waiting but no session — fetching welcome");
+      fetchWelcome(true);
     }
   }, [initialQuery, welcomeMessage, sessionReady, isLoading]);
 
@@ -816,6 +1009,41 @@ export function ChatArea({
       const message = (text || input).trim();
       if ((!message && pendingFiles.length === 0) || isLoading) return;
 
+      // Post-seed tour paywall — chat-turn-counter trigger.
+      // The auto-send effect fires the tour's seed through this same
+      // handleSend, so we skip it via the lastAutoSentQuery comparison;
+      // only real user-typed sends bump userTypedCountRef. When the
+      // tour gate flag is armed and a free user types their 2nd
+      // meaningful message (≥10 chars, so "ok" / "thanks" don't burn
+      // the gate), we show the reviews modal → upgrade modal and
+      // block the send. Flag is consumed so it only fires once.
+      const isAutoSeedSend = !!lastAutoSentQuery.current && message === lastAutoSentQuery.current;
+      if (!isAutoSeedSend && message.length > 0) {
+        userTypedCountRef.current++;
+        const tourGateFlag = typeof window !== "undefined"
+          && sessionStorage.getItem("elena_tour_post_seed_gate") === "1";
+        const isFreeTier = !(subscription && subscription.tier && subscription.tier !== "free");
+        if (
+          userTypedCountRef.current === 2
+          && tourGateFlag
+          && isFreeTier
+          && message.length >= 10
+        ) {
+          analytics.track("Tour Post-Seed Paywall Hit" as any, {
+            trigger: "second_message",
+            message_length: message.length,
+          });
+          try { sessionStorage.removeItem("elena_tour_post_seed_gate"); } catch {}
+          // Soft reason — the user hasn't hit any real quota yet, so the
+          // modal reads "Get more out of Elena" rather than "Free limit
+          // reached." The reviews modal precedes this, then Continue
+          // chains into the upgrade modal carrying this reason.
+          setUpgradeReason("soft");
+          setReviewsOpen(true);
+          return;
+        }
+      }
+
       setInput("");
       if (textareaRef.current) textareaRef.current.style.height = "auto";
       setSuggestions([]);
@@ -920,12 +1148,76 @@ export function ChatArea({
               refillPlanCreated: chatResult.refill_plan_created,
               carePlanShown: chatResult.care_plan_shown,
               scheduledActionCreated: chatResult.scheduled_action_created,
+              needsHipaaConsent: !!chatResult.needs_hipaa_consent,
             },
           ]);
           setStreamingId(assistantId);
           setSuggestions(chatResult.suggestions || []);
           setToolLabel(null);
           setIsLoading(false);
+          // Form-request diagnostic pipeline — forms disappearing
+          // silently is the #1 chat bug, so we trace every stage:
+          //   1) received from backend  (this block)
+          //   2) added to message state (setMessages above — verify via render log in FormRequestCard)
+          //   3) mounted in DOM         (FormRequestCard / HealthProfileIntakeCard useEffect)
+          //   4) actually visible       (DOM-check inside those cards)
+          //   5) sentinel fallback      (scheduleFormPresenceCheck — loud error + analytics if missing)
+          // HIPAA-miss diagnostic — if the user just asked for HIPAA
+          // (common phrasings) and the agent's response came back
+          // WITHOUT a hipaa_consent form_request, that's the agent
+          // replying in text instead of calling request_user_info. Log
+          // it so we can see the miss rate distinct from render bugs.
+          try {
+            const lastUser = messagesRef.current.filter((m) => m.role === "user").slice(-1)[0]?.content?.toLowerCase() || "";
+            const hipaaIntent = /\b(hipaa|authorization form|consent form|sign.*form|sign.*now|give me the form)\b/.test(lastUser);
+            const hasHipaaField = !!(chatResult.form_request?.fields || []).find((f: { type?: string }) => f.type === "hipaa_consent");
+            if (hipaaIntent && !hasHipaaField) {
+              console.warn("[hipaa-debug] user asked for HIPAA but agent response has no hipaa_consent field", {
+                user_msg_preview: lastUser.slice(0, 80),
+                has_form_request: !!chatResult.form_request,
+                form_save_to: (chatResult.form_request as unknown as { save_to?: string } | undefined)?.save_to,
+                reply_preview: (chatResult.reply || "").slice(0, 120),
+              });
+              analytics.track("Hipaa Tool Not Called", { had_form_request: !!chatResult.form_request });
+            }
+          } catch {}
+
+          if (chatResult.form_request) {
+            const fr = chatResult.form_request as unknown as { form_id?: string; save_to?: string; title?: string; fields?: Array<{ key: string; type: string }> };
+            const formPayload = {
+              form_id: fr.form_id,
+              save_to: fr.save_to,
+              title: fr.title,
+              field_count: fr.fields?.length || 0,
+              field_types: (fr.fields || []).map((f) => `${f.key}:${f.type}`),
+              msg_id: assistantId,
+            };
+            console.log("[form-debug] 1/5 form_request received from backend", formPayload);
+            const hipaaFieldCount = (fr.fields || []).filter((f) => f.type === "hipaa_consent").length;
+            if (hipaaFieldCount > 0) {
+              console.log("[hipaa-debug] form_request contains hipaa_consent field", {
+                form_id: fr.form_id, save_to: fr.save_to, hipaa_fields: hipaaFieldCount,
+              });
+              analytics.track("Hipaa Form Requested", { form_id: fr.form_id, save_to: fr.save_to });
+            }
+            analytics.track("Form Request Received", formPayload);
+            // Stage 2 — verify the form made it into the message-state array.
+            // Runs right after the setState in the same microtask batch;
+            // messagesRef lags by one effect tick, so we check the queued
+            // state via a 0ms timeout.
+            window.setTimeout(() => {
+              const msg = messagesRef.current.find((m) => m.id === assistantId);
+              console.log("[form-debug] 2/5 form in message state?", {
+                form_id: fr.form_id, msg_id: assistantId,
+                msg_exists: !!msg, msg_has_form: !!msg?.formRequest,
+                form_id_on_msg: msg?.formRequest?.form_id,
+              });
+              if (!msg || !msg.formRequest) {
+                analytics.track("Form Missing From State", { form_id: fr.form_id, msg_id: assistantId, msg_exists: !!msg });
+              }
+            }, 0);
+            scheduleFormPresenceCheck(fr.form_id, fr.save_to, assistantId);
+          }
 
           analytics.track("Response Received", {
             has_doctor_results: !!(chatResult.doctor_results?.length),
@@ -978,28 +1270,18 @@ export function ChatArea({
               rows,
             });
           }
-          // Post-seed tour paywall. Two triggers, both gated by the
-          // elena_tour_post_seed_gate flag + free tier:
-          //  1. Real value moment (booking_id, bill_analysis,
-          //     appeal_script, assistance_result, plan_comparison,
-          //     todo_created) — Elena delivered something tangible, so
-          //     we show reviews → upgrade while the dopamine is fresh.
-          //  2. Backend quota block (error_code === "upgrade_required")
-          //     — if the gate flag is set, wrap the upgrade modal in
-          //     the reviews modal first; otherwise open upgrade directly.
-          // The flag is consumed (cleared) on first fire of either path.
-          const tourGateFlag = typeof window !== "undefined"
-            && sessionStorage.getItem("elena_tour_post_seed_gate") === "1";
-          const isFreeTier = !(subscription && subscription.tier && subscription.tier !== "free");
-          const hasValueMoment =
-            !!chatResult.booking_id ||
-            !!chatResult.bill_analysis ||
-            !!chatResult.appeal_script ||
-            !!chatResult.assistance_result ||
-            !!chatResult.insurance_plan_comparison ||
-            !!chatResult.todo_created;
-
+          // Backend quota-block paywall. If the tour post-seed gate is
+          // still armed when a free user hits a real upgrade_required
+          // from the backend, wrap it through the reviews modal so the
+          // social-proof beat still lands. Otherwise open upgrade
+          // modal directly. (The chat-turn-counter trigger in
+          // handleSend usually consumes the tour gate flag BEFORE this
+          // path fires, so this branch mostly handles paid-feature
+          // gates mid-session.)
           if (chatResult.error_code === "upgrade_required") {
+            const tourGateFlag = typeof window !== "undefined"
+              && sessionStorage.getItem("elena_tour_post_seed_gate") === "1";
+            const isFreeTier = !(subscription && subscription.tier && subscription.tier !== "free");
             setUpgradeReason("upgrade_required");
             setUpgradeFeature(chatResult.gated_feature || undefined);
             trackPaywallHit("upgrade_required", chatResult.gated_feature || undefined);
@@ -1009,24 +1291,12 @@ export function ChatArea({
             } else {
               setUpgradeOpen(true);
             }
-          } else if (hasValueMoment && tourGateFlag && isFreeTier) {
-            analytics.track("Tour Post-Seed Paywall Hit" as any, {
-              trigger: "value_moment",
-              has_booking: !!chatResult.booking_id,
-              has_bill_analysis: !!chatResult.bill_analysis,
-              has_appeal: !!chatResult.appeal_script,
-              has_assistance: !!chatResult.assistance_result,
-              has_plan_comparison: !!chatResult.insurance_plan_comparison,
-              has_todo_created: !!chatResult.todo_created,
-            });
-            setUpgradeReason("upgrade_required");
-            setReviewsOpen(true);
-            try { sessionStorage.removeItem("elena_tour_post_seed_gate"); } catch {}
           }
 
-          if (chatResult.needs_hipaa_consent) {
-            setShowHipaaButton(true);
-          }
+          // needs_hipaa_consent is now attached directly to the message
+          // (msg.needsHipaaConsent) in the setMessages call above, so the
+          // button renders inline with the assistant turn that requested
+          // it — same pattern as RefillPlanCreatedCard / CarePlanCard.
 
           // Refresh profile data after every agent response — the agent may
           // have updated insurance, created todos, added doctors / visits,
@@ -1086,7 +1356,7 @@ export function ChatArea({
     // evaluates to undefined — so trackActivation never fires and the Meta
     // `CompleteRegistration` pixel (wired to trackActivation) is silently
     // dropped for every OAuth signup that gets their message auto-sent.
-    [input, isLoading, sendAndPoll, onSessionCreated, welcomeMessage, pendingFiles, user],
+    [input, isLoading, sendAndPoll, onSessionCreated, welcomeMessage, pendingFiles, user, subscription],
   );
 
   // Keep ref in sync for auto-send effect
@@ -1111,7 +1381,20 @@ export function ChatArea({
           setUpgradeOpen(true);
         }}
       />
-      <HipaaConsentModal open={hipaaConsentOpen} onOpenChange={setHipaaConsentOpen} />
+      <HipaaConsentModal
+        open={hipaaConsentOpen}
+        onOpenChange={setHipaaConsentOpen}
+        onSigned={() => {
+          // Clear the per-message HIPAA flag on every assistant turn so
+          // the inline button disappears everywhere the agent had asked.
+          setMessages((prev) =>
+            prev.map((m) => (m.needsHipaaConsent ? { ...m, needsHipaaConsent: false } : m)),
+          );
+          // Notify every mounted FormRequestCard so any with a
+          // hipaa_consent field can mark it "signed" and auto-submit.
+          setHipaaSignedAt(Date.now());
+        }}
+      />
       <FeedbackModal open={feedbackOpen} onOpenChange={setFeedbackOpen} />
       <UpgradeModal open={softPaywallOpen} onOpenChange={setSoftPaywallOpen} reason="soft" />
 
@@ -1158,7 +1441,7 @@ export function ChatArea({
 
       {/* Messages */}
       <div className="relative z-10 flex-1 min-h-0 overflow-y-auto overflow-x-hidden chat-selectable flex flex-col">
-        <div className="mx-auto max-w-2xl px-4 md:px-8 py-8 space-y-6 flex-1 flex flex-col w-full">
+        <div className="mx-auto max-w-2xl px-4 md:px-8 py-8 space-y-4 flex-1 flex flex-col w-full">
           {/* Shimmer loading -- shown while waiting for sessions to resolve, the
               pending-message claim to return, or messages to load.
               Note: we intentionally do NOT gate on localStorage.elena_pending_query
@@ -1268,6 +1551,21 @@ export function ChatArea({
                 </div>
                 {/* Structured result cards — hidden while streaming, fade in after */}
                 {msg.id !== streamingId && (() => {
+                  // Stage-3 form-debug log — fires once per message when the
+                  // gate opens. If you see 1/5 and 2/5 but never 3/5 for a
+                  // given form_id, the message is stuck in streamingId state
+                  // (StreamingText.onComplete never fired).
+                  if (typeof window !== "undefined" && msg.formRequest) {
+                    const w = window as unknown as { __formStage3Logged?: Set<string> };
+                    w.__formStage3Logged = w.__formStage3Logged || new Set();
+                    if (!w.__formStage3Logged.has(msg.id)) {
+                      w.__formStage3Logged.add(msg.id);
+                      console.log("[form-debug] 3/5 message render pass (gate open)", {
+                        msg_id: msg.id, form_id: msg.formRequest.form_id,
+                        save_to: msg.formRequest.save_to,
+                      });
+                    }
+                  }
                   // One-shot per-message map-readiness debug. Fires at
                   // render time (not just on onDone) so cards loaded
                   // from session history also get logged. Side-effect
@@ -1386,6 +1684,105 @@ export function ChatArea({
                     {msg.scheduledActionCreated && (
                       <ScheduledActionCard data={msg.scheduledActionCreated} />
                     )}
+                    {msg.formRequest && msg.formRequest.save_to === "health_profile" ? (
+                      <HealthProfileIntakeCard
+                        form={msg.formRequest}
+                        onSubmitted={async (data) => {
+                          analytics.track("Form Submitted", { form_id: msg.formRequest?.form_id, type: "health_profile" });
+                          const parts: string[] = [];
+                          if (data.basics) {
+                            try {
+                              const b = JSON.parse(data.basics) as Record<string, string>;
+                              const filled = Object.values(b).filter((v) => (v || "").toString().trim()).length;
+                              if (filled > 0) parts.push(`basics (${filled} field${filled === 1 ? "" : "s"})`);
+                            } catch {}
+                          }
+                          if (data.conditions) { try { parts.push(`${JSON.parse(data.conditions).length} condition(s)`); } catch {} }
+                          if (data.medications) { try { parts.push(`${JSON.parse(data.medications).length} medication(s)`); } catch {} }
+                          if (data.allergies) { try { parts.push(`${JSON.parse(data.allergies).length} allergy/allergies`); } catch {} }
+                          if (data.doctors) { try { parts.push(`${JSON.parse(data.doctors).length} doctor(s)`); } catch {} }
+                          if (data.visits) { try { parts.push(`${JSON.parse(data.visits).length} past visit(s)`); } catch {} }
+                          const summary = parts.length > 0 ? `Added: ${parts.join(", ")}` : "No items added";
+                          const formMsg = `[FORM SUBMITTED: ${msg.formRequest?.form_id || "unknown"}] Health profile updated. ${summary}`;
+                          setIsLoading(true);
+                          sendAndPoll(
+                            { message: formMsg, session_id: sessionIdRef.current },
+                            (label) => setToolLabel(label),
+                            (chatResult) => {
+                              const assistantId = nextId();
+                              setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: chatResult.reply || "" }]);
+                              if (chatResult.suggestions?.length) setSuggestions(chatResult.suggestions);
+                              setToolLabel(null);
+                              setIsLoading(false);
+                            },
+                            () => { setToolLabel(null); setIsLoading(false); },
+                          );
+                        }}
+                      />
+                    ) : msg.formRequest ? (
+                      <FormRequestCard
+                        form={msg.formRequest}
+                        onOpenHipaa={() => setHipaaConsentOpen(true)}
+                        hipaaSignedAt={hipaaSignedAt}
+                        onSubmitted={async (data) => {
+                          analytics.track("Form Submitted", { form_id: msg.formRequest?.form_id });
+                          const saveTo = msg.formRequest?.save_to || "none";
+                          try {
+                            await apiFetch("/chat/form-submit", {
+                              method: "POST",
+                              body: JSON.stringify({
+                                form_id: msg.formRequest?.form_id,
+                                save_to: saveTo,
+                                data,
+                              }),
+                            });
+                          } catch {}
+                          if (saveTo === "insurance") refreshInsurance();
+                          triggerSoftPaywall();
+                          const formSummary = Object.entries(data)
+                            .filter(([, v]) => v && String(v).trim())
+                            .map(([k, v]) => `${k}: ${v}`)
+                            .join(", ");
+                          const formMsg = `[FORM SUBMITTED: ${msg.formRequest?.form_id || "unknown"}] ${formSummary}`;
+                          setIsLoading(true);
+                          sendAndPoll(
+                            {
+                              message: formMsg,
+                              session_id: sessionIdRef.current,
+                            },
+                            (label) => setToolLabel(label),
+                            (chatResult) => {
+                              const assistantId = nextId();
+                              setMessages((prev) => [
+                                ...prev,
+                                { id: assistantId, role: "assistant", content: chatResult.reply || "" },
+                              ]);
+                              if (chatResult.suggestions?.length) setSuggestions(chatResult.suggestions);
+                              setToolLabel(null);
+                              setIsLoading(false);
+                            },
+                            () => {
+                              setToolLabel(null);
+                              setIsLoading(false);
+                            },
+                          );
+                          if (saveTo === "insurance") setTimeout(() => refreshInsurance(), 3000);
+                        }}
+                      />
+                    ) : null}
+                    {msg.needsHipaaConsent && (
+                      <div className="mt-3 flex flex-col gap-2 items-start">
+                        <button
+                          onClick={() => setHipaaConsentOpen(true)}
+                          className="rounded-full bg-[#0F1B3D] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#0F1B3D]/90 hover:-translate-y-px"
+                        >
+                          Open Authorization Form
+                        </button>
+                        <p className="text-[12px] text-[#8E8E93]">
+                          Or sign it from Personal Details in your profile.
+                        </p>
+                      </div>
+                    )}
                     {msg.bookingResult && msg.bookingResult.status === "confirmed" && (
                       <>
                         <AppointmentConfirmationCard result={msg.bookingResult} />
@@ -1425,89 +1822,6 @@ export function ChatArea({
                     {msg.webSources && msg.webSources.length > 0 && (
                       <SourcesFooter sources={msg.webSources} />
                     )}
-                    {msg.formRequest && msg.formRequest.save_to === "health_profile" ? (
-                      <HealthProfileIntakeCard
-                        form={msg.formRequest}
-                        onSubmitted={async (data) => {
-                          analytics.track("Form Submitted", { form_id: msg.formRequest?.form_id, type: "health_profile" });
-                          const parts: string[] = [];
-                          if (data.conditions) { try { parts.push(`${JSON.parse(data.conditions).length} condition(s)`); } catch {} }
-                          if (data.medications) { try { parts.push(`${JSON.parse(data.medications).length} medication(s)`); } catch {} }
-                          if (data.allergies) { try { parts.push(`${JSON.parse(data.allergies).length} allergy/allergies`); } catch {} }
-                          if (data.doctors) { try { parts.push(`${JSON.parse(data.doctors).length} doctor(s)`); } catch {} }
-                          if (data.visits) { try { parts.push(`${JSON.parse(data.visits).length} past visit(s)`); } catch {} }
-                          const summary = parts.length > 0 ? `Added: ${parts.join(", ")}` : "No items added";
-                          const formMsg = `[FORM SUBMITTED: ${msg.formRequest?.form_id || "unknown"}] Health profile updated. ${summary}`;
-                          setIsLoading(true);
-                          sendAndPoll(
-                            { message: formMsg, session_id: sessionIdRef.current },
-                            (label) => setToolLabel(label),
-                            (chatResult) => {
-                              const assistantId = nextId();
-                              setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: chatResult.reply || "" }]);
-                              if (chatResult.suggestions?.length) setSuggestions(chatResult.suggestions);
-                              setToolLabel(null);
-                              setIsLoading(false);
-                            },
-                            () => { setToolLabel(null); setIsLoading(false); },
-                          );
-                        }}
-                      />
-                    ) : msg.formRequest ? (
-                      <FormRequestCard
-                        form={msg.formRequest}
-                        onSubmitted={async (data) => {
-                          analytics.track("Form Submitted", { form_id: msg.formRequest?.form_id });
-                          const saveTo = msg.formRequest?.save_to || "none";
-                          // Save data via the form-submit endpoint
-                          try {
-                            await apiFetch("/chat/form-submit", {
-                              method: "POST",
-                              body: JSON.stringify({
-                                form_id: msg.formRequest?.form_id,
-                                save_to: saveTo,
-                                data,
-                              }),
-                            });
-                          } catch {}
-                          // Refresh cached data
-                          if (saveTo === "insurance") refreshInsurance();
-                          // Trigger soft paywall on first value-moment action
-                          triggerSoftPaywall();
-                          // Send form data to the agent without showing a user message bubble
-                          const formSummary = Object.entries(data)
-                            .filter(([, v]) => v && String(v).trim())
-                            .map(([k, v]) => `${k}: ${v}`)
-                            .join(", ");
-                          const formMsg = `[FORM SUBMITTED: ${msg.formRequest?.form_id || "unknown"}] ${formSummary}`;
-                          // Send directly via poll (no visible user bubble)
-                          setIsLoading(true);
-                          sendAndPoll(
-                            {
-                              message: formMsg,
-                              session_id: sessionIdRef.current,
-                            },
-                            (label) => setToolLabel(label),
-                            (chatResult) => {
-                              const assistantId = nextId();
-                              setMessages((prev) => [
-                                ...prev,
-                                { id: assistantId, role: "assistant", content: chatResult.reply || "" },
-                              ]);
-                              if (chatResult.suggestions?.length) setSuggestions(chatResult.suggestions);
-                              setToolLabel(null);
-                              setIsLoading(false);
-                            },
-                            () => {
-                              setToolLabel(null);
-                              setIsLoading(false);
-                            },
-                          );
-                          // Refresh insurance display after a short delay for the save to complete
-                          if (saveTo === "insurance") setTimeout(() => refreshInsurance(), 3000);
-                        }}
-                      />
-                    ) : null}
                   </div>
                   );
                 })()}
@@ -1539,9 +1853,12 @@ export function ChatArea({
             />
           )}
 
-          {/* Suggestion chips — inline after last message, left-aligned with text */}
+          {/* Suggestion chips — inline after last message, left-aligned with text.
+              Negative -mt pulls them closer to the preceding card/form — the
+              parent's space-y-4 adds 1rem of top margin which on top of the
+              card's own bottom padding read as dead space. */}
           {messages.length > 0 && !isLoading && !streamingId && suggestions.length > 0 && (
-            <div className="mt-3">
+            <div className="-mt-2">
               <div className="flex gap-1.5 flex-wrap">
                 {suggestions.map((s) => (
                   <button
@@ -1562,17 +1879,12 @@ export function ChatArea({
             </div>
           )}
 
-          {/* HIPAA consent button — shown when agent needs authorization */}
-          {showHipaaButton && (
-            <div className="mt-3">
-              <button
-                onClick={() => { setShowHipaaButton(false); setHipaaConsentOpen(true); }}
-                className="rounded-full bg-[#0F1B3D] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#0F1B3D]/90 hover:-translate-y-px"
-              >
-                Open Authorization Form
-              </button>
-            </div>
-          )}
+          {/* HIPAA button now renders per-turn, inline with the assistant
+              message that requested it (see msg.needsHipaaConsent in the
+              IIFE above). That way it uses the same reliable render path
+              as RefillPlanCreatedCard / CarePlanCard / ScheduledActionCard
+              and scrolls with the conversation instead of living as a
+              single standalone button at the bottom. */}
 
           <div ref={scrollEndRef} className="h-6" />
         </div>

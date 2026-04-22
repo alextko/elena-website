@@ -49,10 +49,14 @@ function SidebarProfile({ onBookMessage, popoverOpen, onPopoverChange, popoverTa
     );
   }
 
-  const displayName =
-    profileData.firstName && profileData.lastName
-      ? `${profileData.firstName} ${profileData.lastName}`
-      : user?.email?.split("@")[0] || "User";
+  // Display priority: full name → first name only → email prefix → "User".
+  // Previously required BOTH first+last to avoid the email fallback, so a
+  // linked dependent profile with just a first name (Linda, no last name)
+  // rendered the caregiver's email prefix instead of "Linda" during the
+  // tour + post-tour.
+  const displayName = profileData.firstName
+    ? (profileData.lastName ? `${profileData.firstName} ${profileData.lastName}` : profileData.firstName)
+    : (user?.email?.split("@")[0] || "User");
   const initials = profileData.firstName
     ? `${profileData.firstName[0]}${profileData.lastName?.[0] || ""}`.toUpperCase()
     : (user?.email?.[0] || "U").toUpperCase();
