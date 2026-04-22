@@ -1354,6 +1354,11 @@ export function FormRequestCard({
   const [submitted, setSubmitted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeImageField, setActiveImageField] = useState<string | null>(null);
+  // Tracks which image field is currently uploading/OCR-processing so the
+  // corresponding button can show a spinner. Without this the user hits
+  // "scan" and sees nothing change for several seconds.
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Multi-page support
   const pages = useMemo(() => {
@@ -1395,95 +1400,103 @@ export function FormRequestCard({
     setSubmitting(false);
   }
 
+  // Core upload routine used by both the hidden file input and drag-and-drop.
+  // Sets uploadingField around the async work so the UI can show a spinner.
+  async function uploadImageForField(file: File, fieldKey: string) {
+    setUploadingField(fieldKey);
+    try {
+      // For insurance images, use OCR endpoint
+      if (form.save_to === "insurance") {
+        const formData = new FormData();
+        formData.append("image", file);
+        formData.append("card_type", values.card_type || "medical");
+        formData.append("side", fieldKey.includes("back") ? "back" : "front");
+        try {
+          const res = await apiFetch("/insurance/ocr", { method: "POST", body: formData });
+          if (res.ok) {
+            setValue(fieldKey, "Uploaded");
+          }
+        } catch {}
+      } else if (form.save_to === "medication") {
+        // Pill-bottle OCR. Same pattern as the mobile flow — send to
+        // /medications/ocr, merge the extracted fields into the form's values
+        // so they ride the subsequent /chat/form-submit back to the agent as
+        // its tool result. The agent then calls update_health_profile with
+        // the fields.
+        const formData = new FormData();
+        formData.append("image", file);
+        try {
+          const res = await apiFetch("/medications/ocr", { method: "POST", body: formData });
+          if (res.ok) {
+            const data = await res.json();
+            setValues((prev) => {
+              const next = { ...prev };
+              for (const [k, v] of Object.entries(data)) {
+                if (v != null && v !== "") next[k] = String(v);
+              }
+              next[fieldKey] = data.name ? `Scanned: ${data.name}` : "Scanned";
+              return next;
+            });
+          } else {
+            setValue(fieldKey, "Could not read the label. Try again?");
+          }
+        } catch {
+          setValue(fieldKey, "Could not read the label. Try again?");
+        }
+      } else {
+        // Generic file upload via presigned URL
+        try {
+          const urlRes = await apiFetch("/documents/upload-url", {
+            method: "POST",
+            body: JSON.stringify({ session_id: "form", filename: file.name }),
+          });
+          if (urlRes.ok) {
+            const { upload_url, key, content_type, required_headers } = await urlRes.json();
+            await fetch(upload_url, {
+              method: "PUT",
+              body: file,
+              headers: { "Content-Type": content_type, ...required_headers },
+            });
+            setValue(fieldKey, key);
+          }
+        } catch {}
+      }
+    } finally {
+      setUploadingField(null);
+    }
+  }
+
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>, fieldKey: string) {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = "";
-
-    // For insurance images, use OCR endpoint
-    if (form.save_to === "insurance") {
-      const formData = new FormData();
-      formData.append("image", file);
-      formData.append("card_type", values.card_type || "medical");
-      formData.append("side", fieldKey.includes("back") ? "back" : "front");
-      try {
-        const res = await apiFetch("/insurance/ocr", { method: "POST", body: formData });
-        if (res.ok) {
-          setValue(fieldKey, "Uploaded");
-        }
-      } catch {}
-    } else if (form.save_to === "medication") {
-      // Pill-bottle OCR. Same pattern as the mobile flow — send to
-      // /medications/ocr, merge the extracted fields into the form's values
-      // so they ride the subsequent /chat/form-submit back to the agent as
-      // its tool result. The agent then calls update_health_profile with
-      // the fields.
-      const formData = new FormData();
-      formData.append("image", file);
-      try {
-        const res = await apiFetch("/medications/ocr", { method: "POST", body: formData });
-        if (res.ok) {
-          const data = await res.json();
-          setValues((prev) => {
-            const next = { ...prev };
-            for (const [k, v] of Object.entries(data)) {
-              if (v != null && v !== "") next[k] = String(v);
-            }
-            next[fieldKey] = data.name ? `Scanned: ${data.name}` : "Scanned";
-            return next;
-          });
-        } else {
-          setValue(fieldKey, "Could not read the label. Try again?");
-        }
-      } catch {
-        setValue(fieldKey, "Could not read the label. Try again?");
-      }
-    } else {
-      // Generic file upload via presigned URL
-      try {
-        const urlRes = await apiFetch("/documents/upload-url", {
-          method: "POST",
-          body: JSON.stringify({ session_id: "form", filename: file.name }),
-        });
-        if (urlRes.ok) {
-          const { upload_url, key, content_type, required_headers } = await urlRes.json();
-          await fetch(upload_url, {
-            method: "PUT",
-            body: file,
-            headers: { "Content-Type": content_type, ...required_headers },
-          });
-          setValue(fieldKey, key);
-        }
-      } catch {}
-    }
+    await uploadImageForField(file, fieldKey);
   }
 
-  if (submitted) {
-    return (
-      <div className="mt-3 rounded-2xl bg-gradient-to-br from-emerald-50 to-white border border-emerald-100 p-4 shadow-[0_2px_8px_rgba(16,185,129,0.08)]">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 shadow-[0_2px_6px_rgba(16,185,129,0.3)]">
-            <Check className="h-4 w-4 text-white" strokeWidth={3} />
-          </div>
-          <div>
-            <p className="text-[14px] font-semibold text-[#0F1B3D]">Information saved</p>
-            <p className="text-[12px] text-[#0F1B3D]/40 mt-0.5">Your details have been updated</p>
-          </div>
-        </div>
-      </div>
-    );
+  // Drag-and-drop anywhere on the form card uploads into the current image
+  // field (or the first image field on the page if none is active). Only
+  // wired up when the form actually has an image field.
+  const imageFields = useMemo(
+    () => form.fields.filter((f) => f.type === "image"),
+    [form.fields],
+  );
+  const hasImageField = imageFields.length > 0;
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setIsDragging(false);
+    if (!hasImageField) return;
+    const file = e.dataTransfer.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    const target = activeImageField || imageFields[0]?.key;
+    if (!target) return;
+    setActiveImageField(target);
+    void uploadImageForField(file, target);
   }
 
-  const currentPageFields = isMultiPage ? (pages[currentPage]?.[1] ?? []) : form.fields;
-  const currentPageTitle = isMultiPage ? currentPageFields[0]?.page_title : undefined;
-  const isLastPage = !isMultiPage || currentPage >= pages.length - 1;
-
-  const fieldCls = "mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30";
-
-  // When the parent signals a fresh HIPAA signature (hipaaSignedAt bumps),
-  // fill any hipaa_consent fields with "signed" and auto-submit. This is
-  // the glue between the shared HIPAA modal (lives in chat-area) and the
-  // form's submission pipeline — no separate signal path, no drift.
+  // All hooks must run before any early return below. When the form submits
+  // successfully we render a "saved" card, which previously skipped the
+  // useRef/useEffect calls further down and triggered "Rendered fewer hooks
+  // than expected."
   const hipaaFields = form.fields.filter((f) => f.type === "hipaa_consent");
   const lastSeenHipaaRef = useRef(hipaaSignedAt);
   useEffect(() => {
@@ -1545,12 +1558,46 @@ export function FormRequestCard({
     return () => cancelAnimationFrame(raf);
   }, [form.form_id, form.save_to, form.title, form.fields?.length]);
 
+  if (submitted) {
+    return (
+      <div className="mt-3 rounded-2xl bg-gradient-to-br from-emerald-50 to-white border border-emerald-100 p-4 shadow-[0_2px_8px_rgba(16,185,129,0.08)]">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 shadow-[0_2px_6px_rgba(16,185,129,0.3)]">
+            <Check className="h-4 w-4 text-white" strokeWidth={3} />
+          </div>
+          <div>
+            <p className="text-[14px] font-semibold text-[#0F1B3D]">Information saved</p>
+            <p className="text-[12px] text-[#0F1B3D]/40 mt-0.5">Your details have been updated</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const currentPageFields = isMultiPage ? (pages[currentPage]?.[1] ?? []) : form.fields;
+  const currentPageTitle = isMultiPage ? currentPageFields[0]?.page_title : undefined;
+  const isLastPage = !isMultiPage || currentPage >= pages.length - 1;
+
+  const fieldCls = "mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30";
+
   return (
     <div
       ref={rootRef}
       data-form-id={form.form_id}
       data-form-save-to={form.save_to}
-      className="mt-3 rounded-2xl border border-[#0F1B3D]/[0.06] bg-white p-5 shadow-[0_2px_8px_rgba(15,27,61,0.06)]"
+      onDragEnter={hasImageField ? (e) => {
+        if (e.dataTransfer.types.includes("Files")) { e.preventDefault(); setIsDragging(true); }
+      } : undefined}
+      onDragOver={hasImageField ? (e) => {
+        if (e.dataTransfer.types.includes("Files")) { e.preventDefault(); setIsDragging(true); }
+      } : undefined}
+      onDragLeave={hasImageField ? (e) => {
+        if (!rootRef.current?.contains(e.relatedTarget as Node)) setIsDragging(false);
+      } : undefined}
+      onDrop={hasImageField ? handleDrop : undefined}
+      className={`mt-3 rounded-2xl border bg-white p-5 shadow-[0_2px_8px_rgba(15,27,61,0.06)] transition-colors ${
+        isDragging ? "border-[#0F1B3D]/40 ring-2 ring-[#0F1B3D]/10" : "border-[#0F1B3D]/[0.06]"
+      }`}
     >
       <h4 className="text-[16px] font-bold text-[#0F1B3D] mb-1">
         {currentPageTitle || form.title}
@@ -1610,23 +1657,43 @@ export function FormRequestCard({
                 // uploads get a storage key. Each deserves its own state so
                 // the user can tell what actually happened.
                 const raw = values[field.key] || "";
+                const isUploading = uploadingField === field.key;
                 const isScanned = raw.startsWith("Scanned");
                 const isError = raw.startsWith("Could not");
                 const hasValue = raw.length > 0;
                 const base = "mt-1 w-full rounded-xl border-2 px-3.5 py-4 text-[14px] transition-colors text-left";
-                const variant = isScanned
+                const variant = isUploading
+                  ? "border-solid border-[#0F1B3D]/30 bg-[#F5F7FF]"
+                  : isScanned
                   ? "border-solid border-[#34C759] bg-[#F0FAF3]"
                   : isError
                   ? "border-solid border-[#FF6B6B] bg-[#FFF5F5]"
                   : hasValue
                   ? "border-solid border-[#34C759] bg-[#F0FAF3]"
                   : "border-dashed border-[#E5E5EA] bg-[#FAFAFA] hover:border-[#0F1B3D]/20";
+                const uploadLabel = form.save_to === "medication"
+                  ? "Reading the bottle label…"
+                  : form.save_to === "insurance"
+                  ? "Reading your card…"
+                  : "Uploading…";
                 return (
                   <button
                     onClick={() => { setActiveImageField(field.key); fileInputRef.current?.click(); }}
-                    className={`${base} ${variant}`}
+                    disabled={isUploading}
+                    className={`${base} ${variant} ${isUploading ? "cursor-wait" : ""}`}
                   >
-                    {isScanned ? (
+                    {isUploading ? (
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          aria-hidden
+                          className="h-5 w-5 shrink-0 rounded-full border-2 border-[#0F1B3D]/20 border-t-[#0F1B3D] animate-spin"
+                        />
+                        <div>
+                          <div className="text-[15px] font-semibold text-[#0F1B3D]">{uploadLabel}</div>
+                          <div className="text-[12px] text-[#0F1B3D]/50 mt-0.5">Elena is processing your photo</div>
+                        </div>
+                      </div>
+                    ) : isScanned ? (
                       <div className="flex items-center gap-2.5">
                         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#34C759]">
                           <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
@@ -1647,7 +1714,7 @@ export function FormRequestCard({
                       </div>
                     ) : (
                       <span className="text-[#AEAEB2] block text-center">
-                        {field.placeholder || "Tap to upload"}
+                        {field.placeholder || "Tap or drop an image here to upload"}
                       </span>
                     )}
                   </button>
