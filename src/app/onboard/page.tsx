@@ -106,7 +106,13 @@ export default function OnboardPage() {
           profile_saved: result.profile_saved,
           dependents_created: result.dependents_created,
           primary_dependent_created: !!result.primary_dependent_id,
+          prewarmed_session: !!result.prewarmed_session_id,
           error_count: result.errors.length,
+          // Full error strings on the event so Mixpanel can surface the
+          // exact failure reason on a per-user basis, not just a count.
+          errors: result.errors,
+          duration_total_ms: result.duration_total_ms,
+          stage_timings_ms: result.stage_timings_ms,
         });
         if (result.errors.length > 0) {
           console.warn("[onboard] flushTourBuffer partial errors:", result.errors);

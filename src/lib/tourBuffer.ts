@@ -196,6 +196,10 @@ export interface FlushResult {
   primary_dependent_id: string | null;
   prewarmed_session_id: string | null;
   errors: string[];
+  /** Per-stage wall time in ms. Keys are FlushStage values. */
+  stage_timings_ms?: Record<string, number>;
+  /** Total flush duration in ms. */
+  duration_total_ms?: number;
 }
 
 /** Progress stages the flush reports as it runs. Consumers show these
@@ -236,12 +240,44 @@ export async function flushTourBuffer(opts: {
   if (!buf.profile && buf.dependents.length === 0 && !buf.seed_query) {
     // Nothing buffered — user probably came through OAuth without the
     // anonymous tour (e.g. direct signup on /login). Nothing to flush.
+    console.log("[flush] skipped — empty buffer");
     return result;
   }
+
+  // Start-of-flush snapshot. If a user reports "my meds didn't save" or
+  // "my dependent is missing," the ground truth is what was in the
+  // buffer right before we replayed it — not what the tour "should have"
+  // captured. Logging this at start makes root-cause possible from the
+  // console without having to reconstruct state.
+  console.log("[flush] start", {
+    has_profile: !!buf.profile,
+    profile_has_first_name: !!buf.profile?.first_name,
+    profile_has_dob: !!buf.profile?.date_of_birth,
+    profile_has_zip: !!buf.profile?.zip_code,
+    dependents: buf.dependents.length,
+    primary_dependent: buf.dependents.find((d) => d.is_primary_dependent)?.first_name || null,
+    conditions: buf.conditions.length,
+    medications: buf.medications.length,
+    todos: buf.todos.length,
+    seed_preview: buf.seed_query?.slice(0, 60) ?? null,
+  });
+
+  const flushStartedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
+  const stageTimings: Record<string, number> = {};
+  let currentStage: FlushStage = "saving_profile";
+  let currentStageStart = flushStartedAt;
 
   const { apiFetch } = await import("./apiFetch");
   const report = (stage: FlushStage, percent: number) => {
     try { opts.onProgress?.(stage, percent); } catch {}
+    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+    if (currentStage !== stage) {
+      const elapsed = Math.round(now - currentStageStart);
+      stageTimings[currentStage] = (stageTimings[currentStage] || 0) + elapsed;
+      console.log(`[flush] stage done: ${currentStage} (${elapsed}ms) → ${stage}`);
+      currentStage = stage;
+      currentStageStart = now;
+    }
   };
 
   // Stage 1 — primary profile + dependents in parallel. Both hit
@@ -493,5 +529,27 @@ export async function flushTourBuffer(opts: {
   // end of the resumed profile walkthrough).
   clearTourBuffer();
   report("done", 100);
+
+  // End-of-flush summary. Mirrors what the loading-screen progress bar
+  // showed the user, but with real error strings + timings so a support
+  // engineer debugging a failed signup has the full story in one log
+  // line. Stage timings roll up the per-stage elapsed times; sum should
+  // approximate duration_total_ms.
+  const flushEndedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
+  const stageElapsed = Math.round(flushEndedAt - currentStageStart);
+  stageTimings[currentStage] = (stageTimings[currentStage] || 0) + stageElapsed;
+  const duration_total_ms = Math.round(flushEndedAt - flushStartedAt);
+  result.stage_timings_ms = stageTimings;
+  result.duration_total_ms = duration_total_ms;
+  console.log("[flush] done", {
+    duration_total_ms,
+    stage_timings_ms: stageTimings,
+    profile_saved: result.profile_saved,
+    dependents_created: result.dependents_created,
+    primary_dependent_id: result.primary_dependent_id,
+    prewarmed_session_id: result.prewarmed_session_id,
+    error_count: result.errors.length,
+    errors: result.errors,
+  });
   return result;
 }
