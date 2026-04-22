@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Dialog,
@@ -39,6 +40,22 @@ interface ReviewsModalProps {
 export function ReviewsModal({ open, onOpenChange, onContinue }: ReviewsModalProps) {
   const motionEase = [0.4, 0, 0.2, 1] as const;
   const springEase = [0.34, 1.56, 0.64, 1] as const;
+
+  // Preload + pre-decode the TrialStep1 phone screenshot as soon as this
+  // modal opens. The user spends a few seconds reading testimonials before
+  // clicking Continue, which gives the browser ample time to fetch + decode
+  // the PNG. By the time TrialStep1 mounts, the bitmap is already in GPU-
+  // ready memory and paints synchronously with the dialog's open animation
+  // — no white flash inside the phone frame.
+  useEffect(() => {
+    if (!open) return;
+    const img = new window.Image();
+    img.src = "/images/IMG_0306.PNG";
+    img.decode?.().catch(() => {
+      // decode() not supported or failed; image is still being fetched and
+      // will be cached for the <img> element in TrialStep1.
+    });
+  }, [open]);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent showCloseButton={false} className="w-[calc(100%-2rem)] max-w-[22rem] sm:w-full sm:max-w-md max-h-[calc(100svh-1rem)] overflow-y-auto overflow-x-hidden rounded-2xl border-0 bg-white p-0 shadow-[0_24px_80px_rgba(15,27,61,0.25)]">

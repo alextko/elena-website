@@ -58,7 +58,7 @@ export function TrialStep1({ open, onOpenChange, onContinue }: TrialStep1Props) 
           overflow: hidden;
           border-radius: 33px;
           /* Match the game-plan screenshot's near-white bg so there's no
-             dark flash while the PNG loads. */
+             dark flash while the PNG decodes. */
           background: #fafafa;
         }
         .device-screen :global(img) {
