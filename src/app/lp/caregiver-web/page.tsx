@@ -481,7 +481,7 @@ export default function CaregiverWebLandingPage() {
           <div className="max-w-[640px] mb-16 max-md:mb-12">
             <p className="text-[0.72rem] font-semibold uppercase tracking-[2px] text-[#2E6BB5] mb-4">How it works</p>
             <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-semibold tracking-tight text-[#0F1B3D] leading-tight">
-              Three steps. No phone tree.{" "}
+              Three steps.{" "}
               <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#2E6BB5]">No hold music.</em>
             </h2>
           </div>
@@ -730,7 +730,7 @@ export default function CaregiverWebLandingPage() {
         <div className="mx-auto max-w-[720px] text-center">
           <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-semibold tracking-tight text-[#0F1B3D] leading-tight mb-4">
             The person you care for needs you.{" "}
-            <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#2E6BB5]">Not the phone tree.</em>
+            <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#2E6BB5]">Not on hold.</em>
           </h2>
           <p className="text-[1.05rem] font-light text-[#5a6a82] leading-[1.7] mb-8 max-md:mb-6">
             Tell Elena what&apos;s on your plate. She&apos;ll start sorting it in the next five minutes.
