@@ -5,73 +5,22 @@
  *
  * The tour historically ran inside /chat, which required auth — signup
  * was the gate to even *see* the tour. Under Plan A, the tour runs here
- * anonymously through every phase up to elena-plan; AuthModal only fires
- * on elena-plan's Continue. On signup success, flushTourBuffer() replays
- * every buffered write against the authed backend and the user lands on
- * /chat with the seed message ready to auto-send.
+ * anonymously through every phase up to the building-plan step, which
+ * shows a fake progress bar + pain-targeted affirmation BEFORE auth
+ * (Cal-AI-style psychological staging). The auth step then fires; on
+ * signup success, flushTourBuffer() replays every buffered write
+ * against the authed backend while /onboard shows a minimal branded
+ * "Preparing your tour…" splash. When flush completes we auto-redirect
+ * to /chat.
  */
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
 import { WebOnboardingTour } from "@/components/web-onboarding-tour";
-import type { PainAffirmation } from "@/components/onboarding-flushing-screen";
-import { flushTourBuffer, type FlushStage } from "@/lib/tourBuffer";
+import { flushTourBuffer } from "@/lib/tourBuffer";
 import * as analytics from "@/lib/analytics";
-
-// Pain-bucket labels mirrored from web-onboarding-tour. Duplicated (not
-// imported) so this page stays cheap — the tour file is ~4k lines. Only
-// the label is needed to phrase the post-flush affirmation.
-const TIME_PAIN_LABEL: Record<string, string> = {
-  lt1: "less than 1 hour a week",
-  "1to3": "1 to 3 hours a week",
-  "3to6": "3 to 6 hours a week",
-  "6plus": "6 or more hours a week",
-};
-const MONEY_PAIN_LABEL: Record<string, string> = {
-  lt500: "less than $500 a year",
-  "500to2k": "$500 to $2,000 a year",
-  "2kto5k": "$2,000 to $5,000 a year",
-  "5kplus": "$5,000 or more a year",
-};
-
-const DEFAULT_AFFIRMATION: PainAffirmation = {
-  headline: "You're all set.",
-  subtitle: "Elena is ready to help you stay on top of everything.",
-};
-
-function deriveAffirmation(): PainAffirmation {
-  if (typeof window === "undefined") return DEFAULT_AFFIRMATION;
-  try {
-    const raw =
-      localStorage.getItem("elena_tour_state") ||
-      sessionStorage.getItem("elena_tour_state");
-    if (!raw) return DEFAULT_AFFIRMATION;
-    const s = JSON.parse(raw) as {
-      routerChoice?: string;
-      painSelection?: string | null;
-    };
-    const isMoney = s.routerChoice === "money" || s.routerChoice === "medications";
-    const id = s.painSelection;
-    if (!id) return DEFAULT_AFFIRMATION;
-    if (isMoney) {
-      const label = MONEY_PAIN_LABEL[id];
-      if (!label) return DEFAULT_AFFIRMATION;
-      return {
-        headline: "Ready to start bringing those costs down?",
-        subtitle: `You said about ${label}. Elena's going to help you chip away at that.`,
-      };
-    }
-    const label = TIME_PAIN_LABEL[id];
-    if (!label) return DEFAULT_AFFIRMATION;
-    return {
-      headline: "Ready to start getting that time back?",
-      subtitle: `You said about ${label}. Elena's going to help you take those hours back.`,
-    };
-  } catch {
-    return DEFAULT_AFFIRMATION;
-  }
-}
 
 export default function OnboardPage() {
   const router = useRouter();
@@ -95,17 +44,11 @@ export default function OnboardPage() {
   // re-firing when React batches state updates during signup. (State
   // would trigger re-render + effect re-run; ref just sets in place.)
   const flushingRef = useRef(false);
-  // Separate state to force a re-render when flush starts — purely for
-  // showing the branded loading screen. The ref above is the functional
-  // gate; this is the display signal.
+  // Display signal for the "Preparing your tour…" splash. The user has
+  // already seen the celebratory pre-auth "All ready" beat, so this
+  // post-auth moment is minimal and branded — not a full progress
+  // modal — and auto-redirects when the flush completes.
   const [flushingVisible, setFlushingVisible] = useState(false);
-  const [flushStage, setFlushStage] = useState<FlushStage>("saving_profile");
-  const [flushPercent, setFlushPercent] = useState(8);
-  // Pain affirmation is snapshotted the moment the flush starts so it
-  // survives any downstream clears of elena_tour_state (finishTour,
-  // skipTour). Defaulted to generic copy; replaced with pain-targeted
-  // copy in the flush effect below.
-  const [affirmation, setAffirmation] = useState<PainAffirmation>(DEFAULT_AFFIRMATION);
   // Mirror the latest auth functions in refs so the flush effect can
   // depend ONLY on `session` without re-running whenever useAuth
   // recreates its callbacks. Without this, completeOnboarding's
@@ -148,10 +91,6 @@ export default function OnboardPage() {
     console.log("[onboard] flush starting");
     flushingRef.current = true;
     setFlushingVisible(true);
-    // Capture the pain-targeted affirmation now, while elena_tour_state is
-    // still populated. The flushing screen shows it on the "ready" beat
-    // after the progress bar hits 100%.
-    setAffirmation(deriveAffirmation());
     (async () => {
       // OAuth fallback for the main user's name. Email signup populates
       // the buffer in the auth-step form handler; OAuth (Google/Apple)
@@ -189,10 +128,6 @@ export default function OnboardPage() {
           switchProfile: switchProfileRef.current,
           refreshProfiles: refreshProfilesRef.current,
           completeOnboarding: completeOnboardingRef.current,
-          onProgress: (stage, percent) => {
-            setFlushStage(stage);
-            setFlushPercent(percent);
-          },
         });
         analytics.track("Tour Buffer Flushed", {
           profile_saved: result.profile_saved,
@@ -200,8 +135,6 @@ export default function OnboardPage() {
           primary_dependent_created: !!result.primary_dependent_id,
           prewarmed_session: !!result.prewarmed_session_id,
           error_count: result.errors.length,
-          // Full error strings on the event so Mixpanel can surface the
-          // exact failure reason on a per-user basis, not just a count.
           errors: result.errors,
           duration_total_ms: result.duration_total_ms,
           stage_timings_ms: result.stage_timings_ms,
@@ -209,13 +142,16 @@ export default function OnboardPage() {
         if (result.errors.length > 0) {
           console.warn("[onboard] flushTourBuffer partial errors:", result.errors);
         }
-        console.log("[onboard] flush done, waiting on Continue");
+        console.log("[onboard] flush done, redirecting to /chat");
       } catch (e) {
         console.error("[onboard] flushTourBuffer threw:", e);
       }
-      // Intentionally NOT redirecting here anymore. The flushing screen
-      // transitions to its "ready" state once stage=done + percent=100;
-      // the user presses Continue, which fires handleFlushContinue below.
+      // User already saw the pre-auth "All ready" beat inside the tour's
+      // building-plan phase, so we don't need a post-flush Continue
+      // button. Redirect straight to /chat the moment flush finishes.
+      pendingSignupRef.current = false;
+      try { sessionStorage.removeItem(PENDING_SIGNUP_KEY); } catch {}
+      router.replace("/chat");
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
@@ -230,27 +166,7 @@ export default function OnboardPage() {
 
   return (
     <div className="h-dvh bg-[#F7F6F2]">
-      {/* Flushing state flows INTO the tour modal as a phase, not as a
-          separate overlay — same card, same backdrop, content morphs
-          from auth → progress bar → pain-targeted affirmation →
-          Continue. Driven by the flushingState prop below; the tour
-          swaps its own AnimatePresence content when it's non-null. */}
       <WebOnboardingTour
-        flushingState={
-          flushingVisible
-            ? {
-                stage: flushStage,
-                percent: flushPercent,
-                affirmation,
-                onContinue: () => {
-                  analytics.track("Onboard Flush Continue Clicked" as any);
-                  pendingSignupRef.current = false;
-                  try { sessionStorage.removeItem(PENDING_SIGNUP_KEY); } catch {}
-                  router.replace("/chat");
-                },
-              }
-            : null
-        }
         onComplete={() => {
           // Anonymous tour's onComplete is a no-op — the real completion
           // pathway is onNeedsAuth → signup → flush → /chat. This fires
@@ -282,21 +198,82 @@ export default function OnboardPage() {
           analytics.track("Onboard Auth Gate Hit", { source: "elena_plan_continue" });
           pendingSignupRef.current = true;
           try { sessionStorage.setItem(PENDING_SIGNUP_KEY, "1"); } catch {}
-          // Auth UI now renders inline as a tour phase ("auth"). The
-          // tour component handles the transition via setPhase("auth")
-          // right after firing this callback. AuthModal is kept mounted
-          // below as a recovery affordance but not opened here — the
-          // inline flow is the primary path.
+          // Auth UI renders inline as a tour phase ("auth"). The tour
+          // component handles the transition via setPhase after the
+          // building-plan ready-state Continue button.
         }}
       />
 
-      {/* Previously an <AuthModal> lived here for the signup gate. That
-          path moved inside the tour as phase="auth" — same shell, same
-          animations — so the signup step doesn't read as a foreign
-          modal. /onboard still owns the flush-on-session effect above
-          because that part's surface-agnostic: as long as Supabase
-          flips session truthy, the flush runs regardless of which UI
-          collected the credentials. */}
+      {/* Post-auth splash — renders on top of the tour while the real
+          flush runs. Minimal and branded: the user has already seen
+          the celebratory "All ready" beat pre-auth on building-plan,
+          so this is just a polished transition, not a repeat of the
+          full progress modal. Auto-redirects to /chat on flush complete. */}
+      {flushingVisible && <PreparingTourSplash />}
     </div>
+  );
+}
+
+// Branded post-auth transition. Elena wordmark with a subtle pulsing
+// scale animation; "Preparing your tour…" copy with an animated 3-dot
+// ellipsis. Sits above the tour at high z-index with a solid warm
+// background so the auth card underneath doesn't show through.
+function PreparingTourSplash() {
+  return (
+    <motion.div
+      className="fixed inset-0 z-[100005] flex flex-col items-center justify-center gap-5 bg-[#F7F6F2] font-[family-name:var(--font-inter)]"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      {/* Slow radial bloom in the background to give the splash some
+          motion without reading as a spinner. Expands + fades on a
+          4s loop. */}
+      <motion.div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        initial={{ opacity: 0.0 }}
+        animate={{ opacity: [0, 0.35, 0] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        style={{
+          background:
+            "radial-gradient(circle at 50% 50%, rgba(46,107,181,0.18), rgba(46,107,181,0) 55%)",
+        }}
+      />
+
+      {/* Elena wordmark, pulsing */}
+      <motion.div
+        initial={{ scale: 0.96, opacity: 0 }}
+        animate={{ scale: [1, 1.03, 1], opacity: 1 }}
+        transition={{
+          scale: { duration: 2.4, repeat: Infinity, ease: "easeInOut" },
+          opacity: { duration: 0.4 },
+        }}
+        className="text-[44px] font-extrabold tracking-tight text-[#0F1B3D]"
+      >
+        Elena
+      </motion.div>
+
+      <div className="flex items-baseline gap-1 text-[15px] text-[#0F1B3D]/70 font-medium">
+        <span>Preparing your tour</span>
+        <span className="flex gap-0.5">
+          {[0, 1, 2].map((i) => (
+            <motion.span
+              key={i}
+              initial={{ opacity: 0.2 }}
+              animate={{ opacity: [0.2, 1, 0.2] }}
+              transition={{
+                duration: 1.4,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 0.2,
+              }}
+            >
+              .
+            </motion.span>
+          ))}
+        </span>
+      </div>
+    </motion.div>
   );
 }

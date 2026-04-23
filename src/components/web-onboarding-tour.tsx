@@ -10,6 +10,43 @@ import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/apiFetch";
 import { setBufferedProfile, addBufferedDependent, addBufferedCondition, addBufferedMedication, addBufferedTodo, type FlushStage } from "@/lib/tourBuffer";
 import { OnboardingFlushingContent, type PainAffirmation } from "./onboarding-flushing-screen";
+
+// Pain-bucket labels → affirmation copy shown on the building-plan
+// ready state. Pre-auth, derived from the user's pain selection earlier
+// in the tour so the closing beat matches the promise made on the value
+// step. Mirrors the label strings in TIME_PAIN_OPTIONS + MONEY_PAIN_OPTIONS
+// but simplified for use inside the affirmation sentence.
+const PAIN_AFFIRMATION_LABEL: Record<string, { label: string; bucket: "time" | "money" }> = {
+  lt1:       { label: "less than 1 hour a week",     bucket: "time" },
+  "1to3":    { label: "1 to 3 hours a week",          bucket: "time" },
+  "3to6":    { label: "3 to 6 hours a week",          bucket: "time" },
+  "6plus":   { label: "6 or more hours a week",       bucket: "time" },
+  lt500:     { label: "less than $500 a year",        bucket: "money" },
+  "500to2k": { label: "$500 to $2,000 a year",        bucket: "money" },
+  "2kto5k":  { label: "$2,000 to $5,000 a year",      bucket: "money" },
+  "5kplus":  { label: "$5,000 or more a year",        bucket: "money" },
+};
+
+const DEFAULT_AFFIRMATION: PainAffirmation = {
+  headline: "You're all set.",
+  subtitle: "Elena is ready to help you stay on top of everything.",
+};
+
+function deriveAffirmation(painSelection: string | null): PainAffirmation {
+  if (!painSelection) return DEFAULT_AFFIRMATION;
+  const entry = PAIN_AFFIRMATION_LABEL[painSelection];
+  if (!entry) return DEFAULT_AFFIRMATION;
+  if (entry.bucket === "money") {
+    return {
+      headline: "Ready to start bringing those costs down?",
+      subtitle: `You said about ${entry.label}. Elena's going to help you chip away at that.`,
+    };
+  }
+  return {
+    headline: "Ready to start getting that time back?",
+    subtitle: `You said about ${entry.label}. Elena's going to help you take those hours back.`,
+  };
+}
 import { StreamingText } from "@/components/streaming-text";
 import { SITUATION_CHIPS, getTemplate, getChip, findTemplateByAlias } from "@/lib/onboarding-templates";
 
@@ -104,18 +141,6 @@ interface WebOnboardingTourProps {
   // parent can open AuthModal. Post-signup, the parent is responsible
   // for calling flushTourBuffer() and navigating to /chat.
   onNeedsAuth?: (seedQuery: string) => void;
-  // Plan A flush surface. When set, the tour renders a "flushing" phase
-  // inside its own shell instead of the parent stacking a second overlay
-  // on top. Driven by /onboard as the post-signup flush progresses.
-  // Cleared/null = no flush screen; present = show progress bar, and
-  // once stage="done" + percent=100, the ready-state affirmation +
-  // Continue button. Continue invokes onContinue (→ nav to /chat).
-  flushingState?: {
-    stage: FlushStage;
-    percent: number;
-    affirmation: PainAffirmation;
-    onContinue: () => void;
-  } | null;
 }
 
 function TourTooltip({ step, primaryProps }: { step: any; primaryProps: any }) {
@@ -222,7 +247,7 @@ const PROFILE_STEPS: {
   { id: "family", title: "Add your family", body: "If you manage someone's care, add them here. If they're on their own, send them an invite.", tab: "health", addKind: "family", showSwitcher: true },
 ];
 
-type Phase = "intro" | "care" | "care-ack" | "setup-for" | "router" | "pain" | "value" | "profile-form" | "situation" | "meds" | "care-plan" | "validation" | "elena-plan" | "social-proof" | "auth" | "flushing" | "joyride" | "profile" | "chat" | "done";
+type Phase = "intro" | "care" | "care-ack" | "setup-for" | "router" | "pain" | "value" | "profile-form" | "situation" | "meds" | "care-plan" | "validation" | "elena-plan" | "social-proof" | "building-plan" | "auth" | "joyride" | "profile" | "chat" | "done";
 
 // Map CARE_OPTIONS ids to the backend relationship values used by
 // /profiles. The care phase's "partner" maps to the profile-level
@@ -261,7 +286,7 @@ type RouterChoice = "condition" | "medications" | "money" | "staying_healthy";
 // not three variants of "a phone call."
 const MEDS_BRANCH_HERO_VALUES = [
   "I can call your provider to renew your refills.",
-  "I can price-shop across pharmacies and coupon programs.",
+  "I can price-shop your meds across pharmacies and coupon programs.",
   "I can schedule home delivery for your refills.",
 ];
 // Ordered so the most universal / concrete promises survive the 3-line
@@ -270,15 +295,15 @@ const MEDS_BRANCH_HERO_VALUES = [
 // of the top base lines.
 const MONEY_BRANCH_HERO_VALUES = [
   "I can find the best price for your appointments, procedures, and medications.",
-  "I can call your insurance to check coverage before you go.",
-  "I can help you pay bills on time and dispute wrong charges.",
-  "I can compare plans and help you get the most out of your insurance.",
-  "I can find home medical equipment at the best price.",
+  "I can call your insurance to check coverage before any visit.",
+  "I can track your bill due dates and dispute overcharges.",
+  "I can compare insurance plans to find your best coverage.",
+  "I can find your home medical equipment at the best price.",
 ];
 const STAYING_HEALTHY_BRANCH_HERO_VALUES = [
   "I can call your PCP to book your annual physical.",
-  "I can schedule screenings on the right cadence.",
-  "I can price-shop labs and imaging in-network.",
+  "I can schedule your screenings on the right cadence.",
+  "I can price-shop your labs and imaging in-network.",
 ];
 
 // Classify a hero line into a visual bucket. Kept in sync with
@@ -394,7 +419,19 @@ function cleanActionToUserVoice(raw: string): string {
   s = s.replace(/^You said [^.]+\.\s*/i, "");
   s = s.replace(/^You're caring for [^.]+\.\s*/i, "");
   s = s.replace(/^I can /i, "");
+  // Rewrite every variant of "you/your" into first-person. Order
+  // matters: possessive + contractions first, then subject-position
+  // "you" after conjunctions (→ "I"), then any remaining "you" (→
+  // "me"). Applying "me" last covers both object position ("help you
+  // pay" → "help me pay") and subject-of-infinitive ("help you get"
+  // → "help me get") — both are grammatically served by the object
+  // pronoun in English.
   s = s.replace(/\byour\b/gi, "my");
+  s = s.replace(/\byou're\b/gi, "I'm");
+  s = s.replace(/\byou've\b/gi, "I've");
+  s = s.replace(/\byou'll\b/gi, "I'll");
+  s = s.replace(/\b(before|after|when|while|if|so)\s+you\b/gi, "$1 I");
+  s = s.replace(/\byou\b/gi, "me");
   if (s.length > 0) s = s.charAt(0).toUpperCase() + s.slice(1);
   return s;
 }
@@ -720,7 +757,7 @@ function FamilyMini({ count = 3 }: { count?: number }) {
   );
 }
 
-export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover, onSidebar, onSeedQuery, onNeedsAuth, flushingState }: WebOnboardingTourProps) {
+export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover, onSidebar, onSeedQuery, onNeedsAuth }: WebOnboardingTourProps) {
   // Auth hooks for the profile-form phase (migrated from the old OnboardingModal)
   const {
     session,
@@ -801,16 +838,31 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   const [phase, setPhase] = useState<Phase>(tourSnapshot.phase ?? "intro");
   const [profileStep, setProfileStep] = useState(tourSnapshot.profileStep ?? 0);
 
-  // When /onboard signals the post-signup flush, morph the current phase
-  // into "flushing" so the progress bar lands inside the same shell card
-  // (instead of stacking a second overlay on top). The flush cannot
-  // start until the user has already passed auth, so whatever phase we
-  // exit is fine to leave behind.
+  // Building-plan phase — pre-auth, time-based "Setting up your profile"
+  // progress bar + ready-state affirmation. Psychological staging only;
+  // no network calls. Real flush runs post-auth on /onboard.
+  const [buildStage, setBuildStage] = useState<FlushStage>("saving_profile");
+  const [buildPercent, setBuildPercent] = useState(8);
   useEffect(() => {
-    if (flushingState && phase !== "flushing") {
-      setPhase("flushing");
+    if (phase !== "building-plan") return;
+    setBuildStage("saving_profile");
+    setBuildPercent(8);
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const schedule: Array<{ delay: number; stage: FlushStage; percent: number }> = [
+      { delay: 250,  stage: "saving_profile",     percent: 25 },
+      { delay: 700,  stage: "creating_family",    percent: 45 },
+      { delay: 1200, stage: "saving_health_data", percent: 70 },
+      { delay: 1800, stage: "loading_chat",       percent: 90 },
+      { delay: 2400, stage: "done",               percent: 100 },
+    ];
+    for (const step of schedule) {
+      timers.push(setTimeout(() => {
+        setBuildStage(step.stage);
+        setBuildPercent(step.percent);
+      }, step.delay));
     }
-  }, [flushingState, phase]);
+    return () => { for (const t of timers) clearTimeout(t); };
+  }, [phase]);
 
   // Inline data-entry state for the profile-phase cards. One field set per
   // `addKind`; reset as the user advances so each card starts clean.
@@ -2283,7 +2335,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   //    between phases, and the card's max-width animates so the transition
   //    feels like one continuous container morphing rather than separate
   //    modals. ──
-  if (phase === "intro" || phase === "care" || phase === "care-ack" || phase === "setup-for" || phase === "router" || phase === "pain" || phase === "value" || phase === "profile-form" || phase === "situation" || phase === "meds" || phase === "care-plan" || phase === "validation" || phase === "elena-plan" || phase === "social-proof" || phase === "auth" || phase === "flushing") {
+  if (phase === "intro" || phase === "care" || phase === "care-ack" || phase === "setup-for" || phase === "router" || phase === "pain" || phase === "value" || phase === "profile-form" || phase === "situation" || phase === "meds" || phase === "care-plan" || phase === "validation" || phase === "elena-plan" || phase === "social-proof" || phase === "building-plan" || phase === "auth") {
     const motionEase = [0.4, 0, 0.2, 1] as const;
     const cardMaxWidth = phase === "value" ? 512 : 448;
     return createPortal(
@@ -3174,16 +3226,26 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
             })()}
 
             {phase === "meds" && (() => {
+              // `tpl` may be null when the user typed a custom
+              // condition the library doesn't recognize. Previously
+              // the whole phase early-returned in that case, which
+              // sent the user to a blank dead-end card with no
+              // Continue button. Now: template-derived chips render
+              // only when a template exists; the custom-meds input +
+              // Continue always render so the step is traversable.
               const tpl = getTemplate(selectedSituation);
-              if (!tpl) return null;
               // Short prompt — the template's medsPrompt is encyclopedic
               // ("People managing type 2 diabetes are often on one of
               // these. Any yours?") which takes four lines on mobile.
               // The user just picked the condition in the prior phase, so
               // context is already established. Keep the prompt tight.
-              const medsHeadline = isDependentSetup && managedFirstName
-                ? `Any of these meds for ${managedFirstName}?`
-                : "Any of these your meds?";
+              const medsHeadline = tpl
+                ? (isDependentSetup && managedFirstName
+                    ? `Any of these meds for ${managedFirstName}?`
+                    : "Any of these your meds?")
+                : (isDependentSetup && managedFirstName
+                    ? `What meds is ${managedFirstName} on?`
+                    : "What meds are you on?");
               return (
                 <motion.div
                   key="meds"
@@ -3209,28 +3271,30 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     </div>
                     {headlineDone && (
                       <>
-                        <RevealStack visible className="flex flex-wrap gap-2 max-md:gap-1.5 justify-center">
-                          {tpl.medOptions.map((m) => {
-                            const active = selectedMeds.includes(m);
-                            return (
-                              <motion.button
-                                key={m}
-                                variants={REVEAL_ITEM}
-                                whileTap={{ scale: 0.97 }}
-                                onClick={() =>
-                                  setSelectedMeds((p) => (p.includes(m) ? p.filter((x) => x !== m) : [...p, m]))
-                                }
-                                className={`px-3.5 py-2 max-md:px-3 max-md:py-1.5 rounded-full border text-[14px] max-md:text-[13px] transition-all duration-200 ${
-                                  active
-                                    ? "border-[#0F1B3D] bg-[#0F1B3D] text-white"
-                                    : "border-[#E5E5EA] bg-white text-[#0F1B3D] hover:border-[#0F1B3D]/30"
-                                }`}
-                              >
-                                {m}
-                              </motion.button>
-                            );
-                          })}
-                        </RevealStack>
+                        {tpl && (
+                          <RevealStack visible className="flex flex-wrap gap-2 max-md:gap-1.5 justify-center">
+                            {tpl.medOptions.map((m) => {
+                              const active = selectedMeds.includes(m);
+                              return (
+                                <motion.button
+                                  key={m}
+                                  variants={REVEAL_ITEM}
+                                  whileTap={{ scale: 0.97 }}
+                                  onClick={() =>
+                                    setSelectedMeds((p) => (p.includes(m) ? p.filter((x) => x !== m) : [...p, m]))
+                                  }
+                                  className={`px-3.5 py-2 max-md:px-3 max-md:py-1.5 rounded-full border text-[14px] max-md:text-[13px] transition-all duration-200 ${
+                                    active
+                                      ? "border-[#0F1B3D] bg-[#0F1B3D] text-white"
+                                      : "border-[#E5E5EA] bg-white text-[#0F1B3D] hover:border-[#0F1B3D]/30"
+                                  }`}
+                                >
+                                  {m}
+                                </motion.button>
+                              );
+                            })}
+                          </RevealStack>
+                        )}
                         {customMeds.length > 0 && (
                           <div className="flex flex-wrap gap-2 max-md:gap-1.5 justify-center">
                             {customMeds.map((m, i) => (
@@ -3261,7 +3325,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                                 setNewMedDraft("");
                               }
                             }}
-                            placeholder="Add another medication"
+                            placeholder={tpl ? "Add another medication" : "Type a medication"}
                             className="flex-1 min-w-0 rounded-full border border-[#E5E5EA] bg-white px-4 py-2.5 max-md:px-3.5 max-md:py-2 text-[14px] max-md:text-[13px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors"
                           />
                           <button
@@ -3582,13 +3646,17 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 // is the value proof either way.
                 derived.push(`I can price-shop your ${primaryRxMed} refills every month.`);
               }
-              // Rank 2 — pain callout (money branch). Quotes their own
-              // words back. Specific but abstract relative to a named
-              // med, so it drops below the Rx action when both exist.
+              // Rank 2 — pain callout (money branch). Previously this
+              // was "You said $X. I can help bring that down." which
+              // mixed voices (and became "they said $X" under the
+              // dependent-personalize transform — nonsensical). Now
+              // it's a first-person Elena action with the number
+              // embedded naturally, so the whole line reads as
+              // "I can [action] that [$X a year]" end-to-end.
               if (routerChoice === "money" && painSelection) {
                 const painOpt = [...TIME_PAIN_OPTIONS, ...MONEY_PAIN_OPTIONS].find((o) => o.id === painSelection);
                 if (painOpt) {
-                  derived.push(`You said ${painOpt.label.toLowerCase()}. I can help bring that down.`);
+                  derived.push(`I can audit your bills and bring that ${painOpt.label.toLowerCase()} a year down.`);
                 }
               }
               // Rank 3 — generic dependent framing. Useful but least
@@ -3633,11 +3701,16 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   return "their";
                 });
                 out = out.replace(/\byou're\b/g, "they're");
+                out = out.replace(/\byou've\b/g, "they've");
+                out = out.replace(/\byou'll\b/g, "they'll");
                 // Subject-position "you" after common particles → "they"
                 out = out.replace(/\b(before|after|when|while|if|so)\s+you\b/g, "$1 they");
-                // Verbs following "you" as subject → "they"
-                out = out.replace(/\byou\s+(go|need|want|have|get|pay|can|should|will)\b/g, "they $1");
-                // Remaining "you" (almost always object position) → "them"
+                // Every remaining "you" → "them". Previously there was
+                // an intermediate regex that turned "you + verb" into
+                // "they + verb", but that produced broken grammar like
+                // "help they pay" (where "you" is object of "help" and
+                // subject of the infinitive — English uses the object
+                // pronoun for both). "them" serves both roles correctly.
                 out = out.replace(/\byou\b/g, "them");
                 return out;
               }
@@ -3966,7 +4039,13 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                           pain_bucket: painSelection ?? null,
                           router_choice: routerChoice,
                         });
-                        setPhase("auth");
+                        // Go to the pre-auth "building-plan" transition
+                        // (fake progress bar + pain-targeted affirmation)
+                        // before signup — Cal AI-style psychological
+                        // staging. Auth phase is reached from the
+                        // ready-state Continue button inside the
+                        // building-plan flow.
+                        setPhase("building-plan");
                       }}
                       label="Continue"
                     />
@@ -4195,19 +4274,19 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               </motion.div>
             )}
 
-            {phase === "flushing" && flushingState && (
+            {phase === "building-plan" && (
               <motion.div
-                key="flushing"
+                key="building-plan"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.22, ease: motionEase }}
               >
                 <OnboardingFlushingContent
-                  stage={flushingState.stage}
-                  percent={flushingState.percent}
-                  affirmation={flushingState.affirmation}
-                  onContinue={flushingState.onContinue}
+                  stage={buildStage}
+                  percent={buildPercent}
+                  affirmation={deriveAffirmation(painSelection)}
+                  onContinue={() => setPhase("auth")}
                 />
               </motion.div>
             )}
