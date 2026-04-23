@@ -336,68 +336,73 @@ const INSURERS = [
 // Without this the agent lands with an empty first message and responds with
 // awkward "I don't have your data" copy. This opener invites Elena to do her
 // own pitch instead.
-const HOMEPAGE_DEFAULT_QUERY = "Hi Elena, I'm new here. What can you help me with?";
+// Goal-oriented default opener — lands Elena in an action posture
+// instead of a "what do you want" posture. Previous version was
+// "Hi Elena, I'm new here. What can you help me with?" which produced
+// meandering first responses that didn't move the user toward any
+// concrete outcome.
+const HOMEPAGE_DEFAULT_QUERY = "Help me figure out the single most valuable thing to tackle first with my healthcare. Ask me whatever you need.";
 
 const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; subtitle: string; prefill: string }> = {
   bill_fighting: {
     headline: ["Most medical bills", "have errors. Fight back."],
     accent: "Fight back",
     subtitle: "Up to 80% of medical bills contain mistakes. Elena finds overcharges, files appeals, and negotiates on your behalf so you never pay more than you owe.",
-    prefill: "I have questions about a medical bill.",
+    prefill: "I have a medical bill I think is wrong. Help me audit it and fight whatever's overcharged.",
   },
   calls: {
     headline: ["Elena calls your", "insurance for you."],
     accent: "for you",
     subtitle: "No more hold music. No more transfers. Elena sits on hold, talks to your insurer, and reports back.",
-    prefill: "I need help with some healthcare calls.",
+    prefill: "Call my insurance for me and find out where I stand on my deductible and what's covered this year.",
   },
   caregiver: {
     headline: ["Caregiving is exhausting.", "Elena handles it."],
     accent: "Elena handles it",
     subtitle: "Calling doctors, fighting insurance, tracking medications. Elena does it all so you can focus on being there for them.",
-    prefill: "I'm helping take care of someone's health. Where should I start?",
+    prefill: "Help me set up everything for the person I'm caring for — meds, doctors, upcoming appointments — so I can stop juggling it.",
   },
   risk_assessment: {
     headline: ["Know your risk", "before it's too late."],
     accent: "too late",
     subtitle: "Take our assessment, learn your risks, and get the right tests on the way.",
-    prefill: "I want to understand my health risks.",
+    prefill: "Walk me through my top health risks based on my age, family history, and what I tell you. Then tell me which tests I should get done.",
   },
   meds: {
     headline: ["Find your medications", "in stock today."],
     accent: "today",
     subtitle: "Stop calling pharmacy after pharmacy. Tell Elena what you need and she'll find it in stock near you.",
-    prefill: "I need help with my medications.",
+    prefill: "Find all my prescriptions at the cheapest in-stock pharmacy near me and set up autopilot refills.",
   },
   fertility: {
     headline: ["Your fertility journey,", "all in one place."],
     accent: "all in one place",
     subtitle: "Track medications and appointments, compare clinic prices, call your insurance about coverage, and manage the whole process without the spreadsheets.",
-    prefill: "I'm going through fertility treatment. Where should I start?",
+    prefill: "Build me a fertility plan — compare clinic prices near me, check my insurance coverage, and map out the timeline.",
   },
   chronic: {
     headline: ["Take control of", "your condition."],
     accent: "your condition",
     subtitle: "Living with diabetes, autoimmune disease, thyroid disorders, or mental health conditions means constant doctor visits, medications, and insurance battles. Elena manages it all for you.",
-    prefill: "I'm managing a chronic condition. Where should I start?",
+    prefill: "Build me a plan to manage my condition — the appointments, meds, tests, and follow-ups I should be on top of this year.",
   },
   insurance: {
     headline: ["Find the right insurance.", "Stop overpaying."],
     accent: "overpaying",
     subtitle: "Marketplace plans, employer options, Medicare, Medicaid. Elena compares plans based on your doctors, medications, and expected needs so you pick the one that actually saves you money.",
-    prefill: "I need help with my health insurance.",
+    prefill: "Audit my insurance — am I overpaying, under-covered, or missing a benefit I should be using?",
   },
   care_now: {
     headline: ["Need care today?", "Elena finds it."],
     accent: "finds it",
     subtitle: "Urgent care, same-day appointments, telehealth, or an ER alternative. Elena finds available providers near you right now and tells you what it'll cost before you go.",
-    prefill: "I need to see someone about my health soon.",
+    prefill: "I need care today. Find me a nearby provider who takes my insurance and tell me what it'll cost before I go.",
   },
   prices: {
     headline: ["Never get a surprise bill again.", "See prices before you go."],
     accent: "before you go",
     subtitle: "Elena uses real insurance-negotiated rates to show you what procedures actually cost at every provider near you. No surprises, no guessing.",
-    prefill: "I need to get a procedure done near me. Walk me through what it'll cost.",
+    prefill: "I need a procedure done. Compare prices at every provider near me and tell me the lowest-cost option that takes my insurance.",
   },
 };
 

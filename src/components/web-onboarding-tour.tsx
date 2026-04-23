@@ -418,6 +418,41 @@ function buildSeedMessageFromActions(actions: string[]): string {
   return `Please help me with these:\n${cleaned.map((s) => `• ${s}`).join("\n")}`;
 }
 
+// Fallback seed synthesizer for users who reach the end of the tour
+// without picking any action on elena-plan. Without this, the chat
+// page falls back to whatever generic seed was stashed from the
+// landing page (e.g. "What can you help me with?"), which lands Elena
+// in a directionless intake instead of starting on the user's goal.
+// Uses routerChoice + condition name + caregiver context to write a
+// goal-oriented opener. Always returns a non-empty string.
+function synthesizeFallbackSeed(args: {
+  routerChoice: RouterChoice | null;
+  conditionName: string;
+  managedFirstName: string;
+  isDependentSetup: boolean;
+}): string {
+  const { routerChoice, conditionName, managedFirstName, isDependentSetup } = args;
+  const who = isDependentSetup && managedFirstName ? managedFirstName : "me";
+  const possessive = isDependentSetup && managedFirstName ? `${managedFirstName}'s` : "my";
+
+  if (routerChoice === "condition") {
+    if (conditionName) {
+      return `Help ${who} build a plan to manage ${possessive} ${conditionName.toLowerCase()}. Start with what ${isDependentSetup ? "we" : "I"} should tackle first.`;
+    }
+    return `Help ${who} build a plan to manage ${possessive} condition. Ask whatever you need.`;
+  }
+  if (routerChoice === "medications") {
+    return `Get ${possessive} prescription refills on autopilot — tell me what you need to make that happen.`;
+  }
+  if (routerChoice === "money") {
+    return `Find the biggest savings in ${possessive} healthcare spend this year. Start with where to look first.`;
+  }
+  if (routerChoice === "staying_healthy") {
+    return `Help ${who} stay on top of ${possessive} preventive care — what's due, what's overdue, and what to book first.`;
+  }
+  return `Help ${who} figure out the single most valuable thing to tackle first. Ask whatever you need.`;
+}
+
 // elena-plan row: selectable action card. Vertical layout with the mini
 // mockup up top and the "Want me to..." proposal text below. Tapping
 // the card toggles it into a selected state (soft green tint + check
@@ -1149,7 +1184,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   // payload on save. Stale responses are discarded via a monotonic token.
   useEffect(() => {
     const trimmed = providerName.trim();
-    if (trimmed.length < 3 || !providerSpecialty) {
+    if (trimmed.length < 3) {
       setProviderMatch(null);
       setProviderMatchAccepted(false);
       setProviderMatchLoading(false);
@@ -1163,14 +1198,25 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       setProviderMatchLoading(true);
       try {
         const bareName = trimmed.replace(/^(Dr\.?\s+)/i, "").trim();
-        // Prefer the tour's own zip state (captured in the profile-form
-        // phase a few screens back) — it's always fresh. Fall back to the
-        // auth-context cached profile data which can lag after signup.
-        const zipUsed = zipCode.trim() || profileData?.zipCode || "";
+        // Prefer the tour's own zip state (captured in profile-form).
+        // In managed-setup mode the profile-form collects dependentZip
+        // (not zipCode), so include that in the fallback chain —
+        // previously the effect went out with an empty zip and Serper
+        // Places returned nothing useful.
+        const zipUsed =
+          zipCode.trim()
+          || profileData?.zipCode
+          || dependentZip.trim()
+          || "";
         const res = await apiFetch("/doctors/enrich", {
           method: "POST",
           body: JSON.stringify({
-            doctors: [{ name: bareName, specialty: providerSpecialty }],
+            // Specialty is optional — Serper Places works fine with
+            // just "{name} {zip}" (e.g. "One Medical 10001"). Previously
+            // we required the user to tap a specialty chip before the
+            // search would fire at all, which silently blocked users
+            // who typed a name and expected suggestions.
+            doctors: [{ name: bareName, specialty: providerSpecialty || "" }],
             zip_code: zipUsed,
           }),
         });
@@ -1212,7 +1258,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       }
     }, 700);
     return () => clearTimeout(timer);
-  }, [providerName, providerSpecialty, zipCode, profileData?.zipCode]);
+  }, [providerName, providerSpecialty, zipCode, profileData?.zipCode, dependentZip]);
 
   const nextProfile = useCallback(() => {
     if (guardRef.current) return;
@@ -1249,10 +1295,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       // Close the mobile sidebar drawer here, not just in finishTour —
       // there's a ~1s window between the last profile step and the end
       // of the chat spotlight where a lingering drawer overlaps the
-      // chat surface. User-reported: "side panel is still out, slightly
-      // off." Closing on transition + again in finishTour is
-      // belt-and-suspenders.
-      if (isMobile.current) onSidebar(false);
+      // chat surface. User-reported: "side panel is still out" on
+      // BOTH web and mobile web, so close on all widths now — not
+      // just mobile.
+      onSidebar(false);
       setPhase("chat");
       return;
     }
@@ -1296,8 +1342,13 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
           const resolvedSpecialty = providerSpecialty === "Other"
             ? providerCustomSpecialty.trim()
             : providerSpecialty;
-          if (!providerName.trim() || !resolvedSpecialty || !profileId) {
-            throw new Error("Pick a type and enter a name");
+          // Name + profile are required; specialty is not — saving
+          // with just a name is better than silently dropping it.
+          // Elena / the user can fill in specialty later via profile
+          // edit. If the user tapped "Other" but left the custom
+          // input blank, canSave already prevented getting here.
+          if (!providerName.trim() || !profileId) {
+            throw new Error("Enter a name");
           }
           const bareName = providerName.trim().replace(/^(Dr\.?\s+)/i, "").trim() || providerName.trim();
           // If the user tapped the enrichment card, include the backfilled
@@ -1305,7 +1356,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
           // provider record. Otherwise just send what they typed.
           const payload: Record<string, unknown> = {
             name: bareName,
-            specialty: resolvedSpecialty,
+            specialty: resolvedSpecialty || "",
           };
           if (providerMatchAccepted && providerMatch) {
             if (providerMatch.practice) payload.practice_name = providerMatch.practice;
@@ -1504,23 +1555,11 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     // leave inviteBusy true until the success overlay advances the tour.
   }, [inviteBusy, profileStep, profileData]);
 
-  // Hold the success overlay briefly, then advance. Separate effect so the
-  // overlay animates in first and the tour doesn't snap away instantly.
-  useEffect(() => {
-    if (!successOverlay) return;
-    // Hold long enough for the user to both see the overlay confirmation on
-    // the card AND register the entrance/pulse in the profile popover
-    // above. Family holds slightly longer because the tour closes the
-    // popover entirely when advancing past the last profile step, and we
-    // want the user to see the new profile arrive before it disappears.
-    const hold = successOverlay.kind === "invite"
-      ? 1500
-      : successOverlay.kind === "family"
-      ? 1900
-      : 1200;
-    const timer = setTimeout(() => { nextProfile(); }, hold);
-    return () => clearTimeout(timer);
-  }, [successOverlay, nextProfile]);
+  // Success overlay no longer auto-advances. The user's click-through
+  // is explicit throughout the tour — a Continue button renders
+  // inside the overlay and calls nextProfile on click. Previously a
+  // 1.2–1.9s setTimeout auto-advanced after the overlay animated in,
+  // which violated the "click through every step" requirement.
 
 
   const finishTour = useCallback(() => {
@@ -1541,40 +1580,57 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     try {
       const raw = sessionStorage.getItem("elena_tour_seeded_actions");
       if (raw) {
-        const parsed = JSON.parse(raw) as { actions?: string[] };
+        const parsed = JSON.parse(raw) as {
+          actions?: string[];
+          branch?: RouterChoice | null;
+          conditionName?: string | null;
+          managedFirstName?: string | null;
+          isDependentSetup?: boolean;
+        };
         const actions = Array.isArray(parsed.actions) ? parsed.actions : [];
-        if (actions.length > 0) {
-          const seedMessage = buildSeedMessageFromActions(actions);
-          if (seedMessage) {
-            // Belt + suspenders: write localStorage AND fire the
-            // callback. Callback propagates via parent state → chat
-            // area's initialQuery prop for the immediate handoff.
-            // localStorage is a safety net — if the callback path
-            // silently fails (profile-switch thrash mid-tour, stale
-            // closure in parent, page reload during tour), chat-area
-            // falls back to reading localStorage when sessionReady
-            // flips and no seed has fired. Chat page clears the
-            // localStorage key once the seed actually sends.
-            try { localStorage.setItem("elena_pending_query", seedMessage); } catch {}
-            if (onSeedQuery) {
-              onSeedQuery(seedMessage);
-            }
-            // Post-tour paywall gate: let the seeded first message run
-            // end-to-end for free (activation moment), then gate the
-            // user's next meaningful send on subscription. chat-area
-            // reads this flag in its handleSend to intercept send #2.
-            try { sessionStorage.setItem("elena_tour_post_seed_gate", "1"); } catch {}
+        // Always build a seed — action-derived when possible, synthesized
+        // fallback otherwise. Previously an empty actions array produced
+        // no seed and /chat auto-sent the landing-page default ("What
+        // can you help me with?"), which wasted the first turn.
+        const actionSeed = buildSeedMessageFromActions(actions);
+        const seedMessage = actionSeed || synthesizeFallbackSeed({
+          routerChoice: parsed.branch ?? null,
+          conditionName: parsed.conditionName || "",
+          managedFirstName: parsed.managedFirstName || "",
+          isDependentSetup: !!parsed.isDependentSetup,
+        });
+        if (seedMessage) {
+          // Belt + suspenders: write localStorage AND fire the
+          // callback. Callback propagates via parent state → chat
+          // area's initialQuery prop for the immediate handoff.
+          // localStorage is a safety net — if the callback path
+          // silently fails (profile-switch thrash mid-tour, stale
+          // closure in parent, page reload during tour), chat-area
+          // falls back to reading localStorage when sessionReady
+          // flips and no seed has fired. Chat page clears the
+          // localStorage key once the seed actually sends.
+          try { localStorage.setItem("elena_pending_query", seedMessage); } catch {}
+          if (onSeedQuery) {
+            onSeedQuery(seedMessage);
           }
-          analytics.track("Web Tour Seed Query Written" as any, {
-            action_count: actions.length,
-            via: onSeedQuery ? "callback+localStorage" : "localStorage",
-          });
+          // Post-tour paywall gate: let the seeded first message run
+          // end-to-end for free (activation moment), then gate the
+          // user's next meaningful send on subscription. chat-area
+          // reads this flag in its handleSend to intercept send #2.
+          try { sessionStorage.setItem("elena_tour_post_seed_gate", "1"); } catch {}
         }
+        analytics.track("Web Tour Seed Query Written" as any, {
+          action_count: actions.length,
+          synthesized: !actionSeed,
+          via: onSeedQuery ? "callback+localStorage" : "localStorage",
+        });
         sessionStorage.removeItem("elena_tour_seeded_actions");
       }
     } catch {}
     onProfilePopover(false, undefined, false);
-    if (isMobile.current) onSidebar(false);
+    // Close sidebar on all widths at tour end so the chat surface is
+    // unobstructed post-finishTour (web + mobile web).
+    onSidebar(false);
     setPhase("done");
     onComplete();
   }, [onComplete, onProfilePopover, onSidebar, onSeedQuery]);
@@ -1958,20 +2014,26 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       confirmed_count: confirmedActions.length,
       has_custom: trimmedCustom.length >= 3,
     });
-    // Stash the user's chosen actions for the chat page to read on
-    // mount. Phase 2 will pick these up and seed the opening exchange
-    // so Elena starts on them automatically. For now it's just a
-    // persisted handoff — no chat behavior change yet.
+    // Stash actions + context for finishTour to build the seed from.
+    // We ALWAYS write this — even when actions is empty — so the
+    // fallback synthesizer has the context it needs (routerChoice +
+    // condition name + dependent name) to produce a goal-oriented
+    // seed instead of letting the landing page's generic "what can
+    // you help me with" seed reach /chat.
+    const situationChip = getChip(selectedSituation);
+    const situationTpl = getTemplate(selectedSituation);
+    const resolvedConditionName =
+      situationChip?.conditionName || customSituation.trim() || situationTpl?.conditionName || "";
     try {
-      if (seededActions.length > 0) {
-        sessionStorage.setItem("elena_tour_seeded_actions", JSON.stringify({
-          actions: seededActions,
-          branch: routerChoice,
-          situation: selectedSituation,
-          conditionName: customSituation.trim() || null,
-          created_at: new Date().toISOString(),
-        }));
-      }
+      sessionStorage.setItem("elena_tour_seeded_actions", JSON.stringify({
+        actions: seededActions,
+        branch: routerChoice,
+        situation: selectedSituation,
+        conditionName: resolvedConditionName || null,
+        managedFirstName: isDependentSetup ? (managedFirstName || null) : null,
+        isDependentSetup,
+        created_at: new Date().toISOString(),
+      }));
     } catch {}
     // Plan A anonymous path: build the seed message, stash it in the
     // tour buffer, and hand control to the /onboard page so it can open
@@ -2045,13 +2107,23 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
           });
         }
       }
-      const seedMessage = buildSeedMessageFromActions(seededActions);
-      if (seedMessage) {
-        try {
-          const { setBufferedSeedQuery } = await import("@/lib/tourBuffer");
-          setBufferedSeedQuery(seedMessage);
-        } catch {}
-      }
+      // Always produce a non-empty seed: prefer the user's picked
+      // actions, fall back to a synthesized goal-oriented opener
+      // derived from router + condition + dependent context. Without
+      // the fallback, users who skipped action selection landed in
+      // /chat with a generic "what can you help me with" from the
+      // landing page, which defeats the whole tour.
+      const actionSeed = buildSeedMessageFromActions(seededActions);
+      const seedMessage = actionSeed || synthesizeFallbackSeed({
+        routerChoice,
+        conditionName: resolvedConditionName,
+        managedFirstName,
+        isDependentSetup,
+      });
+      try {
+        const { setBufferedSeedQuery } = await import("@/lib/tourBuffer");
+        setBufferedSeedQuery(seedMessage);
+      } catch {}
       if (onNeedsAuth) {
         onNeedsAuth(seedMessage);
       }
@@ -4115,7 +4187,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     const profileSteps = depName
       ? [
           { id: "health", title: `${possessive} Health tab`, body: `${possessive} conditions, meds, and care plan all land here. Elena keeps them up to date as you chat.`, tab: "health" as const, addKind: "provider" as AddKind | null },
-          { id: "visits", title: `${possessive} Visits tab`, body: `Every appointment Elena books for ${depName} lives here, plus your notes and history.`, tab: "visits" as const, addKind: "visit" as AddKind | null },
+          { id: "visits", title: `${possessive} Visits tab`, body: `Every appointment Elena books for ${depName} lives here, plus notes and history.`, tab: "visits" as const, addKind: "visit" as AddKind | null },
           { id: "insurance", title: `${possessive} Insurance tab`, body: `Elena checks what's covered and estimates costs before ${depName} goes in.`, tab: "insurance" as const, addKind: "insurance" as AddKind | null },
           { id: "family", title: "Anyone else to add?", body: "Other people you manage, or relatives who'd use their own account? Add them here too.", tab: "health" as const, addKind: "family" as AddKind | null, showSwitcher: true },
         ]
@@ -4146,9 +4218,16 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
 
     const canSave = (() => {
       if (addKind === "provider") {
+        // Specialty is optional — if the user types a name but
+        // doesn't tap a specialty chip, we should still save what
+        // they gave us. Previously canSave required a specialty,
+        // which silently turned Continue into Skip and discarded
+        // the typed name. Only "Other" requires the custom text
+        // input to be non-empty (otherwise there's no specialty
+        // to persist).
         if (!providerName.trim()) return false;
         if (providerSpecialty === "Other") return providerCustomSpecialty.trim().length > 0;
-        return providerSpecialty.length > 0;
+        return true;
       }
       if (addKind === "visit") {
         const hasDate = displayToIsoDate(visitDate).length > 0;
@@ -4259,7 +4338,23 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                       <p className="text-[13px] font-semibold text-[#0F1B3D] flex-1 min-w-0">
                         {addKind === "provider"
                           ? (isDependentSetup && managedFirstName ? `Any doctors ${managedFirstName} sees?` : "Have any doctors you like?")
-                          : (isDependentSetup && managedFirstName ? `Any recent visits for ${managedFirstName}?` : "Any recent visits to log?")}
+                          : (
+                              // Visit-step Y/N: if the user just added a
+                              // doctor on the previous step and hasn't
+                              // switched to chip-mode, continue the
+                              // thread — "Have you seen Dr. X recently?"
+                              // is tighter than a generic "any recent
+                              // visits". Falls back to the generic
+                              // question when no lastAddedProvider OR
+                              // the user tapped "Add a different visit".
+                              lastAddedProvider && !visitUseChipMode
+                                ? (isDependentSetup && managedFirstName
+                                    ? `Has ${managedFirstName} seen ${lastAddedProvider.name} recently?`
+                                    : `Have you seen ${lastAddedProvider.name} recently?`)
+                                : (isDependentSetup && managedFirstName
+                                    ? `Any recent visits for ${managedFirstName}?`
+                                    : "Any recent visits to log?")
+                            )}
                       </p>
                       <div className="flex gap-1.5 shrink-0">
                         <button
@@ -4382,7 +4477,11 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 )}
                 {showPrompt && headlineDone && stepChoice === "yes" && addKind ==="visit" && lastAddedProvider && !visitUseChipMode && (
                   <div className="mt-3 text-left space-y-2">
-                    <p className="text-[13px] font-semibold text-[#0F1B3D]">When did you see {lastAddedProvider.name}?</p>
+                    <p className="text-[13px] font-semibold text-[#0F1B3D]">
+                      {isDependentSetup && managedFirstName
+                        ? `When did ${managedFirstName} see ${lastAddedProvider.name}?`
+                        : `When did you see ${lastAddedProvider.name}?`}
+                    </p>
                     <input
                       className={inputClass}
                       type="text"
@@ -4663,6 +4762,17 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   >
                     {successOverlay.detail}
                   </motion.p>
+                  <motion.button
+                    type="button"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.28, delay: 0.5 }}
+                    onClick={nextProfile}
+                    className="mt-5 w-full max-w-xs py-3 rounded-full text-white font-semibold font-sans text-[14px] transition-opacity hover:opacity-90 shadow-[0_4px_14px_rgba(15,27,61,0.25)]"
+                    style={{ background: ctaGradient }}
+                  >
+                    Continue
+                  </motion.button>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -4681,12 +4791,13 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     return (
       <ChatStepJoyride
         onMount={() => {
-          // Safety net for the "side panel still out" bug: if the user
-          // reached chat phase via a path other than nextProfile
-          // (refresh, snapshot rehydrate, etc.) the sidebar close from
-          // the profile-step-advance wouldn't have fired. Close on
-          // mount here so the chat surface is always unobstructed.
-          if (isMobile.current) onSidebar(false);
+          // Close the sidebar on all widths (web + mobile web) before
+          // the chat-input spotlight fires. On desktop the sidebar is
+          // persistent by default, but at the chat-joyride moment we
+          // want the input fully unobstructed so the "Let's do this
+          // together" tooltip's arrow points at a clean target. User
+          // can re-open the sidebar after the joyride completes.
+          onSidebar(false);
           onProfilePopover(false, undefined, false);
         }}
         onFinish={() => { setShellFading(false); finishTour(); }}
@@ -5104,10 +5215,8 @@ function ChatStepJoyride({ onFinish, onMount }: { onFinish: () => void; onMount?
   // Listen on TOUR_END (not STEP_AFTER) so dismissing the spotlight via
   // Finish, X, or clicking the dim overlay all advance the tour. Using
   // STEP_AFTER alone left the tour state stuck at "chat" when users
-  // closed the tooltip without clicking Finish. A 20s safety timeout
-  // advances the tour even if the chat-input target isn't mountable
-  // (e.g. on force-tour runs where the chat surface takes a moment to
-  // hydrate). Guarantees finishTour always runs at the end.
+  // closed the tooltip without clicking Finish. No auto-advance timeout
+  // — user must click "Let's go" (or the X / dim overlay) to finish.
   useEffect(() => {
     const fire = () => {
       if (finishRef.current) return;
@@ -5115,8 +5224,7 @@ function ChatStepJoyride({ onFinish, onMount }: { onFinish: () => void; onMount?
       onFinishRef.current();
     };
     const unsub = on(EVENTS.TOUR_END, fire);
-    const timer = setTimeout(fire, 20000);
-    return () => { unsub(); clearTimeout(timer); };
+    return () => { unsub(); };
   }, [on]);
 
   return Tour;
