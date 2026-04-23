@@ -117,4 +117,24 @@ test.describe("Landing page — late-signup default", () => {
     await fillAndSendHero(page);
     await expect(page).toHaveURL(/\/onboard/, { timeout: 5_000 });
   });
+
+  test("cold /onboard deep-link arms the post-seed paywall gate on mount", async ({ page }) => {
+    // Regression pin: paid ads that deep-link directly to /onboard (skipping
+    // the landing hero) must still arm elena_tour_post_seed_gate so the
+    // paywall fires at message #2 on /chat. Without the mount-time write in
+    // src/app/onboard/page.tsx, cold entries previously slipped through
+    // without the gate — Meta's optimizer saw no StartTrial event.
+    await mockLanding(page);
+
+    await page.goto("/onboard?utm_source=meta&utm_campaign=cold_deeplink");
+    // Wait for the mount effect to run
+    await page.waitForFunction(
+      () => sessionStorage.getItem("elena_tour_post_seed_gate") === "1",
+      undefined,
+      { timeout: 5_000 },
+    );
+
+    const gate = await page.evaluate(() => sessionStorage.getItem("elena_tour_post_seed_gate"));
+    expect(gate).toBe("1");
+  });
 });

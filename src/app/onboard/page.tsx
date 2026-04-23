@@ -118,6 +118,15 @@ export default function OnboardPage() {
   switchProfileRef.current = switchProfile;
   completeOnboardingRef.current = completeOnboarding;
 
+  // Arm the post-seed paywall gate on every /onboard mount so direct
+  // deep-links (paid ads that skip the landing hero) still trigger the
+  // paywall at message #2 on /chat. Without this, cold /onboard entries
+  // signed up via OAuth mid-tour land on /chat with the gate unset and
+  // the paywall never fires — Meta's optimizer sees no StartTrial event.
+  useEffect(() => {
+    try { sessionStorage.setItem("elena_tour_post_seed_gate", "1"); } catch {}
+  }, []);
+
   // If an already-authenticated user lands here (refresh after signup,
   // bookmark, etc.), bounce them to /chat where their authed tour shell
   // lives. We don't want two different surfaces rendering the tour for
@@ -275,7 +284,8 @@ export default function OnboardPage() {
           // mid-flush — user still lands on /chat with the seed ready.
           try {
             localStorage.setItem("elena_pending_query", msg);
-            sessionStorage.setItem("elena_tour_post_seed_gate", "1");
+            // elena_tour_post_seed_gate is already armed at mount time
+            // (see the mount effect near the top of this component).
           } catch {}
         }}
         onNeedsAuth={() => {
