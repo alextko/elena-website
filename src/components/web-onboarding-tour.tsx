@@ -2431,10 +2431,19 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   .filter((x): x is { id: string; label: string; icon: typeof User } => x !== null),
               ];
               const pickedOther = setupForCareId && setupForCareId !== "myself";
+              // Require BOTH first + last name for managed-profile setup.
+              // Previously only first was required here; last name became
+              // required later at profile-form, so users who skipped last
+              // name here hit a silent "Continue disabled" on profile-form
+              // without understanding why. Gating both up-front avoids
+              // that dead end.
               const canContinue =
                 !creatingDependent &&
                 !!setupForCareId &&
-                (setupForCareId === "myself" || dependentFirstName.trim().length > 0);
+                (setupForCareId === "myself" || (
+                  dependentFirstName.trim().length > 0
+                  && dependentLastName.trim().length > 0
+                ));
               const dependentLabel = pickedOther
                 ? careIdToNounLabel(setupForCareId as string)
                 : "";
@@ -3068,12 +3077,24 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   {headlineDone && (
                     <button
                       onClick={() => {
+                        // Users who originally picked "condition" as their
+                        // priority but now say they have none get rerouted
+                        // to the staying_healthy track — preventive care
+                        // framing (checkups, screenings, reminders) instead
+                        // of condition-specific meds/care-plan/validation.
+                        // Before this fix, clicking here called
+                        // leaveShellThen(beginJoyride), which jumped past
+                        // social-proof → auth → flush and dead-ended
+                        // anonymous users without signup.
                         analytics.track("Web Tour Situation Skipped" as any);
-                        leaveShellThen(beginJoyride);
+                        setRouterChoice("staying_healthy");
+                        setPhase("elena-plan");
                       }}
                       className="text-[13px] text-[#8E8E93] hover:text-[#0F1B3D] self-center"
                     >
-                      I don&apos;t have an active condition
+                      {isDependentSetup
+                        ? "No active conditions to report"
+                        : "I don't have an active condition"}
                     </button>
                   )}
                 </motion.div>
