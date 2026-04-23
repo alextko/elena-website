@@ -755,6 +755,472 @@ export const SITUATION_TEMPLATES: Record<string, SituationTemplate> = {
     sourceUrl: "https://www.nccn.org/guidelines/category_1",
   },
 
+  // ── Cardiometabolic (additions) ────────────────────────────────────
+  t1_diabetes: {
+    key: "t1_diabetes",
+    label: "Type 1 diabetes",
+    conditionName: "Type 1 diabetes",
+    medsPrompt: "People managing type 1 diabetes are usually on insulin. What's in your routine?",
+    medOptions: ["Lantus (basal)", "Tresiba (basal)", "Levemir (basal)", "Humalog (meal)", "Novolog (meal)", "Fiasp (meal)", "Afrezza (inhaled)", "Dexcom G7", "Freestyle Libre", "Omnipod / Tandem pump"],
+    planItems: [
+      { id: "endo", label: "Endocrinology visit in the last 3-6 months", todoText: "Book your endocrinology follow-up" },
+      { id: "a1c", label: "A1C blood test in the last 3 months", todoText: "Schedule an A1C check" },
+      { id: "cgm", label: "CGM or pump check-in with your care team", todoText: "Book a CGM / pump review visit" },
+      { id: "eye", label: "Dilated eye exam in the last year", todoText: "Book an annual diabetic eye exam" },
+      { id: "foot", label: "Foot exam with your doctor", todoText: "Ask your PCP for a diabetic foot exam" },
+      { id: "kidney", label: "Kidney function + urine microalbumin in the last year", todoText: "Schedule kidney labs + urine microalbumin" },
+      { id: "lipid", label: "Lipid panel in the last year", todoText: "Schedule a lipid panel" },
+      { id: "thyroid", label: "Thyroid panel in the last year", todoText: "Schedule a thyroid panel" },
+    ],
+    heroValues: [
+      "I can call your endo to book your next follow-up.",
+      "I can call your insurance about CGM and pump coverage.",
+      "I can coordinate your eye, foot, and lab visits.",
+    ],
+    source: "ADA Standards of Medical Care in Diabetes (2025)",
+    sourceUrl: "https://diabetesjournals.org/care/issue/48/Supplement_1",
+  },
+
+  coronary_artery_disease: {
+    key: "coronary_artery_disease",
+    label: "Heart disease (CAD / post-MI)",
+    conditionName: "Coronary artery disease",
+    medsPrompt: "People managing CAD are often on one of these. Any yours?",
+    medOptions: ["Aspirin", "Atorvastatin (Lipitor)", "Rosuvastatin (Crestor)", "Clopidogrel (Plavix)", "Ticagrelor (Brilinta)", "Metoprolol", "Carvedilol", "Lisinopril", "Losartan", "Nitroglycerin (rescue)"],
+    planItems: [
+      { id: "cardio", label: "Cardiology follow-up in the last 6 months", todoText: "Book your cardiology follow-up" },
+      { id: "rehab", label: "Cardiac rehab enrollment (if eligible)", todoText: "Enroll in cardiac rehab" },
+      { id: "lipid", label: "Lipid panel in the last year", todoText: "Schedule a lipid panel" },
+      { id: "bp", label: "Blood pressure check in the last 3 months", todoText: "Check blood pressure with your PCP" },
+      { id: "a1c", label: "A1C or fasting glucose in the last year", todoText: "Schedule an A1C or glucose check" },
+      { id: "ekg", label: "EKG or stress test per your cardiologist", todoText: "Follow up on EKG / stress-test orders" },
+      { id: "flu", label: "Annual flu shot", todoText: "Book your flu shot" },
+    ],
+    heroValues: [
+      "I can book your cardiology follow-up.",
+      "I can enroll you in cardiac rehab and price-shop sessions.",
+      "I can call your pharmacy to chain your heart meds.",
+    ],
+    source: "AHA/ACC Guideline for the Management of Chronic Coronary Disease (2023)",
+    sourceUrl: "https://www.acc.org/guidelines",
+  },
+
+  chronic_kidney_disease: {
+    key: "chronic_kidney_disease",
+    label: "Chronic kidney disease",
+    conditionName: "Chronic kidney disease",
+    medsPrompt: "People managing CKD are often on one of these. Any yours?",
+    medOptions: ["Lisinopril", "Losartan", "Farxiga (dapagliflozin)", "Jardiance (empagliflozin)", "Kerendia (finerenone)", "Atorvastatin", "Furosemide (Lasix)", "Sodium bicarbonate", "Phosphate binders (Renvela, PhosLo)"],
+    planItems: [
+      { id: "nephro", label: "Nephrology visit in the last 6-12 months", todoText: "Book a nephrology visit" },
+      { id: "egfr", label: "eGFR / creatinine labs in the last 6 months", todoText: "Schedule eGFR and creatinine labs" },
+      { id: "uacr", label: "Urine albumin-to-creatinine in the last year", todoText: "Schedule a urine albumin-creatinine test" },
+      { id: "bp", label: "Blood pressure check in the last 3 months", todoText: "Check blood pressure with your PCP" },
+      { id: "a1c", label: "A1C in the last 6 months (if diabetic)", todoText: "Schedule an A1C check" },
+      { id: "lipid", label: "Lipid panel in the last year", todoText: "Schedule a lipid panel" },
+      { id: "vaccines", label: "Flu + pneumonia vaccines current", todoText: "Book flu and pneumonia vaccines" },
+    ],
+    heroValues: [
+      "I can book your nephrology follow-up.",
+      "I can coordinate your labs and PCP visits.",
+      "I can call your insurance about SGLT2 coverage.",
+    ],
+    source: "KDIGO 2024 Clinical Practice Guideline for the Evaluation and Management of CKD",
+    sourceUrl: "https://kdigo.org/guidelines/ckd-evaluation-and-management/",
+  },
+
+  // ── Musculoskeletal (additions) ────────────────────────────────────
+  osteoarthritis: {
+    key: "osteoarthritis",
+    label: "Osteoarthritis (joint pain)",
+    conditionName: "Osteoarthritis",
+    medsPrompt: "For OA pain, any of these in your routine?",
+    medOptions: ["Acetaminophen (Tylenol)", "Ibuprofen (Advil)", "Naproxen (Aleve)", "Diclofenac gel (Voltaren)", "Meloxicam", "Celecoxib (Celebrex)", "Duloxetine (Cymbalta)", "Cortisone injection"],
+    planItems: [
+      { id: "pcp", label: "PCP visit for joint assessment", todoText: "Book a PCP visit for your joint pain" },
+      { id: "imaging", label: "X-ray of the affected joint", todoText: "Schedule an X-ray of the affected joint" },
+      { id: "pt", label: "PT evaluation in the last 6 months", todoText: "Book a PT evaluation" },
+      { id: "ortho", label: "Orthopedics consult if severe or worsening", todoText: "Book an orthopedics consult" },
+      { id: "injection", label: "Joint injection discussion if pain is persistent", todoText: "Ask about a joint injection" },
+      { id: "weight", label: "Weight review if BMI ≥ 25", todoText: "Book a weight and BMI check" },
+    ],
+    heroValues: [
+      "I can book your PT and coordinate with ortho.",
+      "I can price-shop X-rays and injections before you go.",
+      "I can call your pharmacy for NSAID or Voltaren refills.",
+    ],
+    source: "ACR / AF Guideline for the Management of Osteoarthritis (2019)",
+    sourceUrl: "https://www.rheumatology.org/Practice-Quality/Clinical-Support/Clinical-Practice-Guidelines",
+  },
+
+  gout: {
+    key: "gout",
+    label: "Gout",
+    conditionName: "Gout",
+    medsPrompt: "People managing gout are often on one of these. Any yours?",
+    medOptions: ["Allopurinol", "Febuxostat (Uloric)", "Colchicine", "Indomethacin", "Naproxen", "Prednisone (flare)", "Probenecid"],
+    planItems: [
+      { id: "rheum", label: "Rheumatology or PCP visit for management", todoText: "Book a rheumatology or PCP visit" },
+      { id: "urate", label: "Uric-acid level in the last 6 months", todoText: "Schedule a uric-acid blood test" },
+      { id: "kidney", label: "Kidney function labs in the last year", todoText: "Schedule kidney function labs" },
+      { id: "podiatry", label: "Podiatry consult for recurrent foot flares", todoText: "Book a podiatry consult" },
+      { id: "refill", label: "Daily urate-lowering med on hand", todoText: "Refill your allopurinol or febuxostat" },
+    ],
+    heroValues: [
+      "I can book your rheumatology or PCP visit.",
+      "I can refill your allopurinol and price-shop alternatives.",
+      "I can schedule your uric-acid labs.",
+    ],
+    source: "ACR Guideline for the Management of Gout (2020)",
+    sourceUrl: "https://www.rheumatology.org/Practice-Quality/Clinical-Support/Clinical-Practice-Guidelines",
+  },
+
+  // ── Women's health (additions) ─────────────────────────────────────
+  endometriosis: {
+    key: "endometriosis",
+    label: "Endometriosis",
+    conditionName: "Endometriosis",
+    medsPrompt: "People managing endometriosis are often on one of these. Any yours?",
+    medOptions: ["Combined OCPs (Yaz, Lo Loestrin)", "Norethindrone", "Depo-Provera", "Lupron (leuprolide)", "Orilissa (elagolix)", "Myfembree (relugolix)", "Ibuprofen (Advil)", "Naproxen (Aleve)", "Mirena IUD"],
+    planItems: [
+      { id: "obgyn", label: "OB-GYN visit in the last 6-12 months", todoText: "Book your OB-GYN follow-up" },
+      { id: "imaging", label: "Pelvic ultrasound or MRI per your doctor", todoText: "Schedule pelvic imaging" },
+      { id: "pain", label: "Pain management consult if pain is uncontrolled", todoText: "Book a pain management consult" },
+      { id: "fertility", label: "Fertility consult if trying to conceive", todoText: "Book a fertility consult" },
+      { id: "mental_health", label: "Mental health check-in for chronic-pain support", todoText: "Book a mental health or therapy visit" },
+    ],
+    heroValues: [
+      "I can book your OB-GYN and pain management visits.",
+      "I can call your insurance about specialist coverage.",
+      "I can price-shop imaging before you go.",
+    ],
+    source: "ACOG Practice Bulletin — Management of Endometriosis",
+    sourceUrl: "https://www.acog.org/clinical/clinical-guidance/practice-bulletin",
+  },
+
+  // ── GI (additions) ─────────────────────────────────────────────────
+  celiac_disease: {
+    key: "celiac_disease",
+    label: "Celiac disease",
+    conditionName: "Celiac disease",
+    medsPrompt: "Celiac is mostly diet, but supplements are common. Any of these?",
+    medOptions: ["Iron", "Vitamin D", "Vitamin B12", "Folate", "Calcium", "Multivitamin", "Probiotic", "Not on any supplements"],
+    planItems: [
+      { id: "gi", label: "GI follow-up in the last year", todoText: "Book a GI follow-up" },
+      { id: "tTG", label: "TTG-IgA in the last year to confirm gluten-free adherence", todoText: "Schedule a TTG-IgA blood test" },
+      { id: "labs", label: "Iron, B12, folate, vitamin D labs in the last year", todoText: "Schedule iron, B12, folate, vitamin D labs" },
+      { id: "dexa", label: "Bone density (DEXA) scan if not done", todoText: "Book a DEXA scan" },
+      { id: "dietitian", label: "Dietitian consult for gluten-free diet", todoText: "Book a dietitian consult" },
+      { id: "family", label: "First-degree relatives screened for celiac", todoText: "Remind family to get celiac screening" },
+    ],
+    heroValues: [
+      "I can book your GI and dietitian follow-ups.",
+      "I can schedule your TTG and vitamin labs.",
+      "I can price-shop your DEXA scan.",
+    ],
+    source: "ACG Clinical Guidelines: Diagnosis and Management of Celiac Disease (2023)",
+    sourceUrl: "https://gi.org/guidelines/",
+  },
+
+  // ── Neurology (additions) ──────────────────────────────────────────
+  parkinsons_disease: {
+    key: "parkinsons_disease",
+    label: "Parkinson's disease",
+    conditionName: "Parkinson's disease",
+    medsPrompt: "People managing Parkinson's are often on one of these. Any yours?",
+    medOptions: ["Sinemet (carbidopa-levodopa)", "Rytary", "Requip (ropinirole)", "Mirapex (pramipexole)", "Azilect (rasagiline)", "Amantadine", "Nuplazid", "Neupro patch"],
+    planItems: [
+      { id: "neuro", label: "Movement disorder neurology visit in the last 6 months", todoText: "Book a movement disorder neurology visit" },
+      { id: "pt", label: "LSVT BIG or balance-focused PT evaluation", todoText: "Book a Parkinson's-focused PT evaluation" },
+      { id: "speech", label: "Speech / LSVT LOUD therapy evaluation", todoText: "Book a speech therapy evaluation" },
+      { id: "ortho_bp", label: "Orthostatic BP check (sitting + standing)", todoText: "Book an orthostatic BP check" },
+      { id: "swallow", label: "Swallowing evaluation if any trouble", todoText: "Book a swallowing evaluation" },
+      { id: "mental_health", label: "Mental health check-in for mood or anxiety", todoText: "Book a mental health visit" },
+      { id: "fall", label: "Home fall-risk assessment", todoText: "Book a home fall-risk assessment" },
+    ],
+    heroValues: [
+      "I can book your movement disorder neurology visit.",
+      "I can coordinate PT, speech, and OT across your care team.",
+      "I can call your pharmacy to chain your dopamine meds on time.",
+    ],
+    source: "AAN + Parkinson's Foundation Clinical Care Guidelines",
+    sourceUrl: "https://www.parkinson.org/",
+  },
+
+  stroke_tia: {
+    key: "stroke_tia",
+    label: "Stroke or TIA recovery",
+    conditionName: "Stroke / TIA",
+    medsPrompt: "After a stroke or TIA, people are often on one of these. Any yours?",
+    medOptions: ["Aspirin", "Clopidogrel (Plavix)", "Atorvastatin", "Rosuvastatin", "Apixaban (Eliquis)", "Rivaroxaban (Xarelto)", "Warfarin", "Lisinopril", "Amlodipine"],
+    planItems: [
+      { id: "neuro", label: "Neurology follow-up in the last 3-6 months", todoText: "Book your neurology follow-up" },
+      { id: "cardio", label: "Cardiology visit + echo / rhythm monitoring", todoText: "Book a cardiology follow-up" },
+      { id: "carotid", label: "Carotid ultrasound if not recent", todoText: "Schedule a carotid ultrasound" },
+      { id: "lipid", label: "Lipid panel in the last year", todoText: "Schedule a lipid panel" },
+      { id: "bp", label: "Blood pressure check in the last 3 months", todoText: "Check blood pressure with your PCP" },
+      { id: "a1c", label: "A1C in the last year", todoText: "Schedule an A1C check" },
+      { id: "rehab", label: "PT / OT / speech therapy on schedule", todoText: "Book your rehab therapy sessions" },
+    ],
+    heroValues: [
+      "I can book your neurology and cardiology follow-ups.",
+      "I can coordinate PT, OT, and speech therapy.",
+      "I can call your pharmacy for your secondary-prevention meds.",
+    ],
+    source: "AHA/ASA Guideline for the Prevention of Stroke in Patients with Stroke and TIA (2021)",
+    sourceUrl: "https://www.ahajournals.org/guidelines",
+  },
+
+  // ── Ophthalmology (additions) ──────────────────────────────────────
+  cataracts: {
+    key: "cataracts",
+    label: "Cataracts",
+    conditionName: "Cataracts",
+    medsPrompt: "For cataract care — pre or post-op — any of these in the mix?",
+    medOptions: ["Prednisolone acetate (pre/post-op)", "Moxifloxacin (post-op)", "Ketorolac (post-op)", "Artificial tears", "Not on any drops"],
+    planItems: [
+      { id: "ophth", label: "Ophthalmology visit to assess cataracts", todoText: "Book an ophthalmology visit" },
+      { id: "surgical", label: "Cataract surgical consult if vision is impaired", todoText: "Book a cataract surgical consult" },
+      { id: "preop", label: "Pre-op physical / medical clearance", todoText: "Book pre-op medical clearance" },
+      { id: "postop", label: "Post-op follow-up visits on schedule", todoText: "Book post-op ophthalmology follow-ups" },
+    ],
+    heroValues: [
+      "I can book your ophthalmology and surgical consults.",
+      "I can price-shop cataract surgery near you.",
+      "I can call your insurance about lens coverage.",
+    ],
+    source: "AAO Preferred Practice Pattern — Cataract / Anterior Segment (2021)",
+    sourceUrl: "https://www.aao.org/preferred-practice-pattern",
+  },
+
+  glaucoma: {
+    key: "glaucoma",
+    label: "Glaucoma",
+    conditionName: "Glaucoma",
+    medsPrompt: "People managing glaucoma are often on one of these drops. Any yours?",
+    medOptions: ["Latanoprost (Xalatan)", "Travoprost (Travatan Z)", "Bimatoprost (Lumigan)", "Timolol", "Brimonidine (Alphagan)", "Dorzolamide (Trusopt)", "Combigan", "Cosopt"],
+    planItems: [
+      { id: "ophth", label: "Ophthalmology visit every 3-6 months", todoText: "Book your ophthalmology follow-up" },
+      { id: "vf", label: "Visual field testing on schedule", todoText: "Schedule visual field testing" },
+      { id: "oct", label: "OCT imaging of the optic nerve", todoText: "Schedule OCT optic nerve imaging" },
+      { id: "iop", label: "IOP (eye pressure) check as recommended", todoText: "Book an IOP check" },
+      { id: "drops", label: "Daily eye drops on hand", todoText: "Refill your glaucoma drops" },
+    ],
+    heroValues: [
+      "I can book your ophthalmology follow-up.",
+      "I can chain your drop refills at your pharmacy.",
+      "I can price-shop visual field and OCT imaging.",
+    ],
+    source: "AAO Preferred Practice Pattern — Primary Open-Angle Glaucoma (2020)",
+    sourceUrl: "https://www.aao.org/preferred-practice-pattern",
+  },
+
+  macular_degeneration: {
+    key: "macular_degeneration",
+    label: "Macular degeneration (AMD)",
+    conditionName: "Macular degeneration",
+    medsPrompt: "For AMD, people often take AREDS2 vitamins or get injections. Any of these?",
+    medOptions: ["AREDS2 multivitamin", "Anti-VEGF injection (Eylea)", "Anti-VEGF injection (Lucentis)", "Anti-VEGF injection (Avastin)", "Not on any treatment yet"],
+    planItems: [
+      { id: "retina", label: "Retina specialist visit in the last 3-6 months", todoText: "Book a retina specialist visit" },
+      { id: "injections", label: "Anti-VEGF injection schedule if wet AMD", todoText: "Schedule your next anti-VEGF injection" },
+      { id: "oct", label: "OCT imaging per your doctor", todoText: "Schedule OCT retinal imaging" },
+      { id: "amsler", label: "Amsler grid handed out for at-home monitoring", todoText: "Ask your doctor for an Amsler grid" },
+      { id: "low_vision", label: "Low-vision evaluation if vision is impaired", todoText: "Book a low-vision evaluation" },
+    ],
+    heroValues: [
+      "I can book your retina specialist and injection visits.",
+      "I can call your insurance about Eylea / Lucentis coverage.",
+      "I can coordinate your low-vision evaluation.",
+    ],
+    source: "AAO Preferred Practice Pattern — Age-Related Macular Degeneration (2019)",
+    sourceUrl: "https://www.aao.org/preferred-practice-pattern",
+  },
+
+  // ── Geriatric syndromes (additions) ────────────────────────────────
+  fall_risk: {
+    key: "fall_risk",
+    label: "Fall risk / balance issues",
+    conditionName: "Fall risk",
+    medsPrompt: "For fall prevention, Vitamin D is common. Any of these in the routine?",
+    medOptions: ["Vitamin D", "Calcium", "Not on any meds for this"],
+    planItems: [
+      { id: "pcp", label: "PCP fall-risk assessment in the last year", todoText: "Book a fall-risk assessment with your PCP" },
+      { id: "med_review", label: "Medication review for fall-risk meds", todoText: "Book a pharmacist or PCP medication review" },
+      { id: "pt", label: "PT for balance and strength training", todoText: "Book a balance-focused PT evaluation" },
+      { id: "home", label: "Home safety evaluation (OT or aging-in-place specialist)", todoText: "Book a home safety evaluation" },
+      { id: "vision", label: "Vision check in the last year", todoText: "Book an eye exam" },
+      { id: "hearing", label: "Hearing check in the last 2 years", todoText: "Book a hearing evaluation" },
+      { id: "dexa", label: "Bone density (DEXA) scan if not recent", todoText: "Book a DEXA scan" },
+    ],
+    heroValues: [
+      "I can book a home safety evaluation.",
+      "I can coordinate PT, vision, and hearing checks.",
+      "I can call your pharmacist to review fall-risk meds.",
+    ],
+    source: "AGS/BGS Clinical Practice Guideline for the Prevention of Falls in Older Persons",
+    sourceUrl: "https://www.americangeriatrics.org/",
+  },
+
+  hearing_loss: {
+    key: "hearing_loss",
+    label: "Hearing loss",
+    conditionName: "Hearing loss",
+    medsPrompt: "Hearing loss is typically managed with devices, not meds. Anything in the routine?",
+    medOptions: ["Not on any meds", "Other"],
+    planItems: [
+      { id: "audiology", label: "Audiology evaluation in the last 2 years", todoText: "Book an audiology evaluation" },
+      { id: "ent", label: "ENT visit if sudden or one-sided hearing loss", todoText: "Book an ENT visit" },
+      { id: "hearing_aid", label: "Hearing aid fitting or maintenance", todoText: "Book a hearing aid fitting" },
+      { id: "insurance", label: "Insurance check for hearing aid coverage", todoText: "Call insurance about hearing aid coverage" },
+    ],
+    heroValues: [
+      "I can book your audiology and ENT visits.",
+      "I can call your insurance about hearing aid coverage.",
+      "I can price-shop hearing aid fittings.",
+    ],
+    source: "AAO-HNS Clinical Practice Guideline — Hearing Loss",
+    sourceUrl: "https://www.entnet.org/resource/clinical-practice-guidelines/",
+  },
+
+  urinary_incontinence: {
+    key: "urinary_incontinence",
+    label: "Urinary incontinence",
+    conditionName: "Urinary incontinence",
+    medsPrompt: "People managing incontinence are sometimes on one of these. Any yours?",
+    medOptions: ["Oxybutynin (Ditropan)", "Mirabegron (Myrbetriq)", "Solifenacin (Vesicare)", "Tolterodine (Detrol)", "Topical estrogen", "Not on any meds"],
+    planItems: [
+      { id: "urology", label: "Urology or urogynecology visit in the last year", todoText: "Book a urology or urogyn visit" },
+      { id: "pelvic_pt", label: "Pelvic floor PT evaluation", todoText: "Book a pelvic floor PT evaluation" },
+      { id: "urinalysis", label: "Urinalysis to rule out infection", todoText: "Schedule a urinalysis" },
+      { id: "med_review", label: "Medication review for bladder-irritating meds", todoText: "Book a medication review" },
+    ],
+    heroValues: [
+      "I can book your urology and pelvic floor PT visits.",
+      "I can call your pharmacy for refills and alternatives.",
+      "I can price-shop specialist visits.",
+    ],
+    source: "AUA/SUFU Guideline on Urinary Incontinence",
+    sourceUrl: "https://www.auanet.org/guidelines-and-quality",
+  },
+
+  // ── Urology (additions) ────────────────────────────────────────────
+  bph: {
+    key: "bph",
+    label: "Enlarged prostate (BPH)",
+    conditionName: "Benign prostatic hyperplasia",
+    medsPrompt: "People managing BPH are often on one of these. Any yours?",
+    medOptions: ["Tamsulosin (Flomax)", "Alfuzosin (Uroxatral)", "Silodosin (Rapaflo)", "Finasteride (Proscar)", "Dutasteride (Avodart)", "Tadalafil (Cialis, daily)"],
+    planItems: [
+      { id: "urology", label: "Urology visit in the last year", todoText: "Book a urology visit" },
+      { id: "psa", label: "PSA + prostate exam on schedule", todoText: "Schedule a PSA check with your PCP or urologist" },
+      { id: "urinalysis", label: "Urinalysis in the last year", todoText: "Schedule a urinalysis" },
+      { id: "med_review", label: "Medication review for urinary-retention meds", todoText: "Book a medication review" },
+    ],
+    heroValues: [
+      "I can book your urology follow-up.",
+      "I can refill your Flomax or Avodart at the cheapest pharmacy.",
+      "I can coordinate your PSA and urinalysis.",
+    ],
+    source: "AUA Guideline on the Management of BPH (2023)",
+    sourceUrl: "https://www.auanet.org/guidelines-and-quality",
+  },
+
+  // ── Mental health (additions) ──────────────────────────────────────
+  bipolar_disorder: {
+    key: "bipolar_disorder",
+    label: "Bipolar disorder",
+    conditionName: "Bipolar disorder",
+    medsPrompt: "People managing bipolar disorder are often on one of these. Any yours?",
+    medOptions: ["Lithium", "Lamotrigine (Lamictal)", "Valproate (Depakote)", "Quetiapine (Seroquel)", "Lurasidone (Latuda)", "Aripiprazole (Abilify)", "Olanzapine (Zyprexa)"],
+    planItems: [
+      { id: "psych", label: "Psychiatry follow-up in the last 3 months", todoText: "Book your psychiatry follow-up" },
+      { id: "therapy", label: "Therapy session in the last month", todoText: "Book a therapy session" },
+      { id: "levels", label: "Lithium or valproate levels if applicable", todoText: "Schedule mood-stabilizer drug levels" },
+      { id: "thyroid", label: "Thyroid panel (if on lithium)", todoText: "Schedule a thyroid panel" },
+      { id: "kidney", label: "Kidney function (if on lithium)", todoText: "Schedule kidney function labs" },
+      { id: "physical", label: "Annual physical in the last year", todoText: "Book your annual physical" },
+    ],
+    heroValues: [
+      "I can book your psychiatry and therapy visits.",
+      "I can schedule your lithium / valproate levels + safety labs.",
+      "I can call your pharmacy for refills.",
+    ],
+    source: "APA Practice Guideline for the Treatment of Patients with Bipolar Disorder",
+    sourceUrl: "https://www.psychiatry.org/psychiatrists/practice/clinical-practice-guidelines",
+  },
+
+  // ── Pain / rheumatology (additions) ────────────────────────────────
+  fibromyalgia: {
+    key: "fibromyalgia",
+    label: "Fibromyalgia",
+    conditionName: "Fibromyalgia",
+    medsPrompt: "People managing fibromyalgia are often on one of these. Any yours?",
+    medOptions: ["Pregabalin (Lyrica)", "Duloxetine (Cymbalta)", "Milnacipran (Savella)", "Amitriptyline", "Gabapentin", "Tramadol", "Not on any meds"],
+    planItems: [
+      { id: "rheum", label: "Rheumatology or pain management visit", todoText: "Book a rheumatology or pain management visit" },
+      { id: "pt", label: "PT evaluation for gentle-movement program", todoText: "Book a PT evaluation" },
+      { id: "mental_health", label: "Mental health visit for chronic-pain support", todoText: "Book a therapy visit" },
+      { id: "sleep", label: "Sleep study if unrefreshing sleep or suspected apnea", todoText: "Book a sleep evaluation" },
+      { id: "pcp", label: "Annual physical to rule out overlapping conditions", todoText: "Book your annual physical" },
+    ],
+    heroValues: [
+      "I can book your rheumatology and PT visits.",
+      "I can coordinate therapy and sleep evaluations.",
+      "I can price-shop your specialist visits.",
+    ],
+    source: "ACR Diagnostic Criteria for Fibromyalgia + EULAR Recommendations",
+    sourceUrl: "https://www.rheumatology.org/Practice-Quality/Clinical-Support/Clinical-Practice-Guidelines",
+  },
+
+  // ── Infectious disease (additions) ─────────────────────────────────
+  hiv: {
+    key: "hiv",
+    label: "HIV",
+    conditionName: "HIV",
+    medsPrompt: "People managing HIV are usually on ART. What's in your regimen?",
+    medOptions: ["Biktarvy", "Dovato", "Triumeq", "Descovy", "Genvoya", "Odefsey", "Cabenuva (injection)", "Other ART regimen"],
+    planItems: [
+      { id: "id", label: "Infectious disease visit every 3-6 months", todoText: "Book your ID follow-up" },
+      { id: "viral_load", label: "Viral load + CD4 count on schedule", todoText: "Schedule viral load and CD4 labs" },
+      { id: "sti", label: "Annual STI screening", todoText: "Schedule annual STI screening" },
+      { id: "mental_health", label: "Mental health visit in the last year", todoText: "Book a therapy or psychiatry visit" },
+      { id: "dental", label: "Dental cleaning in the last 6 months", todoText: "Book a dental cleaning" },
+      { id: "vaccines", label: "Flu, pneumonia, Hep B, HPV vaccines current", todoText: "Book up-to-date vaccines" },
+    ],
+    heroValues: [
+      "I can book your ID specialist and lab visits.",
+      "I can call your pharmacy to refill your ART.",
+      "I can call your insurance about ART and specialist coverage.",
+    ],
+    source: "DHHS Clinical Guidelines for the Management of HIV (2024)",
+    sourceUrl: "https://clinicalinfo.hiv.gov/en/guidelines",
+  },
+
+  // ── Post-viral (additions) ─────────────────────────────────────────
+  long_covid: {
+    key: "long_covid",
+    label: "Long COVID",
+    conditionName: "Long COVID",
+    medsPrompt: "Long COVID is individualized — any of these in your routine?",
+    medOptions: ["Low-dose naltrexone (LDN)", "Ivabradine", "Beta blocker (Metoprolol, Propranolol)", "Antihistamines (Zyrtec, Pepcid)", "Metformin", "Guanfacine", "Not on any prescription meds"],
+    planItems: [
+      { id: "pcp", label: "PCP or long-COVID clinic visit in the last 3-6 months", todoText: "Book a long-COVID clinic or PCP visit" },
+      { id: "cardio", label: "Cardiology consult if heart symptoms (POTS, palpitations)", todoText: "Book a cardiology consult" },
+      { id: "pulm", label: "Pulmonology consult if lingering shortness of breath", todoText: "Book a pulmonology consult" },
+      { id: "neuro", label: "Neurology consult if cognitive symptoms", todoText: "Book a neurology consult" },
+      { id: "pt", label: "PT / rehab for deconditioning or chronic fatigue", todoText: "Book a PT evaluation for long COVID" },
+      { id: "mental_health", label: "Mental health support for chronic illness", todoText: "Book a mental health or therapy visit" },
+    ],
+    heroValues: [
+      "I can find an in-network long-COVID clinic.",
+      "I can coordinate specialists across cardiology, pulmonology, and neurology.",
+      "I can price-shop your labs and imaging.",
+    ],
+    source: "CDC / NIH RECOVER — Post-COVID Conditions Clinical Guidance",
+    sourceUrl: "https://recovercovid.org/",
+  },
+
   // ── Category fallbacks ─────────────────────────────────────────────
   chronic_condition_fallback: {
     key: "chronic_condition_fallback",
@@ -893,6 +1359,26 @@ export const CONDITION_ALIASES: Record<string, string[]> = {
   gerd: ["gerd", "acid reflux", "reflux", "heartburn"],
   ibs: ["ibs", "irritable bowel", "irritable bowel syndrome"],
   cancer: ["cancer", "chemo", "chemotherapy", "oncology", "breast cancer", "prostate cancer", "colon cancer", "lung cancer", "lymphoma", "leukemia", "melanoma", "ovarian cancer", "skin cancer", "cervical cancer", "uterine cancer", "thyroid cancer", "pancreatic cancer", "kidney cancer", "bladder cancer", "tumor", "malignancy"],
+  t1_diabetes: ["type 1 diabetes", "type 1", "type i diabetes", "t1d", "t1 diabetes", "juvenile diabetes", "insulin dependent diabetes", "iddm"],
+  coronary_artery_disease: ["coronary artery disease", "cad", "heart attack", "mi", "myocardial infarction", "stent", "angioplasty", "bypass", "cabg", "post-mi", "post mi", "coronary", "angina"],
+  chronic_kidney_disease: ["ckd", "chronic kidney disease", "kidney disease", "kidney function", "low egfr", "egfr", "renal", "dialysis", "proteinuria", "albuminuria"],
+  osteoarthritis: ["osteoarthritis", "oa", "joint pain", "knee arthritis", "hip arthritis", "wear and tear arthritis", "joint replacement"],
+  gout: ["gout", "uric acid", "gouty arthritis", "podagra", "tophi"],
+  endometriosis: ["endometriosis", "endo", "pelvic pain", "painful periods", "dysmenorrhea"],
+  celiac_disease: ["celiac", "celiac disease", "coeliac", "gluten intolerance", "gluten-free", "ttg"],
+  long_covid: ["long covid", "long-covid", "long haul", "long-haul covid", "post covid", "post-covid", "pasc", "chronic covid"],
+  parkinsons_disease: ["parkinson", "parkinson's", "parkinsons", "parkinson's disease", "pd", "tremor", "levodopa", "sinemet", "carbidopa"],
+  stroke_tia: ["stroke", "tia", "mini stroke", "mini-stroke", "transient ischemic attack", "cva", "cerebrovascular", "brain bleed", "hemorrhagic stroke", "ischemic stroke"],
+  cataracts: ["cataract", "cataracts", "cloudy lens", "cataract surgery"],
+  glaucoma: ["glaucoma", "eye pressure", "iop", "optic nerve", "latanoprost", "xalatan"],
+  macular_degeneration: ["macular degeneration", "amd", "wet amd", "dry amd", "age-related macular", "eylea", "lucentis", "retina injections"],
+  fall_risk: ["falls", "fall risk", "balance", "balance issues", "unsteady", "falling", "gait"],
+  hearing_loss: ["hearing loss", "hard of hearing", "hearing aid", "hearing aids", "presbycusis", "deafness", "hearing impaired"],
+  urinary_incontinence: ["incontinence", "urinary incontinence", "leaking", "leaky bladder", "overactive bladder", "oab", "urge incontinence", "stress incontinence"],
+  bph: ["bph", "enlarged prostate", "prostate", "prostatic hyperplasia", "flomax", "tamsulosin"],
+  bipolar_disorder: ["bipolar", "bipolar disorder", "bipolar i", "bipolar ii", "bipolar 1", "bipolar 2", "manic depression", "lithium"],
+  fibromyalgia: ["fibromyalgia", "fibro", "widespread pain", "chronic widespread pain"],
+  hiv: ["hiv", "human immunodeficiency virus", "aids", "antiretroviral", "art", "biktarvy", "prep"],
 };
 
 export function getTemplate(key: string | null): SituationTemplate | null {

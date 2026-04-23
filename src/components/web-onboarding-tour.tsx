@@ -3716,6 +3716,57 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                           transition={{ duration: 0.3, ease: motionEase, delay: 0.2 + lines.length * 0.32 }}
                           className="w-full rounded-full border border-[#E5E5EA] bg-white px-4 py-3 max-md:px-3.5 max-md:py-2 text-[15px] max-md:text-[14px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors"
                         />
+                        {/* Prescription autocomplete — match the last word
+                            of the user's text against the meds they just
+                            captured on the meds step. Shows up only when
+                            the last word is ≥2 chars AND matches the start
+                            of a saved med name. Click to replace the
+                            partial word with the full med name. V1 uses
+                            only user-captured meds (selectedMeds + customMeds);
+                            adding RxNorm for unknown meds is future work. */}
+                        {(() => {
+                          const userMeds = Array.from(new Set(
+                            [...selectedMeds, ...customMeds.map((m) => m.trim())]
+                              .filter((m): m is string => typeof m === "string" && m.length > 0)
+                          ));
+                          const text = customActionText;
+                          const trailingWordMatch = text.match(/([A-Za-z][A-Za-z0-9-]*)$/);
+                          const partial = trailingWordMatch?.[1] ?? "";
+                          if (partial.length < 2 || userMeds.length === 0) return null;
+                          const partialLower = partial.toLowerCase();
+                          const matches = userMeds
+                            .filter((m) => {
+                              const ml = m.toLowerCase();
+                              return ml !== partialLower && ml.startsWith(partialLower);
+                            })
+                            .slice(0, 5);
+                          if (matches.length === 0) return null;
+                          return (
+                            <motion.div
+                              initial={{ opacity: 0, y: -4 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.15 }}
+                              className="mt-1.5 flex flex-col gap-0.5 rounded-2xl border border-[#E5E5EA] bg-white shadow-[0_4px_14px_rgba(15,27,61,0.08)] overflow-hidden"
+                            >
+                              {matches.map((m) => (
+                                <button
+                                  key={m}
+                                  type="button"
+                                  onClick={() => {
+                                    const base = text.slice(0, text.length - partial.length);
+                                    const next = `${base}${m}`;
+                                    setCustomActionText(next);
+                                    if (confirmedActions.length > 0) setConfirmedActions([]);
+                                  }}
+                                  className="flex items-center gap-2 px-4 py-2 text-left text-[14px] text-[#0F1B3D] hover:bg-[#F5F7FB] transition-colors"
+                                >
+                                  <span className="text-[11px] font-semibold uppercase tracking-wider text-[#2E6BB5]">Rx</span>
+                                  <span>{m}</span>
+                                </button>
+                              ))}
+                            </motion.div>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>
