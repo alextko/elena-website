@@ -1814,7 +1814,12 @@ export function ChatArea({
                         }}
                       />
                     ) : null}
-                    {msg.needsHipaaConsent && (
+                    {/* Skip the standalone HIPAA CTA when the message's
+                        formRequest already renders a hipaa_consent field —
+                        FormRequestCard renders its own "Open Authorization
+                        Form" button inline, so showing this one too produces
+                        a duplicate button on the same message. */}
+                    {msg.needsHipaaConsent && !msg.formRequest?.fields?.some((f) => f.type === "hipaa_consent") && (
                       <div className="mt-3 flex flex-col gap-2 items-start">
                         <button
                           onClick={() => setHipaaConsentOpen(true)}
