@@ -20,15 +20,32 @@ interface HipaaConsentModalProps {
 }
 
 export function HipaaConsentModal({ open, onOpenChange, onSigned }: HipaaConsentModalProps) {
-  const { profileId } = useAuth();
+  const { profileId, profileData } = useAuth();
   const [signature, setSignature] = useState("");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<"sign" | "insurer">("sign");
+
+  // Expected HIPAA signature name. If the profile has first + last name set,
+  // the signed name must match (case-insensitive, whitespace-normalized) —
+  // Elena places calls using this signature as the authorized representative,
+  // so the signed name must match the account holder on record. If profile
+  // name is missing, any non-trivial signature is accepted.
+  const expectedName = profileData?.firstName?.trim() && profileData?.lastName?.trim()
+    ? `${profileData.firstName.trim()} ${profileData.lastName.trim()}`
+    : null;
 
   const canSign = signature.trim().length > 1;
 
+  const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+
   const handleSign = async () => {
     if (!canSign || !profileId) return;
+    if (expectedName && normalize(signature) !== normalize(expectedName)) {
+      setError(`Please sign with the name on your profile: ${expectedName}`);
+      return;
+    }
+    setError(null);
     setSaving(true);
     try {
       await apiFetch(`/profile/${profileId}/hipaa-consent`, {
@@ -47,6 +64,7 @@ export function HipaaConsentModal({ open, onOpenChange, onSigned }: HipaaConsent
   const handleClose = () => {
     onOpenChange(false);
     setSignature("");
+    setError(null);
     setStep("sign");
     if (step === "insurer") onSigned?.();
   };
@@ -114,16 +132,21 @@ export function HipaaConsentModal({ open, onOpenChange, onSigned }: HipaaConsent
 
             <div className="p-6 pt-4">
               <label className="block text-xs font-semibold text-[#0F1B3D] mb-1.5">
-                Type your full name to sign
+                {expectedName
+                  ? "Type your full name to sign (must match your profile)"
+                  : "Type your full name to sign"}
               </label>
               <input
                 type="text"
                 value={signature}
-                onChange={(e) => setSignature(e.target.value)}
-                placeholder="e.g. John Smith"
+                onChange={(e) => { setSignature(e.target.value); if (error) setError(null); }}
+                placeholder={expectedName ?? "e.g. John Smith"}
                 className="w-full rounded-xl border border-[#0F1B3D]/10 bg-[#f5f7fb] px-3.5 py-2.5 text-sm text-[#0F1B3D] placeholder:text-[#0F1B3D]/30 focus:outline-none focus:ring-2 focus:ring-[#0F1B3D]/20 transition-all"
                 autoFocus
               />
+              {error && (
+                <p className="mt-2 text-xs text-red-600">{error}</p>
+              )}
 
               <button
                 onClick={handleSign}
