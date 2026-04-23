@@ -1321,10 +1321,17 @@ export function ChatArea({
             const tourGateFlag = typeof window !== "undefined"
               && sessionStorage.getItem("elena_tour_post_seed_gate") === "1";
             const isFreeTier = !(subscription && subscription.tier && subscription.tier !== "free");
+            const isChatMessageCap = chatResult.gated_feature === "chat_message";
             setUpgradeReason("upgrade_required");
             setUpgradeFeature(chatResult.gated_feature || undefined);
             trackPaywallHit("upgrade_required", chatResult.gated_feature || undefined);
-            if (tourGateFlag && isFreeTier) {
+            // Route to TrialFlow (via reviews modal) for:
+            //   - cold-traffic tour users hitting any gate (existing 2-msg flow)
+            //   - free-tier users hitting the 25/month chat_message cap
+            //     (same TrialFlow so the paywall feels coherent; user sees
+            //     the trial offer rather than the feature-specific upgrade
+            //     modal, which would be weirdly narrow for a message cap).
+            if (isFreeTier && (tourGateFlag || isChatMessageCap)) {
               setReviewsOpen(true);
               try { sessionStorage.removeItem("elena_tour_post_seed_gate"); } catch {}
             } else {
