@@ -269,7 +269,11 @@ test("seeded free user hits paywall when provider-search quota is exhausted", as
 }) => {
   test.setTimeout(120_000);
 
-  const ctx = await browser.newContext();
+  const ctx = await browser.newContext({
+    extraHTTPHeaders: {
+      "X-E2E-Scenario": "provider-search-paywall",
+    },
+  });
   const page = await ctx.newPage();
   const reqs = await captureNetwork(page);
   let user: TestUser | null = null;

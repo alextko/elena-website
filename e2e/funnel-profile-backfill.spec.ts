@@ -334,9 +334,9 @@ test("DME submit: profile backfilled + onboarding marked complete, modal never s
       `my_doctors should include Vanderbilt. Got: ${JSON.stringify(doctors)}`,
     ).toBe(true);
 
-    // 5. Inject auth + navigate to /chat. Assert the onboarding modal is NEVER visible.
-    //    The welcome fetch path runs but we're not asserting on it here — the focus
-    //    is on the modal skip.
+    // 5. Inject auth + navigate to /chat. Assert the onboarding overlay is NEVER visible.
+    //    The regular chat welcome card *should* still appear; what we're guarding
+    //    against is the WebOnboardingTour intro ("Hey, I'm Elena" + Continue) reopening.
     await injectAuth(page, auth);
     await page.addInitScript((pid) => {
       localStorage.setItem("elena_active_profile_id", pid);
@@ -344,12 +344,13 @@ test("DME submit: profile backfilled + onboarding marked complete, modal never s
 
     await page.goto("/chat");
 
-    // The onboarding modal heading would say "Welcome to Elena" or "Hey <name>!".
-    // We want it to NOT appear. Give the page time to call /auth/me and settle.
+    // Give the page time to call /auth/me and settle.
     await page.waitForTimeout(4_000);
-    const modalCount = await page.getByRole("heading", { name: /Welcome to Elena|Hey DmeBackfill/i }).count();
-    console.log("[e2e pbf-dme] modal headings visible count:", modalCount);
-    expect(modalCount, "onboarding modal should be skipped because backfill marked onboarding complete").toBe(0);
+    const onboardingIntro = page.getByRole("heading", { name: /Hey, I'm Elena/i });
+    const onboardingContinue = page.getByRole("button", { name: /^Continue$/i });
+    await expect(onboardingIntro, "onboarding intro should stay skipped after DME backfill").toHaveCount(0);
+    await expect(onboardingContinue, "onboarding CTA should not reopen once DME backfill marked onboarding complete").toHaveCount(0);
+    await expect(page.getByPlaceholder("Ask Elena anything...")).toBeVisible();
   } finally {
     if (authUserId) await cleanupProfileByAuthUser(request, authUserId);
   }

@@ -403,9 +403,6 @@ test.describe("Power-user bug fixes", () => {
         /I can't share my internal instructions, but I can still help with your healthcare question/i,
       );
 
-      await insertChatMessage(session.id, "user", textBlocks(message));
-      await insertChatMessage(session.id, "assistant", textBlocks(safeReply));
-
       await primeBrowserAuth(page, user, {
         activeSessionId: session.id,
         preview: "Prompt leak regression",
@@ -708,6 +705,213 @@ test.describe("Power-user bug fixes", () => {
       expect(typeof locations[0]?.name).toBe("string");
       expect(String(locations[0]?.name || "").trim().length).toBeGreaterThan(0);
       expect(JSON.stringify(payload)).not.toContain("auth_required");
+    } finally {
+      await cleanupAuthedUser(user);
+    }
+  });
+
+  test("website surfaces provider outages without collapsing to the generic chat fallback", async ({ page }) => {
+    let user: TestUser | null = null;
+
+    try {
+      user = await createAuthedUser();
+      await primeBrowserAuth(page, user);
+
+      const sessionId = randomUUID();
+      await page.route(`${API_BASE}/chat/send`, async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            chat_request_id: "req-provider-outage",
+            session_id: sessionId,
+          }),
+        });
+      });
+      await page.route(`${API_BASE}/chat/poll/**`, async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            chat_request_id: "req-provider-outage",
+            phase: "failed",
+            error: "Elena's AI provider is unavailable right now. Please try again later.",
+            elapsed_seconds: 0.4,
+            tool_step: 0,
+          }),
+        });
+      });
+
+      await openChat(page);
+      await sendChatMessage(page, "Price-shop labs and imaging in-network.");
+
+      await expect(
+        page.getByText("Elena's AI provider is unavailable right now. Please try again later."),
+      ).toBeVisible({ timeout: 10_000 });
+      await expect(
+        page.getByText("Sorry, something went wrong on my end. Could you try that again?"),
+      ).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Try again" })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Start a new chat" })).toBeVisible();
+    } finally {
+      await cleanupAuthedUser(user);
+    }
+  });
+
+  test("onboard Continue shows progress while chat navigation is in flight", async ({ page }) => {
+    let user: TestUser | null = null;
+
+    try {
+      user = await createAuthedUser();
+      await primeBrowserAuth(page, user);
+      await page.route(`${API_BASE}/chat/welcome`, async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            session_id: randomUUID(),
+            heading: "Hey!",
+            message: "Welcome back to Elena.",
+            suggestions: [],
+          }),
+        });
+      });
+      await page.addInitScript(() => {
+        sessionStorage.setItem("elena_onboard_signup_pending", "1");
+        sessionStorage.setItem(
+          "elena_tour_buffer",
+          JSON.stringify({
+            dependents: [],
+            conditions: [],
+            medications: [],
+            todos: [],
+            seed_query: "Help me price-shop labs and imaging in-network.",
+            created_at: new Date().toISOString(),
+          }),
+        );
+        localStorage.setItem(
+          "elena_tour_state",
+          JSON.stringify({
+            routerChoice: "condition",
+            painSelection: "1to3",
+          }),
+        );
+      });
+
+      await page.route("**/chat*", async (route) => {
+        const url = new URL(route.request().url());
+        const isWebsiteChatNavigation =
+          (url.host === "localhost:3001" || url.host === "127.0.0.1:3001") &&
+          url.pathname === "/chat";
+        if (isWebsiteChatNavigation) {
+          await new Promise((resolve) => setTimeout(resolve, 1200));
+        }
+        await route.continue();
+      });
+
+      await page.goto("/onboard");
+      await expect(page.getByTestId("onboard-flush-ready")).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByRole("heading", { name: /Ready to start getting that time back\?/i })).toBeVisible();
+
+      await page.getByRole("button", { name: /^Continue$/i }).click();
+
+      await expect(page.getByTestId("onboard-opening-chat")).toBeVisible({ timeout: 10_000 });
+      await expect(page.getByRole("heading", { name: /Opening your chat/i })).toBeVisible();
+      await expect(page.getByText("Taking you to Elena now...")).toBeVisible();
+      await expect(page.getByText("100%")).toBeVisible();
+      await expect(page).toHaveURL(/\/chat/, { timeout: 30_000 });
+    } finally {
+      await cleanupAuthedUser(user);
+    }
+  });
+
+  test("onboard handoff surfaces provider outages on the first manually sent message", async ({ page }) => {
+    let user: TestUser | null = null;
+
+    try {
+      user = await createAuthedUser();
+      await primeBrowserAuth(page, user);
+
+      const sessionId = randomUUID();
+      await page.route("**/chat/welcome", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            session_id: sessionId,
+            heading: "Hey there, Power! 👋",
+            message: "Welcome back to Elena.",
+            suggestions: [],
+          }),
+        });
+      });
+      await page.route("**/chat/send", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            chat_request_id: "req-onboard-provider-outage",
+            session_id: sessionId,
+          }),
+        });
+      });
+      await page.route("**/chat/poll/**", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            chat_request_id: "req-onboard-provider-outage",
+            phase: "failed",
+            error: "Elena's AI provider is unavailable right now. Please try again later.",
+            elapsed_seconds: 0.4,
+            tool_step: 0,
+          }),
+        });
+      });
+
+      await page.addInitScript(() => {
+        sessionStorage.setItem("elena_onboard_signup_pending", "1");
+        sessionStorage.setItem(
+          "elena_tour_buffer",
+          JSON.stringify({
+            dependents: [],
+            conditions: [],
+            medications: [],
+            todos: [],
+            seed_query: "Help me price-shop labs and imaging in-network.",
+            created_at: new Date().toISOString(),
+          }),
+        );
+        localStorage.setItem(
+          "elena_tour_state",
+          JSON.stringify({
+            routerChoice: "condition",
+            painSelection: "1to3",
+          }),
+        );
+      });
+
+      await page.goto("/onboard");
+      await expect(page.getByTestId("onboard-flush-ready")).toBeVisible({ timeout: 30_000 });
+
+      await page.getByRole("button", { name: /^Continue$/i }).click();
+
+      await expect(page).toHaveURL(/\/chat/, { timeout: 30_000 });
+      await expect(page.getByPlaceholder("Ask Elena anything...")).toBeVisible({ timeout: 20_000 });
+
+      await sendChatMessage(page, "Price-shop labs and imaging in-network.");
+
+      await expect(
+        page.getByText("Price-shop labs and imaging in-network."),
+      ).toBeVisible({ timeout: 20_000 });
+      await expect(
+        page.getByText("Elena's AI provider is unavailable right now. Please try again later."),
+      ).toBeVisible({ timeout: 20_000 });
+      await expect(
+        page.getByText("Sorry, something went wrong on my end. Could you try that again?"),
+      ).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Try again" })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Start a new chat" })).toBeVisible();
     } finally {
       await cleanupAuthedUser(user);
     }

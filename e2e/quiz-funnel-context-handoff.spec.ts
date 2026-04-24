@@ -410,6 +410,7 @@ test("quiz funnel completion → claim persists quiz_results + agent welcome ref
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
         "X-Profile-Id": profileId,
+        "X-E2E-Scenario": "quiz-followup-provider-search",
       },
       data: {
         message: "Yes please find me a primary care doctor",

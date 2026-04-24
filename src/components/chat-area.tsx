@@ -1374,12 +1374,20 @@ export function ChatArea({
         },
         // onError
         (error) => {
+          const errorMessage =
+            typeof error === "string" && error.trim()
+              ? error.trim()
+              : "Sorry, something went wrong on my end. Could you try that again?";
           const errorId = nextId();
           setMessages((prev) => [
             ...prev,
-            { id: errorId, role: "assistant", content: "Sorry, something went wrong on my end. Could you try that again?" },
+            { id: errorId, role: "assistant", content: errorMessage },
           ]);
-          setSuggestions(["Try again", "Start a new chat"]);
+          setSuggestions(
+            /try again later/i.test(errorMessage)
+              ? ["Start a new chat"]
+              : ["Try again", "Start a new chat"],
+          );
           setToolLabel(null);
           setIsLoading(false);
         },
