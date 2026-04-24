@@ -236,17 +236,33 @@ function ChatPageInner() {
       //                landed while the page was still open (rare).
       // Both fires pass the server-issued meta event_id so Meta dedups with
       // the matching backend CAPI fire from the Stripe webhook.
-      apiFetch("/web/subscription").then(async (res) => {
-        if (!res.ok) return;
-        const sub = await res.json();
-        refreshSubscription();
+      // Poll /web/subscription until the Stripe webhook has flipped tier off
+      // "free" — webhook latency is usually 1-3s but can spike to 10s+. Without
+      // polling, both the FB pixel fires get skipped AND the profile UI stays
+      // on "Upgrade to Pro" until the user navigates again.
+      (async () => {
+        let sub: { tier?: string; status?: string; plan?: string; meta_start_trial_event_id?: string; meta_subscribe_event_id?: string } | null = null;
+        for (let attempt = 0; attempt < 10; attempt++) {
+          try {
+            const res = await apiFetch("/web/subscription");
+            if (res.ok) {
+              sub = await res.json();
+              if (sub && sub.tier && sub.tier !== "free") break;
+            }
+          } catch {}
+          await new Promise((r) => setTimeout(r, 1000));
+        }
+        // Push the latest into auth-context state + Mixpanel plan_type, even
+        // if we timed out — refreshSubscription is idempotent.
+        await refreshSubscription();
+        if (!sub || !sub.tier || sub.tier === "free") return;
         const planKey: string = sub.plan || sub.tier;
-        if (sub.tier !== "free" && sub.status === "trialing") {
+        if (sub.status === "trialing") {
           trackStartTrial(planKey, "USD", sub.meta_start_trial_event_id);
-        } else if (sub.tier !== "free" && sub.status === "active") {
+        } else if (sub.status === "active") {
           trackSubscription(planKey, getPlanPriceUSD(planKey), "USD", sub.meta_subscribe_event_id);
         }
-      }).catch(() => {});
+      })();
       // Clean URL without reload
       window.history.replaceState({}, "", "/chat");
       // Auto-dismiss after 4 seconds

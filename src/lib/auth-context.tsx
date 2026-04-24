@@ -172,7 +172,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         analytics.identify(currentSessionForProvider?.user?.id || "", {
           $email: data.email,
           has_profile: false,
-          plan_type: "free",
         });
         analytics.track("Signup Completed", { method: provider });
         // Ad pixel CompleteRegistration fires after onboarding completes (in completeOnboarding),
@@ -251,7 +250,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           $email: data.email,
           $name: `${primary.first_name} ${primary.last_name}`.trim(),
           has_profile: true,
-          plan_type: "free",
         });
         analytics.track("Login Completed", { method: provider });
       }
@@ -461,7 +459,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .then(async (res) => {
           if (!res.ok || isStale()) return;
           subscriptionResult = await res.json();
-          if (!isStale()) setSubscription(subscriptionResult);
+          if (!isStale()) {
+            setSubscription(subscriptionResult);
+            // Source of truth for Mixpanel plan_type — DB tier, not a hardcoded
+            // "free" guess. Without this, paid/trialing users land in the
+            // free-user cohort until refreshSubscription is called.
+            const tier = subscriptionResult?.tier;
+            if (tier) {
+              analytics.setSuperProperties({ plan_type: tier });
+              analytics.setPeopleProperties({ plan_type: tier });
+            }
+          }
         })
         .catch(() => {}),
     );
