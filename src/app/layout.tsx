@@ -67,8 +67,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
+
   return (
-    <html lang="en" className={`${inter.variable} ${dmSerif.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      data-scroll-behavior="smooth"
+      className={`${inter.variable} ${dmSerif.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
       <head>
         <meta name="theme-color" content="#0F1B3D" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -95,11 +101,12 @@ ttq.page();
 }(window, document, 'ttq');`,
           }}
         />
-        <Script
-          id="meta-pixel"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `!function(f,b,e,v,n,t,s)
+        {metaPixelId ? (
+          <Script
+            id="meta-pixel"
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `!function(f,b,e,v,n,t,s)
 {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};
 if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
@@ -107,10 +114,11 @@ n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '${process.env.NEXT_PUBLIC_META_PIXEL_ID}');
+fbq('init', '${metaPixelId}');
 fbq('track', 'PageView');`,
-          }}
-        />
+            }}
+          />
+        ) : null}
         <Providers>{children}</Providers>
       </body>
     </html>

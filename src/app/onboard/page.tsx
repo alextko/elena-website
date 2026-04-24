@@ -11,7 +11,7 @@
  * /chat with the seed message ready to auto-send.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { WebOnboardingTour } from "@/components/web-onboarding-tour";
@@ -76,6 +76,7 @@ function deriveAffirmation(): PainAffirmation {
 export default function OnboardPage() {
   const router = useRouter();
   const { session, loading, refreshProfiles, switchProfile, completeOnboarding } = useAuth();
+  const [isNavigatingToChat, startNavigatingToChat] = useTransition();
 
   // Flipped true when the tour has reached elena-plan Continue. Controls
   // whether the session-becoming-truthy effect should flush + redirect,
@@ -99,6 +100,7 @@ export default function OnboardPage() {
   // showing the branded loading screen. The ref above is the functional
   // gate; this is the display signal.
   const [flushingVisible, setFlushingVisible] = useState(false);
+  const [continuePending, setContinuePending] = useState(false);
   const [flushStage, setFlushStage] = useState<FlushStage>("saving_profile");
   const [flushPercent, setFlushPercent] = useState(8);
   // Pain affirmation is snapshotted the moment the flush starts so it
@@ -127,6 +129,10 @@ export default function OnboardPage() {
     try { sessionStorage.setItem("elena_tour_post_seed_gate", "1"); } catch {}
   }, []);
 
+  useEffect(() => {
+    router.prefetch("/chat");
+  }, [router]);
+
   // If an already-authenticated user lands here (refresh after signup,
   // bookmark, etc.), bounce them to /chat where their authed tour shell
   // lives. We don't want two different surfaces rendering the tour for
@@ -136,10 +142,10 @@ export default function OnboardPage() {
     // Only bounce if this is a STANDING session (not a session that just
     // appeared because AuthModal completed). The pendingSignupRef flag
     // distinguishes the two.
-    if (session && !pendingSignupRef.current) {
+    if (session && !pendingSignupRef.current && !continuePending) {
       router.replace("/chat");
     }
-  }, [loading, session, router]);
+  }, [continuePending, loading, session, router]);
 
   // Session appeared while the signup gate is pending → run the flush,
   // then navigate to /chat. Depends only on `session` so re-renders
@@ -157,6 +163,7 @@ export default function OnboardPage() {
     console.log("[onboard] flush starting");
     flushingRef.current = true;
     setFlushingVisible(true);
+    setContinuePending(false);
     // Capture the pain-targeted affirmation now, while elena_tour_state is
     // still populated. The flushing screen shows it on the "ready" beat
     // after the progress bar hits 100%.
@@ -251,11 +258,16 @@ export default function OnboardPage() {
                 stage: flushStage,
                 percent: flushPercent,
                 affirmation,
+                isNavigating: continuePending || isNavigatingToChat,
                 onContinue: () => {
+                  if (continuePending) return;
                   analytics.track("Onboard Flush Continue Clicked" as any);
+                  setContinuePending(true);
                   pendingSignupRef.current = false;
                   try { sessionStorage.removeItem(PENDING_SIGNUP_KEY); } catch {}
-                  router.replace("/chat");
+                  startNavigatingToChat(() => {
+                    router.replace("/chat");
+                  });
                 },
               }
             : null

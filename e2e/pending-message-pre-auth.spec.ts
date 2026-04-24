@@ -7,7 +7,7 @@ import { test, expect, type APIRequestContext, type Page } from "@playwright/tes
 //   2. NEXT_PUBLIC_API_BASE pointed at that backend when starting `npm run dev`
 //   3. Supabase reachable; backend has ANTHROPIC_API_KEY set (for variant 3)
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost:8010";
 const SUPABASE_URL = "https://livbrrqqxnvnxhggguig.supabase.co";
 // Same anon key every browser client sees — intentionally public.
 const SUPABASE_ANON_KEY =
@@ -77,41 +77,60 @@ async function deleteUserProfile(api: APIRequestContext, profileId: string): Pro
   });
 }
 
+async function waitForLocalStorageValue(
+  page: Page,
+  key: string,
+  timeoutMs = 20_000,
+): Promise<string> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const value = await page.evaluate((storageKey) => localStorage.getItem(storageKey), key);
+    if (value) return value;
+    await page.waitForTimeout(250);
+  }
+  throw new Error(`Timed out waiting for localStorage.${key}`);
+}
+
+async function waitForPendingRowByContent(
+  api: APIRequestContext,
+  anonId: string,
+  content: string,
+  timeoutMs = 30_000,
+): Promise<PendingRow> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const rows = await fetchPendingRowsByAnon(api, anonId);
+    const match = rows.find((row) => row.content === content);
+    if (match) return match;
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  throw new Error(`Timed out waiting for pending row for anon_id=${anonId}`);
+}
+
 /**
- * Type a message into the landing hero and click send. Returns the pending row
- * the backend created (read back from Supabase for verification) and the anon_id
- * the frontend generated.
+ * Type a message into the landing hero and click send on the explicit
+ * signup-first variant. The homepage defaults to the late-signup /onboard
+ * funnel now, so /chat/pending only fires when we intentionally force the
+ * legacy pre-auth capture path.
+ *
+ * Returns the pending row the backend created (read back from Supabase for
+ * verification) and the anon_id the frontend generated.
  */
 async function sendFromLandingHero(
   page: Page,
   request: APIRequestContext,
   content: string,
 ): Promise<{ pendingId: string; anonId: string; row: PendingRow }> {
-  const pendingResponsePromise = page.waitForResponse(
-    (resp) =>
-      resp.url().includes("/chat/pending") &&
-      !resp.url().includes("/chat/pending/claim") &&
-      resp.request().method() === "POST",
-    { timeout: 15_000 },
-  );
-
-  await page.goto("/");
+  await page.goto("/?signup=first");
   const hero = page.getByPlaceholder("Ask Elena anything...").first();
   await expect(hero).toBeVisible({ timeout: 10_000 });
   await hero.click();
   await hero.fill(content);
   await page.getByRole("button", { name: "Send" }).first().click();
 
-  const pendingResponse = await pendingResponsePromise;
-  expect(pendingResponse.status()).toBe(200);
-  const body = await pendingResponse.json();
-  const pendingId = body.pending_id as string;
-  const postData = pendingResponse.request().postDataJSON();
-  const anonId = postData.anon_id as string;
-
-  const row = await fetchPendingRow(request, pendingId);
-  expect(row, "row should exist in Supabase after POST returned 200").not.toBeNull();
-  return { pendingId, anonId, row: row! };
+  const anonId = await waitForLocalStorageValue(page, "elena_anon_id");
+  const row = await waitForPendingRowByContent(request, anonId, content);
+  return { pendingId: row.id, anonId, row };
 }
 
 // ---------------------------------------------------------------------------
@@ -267,8 +286,9 @@ test("authenticated user claims pending message and gets assistant reply", async
     refreshToken = signupBody.refresh_token as string;
     expect(accessToken).toBeTruthy();
 
-    // 3. Pre-create a user_profiles row linked to the new auth user so the
-    //    backend's /auth/me reports has_profile=true and skips onboarding.
+    // 3. Pre-create an onboarding-complete primary profile linked to the new
+    //    auth user. After the rebase, /auth/me only skips the web onboarding
+    //    tour when onboarding_completed_at is set on the primary profile.
     const profileResp = await request.post(`${SUPABASE_URL}/rest/v1/user_profiles`, {
       headers: { ...SUPABASE_HEADERS, Prefer: "return=representation" },
       data: {
@@ -276,6 +296,9 @@ test("authenticated user claims pending message and gets assistant reply", async
         email,
         first_name: "E2ETest",
         last_name: "Claim",
+        date_of_birth: "1985-05-05",
+        zip_code: "10001",
+        onboarding_completed_at: new Date().toISOString(),
       },
     });
     expect(profileResp.ok(), `profile insert failed: ${profileResp.status()} ${await profileResp.text()}`).toBe(true);
@@ -316,6 +339,9 @@ test("authenticated user claims pending message and gets assistant reply", async
       { timeout: 20_000 },
     );
 
+    await page.context().setExtraHTTPHeaders({
+      "X-E2E-Scenario": "pending-claim-reply",
+    });
     await page.goto("/chat");
 
     const claimResponse = await claimResponsePromise;

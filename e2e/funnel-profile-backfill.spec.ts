@@ -6,11 +6,11 @@ import { test, expect, type APIRequestContext, type Page } from "@playwright/tes
 // pieces but doesn't exercise the modal. This spec fills the gap.
 //
 // Requirements:
-//   1. elena-backend on :8000
-//   2. NEXT_PUBLIC_API_BASE → http://localhost:8000 in the next dev server
+//   1. elena-backend on the Playwright API base
+//   2. NEXT_PUBLIC_API_BASE pointed at it in the next dev server
 //   3. ANTHROPIC_API_KEY set on the backend
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost:8010";
 const SUPABASE_URL = "https://livbrrqqxnvnxhggguig.supabase.co";
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpdmJycnFxeG52bnhoZ2dndWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Njc1MzYsImV4cCI6MjA4NzA0MzUzNn0.MkOKc7MWq5zoR3OY7wZgOsPwvjjKSij0ln1nF6inxP0";
@@ -107,7 +107,7 @@ async function injectAuth(
 // TEST 1: Quiz funnel → email signup → modal shows with zip pre-filled
 // ---------------------------------------------------------------------------
 
-test("quiz signup: profile backfilled from quiz, modal pre-fills zip", async ({ page, request }) => {
+test("quiz signup: quiz backfill preserves context while onboarding stays incomplete", async ({ page, request }) => {
   test.setTimeout(180_000);
 
   const stamp = Date.now();
@@ -209,17 +209,18 @@ test("quiz signup: profile backfilled from quiz, modal pre-fills zip", async ({ 
     expect(profile!.quiz_results).not.toBeNull();
     expect((profile!.quiz_results || []).length).toBe(1);
 
-    // 5. Onboarding modal SHOULD be visible.
-    //    A pure quiz signup gives us no OAuth name (email/password), no DOB,
-    //    and (today) no zip — the production quiz doesn't collect zip despite
-    //    the type declaring it. So the modal is correctly showing with empty
-    //    inputs for the user to fill. What the claim DID backfill behind the
-    //    scenes is gender/family_history/social_history (verified above via
-    //    fetchProfileByAuthUser). Those aren't surfaced on the modal — they're
-    //    used by the agent via the system prompt.
-    const modalHeading = page.getByRole("heading", { name: /Welcome to Elena/i });
-    await expect(modalHeading).toBeVisible({ timeout: 15_000 });
-    console.log("[e2e pbf-quiz] modal shown as expected (quiz doesn't collect modal fields)");
+    // 5. The onboarding experience SHOULD still be active.
+    //    The current website routes incomplete signups through the web
+    //    onboarding tour intro first ("Hey, I'm Elena" + Continue) rather than
+    //    dropping directly into the older profile-form modal. That still
+    //    proves onboarding was NOT silently skipped after claim.
+    const introHeading = page.getByRole("heading", { name: /Hey, I'm Elena/i });
+    const continueButton = page.getByRole("button", { name: /^Continue$/i });
+    await expect(introHeading).toBeVisible({ timeout: 15_000 });
+    await expect(continueButton).toBeVisible();
+    await continueButton.click();
+    await expect(page.getByRole("heading", { name: /Who are you managing care for\?/i })).toBeVisible({ timeout: 15_000 });
+    console.log("[e2e pbf-quiz] onboarding intro shown as expected (quiz still leaves onboarding incomplete)");
   } finally {
     if (authUserId) await cleanupProfileByAuthUser(request, authUserId);
     // Always delete the pending row too.
@@ -333,9 +334,9 @@ test("DME submit: profile backfilled + onboarding marked complete, modal never s
       `my_doctors should include Vanderbilt. Got: ${JSON.stringify(doctors)}`,
     ).toBe(true);
 
-    // 5. Inject auth + navigate to /chat. Assert the onboarding modal is NEVER visible.
-    //    The welcome fetch path runs but we're not asserting on it here — the focus
-    //    is on the modal skip.
+    // 5. Inject auth + navigate to /chat. Assert the onboarding overlay is NEVER visible.
+    //    The regular chat welcome card *should* still appear; what we're guarding
+    //    against is the WebOnboardingTour intro ("Hey, I'm Elena" + Continue) reopening.
     await injectAuth(page, auth);
     await page.addInitScript((pid) => {
       localStorage.setItem("elena_active_profile_id", pid);
@@ -343,12 +344,13 @@ test("DME submit: profile backfilled + onboarding marked complete, modal never s
 
     await page.goto("/chat");
 
-    // The onboarding modal heading would say "Welcome to Elena" or "Hey <name>!".
-    // We want it to NOT appear. Give the page time to call /auth/me and settle.
+    // Give the page time to call /auth/me and settle.
     await page.waitForTimeout(4_000);
-    const modalCount = await page.getByRole("heading", { name: /Welcome to Elena|Hey DmeBackfill/i }).count();
-    console.log("[e2e pbf-dme] modal headings visible count:", modalCount);
-    expect(modalCount, "onboarding modal should be skipped because backfill marked onboarding complete").toBe(0);
+    const onboardingIntro = page.getByRole("heading", { name: /Hey, I'm Elena/i });
+    const onboardingContinue = page.getByRole("button", { name: /^Continue$/i });
+    await expect(onboardingIntro, "onboarding intro should stay skipped after DME backfill").toHaveCount(0);
+    await expect(onboardingContinue, "onboarding CTA should not reopen once DME backfill marked onboarding complete").toHaveCount(0);
+    await expect(page.getByPlaceholder("Ask Elena anything...")).toBeVisible();
   } finally {
     if (authUserId) await cleanupProfileByAuthUser(request, authUserId);
   }

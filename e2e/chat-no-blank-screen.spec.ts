@@ -50,6 +50,9 @@ const WELCOME_RESPONSE = {
   session_id: "new-session-id",
 };
 
+const API_BASE_LOCAL = process.env.PLAYWRIGHT_API_BASE || "http://localhost:8010";
+const API_BASE_PROD = "https://elena-backend-production-production.up.railway.app";
+
 // Max time (ms) the user should ever be stuck on a loading/shimmer state
 const MAX_LOADING_MS = 5000;
 
@@ -60,12 +63,13 @@ const MAX_LOADING_MS = 5000;
 /** Inject a fake Supabase auth session into localStorage before the app boots. */
 async function injectAuth(page: Page) {
   await page.addInitScript(
-    ({ key, session }) => {
+    ({ key, session, me }) => {
       localStorage.setItem(key, JSON.stringify(session));
       localStorage.setItem("elena_onboarding_done", "1");
       localStorage.setItem("elena_active_profile_id", "profile-1");
+      sessionStorage.setItem("elena_me_cache", JSON.stringify(me));
     },
-    { key: SUPABASE_STORAGE_KEY, session: FAKE_SESSION },
+    { key: SUPABASE_STORAGE_KEY, session: FAKE_SESSION, me: ME_RESPONSE },
   );
 }
 
@@ -75,7 +79,7 @@ async function injectAuth(page: Page) {
  * to widen the race condition window.
  */
 async function mockApi(page: Page, messageDelay = 0) {
-  const API_BASE = "https://elena-backend-production-production.up.railway.app";
+  const API_BASES = [API_BASE_LOCAL, API_BASE_PROD];
   const SUPABASE_URL = "https://livbrrqqxnvnxhggguig.supabase.co";
 
   // Supabase auth — getSession / refreshSession
@@ -86,48 +90,50 @@ async function mockApi(page: Page, messageDelay = 0) {
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(FAKE_SESSION.user) }),
   );
 
-  // /auth/me
-  await page.route(`${API_BASE}/auth/me`, (route) =>
-    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(ME_RESPONSE) }),
-  );
+  for (const base of API_BASES) {
+    // /auth/me
+    await page.route(`${base}/auth/me**`, (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(ME_RESPONSE) }),
+    );
 
-  // /chat/sessions
-  await page.route(`${API_BASE}/chat/sessions`, (route) =>
-    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(SESSIONS) }),
-  );
+    // /chat/sessions
+    await page.route(`${base}/chat/sessions**`, (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(SESSIONS) }),
+    );
 
-  // /chat/{id}/messages — with optional delay
-  await page.route(`${API_BASE}/chat/*/messages`, async (route) => {
-    const url = route.request().url();
-    const match = url.match(/\/chat\/([^/]+)\/messages/);
-    const sessionId = match?.[1] ?? "unknown";
-    if (messageDelay > 0) {
-      await new Promise((r) => setTimeout(r, messageDelay));
-    }
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(messagesFor(sessionId)),
+    // /chat/{id}/messages — with optional delay
+    await page.route(`${base}/chat/*/messages**`, async (route) => {
+      const url = route.request().url();
+      const match = url.match(/\/chat\/([^/]+)\/messages/);
+      const sessionId = match?.[1] ?? "unknown";
+      if (messageDelay > 0) {
+        await new Promise((r) => setTimeout(r, messageDelay));
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(messagesFor(sessionId)),
+      });
     });
-  });
 
-  // /chat/welcome
-  await page.route(`${API_BASE}/chat/welcome**`, (route) =>
-    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(WELCOME_RESPONSE) }),
-  );
+    // /chat/welcome
+    await page.route(`${base}/chat/welcome**`, (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(WELCOME_RESPONSE) }),
+    );
 
-  // /web/subscription
-  await page.route(`${API_BASE}/web/subscription`, (route) =>
-    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ plan: "free", tier: "free", status: "active", cancel_at_period_end: false }) }),
-  );
+    // /web/subscription
+    await page.route(`${base}/web/subscription**`, (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ plan: "free", tier: "free", status: "active", cancel_at_period_end: false }) }),
+    );
 
-  // Catch-all for any other backend calls — return 200 empty
-  await page.route(`${API_BASE}/**`, (route) => {
-    if (!route.request().url().includes("/chat/") && !route.request().url().includes("/auth/")) {
-      return route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
-    }
-    return route.fallback();
-  });
+    // Catch-all for any other backend calls — return 200 empty
+    await page.route(`${base}/**`, (route) => {
+      if (!route.request().url().includes("/chat/") && !route.request().url().includes("/auth/")) {
+        return route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
+      }
+      return route.fallback();
+    });
+  }
 }
 
 /**

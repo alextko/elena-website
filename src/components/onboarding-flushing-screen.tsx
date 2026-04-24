@@ -34,6 +34,7 @@ export function OnboardingFlushingContent({
   stage,
   percent,
   affirmation,
+  isNavigating = false,
   onContinue,
 }: {
   stage: FlushStage;
@@ -42,6 +43,8 @@ export function OnboardingFlushingContent({
    *  from the user's pain selection so the closing beat matches the
    *  promise we made during the value step. */
   affirmation: PainAffirmation;
+  /** True after the user clicks Continue while /chat navigation is in flight. */
+  isNavigating?: boolean;
   /** Fired when the user clicks Continue on the finished state.
    *  /onboard wires this to navigate to /chat. */
   onContinue: () => void;
@@ -78,6 +81,14 @@ export function OnboardingFlushingContent({
   // on the DISPLAYED value (not the target) so the bar visibly reaches
   // the end before the affirmation takes over.
   const isReady = clampedPercent >= 100 && stage === "done";
+  const isTransitioningToChat = isReady && isNavigating;
+  const progressPercent = isTransitioningToChat ? 100 : clampedPercent;
+  const headline = isTransitioningToChat
+    ? "Opening your chat"
+    : "We're setting everything up for you";
+  const stageLabel = isTransitioningToChat
+    ? "Taking you to Elena now..."
+    : displayLabel;
 
   // Deliverables list shown below the progress bar — preview of what the
   // user will have once the flush completes. Mirrors Cal AI's loading
@@ -89,11 +100,18 @@ export function OnboardingFlushingContent({
     "Your medication schedule",
     "Elena, ready to help",
   ];
+  const TRANSITION_ITEMS = [
+    "Your chat is ready",
+    "Your profile is saved",
+    "Taking you to Elena now",
+  ];
+  const visibleItems = isTransitioningToChat ? TRANSITION_ITEMS : SETUP_ITEMS;
+  const itemsLabel = isTransitioningToChat ? "Almost there" : "Setting up for you";
 
   return (
     <div className="p-5 sm:p-7 flex flex-col min-h-[380px] sm:min-h-[440px]">
       <AnimatePresence mode="wait" initial={false}>
-        {!isReady ? (
+        {!isReady || isTransitioningToChat ? (
           <motion.div
             key="flushing"
             initial={{ opacity: 0 }}
@@ -101,14 +119,16 @@ export function OnboardingFlushingContent({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.22, ease: motionEase }}
             className="flex-1 flex flex-col"
+            data-testid={isTransitioningToChat ? "onboard-opening-chat" : "onboard-flush-progress"}
+            aria-busy={isTransitioningToChat}
           >
             {/* Big percent + headline block */}
             <div className="text-center pt-2">
               <p className="text-[56px] sm:text-[64px] font-extrabold leading-none tracking-tight text-[#0F1B3D] tabular-nums">
-                {clampedPercent}%
+                {progressPercent}%
               </p>
               <h2 className="text-[20px] sm:text-[22px] font-extrabold text-[#0F1B3D] mt-3 leading-tight text-balance">
-                We're setting everything up for you
+                {headline}
               </h2>
             </div>
             {/* Gradient progress bar */}
@@ -116,22 +136,22 @@ export function OnboardingFlushingContent({
               <div
                 className="h-full rounded-full transition-[width] duration-500 ease-out"
                 style={{
-                  width: `${clampedPercent}%`,
+                  width: `${progressPercent}%`,
                   background: "linear-gradient(90deg, #B5707A 0%, #2E6BB5 60%, #0F1B3D 100%)",
                 }}
               />
             </div>
             {/* Current stage */}
             <p className="text-center text-[13px] text-[#5a6a82] mt-3">
-              {displayLabel}
+              {stageLabel}
             </p>
             {/* Deliverables list — pushed to the bottom of the card */}
             <div className="mt-auto pt-6">
               <p className="text-[13px] font-semibold text-[#0F1B3D] mb-2">
-                Setting up for you
+                {itemsLabel}
               </p>
               <ul className="flex flex-col gap-1 text-[14px] text-[#0F1B3D]/85 font-light">
-                {SETUP_ITEMS.map((item) => (
+                {visibleItems.map((item) => (
                   <li key={item} className="flex items-center gap-2.5">
                     <span className="text-[#0F1B3D]/50 leading-none">·</span>
                     <span>{item}</span>
@@ -148,6 +168,7 @@ export function OnboardingFlushingContent({
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.32, ease: motionEase, delay: 0.1 }}
             className="flex-1 text-center flex flex-col items-center justify-center gap-4"
+            data-testid="onboard-flush-ready"
           >
             {/* Single check chip in the brand green to close the
                 "we just did it" beat before the Continue button. */}

@@ -42,7 +42,11 @@ export function ReviewsModal({ open, onOpenChange, onContinue }: ReviewsModalPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className="w-[calc(100%-2rem)] max-w-[22rem] sm:w-full sm:max-w-md max-h-[calc(100svh-1rem)] overflow-y-auto overflow-x-hidden rounded-2xl border-0 bg-white p-0 shadow-[0_24px_80px_rgba(15,27,61,0.25)]">
+      <DialogContent
+        showCloseButton={false}
+        data-testid="paywall-reviews-modal"
+        className="w-[calc(100%-2rem)] max-w-[22rem] sm:w-full sm:max-w-md max-h-[calc(100svh-1rem)] overflow-y-auto overflow-x-hidden rounded-2xl border-0 bg-white p-0 shadow-[0_24px_80px_rgba(15,27,61,0.25)]"
+      >
         <DialogHeader className="sr-only">
           <DialogTitle>What people are saying</DialogTitle>
           <DialogDescription>Testimonials from Elena users</DialogDescription>
@@ -92,6 +96,7 @@ export function ReviewsModal({ open, onOpenChange, onContinue }: ReviewsModalPro
           >
             <button
               onClick={onContinue}
+              data-testid="paywall-reviews-continue"
               className="w-full py-3.5 rounded-full text-white font-semibold font-sans text-[15px] transition-opacity hover:opacity-90 shadow-[0_4px_14px_rgba(15,27,61,0.25)]"
               style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%)" }}
             >

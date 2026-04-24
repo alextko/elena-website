@@ -20,6 +20,39 @@ function log(msg: string, ...args: unknown[]) {
   console.log(`[poll] ${msg}`, ...args);
 }
 
+async function extractApiErrorMessage(response: Response): Promise<string | null> {
+  try {
+    const body = await response.clone().json();
+    const detail =
+      body && typeof body === "object" && "detail" in body
+        ? (body as { detail?: unknown }).detail
+        : body;
+
+    if (typeof detail === "string" && detail.trim()) {
+      return detail.trim();
+    }
+
+    if (detail && typeof detail === "object") {
+      const detailRecord = detail as Record<string, unknown>;
+      if (typeof detailRecord.message === "string" && detailRecord.message.trim()) {
+        return detailRecord.message.trim();
+      }
+      if (typeof detailRecord.error === "string" && detailRecord.error.trim()) {
+        return detailRecord.error.trim();
+      }
+    }
+  } catch {
+    // Fall through to plain-text parsing below.
+  }
+
+  try {
+    const text = (await response.clone().text()).trim();
+    return text || null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Persist a demo exchange (user + assistant messages) to Supabase so the
  * real agent sees them as conversation history on followup messages.
@@ -90,6 +123,7 @@ export function usePollChat(demoMode = false) {
       let sessionId: string | null = params.session_id;
       let hitPaywall = false;
       let pollCount = 0;
+      let sendFailureMessage: string | null = null;
 
       // Demo mode: check sessionStorage directly as safety net —
       // the demoMode prop can be lost during navigation.
@@ -164,6 +198,7 @@ export function usePollChat(demoMode = false) {
           });
 
           if (!sendRes.ok) {
+            const responseMessage = await extractApiErrorMessage(sendRes);
             // 402 = chat_message monthly cap hit (or any other quota
             // block the server surfaces as upgrade_required). Surface
             // it through onDone as a ChatResponse-shaped payload so the
@@ -189,7 +224,8 @@ export function usePollChat(demoMode = false) {
               onDone(blocked);
               return false;
             }
-            log("send failed", { status: sendRes.status });
+            sendFailureMessage = responseMessage;
+            log("send failed", { status: sendRes.status, error: responseMessage });
             return false;
           }
 
@@ -215,7 +251,7 @@ export function usePollChat(demoMode = false) {
 
         if (!(await sendRequest())) {
           if (!chatRequestId && !hitPaywall) {
-            onError("Could not reach the server. Please check your connection.");
+            onError(sendFailureMessage || "Could not reach the server. Please check your connection.");
           }
           return { session_id: sessionId };
         }

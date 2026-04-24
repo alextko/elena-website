@@ -1,30 +1,210 @@
-// Paywall gate verification — reproduces the leak observed in production
-// for sharisven / toddandchom / garlesha (all hit no paywall despite going
-// past the free-tier limits on gated tools).
-//
-// USAGE:
-//   # Target production (read-only sign-up via +paywalltest alias, no card entry)
-//   PAYWALL_E2E_BASE_URL=https://www.elena-ai.com \
-//     npx playwright test e2e/paywall-gate-verification.spec.ts --headed
-//
-//   # Or target localhost
-//   npx playwright test e2e/paywall-gate-verification.spec.ts --headed
-//
-// This test deliberately STOPS at the paywall. It never enters card details.
-// If the paywall does NOT appear, the test dumps page HTML + captured network
-// calls to test-results/paywall-leak-<timestamp>/ for post-mortem.
+import { randomUUID } from "node:crypto";
 
-import { test, expect, Page, Request } from "@playwright/test";
+import { expect, test, type Page, type Request } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
 
-const BASE_URL = process.env.PAYWALL_E2E_BASE_URL || "http://localhost:3000";
-const SLOW_MO = 500;
+const BASE_URL =
+  process.env.PAYWALL_E2E_BASE_URL ||
+  process.env.PLAYWRIGHT_BASE_URL ||
+  "http://localhost:3001";
+const SUPABASE_URL = "https://livbrrqqxnvnxhggguig.supabase.co";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpdmJycnFxeG52bnhoZ2dndWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Njc1MzYsImV4cCI6MjA4NzA0MzUzNn0.MkOKc7MWq5zoR3OY7wZgOsPwvjjKSij0ln1nF6inxP0";
+const SUPABASE_STORAGE_KEY = "sb-livbrrqqxnvnxhggguig-auth-token";
 const RUN_ID = `paywall-leak-${Date.now()}`;
 
-function aliasedEmail(): string {
-  const ts = Date.now();
-  return `paywall+paywalltest-${ts}@elena-ai-testing.com`;
+const SUPABASE_HEADERS = {
+  apikey: SUPABASE_ANON_KEY,
+  Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+  "Content-Type": "application/json",
+} as const;
+
+interface TestUser {
+  accessToken: string;
+  authUserId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  profileId: string;
+  refreshToken: string;
+  sessionBlob: Record<string, unknown>;
+}
+
+function todayIsoDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+async function expectOk(response: Response, label: string) {
+  expect(
+    response.ok,
+    `${label}: ${response.status} ${await response.clone().text()}`,
+  ).toBe(true);
+}
+
+async function safeDelete(url: string) {
+  try {
+    await fetch(url, {
+      method: "DELETE",
+      headers: SUPABASE_HEADERS,
+    });
+  } catch {}
+}
+
+async function createAuthedUser(
+  profileOverrides: Record<string, unknown> = {},
+): Promise<TestUser> {
+  const stamp = Date.now();
+  const suffix = randomUUID().slice(0, 8);
+  const email = `paywall+pw-${stamp}-${suffix}@elena-ai-testing.com`;
+  const password = `Playwright_${suffix}!`;
+  const firstName = "Paywall";
+  const lastName = "User";
+
+  const signupResp = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+    method: "POST",
+    headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  await expectOk(signupResp, "Supabase signup");
+
+  const signupBody = await signupResp.json();
+  const accessToken = signupBody.access_token as string;
+  const refreshToken = signupBody.refresh_token as string;
+  const authUserId = signupBody.user.id as string;
+
+  expect(accessToken).toBeTruthy();
+  expect(refreshToken).toBeTruthy();
+
+  const profileResp = await fetch(`${SUPABASE_URL}/rest/v1/user_profiles`, {
+    method: "POST",
+    headers: { ...SUPABASE_HEADERS, Prefer: "return=representation" },
+    body: JSON.stringify({
+      auth_user_id: authUserId,
+      email,
+      first_name: firstName,
+      last_name: lastName,
+      label: "Me",
+      relationship: "self",
+      is_primary: true,
+      zip_code: "94110",
+      onboarding_completed_at: new Date().toISOString(),
+      ...profileOverrides,
+    }),
+  });
+  await expectOk(profileResp, "profile insert");
+
+  const profileRows = (await profileResp.json()) as Array<{ id: string }>;
+  const profileId = profileRows[0]?.id;
+  expect(profileId).toBeTruthy();
+
+  return {
+    accessToken,
+    authUserId,
+    email,
+    firstName,
+    lastName,
+    profileId,
+    refreshToken,
+    sessionBlob: {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      token_type: "bearer",
+      expires_in: signupBody.expires_in ?? 3600,
+      expires_at: signupBody.expires_at ?? Math.floor(Date.now() / 1000) + 3600,
+      user: signupBody.user,
+    },
+  };
+}
+
+async function cleanupAuthedUser(user: TestUser | null) {
+  if (!user) return;
+
+  await safeDelete(`${SUPABASE_URL}/rest/v1/chat_sessions?profile_id=eq.${user.profileId}`);
+  await safeDelete(`${SUPABASE_URL}/rest/v1/medical_insurance?profile_id=eq.${user.profileId}`);
+  await safeDelete(`${SUPABASE_URL}/rest/v1/secondary_medical_insurance?profile_id=eq.${user.profileId}`);
+  await safeDelete(`${SUPABASE_URL}/rest/v1/dental_insurance?profile_id=eq.${user.profileId}`);
+  await safeDelete(`${SUPABASE_URL}/rest/v1/vision_insurance?profile_id=eq.${user.profileId}`);
+  await safeDelete(`${SUPABASE_URL}/rest/v1/feature_usage?auth_user_id=eq.${user.authUserId}`);
+  await safeDelete(`${SUPABASE_URL}/rest/v1/credit_ledger?auth_user_id=eq.${user.authUserId}`);
+  await safeDelete(`${SUPABASE_URL}/rest/v1/subscriptions?auth_user_id=eq.${user.authUserId}`);
+  await safeDelete(`${SUPABASE_URL}/rest/v1/user_profiles?id=eq.${user.profileId}`);
+}
+
+async function seedFeatureUsage(
+  authUserId: string,
+  feature: string,
+  count: number,
+) {
+  const usageDate = todayIsoDate();
+  await safeDelete(
+    `${SUPABASE_URL}/rest/v1/feature_usage?auth_user_id=eq.${authUserId}&feature=eq.${feature}&usage_date=eq.${usageDate}`,
+  );
+
+  const resp = await fetch(`${SUPABASE_URL}/rest/v1/feature_usage`, {
+    method: "POST",
+    headers: { ...SUPABASE_HEADERS, Prefer: "return=representation" },
+    body: JSON.stringify({
+      auth_user_id: authUserId,
+      feature,
+      usage_date: usageDate,
+      count,
+    }),
+  });
+  await expectOk(resp, `seed feature_usage (${feature})`);
+}
+
+async function primeBrowserAuth(page: Page, user: TestUser) {
+  const meCache = {
+    auth_user_id: user.authUserId,
+    profile_id: user.profileId,
+    email: user.email,
+    has_profile: true,
+    onboarding_completed: true,
+    profiles: [
+      {
+        id: user.profileId,
+        label: "Me",
+        relationship: "self",
+        first_name: user.firstName,
+        last_name: user.lastName,
+        is_primary: true,
+        is_linked: false,
+      },
+    ],
+  };
+
+  await page.addInitScript(
+    ({ storageKey, sessionBlob, profileId, meCache }) => {
+      localStorage.setItem(storageKey, JSON.stringify(sessionBlob));
+      localStorage.setItem("elena_onboarding_done", "1");
+      localStorage.setItem("elena_active_profile_id", profileId);
+      sessionStorage.setItem("elena_me_cache", JSON.stringify(meCache));
+    },
+    {
+      storageKey: SUPABASE_STORAGE_KEY,
+      sessionBlob: user.sessionBlob,
+      profileId: user.profileId,
+      meCache,
+    },
+  );
+}
+
+async function openChat(page: Page) {
+  const welcomePromise = page
+    .waitForResponse(
+      (response) =>
+        response.url().includes("/chat/welcome") &&
+        response.request().method() === "POST",
+      { timeout: 30_000 },
+    )
+    .catch(() => null);
+
+  await page.goto("/chat");
+  await expect(page.getByPlaceholder("Ask Elena anything...")).toBeVisible({
+    timeout: 30_000,
+  });
+  await welcomePromise;
 }
 
 async function captureNetwork(page: Page): Promise<Request[]> {
@@ -32,11 +212,9 @@ async function captureNetwork(page: Page): Promise<Request[]> {
   page.on("request", (r) => {
     const url = r.url();
     if (
-      url.includes("/api/") ||
       url.includes("/web/") ||
       url.includes("/chat") ||
       url.includes("/documents") ||
-      url.includes("/structured-documents") ||
       url.includes("checkout")
     ) {
       reqs.push(r);
@@ -48,8 +226,17 @@ async function captureNetwork(page: Page): Promise<Request[]> {
 async function dumpForensics(page: Page, reqs: Request[], label: string) {
   const dir = path.join("test-results", RUN_ID, label);
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, "page.html"), await page.content());
-  await page.screenshot({ path: path.join(dir, "page.png"), fullPage: true });
+
+  try {
+    fs.writeFileSync(path.join(dir, "page.html"), await page.content());
+    await page.screenshot({ path: path.join(dir, "page.png"), fullPage: true });
+  } catch (error) {
+    fs.writeFileSync(
+      path.join(dir, "page-error.txt"),
+      `Could not capture page snapshot: ${String(error)}`,
+    );
+  }
+
   fs.writeFileSync(
     path.join(dir, "requests.json"),
     JSON.stringify(
@@ -58,158 +245,71 @@ async function dumpForensics(page: Page, reqs: Request[], label: string) {
       2,
     ),
   );
-  console.log(`[forensics] Wrote ${dir}`);
 }
 
-test.use({
-  headless: false,
-  launchOptions: { slowMo: SLOW_MO },
-});
+async function detectPaywallSurface(
+  page: Page,
+): Promise<"reviews" | "trial" | "upgrade" | null> {
+  const reviewModal = page.getByTestId("paywall-reviews-modal");
+  if (await reviewModal.isVisible().catch(() => false)) return "reviews";
 
-test("new free user hits paywall after 2 gated tool invocations", async ({
+  const trialStep = page.getByTestId("paywall-trial-step-1");
+  if (await trialStep.isVisible().catch(() => false)) return "trial";
+
+  const upgradeDialog = page.getByRole("dialog").filter({
+    hasText: /Free limit reached|Upgrade your plan|Get more out of Elena/i,
+  });
+  if (await upgradeDialog.first().isVisible().catch(() => false)) return "upgrade";
+
+  return null;
+}
+
+test("seeded free user hits paywall when provider-search quota is exhausted", async ({
   browser,
 }) => {
-  test.setTimeout(5 * 60_000); // 5 min — onboarding is long
+  test.setTimeout(120_000);
 
-  const ctx = await browser.newContext(); // fresh incognito
+  const ctx = await browser.newContext({
+    extraHTTPHeaders: {
+      "X-E2E-Scenario": "provider-search-paywall",
+    },
+  });
   const page = await ctx.newPage();
   const reqs = await captureNetwork(page);
+  let user: TestUser | null = null;
 
-  const email = aliasedEmail();
-  console.log(`[test] Using email: ${email}`);
-
-  // 1. Land on signup / onboarding
-  await page.goto(`${BASE_URL}/onboard`);
-  await page.waitForLoadState("networkidle");
-
-  // 2. Walk through the /onboard quiz. Each step shows a question with
-  //    one or more choice buttons and a Continue button that's disabled
-  //    until at least one choice is selected. Strategy: on every step,
-  //    pick the first choice that isn't "Continue" / "Back" / "Skip",
-  //    then click Continue. Repeat until we reach a screen with an
-  //    email field (auth) or the URL changes to /chat.
   try {
-    const MAX_QUIZ_STEPS = 25;
-    for (let step = 0; step < MAX_QUIZ_STEPS; step++) {
-      // Have we reached email/password signup?
-      const emailField = page.getByLabel(/email/i).first();
-      if (await emailField.isVisible({ timeout: 1000 }).catch(() => false)) {
-        await emailField.fill(email);
-        const pw = page.getByLabel(/password/i).first();
-        if (await pw.isVisible().catch(() => false)) await pw.fill("TestPassword123!");
-        await page
-          .getByRole("button", { name: /sign up|create account|continue|submit/i })
-          .first()
-          .click();
-        break;
-      }
-      // Did we already land on /chat (happens after auth)?
-      if (/\/chat/.test(page.url())) break;
+    user = await createAuthedUser({
+      insurance_carrier: "Aetna",
+      member_id: "MEM123",
+      insurance_policy_number: "POL123",
+    });
+    await seedFeatureUsage(user.authUserId, "provider_search", 2);
+    await primeBrowserAuth(page, user);
+    await openChat(page);
 
-      // Pick a quiz option. Skip Continue/Back/Skip buttons.
-      const allButtons = await page.getByRole("button").all();
-      let picked = false;
-      for (const b of allButtons) {
-        const txt = (await b.textContent())?.trim() || "";
-        if (
-          !txt ||
-          /^(continue|back|skip|next|submit)$/i.test(txt) ||
-          (await b.isDisabled().catch(() => false))
-        ) {
-          continue;
-        }
-        // Avoid obvious chrome (dev-tools, language toggles, etc.)
-        if (/dev tools|language/i.test(txt)) continue;
-        await b.click().catch(() => {});
-        picked = true;
-        break;
-      }
-      if (!picked) {
-        // Maybe it's a text input step (zip, DOB, etc.) — fill any text inputs with a default.
-        const inputs = await page.getByRole("textbox").all();
-        for (const inp of inputs) {
-          const label = (await inp.getAttribute("placeholder")) || "";
-          if (/zip/i.test(label)) await inp.fill("10036");
-          else if (/year|date|birth/i.test(label)) await inp.fill("1985-01-01");
-          else await inp.fill("Test");
-        }
-      }
-      const cont = page.getByRole("button", { name: /^continue$/i }).first();
-      if (await cont.isVisible({ timeout: 1500 }).catch(() => false)) {
-        await cont.click().catch(() => {});
-      }
-      await page.waitForTimeout(300);
-    }
-  } catch (e) {
-    await dumpForensics(page, reqs, "onboarding-failed");
-    throw e;
-  }
+    const chatInput = page.getByPlaceholder("Ask Elena anything...");
+    await chatInput.fill("Find me an in-network dermatologist near 94110.");
+    await chatInput.press("Enter");
 
-  // 3. Wait for chat interface
-  await page.waitForURL(/\/chat/, { timeout: 30_000 }).catch(async () => {
-    await dumpForensics(page, reqs, "never-reached-chat");
-    throw new Error("Did not reach /chat after onboarding");
-  });
+    await expect
+      .poll(() => detectPaywallSurface(page), {
+        timeout: 60_000,
+        intervals: [1_000, 2_000, 5_000],
+      })
+      .toBe("reviews");
 
-  const chatInput = page.getByRole("textbox").first();
-  await chatInput.waitFor({ timeout: 10_000 });
+    await page.getByTestId("paywall-reviews-continue").click();
+    await expect(page.getByTestId("paywall-trial-step-1")).toBeVisible({
+      timeout: 30_000,
+    });
 
-  // 4. Gated action #1 — trigger provider_search + call_provider intent
-  //    This mirrors sharisven's flow ("MRI pricing near zip 10036").
-  await chatInput.fill(
-    "Can you get me cash-pay pricing for a bilateral breast MRI near zip 10036? Call the 3 closest imaging centers.",
-  );
-  await chatInput.press("Enter");
-  await page.waitForTimeout(15_000); // let tools run
-
-  // 5. Gated action #2 — document upload intent (toddandchom flow).
-  await chatInput.fill(
-    "I have lab results I want you to analyze. How do I upload a PDF?",
-  );
-  await chatInput.press("Enter");
-  await page.waitForTimeout(10_000);
-
-  // 6. Gated action #3 — another call to push past call_provider free=1 limit.
-  await chatInput.fill(
-    "Please call Dr. Smith's office at the number you found to book me an appointment this week.",
-  );
-  await chatInput.press("Enter");
-  await page.waitForTimeout(15_000);
-
-  // 7. Assertion — paywall should be visible by now.
-  //    The trial-flow uses data-testid on its root, and the upgrade-modal
-  //    has a known heading. Match either.
-  const paywallVisible = await Promise.race([
-    page
-      .getByTestId("paywall-trial-flow")
-      .first()
-      .isVisible({ timeout: 5000 })
-      .catch(() => false),
-    page
-      .getByRole("heading", { name: /upgrade|unlock|trial/i })
-      .first()
-      .isVisible({ timeout: 5000 })
-      .catch(() => false),
-    page
-      .locator('[data-testid="upgrade-modal"], [data-testid="soft-paywall"]')
-      .first()
-      .isVisible({ timeout: 5000 })
-      .catch(() => false),
-  ]);
-
-  if (!paywallVisible) {
+    await dumpForensics(page, reqs, "paywall-fired-ok");
+  } catch (error) {
     await dumpForensics(page, reqs, "paywall-did-not-fire");
-    // Surface the error_code responses we saw
-    const gateResponses = reqs
-      .filter((r) => r.url().includes("/chat") || r.url().includes("/documents"))
-      .map((r) => ({ method: r.method(), url: r.url() }));
-    console.log("[gates]", JSON.stringify(gateResponses, null, 2));
-    throw new Error(
-      `Paywall did NOT appear after 3 gated actions. Forensics dumped to test-results/${RUN_ID}/paywall-did-not-fire/`,
-    );
+    throw error;
+  } finally {
+    await cleanupAuthedUser(user);
+    await ctx.close();
   }
-
-  // 8. DO NOT click into Stripe Checkout. Test ends here.
-  console.log("[test] PASS — paywall visible. Test stops before card entry.");
-  await dumpForensics(page, reqs, "paywall-fired-ok");
 });

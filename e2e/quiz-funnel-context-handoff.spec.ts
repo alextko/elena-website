@@ -10,11 +10,11 @@ import { test, expect, type APIRequestContext } from "@playwright/test";
 //      generate_onboarding_welcome path triggered from /chat/pending/claim
 //
 // Requirements to run:
-//   1. elena-backend running locally on :8000 (gunicorn or uvicorn)
+//   1. elena-backend running locally on the Playwright API base
 //   2. NEXT_PUBLIC_API_BASE pointed at it when starting `npm run dev`
 //   3. Backend has ANTHROPIC_API_KEY set (welcome generation calls Claude)
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost:8010";
 const SUPABASE_URL = "https://livbrrqqxnvnxhggguig.supabase.co";
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpdmJycnFxeG52bnhoZ2dndWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Njc1MzYsImV4cCI6MjA4NzA0MzUzNn0.MkOKc7MWq5zoR3OY7wZgOsPwvjjKSij0ln1nF6inxP0";
@@ -410,6 +410,7 @@ test("quiz funnel completion → claim persists quiz_results + agent welcome ref
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
         "X-Profile-Id": profileId,
+        "X-E2E-Scenario": "quiz-followup-provider-search",
       },
       data: {
         message: "Yes please find me a primary care doctor",

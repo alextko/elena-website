@@ -114,6 +114,7 @@ interface WebOnboardingTourProps {
     stage: FlushStage;
     percent: number;
     affirmation: PainAffirmation;
+    isNavigating?: boolean;
     onContinue: () => void;
   } | null;
 }
@@ -4156,6 +4157,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   stage={flushingState.stage}
                   percent={flushingState.percent}
                   affirmation={flushingState.affirmation}
+                  isNavigating={flushingState.isNavigating}
                   onContinue={flushingState.onContinue}
                 />
               </motion.div>

@@ -149,8 +149,8 @@ function TabPill({ label, active, onClick }: { label: string; active: boolean; o
   );
 }
 
-function specialtyIcon(specialty: string) {
-  const s = specialty.toLowerCase();
+function specialtyIcon(specialty?: string | null) {
+  const s = (specialty || "").toLowerCase();
   if (s.includes("dent")) return SmilePlus;
   if (s.includes("eye") || s.includes("optom") || s.includes("ophthal")) return Eye;
   if (s.includes("pharma")) return Pill;

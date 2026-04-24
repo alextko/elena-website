@@ -67,6 +67,12 @@ function ChatPageInner() {
   const { showAppCta } = useAppCta();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [postIntakeSubmitKind] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const flag = localStorage.getItem("elena_post_intake_submit");
+    if (flag) localStorage.removeItem("elena_post_intake_submit");
+    return flag;
+  });
   const [sidebarOpen, setSidebarOpen] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth >= 768 : true
   );
@@ -76,7 +82,7 @@ function ChatPageInner() {
       if (localStorage.getItem("elena_pending_query")) return null;
       // Don't restore if the user just finished a post-auth intake funnel —
       // we want a fresh intake-aware welcome session rather than an existing chat.
-      if (localStorage.getItem("elena_post_intake_submit")) return null;
+      if (postIntakeSubmitKind) return null;
       return sessionStorage.getItem("elena_active_session_id");
     }
     return null;
@@ -116,7 +122,7 @@ function ChatPageInner() {
   const [bookMessage, setBookMessage] = useState<string | null>(null);
   const [isNewChat, setIsNewChat] = useState(() => {
     if (typeof window !== "undefined") {
-      return !!localStorage.getItem("elena_post_intake_submit");
+      return !!postIntakeSubmitKind;
     }
     return false;
   });
@@ -539,6 +545,7 @@ function ChatPageInner() {
           bookMessage={bookMessage}
           onBookMessageConsumed={() => setBookMessage(null)}
           isNewChat={isNewChat}
+          postIntakeSubmitKind={postIntakeSubmitKind}
           demoMode={demoMode}
           autoShowHipaa={searchParams.get("hipaa") === "1"}
         />
