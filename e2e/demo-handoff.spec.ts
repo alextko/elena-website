@@ -42,7 +42,7 @@ const WELCOME_RESPONSE = {
   session_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
 };
 
-const API_BASE_LOCAL = "http://localhost:8000";
+const API_BASE_LOCAL = process.env.PLAYWRIGHT_API_BASE || "http://localhost:8010";
 const API_BASE_PROD = "https://elena-backend-production-production.up.railway.app";
 const SUPABASE_URL = "https://livbrrqqxnvnxhggguig.supabase.co";
 
@@ -55,13 +55,14 @@ const HANDOFF_TIMEOUT = 15_000;
 
 async function injectAuthAndDemoMode(page: Page) {
   await page.addInitScript(
-    ({ key, session }) => {
+    ({ key, session, me }) => {
       localStorage.setItem(key, JSON.stringify(session));
       localStorage.setItem("elena_onboarding_done", "1");
       localStorage.setItem("elena_active_profile_id", "profile-1");
+      sessionStorage.setItem("elena_me_cache", JSON.stringify(me));
       sessionStorage.setItem("elena_demo_mode", "true");
     },
-    { key: SUPABASE_STORAGE_KEY, session: FAKE_SESSION },
+    { key: SUPABASE_STORAGE_KEY, session: FAKE_SESSION, me: ME_RESPONSE },
   );
 }
 
@@ -97,21 +98,21 @@ function createHandoffMock() {
     });
 
     for (const base of API_BASES) {
-      await page.route(`${base}/auth/me`, (route) =>
+      await page.route(`${base}/auth/me**`, (route) =>
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(ME_RESPONSE) }),
       );
-      await page.route(`${base}/chat/sessions`, (route) =>
+      await page.route(`${base}/chat/sessions**`, (route) =>
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([]) }),
       );
       await page.route(`${base}/chat/welcome**`, (route) =>
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(WELCOME_RESPONSE) }),
       );
-      await page.route(`${base}/web/subscription`, (route) =>
+      await page.route(`${base}/web/subscription**`, (route) =>
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ plan: "free", tier: "free", status: "active", cancel_at_period_end: false }) }),
       );
 
       // /chat/send — capture request body and return success
-      await page.route(`${base}/chat/send`, async (route) => {
+      await page.route(`${base}/chat/send**`, async (route) => {
         try {
           capturedSendBodies.push(JSON.parse(route.request().postData() || "{}"));
         } catch {

@@ -1,18 +1,23 @@
 import { test, expect, type APIRequestContext } from "@playwright/test";
 
-// End-to-end coverage for the DME funnel → chat agent context handoff.
+// Regression coverage for the DME intake → chat welcome handoff.
 //
-// Verifies that when an authenticated user submits the DME intake form, the
-// agent's first assistant message on /chat references the specific intake
-// fields (equipment, insurance, prescriber) pulled from dme_intakes via
-// _build_submissions_context — no synthetic user message required.
+// We no longer drive active traffic into the DME landing page, so this spec
+// intentionally stays narrow: it verifies the shared handoff/session boot logic
+// that used to regress here.
+//
+// Specifically, when an authenticated user submits the DME intake form, the
+// first assistant message on /chat should reference the specific intake fields
+// (equipment, insurance, prescriber) pulled from dme_intakes via
+// _build_submissions_context, and the landing should create exactly one chat
+// session with no synthetic user resend.
 //
 // Requirements to run:
-//   1. elena-backend running locally on :8000
+//   1. elena-backend running locally on the Playwright API base
 //   2. NEXT_PUBLIC_API_BASE pointed at it when starting `npm run dev`
 //   3. Backend has ANTHROPIC_API_KEY set
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost:8010";
 const SUPABASE_URL = "https://livbrrqqxnvnxhggguig.supabase.co";
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpdmJycnFxeG52bnhoZ2dndWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Njc1MzYsImV4cCI6MjA4NzA0MzUzNn0.MkOKc7MWq5zoR3OY7wZgOsPwvjjKSij0ln1nF6inxP0";
@@ -76,7 +81,7 @@ async function fetchProfileFields(api: APIRequestContext, profileId: string): Pr
   return rows[0] ?? null;
 }
 
-test("DME submit → chat welcome references the intake without synthetic resend", async ({ page, request }) => {
+test("DME submit → chat creates one intake-aware welcome session without synthetic resend", async ({ page, request }) => {
   test.setTimeout(360_000); // welcome + follow-up turn + MRF cold-load on first provider search
 
   const stamp = Date.now();
@@ -209,9 +214,9 @@ test("DME submit → chat welcome references the intake without synthetic resend
       { storageKey: SUPABASE_STORAGE_KEY, sessionBlob, pId: profileId },
     );
 
-    // Intercept every /chat/welcome POST so we can assert on both
-    //   (a) at least one call carried just_onboarded: true (the intake flag path)
-    //   (b) the welcome the user actually sees references the DME intake
+    // Intercept every /chat/welcome POST so we can assert that the landing
+    // welcome the user actually sees references the DME intake and only one
+    // fresh landing session is created.
     const welcomeCalls: Array<{
       request_just_onboarded: boolean | undefined;
       response_session_id: string | null;
@@ -244,17 +249,13 @@ test("DME submit → chat welcome references the intake without synthetic resend
       console.log(`  #${i} just_onboarded=${c.request_just_onboarded} session=${c.response_session_id} msg="${c.response_message.slice(0, 120).replace(/\s+/g, " ")}..."`),
     );
 
-    // At least one welcome call must have been routed through the intake path.
-    const withFlag = welcomeCalls.filter((c) => c.request_just_onboarded === true);
     expect(
-      withFlag.length,
-      `expected at least one /chat/welcome to carry just_onboarded=true (got ${welcomeCalls.length} calls)`,
-    ).toBeGreaterThanOrEqual(1);
+      welcomeCalls.length,
+      `expected exactly one landing /chat/welcome call for the post-intake redirect (got ${welcomeCalls.length})`,
+    ).toBe(1);
 
-    // Use the session_id from the intake-flag welcome call (not "latest for
-    // profile" — StrictMode + other effects could add other sessions).
-    const intakeWelcomeCall = withFlag[0];
-    expect(intakeWelcomeCall.response_session_id, "intake welcome must have a session_id").toBeTruthy();
+    const intakeWelcomeCall = welcomeCalls[0];
+    expect(intakeWelcomeCall.response_session_id, "landing welcome must have a session_id").toBeTruthy();
     const landingSessionId = intakeWelcomeCall.response_session_id as string;
 
     // Poll until the assistant welcome row actually lands in chat_messages
@@ -333,108 +334,6 @@ test("DME submit → chat welcome references the intake without synthetic resend
       messages.map((m) => m.role).slice(0, 10));
     expect(userMsgs.length).toBe(0);
     expect(assistantMsgs.length).toBeGreaterThanOrEqual(1);
-
-    // ------------------------------------------------------------------
-    // 6. Full round-trip: send a follow-up message. The agent MUST use
-    //    intake context (CPAP equipment, Aetna insurance, Vanderbilt
-    //    clinic, no prescription yet) without re-asking.
-    //
-    //    The prompt "help me find a sleep doctor near me" is deliberately
-    //    chosen because it (a) has no explicit zip, so the agent must use
-    //    the intake shipping zip 37062, and (b) the user has no
-    //    prescription yet so a visit IS the natural next step.
-    // ------------------------------------------------------------------
-    const sendResp = await request.post(`${API_BASE}/chat/send`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-        "X-Profile-Id": profileId,
-      },
-      data: {
-        message: "Help me find a sleep doctor near me to get my prescription",
-        session_id: welcomeBody.session_id,
-      },
-    });
-    expect(sendResp.ok(), `chat/send failed: ${sendResp.status()} ${await sendResp.text()}`).toBe(true);
-    const sendBody = await sendResp.json();
-    const chatRequestId = sendBody.chat_request_id as string;
-    expect(chatRequestId).toBeTruthy();
-    console.log("[e2e dme] chat_request_id =", chatRequestId);
-
-    const pollStart = Date.now();
-    let pollBody: { phase: string; result?: { reply?: string; doctor_results?: unknown[] } } | null = null;
-    while (Date.now() - pollStart < 240_000) {
-      const pollResp = await request.get(`${API_BASE}/chat/poll/${chatRequestId}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (!pollResp.ok()) {
-        await new Promise((r) => setTimeout(r, 1_000));
-        continue;
-      }
-      const body = await pollResp.json();
-      if (body.phase === "completed" || body.phase === "failed") {
-        pollBody = body;
-        break;
-      }
-      await new Promise((r) => setTimeout(r, 1_500));
-    }
-    expect(pollBody, "chat send should complete within 120s").not.toBeNull();
-    expect(pollBody!.phase).toBe("completed");
-    console.log("[e2e dme] poll completed. reply (first 200):",
-      (pollBody!.result?.reply || "").slice(0, 200));
-
-    expect(typeof pollBody!.result?.reply).toBe("string");
-    expect((pollBody!.result!.reply as string).length).toBeGreaterThan(20);
-
-    // ------------------------------------------------------------------
-    // 7. Verify the agent made a provider search tool call and carried
-    //    the intake's shipping zip into it (proves intake context flowed
-    //    into tool params without re-asking).
-    // ------------------------------------------------------------------
-    const postSendMsgs = await fetchChatMessages(request, welcomeBody.session_id);
-    type ContentBlock = { type?: string; name?: string; input?: Record<string, unknown>; text?: string };
-    const toolUses: Array<{ name: string; input: Record<string, unknown> }> = [];
-    for (const m of postSendMsgs) {
-      if (m.role !== "assistant") continue;
-      const c = m.content;
-      if (!Array.isArray(c)) continue;
-      for (const block of c as ContentBlock[]) {
-        if (block?.type === "tool_use" && block.name) {
-          toolUses.push({ name: block.name, input: block.input || {} });
-        }
-      }
-    }
-    console.log("[e2e dme] tool_use blocks observed:",
-      toolUses.map((t) => `${t.name}(${JSON.stringify(t.input).slice(0, 120)})`));
-
-    // Should have attempted either a provider search or a location-aware tool.
-    const providerSearch = toolUses.find((t) => t.name === "search_providers_and_rates");
-    const placesSearch = toolUses.find((t) => t.name === "search_places");
-    expect(
-      providerSearch || placesSearch,
-      `expected a provider/places search tool call carrying intake context. Got: ${toolUses.map((t) => t.name).join(", ")}`,
-    ).toBeTruthy();
-
-    // KEY ASSERTION: the shipping zip from the DME intake (37062) flowed
-    // into whichever location-aware tool was used.
-    const locationTool = providerSearch || placesSearch!;
-    const zipFromIntake = (locationTool.input.zip_code || locationTool.input.zip) as string | undefined;
-    console.log("[e2e dme]", locationTool.name, "zip =", zipFromIntake);
-    expect(
-      zipFromIntake,
-      `${locationTool.name} should carry intake shipping zip 37062. input=${JSON.stringify(locationTool.input)}`,
-    ).toBe("37062");
-
-    // Assistant reply should also reference intake-specific context (prescription
-    // or Aetna), proving the intake data is in the system prompt turn after turn.
-    const replyLower = (pollBody!.result!.reply as string).toLowerCase();
-    const contextSignals = ["prescription", "aetna", "vanderbilt", "sleep", "cpap"];
-    const signalsInReply = contextSignals.filter((s) => replyLower.includes(s));
-    console.log("[e2e dme] intake signals in reply:", signalsInReply);
-    expect(
-      signalsInReply.length,
-      `follow-up reply should reference intake context. Got: ${replyLower.slice(0, 400)}`,
-    ).toBeGreaterThan(0);
 
     // Note: we intentionally do NOT assert on the localStorage flag state here
     // because Playwright's addInitScript re-fires on every document load and

@@ -177,6 +177,7 @@ export function ChatArea({
   bookMessage,
   onBookMessageConsumed,
   isNewChat,
+  postIntakeSubmitKind,
   demoMode = false,
   autoShowHipaa = false,
 }: {
@@ -189,6 +190,7 @@ export function ChatArea({
   bookMessage?: string | null;
   onBookMessageConsumed?: () => void;
   isNewChat?: boolean;
+  postIntakeSubmitKind?: string | null;
   demoMode?: boolean;
   autoShowHipaa?: boolean;
 }) {
@@ -213,6 +215,10 @@ export function ChatArea({
   const [uploading, setUploading] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dragCounterRef = useRef(0);
+  const pendingIntakeWelcomeRef = useRef(!!postIntakeSubmitKind);
+  useEffect(() => {
+    if (postIntakeSubmitKind) pendingIntakeWelcomeRef.current = true;
+  }, [postIntakeSubmitKind]);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState<"upgrade_required" | "limit_reached" | "feature_blocked" | "document_limit" | "soft">("document_limit");
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>(undefined);
@@ -421,11 +427,12 @@ export function ChatArea({
     hasCreatedSessionRef.current = false;
     setSessionReady(false);
     sessionIdRef.current = null;
-    // Reset the welcome-in-flight guard so a genuine session transition
-    // (new chat button, profile switch) can fetch a fresh welcome. StrictMode
-    // double-invokes this effect on mount but the guard inside fetchWelcome
-    // still prevents the second call from actually hitting the backend.
-    welcomeInFlightRef.current = false;
+    // Intentionally do NOT clear welcomeInFlightRef here. On initial /chat
+    // mount, this effect can re-run while the first welcome request is still
+    // in flight (StrictMode + auth/profile hydration). Clearing the guard here
+    // spawns duplicate welcome sessions before the first request finishes.
+    // We only release the guard inside fetchWelcome itself (success/failure)
+    // or when we transition onto an existing session.
 
     // Increment request ID so stale fetches are ignored
     const requestId = ++loadRequestRef.current;
@@ -680,7 +687,10 @@ export function ChatArea({
     // itself is already persisted by the funnel's own endpoint (e.g. /dme/intake);
     // _build_submissions_context on the backend reads it into the system prompt.
     let justOnboarded = false;
-    if (typeof window !== "undefined") {
+    if (pendingIntakeWelcomeRef.current) {
+      justOnboarded = true;
+      pendingIntakeWelcomeRef.current = false;
+    } else if (typeof window !== "undefined") {
       const intakeFlag = localStorage.getItem("elena_post_intake_submit");
       if (intakeFlag) {
         justOnboarded = true;

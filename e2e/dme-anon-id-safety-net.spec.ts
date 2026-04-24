@@ -13,10 +13,10 @@ import { test, expect, type APIRequestContext } from "@playwright/test";
 //      doctors, and onboarding_completed_at are all populated on the profile.
 //
 // Requirements:
-//   - elena-backend running on :8000
+//   - elena-backend running on the Playwright API base
 //   - Migration 016_dme_intakes_anon_id applied (anon_id column exists)
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost:8010";
 const SUPABASE_URL = "https://livbrrqqxnvnxhggguig.supabase.co";
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpdmJycnFxeG52bnhoZ2dndWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Njc1MzYsImV4cCI6MjA4NzA0MzUzNn0.MkOKc7MWq5zoR3OY7wZgOsPwvjjKSij0ln1nF6inxP0";

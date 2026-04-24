@@ -7,7 +7,7 @@ import { test, expect, type APIRequestContext, type Page } from "@playwright/tes
 //   2. NEXT_PUBLIC_API_BASE pointed at that backend when starting `npm run dev`
 //   3. Supabase reachable; backend has ANTHROPIC_API_KEY set (for variant 3)
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost:8010";
 const SUPABASE_URL = "https://livbrrqqxnvnxhggguig.supabase.co";
 // Same anon key every browser client sees — intentionally public.
 const SUPABASE_ANON_KEY =
@@ -78,9 +78,13 @@ async function deleteUserProfile(api: APIRequestContext, profileId: string): Pro
 }
 
 /**
- * Type a message into the landing hero and click send. Returns the pending row
- * the backend created (read back from Supabase for verification) and the anon_id
- * the frontend generated.
+ * Type a message into the landing hero and click send on the explicit
+ * signup-first variant. The homepage defaults to the late-signup /onboard
+ * funnel now, so /chat/pending only fires when we intentionally force the
+ * legacy pre-auth capture path.
+ *
+ * Returns the pending row the backend created (read back from Supabase for
+ * verification) and the anon_id the frontend generated.
  */
 async function sendFromLandingHero(
   page: Page,
@@ -95,7 +99,7 @@ async function sendFromLandingHero(
     { timeout: 15_000 },
   );
 
-  await page.goto("/");
+  await page.goto("/?signup=first");
   const hero = page.getByPlaceholder("Ask Elena anything...").first();
   await expect(hero).toBeVisible({ timeout: 10_000 });
   await hero.click();

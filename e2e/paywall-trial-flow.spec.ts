@@ -11,7 +11,7 @@
 
 import { test, expect, type Page, type Route } from "@playwright/test";
 
-const API_BASE_LOCAL = "http://localhost:8000";
+const API_BASE_LOCAL = process.env.PLAYWRIGHT_API_BASE || "http://localhost:8010";
 const API_BASE_PROD = "https://elena-backend-production-production.up.railway.app";
 
 type CapturedCheckout = {
@@ -242,7 +242,7 @@ test.describe("Paywall maybe-later exit-intent sheet", () => {
     await page.getByTestId("paywall-maybe-later").click();
     await expect(page.getByTestId("paywall-exit-sheet")).toBeVisible();
 
-    await page.getByTestId("paywall-exit-sheet-backdrop").click();
+    await page.getByTestId("paywall-exit-sheet-backdrop").click({ position: { x: 20, y: 20 } });
     await expect(page.getByTestId("paywall-exit-sheet")).toBeHidden();
     await expect(page.getByTestId("paywall-trial-step-3")).toBeVisible();
   });

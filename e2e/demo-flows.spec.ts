@@ -37,7 +37,7 @@ const WELCOME_RESPONSE = {
   session_id: "demo-welcome-session",
 };
 
-const API_BASE_LOCAL = "http://localhost:8000";
+const API_BASE_LOCAL = process.env.PLAYWRIGHT_API_BASE || "http://localhost:8010";
 const API_BASE_PROD = "https://elena-backend-production-production.up.railway.app";
 const SUPABASE_URL = "https://livbrrqqxnvnxhggguig.supabase.co";
 
@@ -47,13 +47,14 @@ const SUPABASE_URL = "https://livbrrqqxnvnxhggguig.supabase.co";
 
 async function injectAuthAndDemoMode(page: Page) {
   await page.addInitScript(
-    ({ key, session }) => {
+    ({ key, session, me }) => {
       localStorage.setItem(key, JSON.stringify(session));
       localStorage.setItem("elena_onboarding_done", "1");
       localStorage.setItem("elena_active_profile_id", "profile-1");
+      sessionStorage.setItem("elena_me_cache", JSON.stringify(me));
       sessionStorage.setItem("elena_demo_mode", "true");
     },
-    { key: SUPABASE_STORAGE_KEY, session: FAKE_SESSION },
+    { key: SUPABASE_STORAGE_KEY, session: FAKE_SESSION, me: ME_RESPONSE },
   );
 }
 
@@ -86,19 +87,19 @@ async function mockApi(page: Page) {
   });
 
   for (const base of API_BASES) {
-    await page.route(`${base}/auth/me`, (route) =>
+    await page.route(`${base}/auth/me**`, (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(ME_RESPONSE) }),
     );
-    await page.route(`${base}/chat/sessions`, (route) =>
+    await page.route(`${base}/chat/sessions**`, (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([]) }),
     );
     await page.route(`${base}/chat/welcome**`, (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(WELCOME_RESPONSE) }),
     );
-    await page.route(`${base}/web/subscription`, (route) =>
+    await page.route(`${base}/web/subscription**`, (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ plan: "free", tier: "free", status: "active", cancel_at_period_end: false }) }),
     );
-    await page.route(`${base}/chat/send`, (route) => {
+    await page.route(`${base}/chat/send**`, (route) => {
       console.error("BUG: /chat/send was called in demo mode!");
       return route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: "Should not reach real backend in demo mode" }) });
     });
@@ -107,6 +108,18 @@ async function mockApi(page: Page) {
       return route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: "Should not reach real backend in demo mode" }) });
     });
     await page.route(`${base}/**`, (route) => route.fallback());
+  }
+}
+
+async function mockPaidSubscription(page: Page) {
+  for (const base of [API_BASE_LOCAL, API_BASE_PROD]) {
+    await page.route(`${base}/web/subscription**`, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ plan: "pro", tier: "pro", status: "active", cancel_at_period_end: false }),
+      }),
+    );
   }
 }
 
@@ -245,6 +258,7 @@ test.describe("Demo mode: appeal multi-turn chain", () => {
       "insurance_denial_letter.pdf",
     );
     await mockApi(page);
+    await mockPaidSubscription(page);
 
     await page.goto("/chat");
     await expect(page.locator(".chat-selectable")).toBeVisible({ timeout: 10_000 });

@@ -33,7 +33,7 @@ async function mockLanding(page: Page) {
 
   // /onboard loads a tour shell + quiz content. We don't need the real data
   // to land there — just block the API calls that would otherwise hang.
-  for (const base of ["http://localhost:8000", "https://elena-backend-production-production.up.railway.app"]) {
+  for (const base of [process.env.PLAYWRIGHT_API_BASE || "http://localhost:8010", "https://elena-backend-production-production.up.railway.app"]) {
     await page.route(`${base}/**`, (route: Route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: "{}" }),
     );
