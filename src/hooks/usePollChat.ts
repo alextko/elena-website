@@ -164,6 +164,31 @@ export function usePollChat(demoMode = false) {
           });
 
           if (!sendRes.ok) {
+            // 402 = chat_message monthly cap hit (or any other quota
+            // block the server surfaces as upgrade_required). Surface
+            // it through onDone as a ChatResponse-shaped payload so the
+            // chat-area `chatResult.error_code === "upgrade_required"`
+            // handler picks it up and routes to the upgrade modal/trial
+            // flow, same as a mid-turn tool block would.
+            if (sendRes.status === 402) {
+              log("send 402 — quota block", { status: sendRes.status });
+              let detail: Record<string, unknown> = {};
+              try {
+                const body = await sendRes.json();
+                detail = (body && typeof body === "object" && body.detail && typeof body.detail === "object")
+                  ? (body.detail as Record<string, unknown>)
+                  : (body as Record<string, unknown>);
+              } catch { /* body wasn't JSON — fall through with empty detail */ }
+              const blocked: ChatResponse = {
+                reply: "",
+                session_id: sessionId ?? "",
+                error_code: "upgrade_required",
+                gated_feature: (detail.gated_feature as string) || "chat_message",
+              };
+              hitPaywall = true;
+              onDone(blocked);
+              return false;
+            }
             log("send failed", { status: sendRes.status });
             return false;
           }

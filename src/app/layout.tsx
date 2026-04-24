@@ -73,6 +73,8 @@ export default function RootLayout({
         <meta name="theme-color" content="#0F1B3D" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        {/* DO NOT REMOVE — Meta (Facebook) domain verification. Required for iOS 14.5+ Aggregated Event Measurement attribution. Configured in Business Settings → Brand Safety → Domains. */}
+        <meta name="facebook-domain-verification" content="ebchqhdoar2jqep41m8y4tq46crrtx" />
       </head>
       <body className="h-full overflow-x-hidden bg-background text-foreground">
         <Script
