@@ -238,26 +238,45 @@ export function ChatArea({
     }
   }, [autoShowHipaa]);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const [softPaywallOpen, setSoftPaywallOpen] = useState(false);
   const userMessageCountRef = useRef(0);
   // Counts ONLY user-typed sends (excludes the auto-sent seed from the
-  // tour handoff). When the post-seed tour gate is armed, hitting the
-  // 2nd typed send opens reviews → upgrade. Turn-count-based because
-  // response-signal triggers (booking_id / bill_analysis / todo_created)
-  // were unreliable — they only fire when Elena actually runs a gated
-  // tool, which many seeded actions don't.
+  // tour handoff). 2nd typed send by a free user fires the marketing
+  // paywall (see handleSend). Turn-count-based because response-signal
+  // triggers (booking_id / bill_analysis / todo_created) were unreliable —
+  // they only fire when Elena actually runs a gated tool, which many
+  // seeded actions don't.
   const userTypedCountRef = useRef(0);
 
-  // Soft paywall: show upgrade modal once on first value-moment action (free users)
+  // First-ever paywall for any user routes through ReviewsModal → TrialFlow
+  // (the 4-step trial beat — first impression stays emotional regardless of
+  // which gate fires first). Every subsequent paywall trigger opens the
+  // feature-specific UpgradeModal. Flag is localStorage (not session) so a
+  // user who saw TrialFlow on day 1 doesn't see it again on day 3.
+  const openPaywall = useCallback((
+    reason: "upgrade_required" | "limit_reached" | "feature_blocked" | "document_limit" | "soft",
+    feature?: string,
+  ) => {
+    if (typeof window === "undefined") return;
+    if (!localStorage.getItem("elena_trial_flow_shown")) {
+      localStorage.setItem("elena_trial_flow_shown", "1");
+      setReviewsOpen(true);
+      return;
+    }
+    setUpgradeReason(reason);
+    setUpgradeFeature(feature);
+    setUpgradeOpen(true);
+  }, []);
+
+  // Delayed one-shot marketing paywall fired after value-moment actions
+  // (upload success, form submit). The 2s delay lets the success land
+  // visually before the modal pops.
   const triggerSoftPaywall = useCallback(() => {
     if (typeof window === "undefined") return;
     if (localStorage.getItem("elena_soft_paywall_shown")) return;
-    // Check if user is paid (subscription data from auth context)
-    // For now, always trigger for all users — the upgrade modal handles plan checks
     localStorage.setItem("elena_soft_paywall_shown", "1");
     analytics.track("Soft Paywall Triggered");
-    setTimeout(() => setSoftPaywallOpen(true), 2000);
-  }, []);
+    setTimeout(() => openPaywall("soft"), 2000);
+  }, [openPaywall]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -990,9 +1009,8 @@ export function ChatArea({
         });
         // Handle document limit (402)
         if (urlRes.status === 402) {
-          setUpgradeReason("document_limit");
-          setUpgradeOpen(true);
           trackPaywallHit("document_limit", "upload_document");
+          openPaywall("document_limit", "upload_document");
           setUploading(false);
           return;
         }
@@ -1060,25 +1078,16 @@ export function ChatArea({
       const isAutoSeedSend = !!lastAutoSentQuery.current && message === lastAutoSentQuery.current;
       if (!isAutoSeedSend && message.length > 0) {
         userTypedCountRef.current++;
-        const tourGateFlag = typeof window !== "undefined"
-          && sessionStorage.getItem("elena_tour_post_seed_gate") === "1";
         const isFreeTier = !(subscription && subscription.tier && subscription.tier !== "free");
-        if (
-          userTypedCountRef.current === 2
-          && tourGateFlag
-          && isFreeTier
-        ) {
+        if (userTypedCountRef.current === 2 && isFreeTier) {
           analytics.track("Tour Post-Seed Paywall Hit" as any, {
             trigger: "second_message",
             message_length: message.length,
           });
-          try { sessionStorage.removeItem("elena_tour_post_seed_gate"); } catch {}
-          // Soft reason — the user hasn't hit any real quota yet, so the
-          // modal reads "Get more out of Elena" rather than "Free limit
-          // reached." The reviews modal precedes this, then Continue
-          // chains into the upgrade modal carrying this reason.
-          setUpgradeReason("soft");
-          setReviewsOpen(true);
+          // Soft reason — user hasn't hit any real quota yet, so if the
+          // UpgradeModal fires (i.e. not the first-ever paywall) it reads
+          // "Get more out of Elena" rather than "Free limit reached."
+          openPaywall("soft");
           return;
         }
       }
@@ -1309,34 +1318,12 @@ export function ChatArea({
               rows,
             });
           }
-          // Backend quota-block paywall. If the tour post-seed gate is
-          // still armed when a free user hits a real upgrade_required
-          // from the backend, wrap it through the reviews modal so the
-          // social-proof beat still lands. Otherwise open upgrade
-          // modal directly. (The chat-turn-counter trigger in
-          // handleSend usually consumes the tour gate flag BEFORE this
-          // path fires, so this branch mostly handles paid-feature
-          // gates mid-session.)
+          // Backend quota-block paywall. Routing is owned by openPaywall:
+          // first paywall the user ever sees → TrialFlow; subsequent →
+          // feature-specific UpgradeModal.
           if (chatResult.error_code === "upgrade_required") {
-            const tourGateFlag = typeof window !== "undefined"
-              && sessionStorage.getItem("elena_tour_post_seed_gate") === "1";
-            const isFreeTier = !(subscription && subscription.tier && subscription.tier !== "free");
-            const isChatMessageCap = chatResult.gated_feature === "chat_message";
-            setUpgradeReason("upgrade_required");
-            setUpgradeFeature(chatResult.gated_feature || undefined);
             trackPaywallHit("upgrade_required", chatResult.gated_feature || undefined);
-            // Route to TrialFlow (via reviews modal) for:
-            //   - cold-traffic tour users hitting any gate (existing 2-msg flow)
-            //   - free-tier users hitting the 25/month chat_message cap
-            //     (same TrialFlow so the paywall feels coherent; user sees
-            //     the trial offer rather than the feature-specific upgrade
-            //     modal, which would be weirdly narrow for a message cap).
-            if (isFreeTier && (tourGateFlag || isChatMessageCap)) {
-              setReviewsOpen(true);
-              try { sessionStorage.removeItem("elena_tour_post_seed_gate"); } catch {}
-            } else {
-              setUpgradeOpen(true);
-            }
+            openPaywall("upgrade_required", chatResult.gated_feature || undefined);
           }
 
           // needs_hipaa_consent is now attached directly to the message
@@ -1447,7 +1434,6 @@ export function ChatArea({
         }}
       />
       <FeedbackModal open={feedbackOpen} onOpenChange={setFeedbackOpen} />
-      <UpgradeModal open={softPaywallOpen} onOpenChange={setSoftPaywallOpen} reason="soft" />
 
       {/* Full-page drag-and-drop overlay */}
       {isDraggingOver && (
