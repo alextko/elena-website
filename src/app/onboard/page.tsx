@@ -76,7 +76,7 @@ function deriveAffirmation(): PainAffirmation {
 
 export default function OnboardPage() {
   const router = useRouter();
-  const { session, loading, refreshProfiles, switchProfile, completeOnboarding } = useAuth();
+  const { session, loading, refreshProfiles, switchProfile, completeOnboarding, needsOnboarding, profileChecked } = useAuth();
   const [isNavigatingToChat, startNavigatingToChat] = useTransition();
 
   // Flipped true when the tour has reached elena-plan Continue. Controls
@@ -140,13 +140,19 @@ export default function OnboardPage() {
   // a signed-in user.
   useEffect(() => {
     if (loading) return;
+    if (session && profileChecked && !needsOnboarding) {
+      pendingSignupRef.current = false;
+      try { sessionStorage.removeItem(PENDING_SIGNUP_KEY); } catch {}
+      router.replace("/chat");
+      return;
+    }
     // Only bounce if this is a STANDING session (not a session that just
     // appeared because AuthModal completed). The pendingSignupRef flag
     // distinguishes the two.
     if (session && !pendingSignupRef.current && !continuePending) {
       router.replace("/chat");
     }
-  }, [continuePending, loading, session, router]);
+  }, [continuePending, loading, session, router, needsOnboarding, profileChecked]);
 
   // Session appeared while the signup gate is pending → run the flush,
   // then navigate to /chat. Depends only on `session` so re-renders
@@ -236,7 +242,11 @@ export default function OnboardPage() {
     })();
   }, [session]);
 
-  if (loading || (session && !pendingSignupRef.current && !flushingRef.current)) {
+  if (
+    loading
+    || (session && profileChecked && !needsOnboarding)
+    || (session && !pendingSignupRef.current && !flushingRef.current)
+  ) {
     return (
       <div className="flex h-dvh items-center justify-center bg-[#F7F6F2]">
         <div className="h-10 w-10 rounded-full border-2 border-[#0F1B3D]/20 border-t-[#0F1B3D] animate-spin" />

@@ -535,7 +535,7 @@ export default function LandingPageWrapper() {
 }
 
 function LandingPage() {
-  const { session, loading } = useAuth();
+  const { session, loading, needsOnboarding, profileChecked } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -757,6 +757,13 @@ function LandingPage() {
     if (pendingDocFile) {
       localStorage.setItem("elena_pending_doc", pendingDocFile.name);
     }
+    // Existing signed-in users should never be routed back through the
+    // anonymous onboarding funnel. Preserve their drafted query and send them
+    // straight to chat.
+    if (session && profileChecked && !needsOnboarding) {
+      router.push("/chat");
+      return;
+    }
     // Demo mode + authenticated: skip auth modal, go straight to chat
     if (demoMode && session) {
       router.push("/chat");
@@ -793,7 +800,7 @@ function LandingPage() {
     setChatPreviewQuery(query || "");
     setChatPreviewVisible(true);
     setAuthModalOpen(true);
-  }, [sendQuery, ref, hero, demoMode, session, pendingDocFile, router, userHasEdited]);
+  }, [sendQuery, ref, hero, demoMode, session, pendingDocFile, router, userHasEdited, needsOnboarding, profileChecked]);
 
   const handleChipClick = useCallback((suggestion: typeof SUGGESTIONS[number]) => {
     analytics.track("Suggested Prompt Clicked", { prompt_label: suggestion.label });
