@@ -256,22 +256,26 @@ export function ChatArea({
   // First-ever paywall for any user routes through ReviewsModal → TrialFlow
   // (the 4-step trial beat — first impression stays emotional regardless of
   // which gate fires first). Every subsequent paywall trigger opens the
-  // feature-specific UpgradeModal. Flag is localStorage (not session) so a
-  // user who saw TrialFlow on day 1 doesn't see it again on day 3.
+  // feature-specific UpgradeModal.
+  //
+  // Flag is keyed by user.id (not just localStorage) so a fresh signup on a
+  // browser that previously ran a different account still gets the TrialFlow.
+  // Falls back to a per-browser key for unauthenticated triggers.
   const openPaywall = useCallback((
     reason: "upgrade_required" | "limit_reached" | "feature_blocked" | "document_limit" | "soft",
     feature?: string,
   ) => {
     if (typeof window === "undefined") return;
-    if (!localStorage.getItem("elena_trial_flow_shown")) {
-      localStorage.setItem("elena_trial_flow_shown", "1");
+    const trialFlowShownKey = `elena_trial_flow_shown_${user?.id ?? "anon"}`;
+    if (!localStorage.getItem(trialFlowShownKey)) {
+      localStorage.setItem(trialFlowShownKey, "1");
       setReviewsOpen(true);
       return;
     }
     setUpgradeReason(reason);
     setUpgradeFeature(feature);
     setUpgradeOpen(true);
-  }, []);
+  }, [user?.id]);
 
   // Delayed one-shot marketing paywall fired after value-moment actions
   // (upload success, form submit). The 2s delay lets the success land

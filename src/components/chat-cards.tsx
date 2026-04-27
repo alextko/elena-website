@@ -1483,6 +1483,10 @@ export function FormRequestCard({
   const hasImageField = imageFields.length > 0;
   function handleDrop(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
+    // Without stopPropagation the chat-area's full-page drop handler ALSO fires
+    // and uploads the same file as a chat attachment — user sees the scan saved
+    // to the form AND a duplicate file chip above the composer.
+    e.stopPropagation();
     setIsDragging(false);
     if (!hasImageField) return;
     const file = e.dataTransfer.files?.[0];
@@ -1586,12 +1590,13 @@ export function FormRequestCard({
       data-form-id={form.form_id}
       data-form-save-to={form.save_to}
       onDragEnter={hasImageField ? (e) => {
-        if (e.dataTransfer.types.includes("Files")) { e.preventDefault(); setIsDragging(true); }
+        if (e.dataTransfer.types.includes("Files")) { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }
       } : undefined}
       onDragOver={hasImageField ? (e) => {
-        if (e.dataTransfer.types.includes("Files")) { e.preventDefault(); setIsDragging(true); }
+        if (e.dataTransfer.types.includes("Files")) { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }
       } : undefined}
       onDragLeave={hasImageField ? (e) => {
+        e.stopPropagation();
         if (!rootRef.current?.contains(e.relatedTarget as Node)) setIsDragging(false);
       } : undefined}
       onDrop={hasImageField ? handleDrop : undefined}

@@ -81,6 +81,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         {/* DO NOT REMOVE — Meta (Facebook) domain verification. Required for iOS 14.5+ Aggregated Event Measurement attribution. Configured in Business Settings → Brand Safety → Domains. */}
         <meta name="facebook-domain-verification" content="ebchqhdoar2jqep41m8y4tq46crrtx" />
+        {/* AppCtaModal images — preload so the icon paints with the modal animation
+            instead of fetching after open and showing a beat of empty space. */}
+        <link rel="preload" as="image" href="/assets/elena-app-icon.png" />
+        <link rel="preload" as="image" href="/assets/app-store-badge.svg" />
       </head>
       <body className="h-full overflow-x-hidden bg-background text-foreground">
         <Script

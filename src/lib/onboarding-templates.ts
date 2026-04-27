@@ -951,12 +951,26 @@ export function getChip(key: string | null): SituationChip | null {
   return SITUATION_CHIPS.find((c) => c.key === key) ?? null;
 }
 
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Short aliases (≤4 chars) like "ra", "ms", "uc", "sle", "pt", "htn" raw-substring
+// match inside unrelated words ("ra" → "brain", "ms" → "items"), so for those we
+// require a word-boundary match. Mirrors backend `_alias_matches` in care_plans.py.
+function aliasMatches(alias: string, q: string): boolean {
+  if (alias.length <= 4) {
+    return new RegExp(`\\b${escapeRegex(alias)}\\b`).test(q);
+  }
+  return q.includes(alias) || alias.includes(q);
+}
+
 export function findTemplateByAlias(query: string): SituationTemplate | null {
   const q = query.trim().toLowerCase();
   if (q.length < 2) return null;
   for (const [templateKey, aliases] of Object.entries(CONDITION_ALIASES)) {
     for (const alias of aliases) {
-      if (q.includes(alias) || alias.includes(q)) {
+      if (aliasMatches(alias, q)) {
         return SITUATION_TEMPLATES[templateKey] ?? null;
       }
     }

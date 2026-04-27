@@ -18,11 +18,13 @@ export function AppCtaModal() {
           doesn't balloon. Without an explicit mobile width the Dialog
           primitive renders at content width and can look awkward. */}
       <DialogContent
+        data-testid="app-cta-modal-root"
         overlayClassName="bg-[#0F1B3D]/22 backdrop-blur-[2px] duration-200"
         className="w-[calc(100vw-2rem)] sm:max-w-[340px] p-0 overflow-hidden rounded-2xl border border-white/70 bg-white/95 shadow-[0_22px_60px_rgba(15,27,61,0.22)] will-change-[opacity,transform] duration-200 data-open:zoom-in-[0.985] data-open:fade-in-0 data-closed:zoom-out-[0.985]"
       >
         <div className="p-7 sm:p-8 flex flex-col items-center">
           <img
+            data-testid="app-cta-modal-icon"
             src="/assets/elena-app-icon.png"
             alt="Elena"
             className="w-[88px] h-[88px] sm:w-[96px] sm:h-[96px] rounded-[22px] shadow-[0_10px_30px_rgba(15,27,61,0.22)] mb-5"
