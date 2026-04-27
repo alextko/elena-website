@@ -191,64 +191,26 @@ function StatsBar({ persona }: { persona?: string | null }) {
 const SUGGESTIONS: {
   label: string;
   text: string;
-  madlib?: { segments: { type: "text" | "blank"; value: string; placeholder?: string }[] };
 }[] = [
   {
     label: "Compare Prices",
-    text: "Compare MRI prices near me",
-    madlib: {
-      segments: [
-        { type: "text", value: "Find me the cheapest " },
-        { type: "blank", value: "", placeholder: "procedure" },
-        { type: "text", value: " near me." },
-      ],
-    },
+    text: "Help me find the cheapest MRI near me",
   },
   {
     label: "Dispute a Bill",
-    text: "I want to dispute a medical bill",
-    madlib: {
-      segments: [
-        { type: "text", value: "I got a bill from " },
-        { type: "blank", value: "", placeholder: "provider" },
-        { type: "text", value: ". Help me dispute it." },
-      ],
-    },
+    text: "Help me fight a medical bill",
   },
   {
     label: "Find a Doctor",
-    text: "Find an in-network doctor near me",
-    madlib: {
-      segments: [
-        { type: "text", value: "Find me a " },
-        { type: "blank", value: "", placeholder: "specialty" },
-        { type: "text", value: " that takes " },
-        { type: "blank", value: "", placeholder: "insurance" },
-        { type: "text", value: " near me." },
-      ],
-    },
+    text: "Help me find an in-network doctor near me",
   },
   {
     label: "Manage Family Care",
     text: "Help me manage my parents' healthcare from my phone",
-    madlib: {
-      segments: [
-        { type: "text", value: "Help me manage " },
-        { type: "blank", value: "", placeholder: "family member" },
-        { type: "text", value: "'s healthcare." },
-      ],
-    },
   },
   {
     label: "Find Insurance",
     text: "Help me find the right insurance plan",
-    madlib: {
-      segments: [
-        { type: "text", value: "Help me find " },
-        { type: "blank", value: "", placeholder: "individual or family" },
-        { type: "text", value: " health insurance." },
-      ],
-    },
   },
 ];
 
@@ -420,128 +382,94 @@ const BLOBS = [
   "w-[450px] h-[450px] bg-[radial-gradient(circle,rgba(232,149,109,0.25)_0%,transparent_70%)] bottom-[10%] left-[5%]",
 ];
 
-// Mad Libs template: editable textarea with inline styled blanks
-// Each template is an array of segments. "text" segments are plain text,
-// "blank" segments render as styled pill inputs inline.
-const MADLIB_TEMPLATES: Record<string, { segments: { type: "text" | "blank"; value: string; placeholder?: string }[] }> = {
-  calls: {
-    segments: [
-      { type: "text", value: "Call " },
-      { type: "blank", value: "", placeholder: "insurer" },
-      { type: "text", value: " and ask about " },
-      { type: "blank", value: "", placeholder: "claim or issue" },
-      { type: "text", value: "." },
-    ],
-  },
-  meds: {
-    segments: [
-      { type: "text", value: "Find " },
-      { type: "blank", value: "", placeholder: "medication" },
-      { type: "text", value: " " },
-      { type: "blank", value: "", placeholder: "dosage" },
-      { type: "text", value: " in stock near me." },
-    ],
-  },
-  chronic: {
-    segments: [
-      { type: "text", value: "I have " },
-      { type: "blank", value: "", placeholder: "condition" },
-      { type: "text", value: ". Find me the cheapest " },
-      { type: "blank", value: "", placeholder: "medication" },
-      { type: "text", value: " and a specialist near me." },
-    ],
-  },
-  care_now: {
-    segments: [
-      { type: "text", value: "I need to see a " },
-      { type: "blank", value: "", placeholder: "doctor type" },
-      { type: "text", value: " today near " },
-      { type: "blank", value: "", placeholder: "zip code" },
-      { type: "text", value: "." },
-    ],
-  },
-};
-
 const ROTATING_QUERIES: Record<string, string[]> = {
+  homepage: [
+    "Help me find the cheapest MRI near me",
+    "Help me fight a medical bill",
+    "Help me find an in-network doctor near me",
+    "Call my insurance for me and tell me what's covered",
+    "Help me manage my parents' healthcare from my phone",
+    "Help me find the right insurance plan",
+  ],
   bill_fighting: [
-    "I got a $4,200 ER bill, can you check if it's correct?",
-    "my insurance denied my claim, help me appeal",
-    "I was charged $800 for blood work, that seems way too high",
-    "help me negotiate this hospital bill down",
-    "I got a surprise out-of-network bill, what are my options?",
-    "can you check if my insurance should have covered this?",
-    "I'm being billed for a procedure that was supposed to be preventive",
+    "Check whether my $4,200 ER bill is correct",
+    "Help me appeal my denied insurance claim",
+    "Review this $800 blood work bill for mistakes",
+    "Help me negotiate this hospital bill down",
+    "Help me fight this surprise out-of-network bill",
+    "Check whether my insurance should have covered this",
+    "Help me dispute this bill for preventive care",
   ],
   calls: [
-    "call UnitedHealthcare about my denied claim",
-    "call my insurance and ask why my referral was rejected",
-    "call Aetna and dispute this $800 charge",
-    "call Blue Cross and check if my MRI is covered",
-    "call my provider and negotiate my outstanding balance",
-    "call Cigna and get my prior authorization status",
+    "Call UnitedHealthcare for me about my denied claim",
+    "Call my insurance for me and ask why my referral was rejected",
+    "Call Aetna for me and dispute this $800 charge",
+    "Call Blue Cross for me and check if my MRI is covered",
+    "Call my provider for me and negotiate my balance",
+    "Call Cigna for me and get my prior authorization status",
   ],
   meds: [
-    "find the cheapest Ozempic near me",
-    "compare pharmacy prices for Adderall",
-    "where can I get Eliquis the cheapest?",
-    "find the best price on my Humira prescription",
-    "compare GoodRx vs insurance price for Lipitor",
-    "which pharmacy near me has the cheapest generics?",
-    "find affordable insulin near me",
+    "Help me find the cheapest Ozempic near me",
+    "Help me find the cheapest Adderall near me",
+    "Help me find the cheapest place to get Eliquis",
+    "Help me find the best price on my Humira prescription",
+    "Tell me whether GoodRx or my insurance is cheaper for Lipitor",
+    "Help me find the pharmacy near me with the cheapest generics",
+    "Help me find affordable insulin near me",
   ],
   fertility: [
-    "help me navigate my fertility journey",
-    "compare IVF clinic prices near me",
-    "does my insurance cover fertility treatments?",
-    "how much does egg freezing cost with my plan?",
-    "help me keep track of my fertility appointments",
-    "find a fertility specialist that takes my insurance",
-    "what does my plan cover for IUI?",
+    "Help me navigate my fertility journey",
+    "Help me compare IVF clinic prices near me",
+    "Check whether my insurance covers fertility treatments",
+    "Tell me what egg freezing costs with my plan",
+    "Help me keep track of my fertility appointments",
+    "Find me a fertility specialist that takes my insurance",
+    "Tell me what my plan covers for IUI",
   ],
   caregiver: [
-    "help me manage my mom's medications and refills",
-    "find a geriatrician near my parents that takes Medicare",
-    "my dad got a bill for $3,200, can you help dispute it?",
-    "schedule my mom's annual checkup with her PCP",
-    "which of my dad's prescriptions have cheaper alternatives?",
-    "call my mom's insurance about her denied claim",
-    "help me keep track of my parents' upcoming appointments",
+    "Help me manage my mom's medications and refills",
+    "Find me a geriatrician near my parents that takes Medicare",
+    "Help me dispute my dad's $3,200 bill",
+    "Schedule my mom's annual checkup with her PCP for me",
+    "Find cheaper alternatives to my dad's prescriptions",
+    "Call my mom's insurance for me about her denied claim",
+    "Help me keep track of my parents' upcoming appointments",
   ],
   chronic: [
-    "find the cheapest insulin near me",
-    "help me find an endocrinologist that takes my insurance",
-    "compare prices for my Humira prescription",
-    "find a therapist near me that takes Blue Cross",
-    "what blood tests should I get for my thyroid this year?",
-    "help me find a rheumatologist for my autoimmune condition",
-    "is there a generic alternative to my antidepressant?",
+    "Help me find the cheapest insulin near me",
+    "Help me find an endocrinologist that takes my insurance",
+    "Help me find the cheapest Humira prescription",
+    "Help me find a therapist near me that takes Blue Cross",
+    "Tell me what blood tests I should get for my thyroid this year",
+    "Help me find a rheumatologist for my autoimmune condition",
+    "Find out whether there's a generic alternative to my antidepressant",
   ],
   insurance: [
-    "compare marketplace plans that cover my medications",
-    "which plans have the lowest out-of-pocket for a family of 4?",
-    "does this plan cover my current doctors?",
-    "help me understand the difference between HMO and PPO",
-    "I'm turning 65, walk me through Medicare options",
-    "which plan has the best mental health coverage?",
-    "compare deductibles across Silver plans in my area",
+    "Find me the best marketplace plan for my medications",
+    "Find me the plan with the lowest out-of-pocket for a family of 4",
+    "Check whether this plan covers my current doctors",
+    "Help me understand the difference between HMO and PPO",
+    "I'm turning 65, walk me through my Medicare options",
+    "Find me the plan with the best mental health coverage",
+    "Find me the Silver plan with the lowest deductible in my area",
   ],
   care_now: [
-    "find urgent care open right now near me",
-    "I need a same-day appointment with a doctor",
-    "is it cheaper to go to urgent care or the ER for this?",
-    "find a telehealth doctor I can see in the next hour",
-    "where can I get an X-ray today without a referral?",
-    "find a walk-in clinic near me that takes Aetna",
-    "I need a prescription refill today, who can help?",
+    "Help me find an urgent care near me that's open right now",
+    "Help me find a same-day appointment with a doctor",
+    "Tell me whether urgent care or the ER is cheaper for this",
+    "Help me find a telehealth doctor I can see in the next hour",
+    "Help me find a place to get an X-ray today without a referral",
+    "Help me find a walk-in clinic near me that takes Aetna",
+    "Help me get a prescription refill today",
   ],
   prices: [
-    "how much does an MRI cost near me?",
-    "compare colonoscopy prices at hospitals vs outpatient centers",
-    "what will a knee replacement cost with my insurance?",
-    "find the cheapest place to get blood work done near me",
-    "how much does physical therapy cost per session?",
-    "compare prices for a CT scan at facilities near me",
-    "what's the cash price vs insurance price for an ultrasound?",
+    "Tell me how much an MRI costs near me",
+    "Help me find the cheapest colonoscopy near me",
+    "Tell me what a knee replacement will cost with my insurance",
+    "Help me find the cheapest place to get blood work done near me",
+    "Tell me how much physical therapy costs per session",
+    "Help me find the cheapest CT scan near me",
+    "Tell me the cash price vs insurance price for an ultrasound",
   ],
 };
 
@@ -650,37 +578,14 @@ function LandingPage() {
     LP_PATH_MAP[pathname] ||
     (utmContentRef && HERO_COPY[utmContentRef] ? utmContentRef : null);
   const hero = (ref && HERO_COPY[ref]) || null;
-  const queries = ref ? ROTATING_QUERIES[ref] : undefined;
+  const queries = ref ? ROTATING_QUERIES[ref] : ROTATING_QUERIES.homepage;
   const [userHasEdited, setUserHasEdited] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
   const { displayed: rotatingText, fullQuery } = useRotatingQuery(queries, userHasEdited || inputFocused);
   const [manualInput, setManualInput] = useState("");
-  const [chipMadlib, setChipMadlib] = useState<typeof SUGGESTIONS[0]["madlib"] | null | undefined>(undefined);
-  // undefined = no chip clicked (use LP template); null = chip clicked with no madlib (plain input); object = chip madlib
-  const madlib = chipMadlib === undefined ? (ref ? MADLIB_TEMPLATES[ref] : undefined) : (chipMadlib ?? undefined);
   const input = userHasEdited ? manualInput : (queries ? rotatingText : (hero?.prefill || ""));
   // When sending mid-animation, use the full target query instead of partial text
-  const madlibRef = useRef<HTMLDivElement>(null);
-  const getMadlibText = () => {
-    if (!madlibRef.current || !madlib) return "";
-    const textSpans = madlibRef.current.querySelectorAll("[data-madlib-text]");
-    const inputs = madlibRef.current.querySelectorAll("input");
-    let textIdx = 0;
-    let inputIdx = 0;
-    return madlib.segments.map((seg) => {
-      if (seg.type === "text") {
-        const span = textSpans[textIdx];
-        textIdx++;
-        return span?.textContent ?? seg.value;
-      }
-      const val = inputs[inputIdx]?.value || seg.placeholder || "";
-      inputIdx++;
-      return val;
-    }).join("").trim();
-  };
-  const sendQuery = madlib
-    ? getMadlibText()
-    : (userHasEdited ? manualInput : (queries ? fullQuery : (hero?.prefill || "")));
+  const sendQuery = userHasEdited ? manualInput : (queries ? fullQuery : (hero?.prefill || ""));
   const setInput = useCallback((val: string) => { setUserHasEdited(true); setManualInput(val); }, []);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [chatPreviewVisible, setChatPreviewVisible] = useState(false);
@@ -768,13 +673,12 @@ function LandingPage() {
   }, []);
 
   const handleSend = useCallback((opts?: { preferPrefill?: boolean }) => {
-    // Read madlib inputs at send time (not render time) so user input is captured.
     // preferPrefill (used by the bottom CTA) skips the rotating placeholder text so
     // clicking "Get started" without typing sends the canonical persona prefill
     // instead of whatever random example query was animating in the hero input.
     const typed = opts?.preferPrefill && !userHasEdited
-      ? (madlib ? getMadlibText().trim() : "")
-      : (madlib ? getMadlibText().trim() : sendQuery.trim());
+      ? ""
+      : sendQuery.trim();
     // Fall back to the LP's prefill so users arriving via the mobile "Get
     // started" CTA (no input shown) or hitting send with an empty field open
     // chat with a coherent first message in Elena's voice. Ref-specific LPs
@@ -832,7 +736,7 @@ function LandingPage() {
       if (!lateSignupFlag) {
         void postPendingMessage({
           content: query,
-          source: typed ? (madlib ? "madlib" : "landing_hero") : "landing_default",
+          source: typed ? "landing_hero" : "landing_default",
           landing_variant: ref || "homepage",
           pending_doc_name: pendingDocFile?.name ?? null,
         });
@@ -889,20 +793,13 @@ function LandingPage() {
     setChatPreviewQuery(query || "");
     setChatPreviewVisible(true);
     setAuthModalOpen(true);
-  }, [sendQuery, ref, hero, madlib, demoMode, session, pendingDocFile, router, userHasEdited]);
+  }, [sendQuery, ref, hero, demoMode, session, pendingDocFile, router, userHasEdited]);
 
   const handleChipClick = useCallback((suggestion: typeof SUGGESTIONS[number]) => {
     analytics.track("Suggested Prompt Clicked", { prompt_label: suggestion.label });
-    if (suggestion.madlib) {
-      setChipMadlib(suggestion.madlib);
-      setUserHasEdited(false);
-      setManualInput("");
-    } else {
-      setChipMadlib(null);
-      setUserHasEdited(true);
-      setManualInput(suggestion.text);
-      inputRef.current?.focus();
-    }
+    setUserHasEdited(true);
+    setManualInput(suggestion.text);
+    inputRef.current?.focus();
   }, []);
 
   if (loading || (session && !demoMode)) {
@@ -1012,60 +909,26 @@ function LandingPage() {
               </div>
             )}
             <div className={`px-5 max-md:px-3.5 pt-[18px] max-md:pt-3.5 pb-3 max-md:pb-2 relative min-h-[3.5rem] max-md:min-h-[2.5rem] ${isDraggingOver ? "hidden" : ""}`}>
-              {madlib ? (
-                <div
-                  ref={madlibRef}
-                  className="text-base max-md:text-[0.9rem] text-[#1C1C1E] leading-[2.6] h-full overflow-visible text-left"
-                  style={{ wordBreak: "break-word" }}
-                >
-                  {madlib.segments.map((seg, i) =>
-                    seg.type === "text" ? (
-                      <span
-                        key={i}
-                        contentEditable
-                        suppressContentEditableWarning
-                        data-madlib-text
-                        onInput={() => setUserHasEdited(true)}
-                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSend(); } }}
-                        className="align-middle outline-none"
-                      >{seg.value}</span>
-                    ) : (
-                      <input
-                        key={i}
-                        type="text"
-                        placeholder={seg.placeholder}
-                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSend(); } }}
-                        onChange={() => setUserHasEdited(true)}
-                        className="inline-block border border-[#D1D1D6] rounded-lg px-3 py-1 mx-0.5 text-base max-md:text-[0.9rem] text-[#1C1C1E] font-medium text-center bg-[#F9F9F9] min-w-[4rem] w-auto placeholder:text-[#C7C7CC] placeholder:font-normal focus:border-[#0F1B3D]/40 focus:shadow-[0_0_0_3px_rgba(15,27,61,0.06)] focus:outline-none transition-all align-middle"
-                        style={{ width: seg.placeholder ? `${Math.max(seg.placeholder.length + 2, 6)}ch` : "6ch" }}
-                      />
-                    )
-                  )}
-                </div>
-              ) : (
-                <>
-                  <textarea
-                    ref={inputRef}
-                    value={input}
-                    onFocus={() => setInputFocused(true)}
-                    onBlur={() => setInputFocused(false)}
-                    onChange={(e) => {
-                      setUserHasEdited(true);
-                      setManualInput(e.target.value);
-                      e.target.style.height = "auto";
-                      e.target.style.height = `${e.target.scrollHeight}px`;
-                    }}
-                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                    placeholder="Ask Elena anything..."
-                    rows={1}
-                    className={`w-full border-none outline-none bg-transparent text-base max-md:text-sm text-[#1C1C1E] placeholder:text-[#AEAEB2] resize-none max-h-32 overflow-y-auto ${queries && !userHasEdited && !inputFocused ? "caret-transparent" : ""}`}
-                  />
-                  {queries && !userHasEdited && !inputFocused && (
-                    <span className="pointer-events-none absolute top-[18px] left-5 text-base max-md:text-sm text-transparent whitespace-pre" aria-hidden>
-                      {input}<span className="animate-[cursor-blink_1s_step-end_infinite] text-[#1C1C1E]">|</span>
-                    </span>
-                  )}
-                </>
+              <textarea
+                ref={inputRef}
+                value={input}
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setInputFocused(false)}
+                onChange={(e) => {
+                  setUserHasEdited(true);
+                  setManualInput(e.target.value);
+                  e.target.style.height = "auto";
+                  e.target.style.height = `${e.target.scrollHeight}px`;
+                }}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                placeholder="Ask Elena anything..."
+                rows={1}
+                className={`w-full border-none outline-none bg-transparent text-base max-md:text-sm text-[#1C1C1E] placeholder:text-[#AEAEB2] resize-none max-h-32 overflow-y-auto ${queries && !userHasEdited && !inputFocused ? "caret-transparent" : ""}`}
+              />
+              {queries && !userHasEdited && !inputFocused && (
+                <span className="pointer-events-none absolute top-[18px] left-5 text-base max-md:text-sm text-transparent whitespace-pre" aria-hidden>
+                  {input}<span className="animate-[cursor-blink_1s_step-end_infinite] text-[#1C1C1E]">|</span>
+                </span>
               )}
             </div>
             {/* Pending file chip */}
@@ -1134,7 +997,7 @@ function LandingPage() {
               <button
                 key={s.label}
                 onClick={() => handleChipClick(s)}
-                className={`rounded-[22px] px-[18px] py-2.5 max-md:px-3 max-md:py-1.5 text-sm max-md:text-[11px] font-normal whitespace-nowrap cursor-pointer transition-all active:scale-[0.97] ${chipMadlib === s.madlib && s.madlib ? "bg-white/25 border border-white/40 text-white" : "bg-white/10 border border-white/20 text-white/90 hover:bg-white/[0.18] hover:border-white/[0.35]"}`}
+                className="rounded-[22px] px-[18px] py-2.5 max-md:px-3 max-md:py-1.5 text-sm max-md:text-[11px] font-normal whitespace-nowrap cursor-pointer transition-all active:scale-[0.97] bg-white/10 border border-white/20 text-white/90 hover:bg-white/[0.18] hover:border-white/[0.35]"
               >
                 {s.label}
               </button>
