@@ -17,7 +17,10 @@ export function AppCtaModal() {
           a 16px gutter on each side; sm:max-w caps it on tablet+ so it
           doesn't balloon. Without an explicit mobile width the Dialog
           primitive renders at content width and can look awkward. */}
-      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-[340px] p-0 overflow-hidden rounded-2xl">
+      <DialogContent
+        overlayClassName="bg-[#0F1B3D]/22 backdrop-blur-[2px] duration-200"
+        className="w-[calc(100vw-2rem)] sm:max-w-[340px] p-0 overflow-hidden rounded-2xl border border-white/70 bg-white/95 shadow-[0_22px_60px_rgba(15,27,61,0.22)] will-change-[opacity,transform] duration-200 data-open:zoom-in-[0.985] data-open:fade-in-0 data-closed:zoom-out-[0.985]"
+      >
         <div className="p-7 sm:p-8 flex flex-col items-center">
           <img
             src="/assets/elena-app-icon.png"

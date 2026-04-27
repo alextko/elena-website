@@ -111,7 +111,7 @@ export function TrialFlow({ step, onStepChange, reason }: TrialFlowProps) {
   }, []);
 
   const handleExitAccept = useCallback(
-    (offer: ExitOffer) => {
+    async (offer: ExitOffer) => {
       analytics.track("Paywall Exit Offer Accepted", { offer });
       if (offer === "extended_7_day_trial") {
         // Extended trial uses the weekly plan so Stripe Checkout shows the
@@ -121,8 +121,17 @@ export function TrialFlow({ step, onStepChange, reason }: TrialFlowProps) {
         setExitSheetOpen(false);
         void startCheckout("standard_weekly", 7, "exit_offer");
       } else {
-        // "remind_tomorrow" — close everything. Email scheduling deferred
-        // (see PAYWALL_NEXT_STEPS.md).
+        setLoading(true);
+        try {
+          const res = await apiFetch("/web/remind-tomorrow", {
+            method: "POST",
+          });
+          if (!res.ok) throw new Error(`reminder failed: ${res.status}`);
+        } catch (err) {
+          console.warn("[paywall] remind tomorrow failed", err);
+        } finally {
+          setLoading(false);
+        }
         setExitSheetOpen(false);
         onStepChange(null);
       }

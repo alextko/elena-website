@@ -137,7 +137,13 @@ interface WebOnboardingTourProps {
 function TourTooltip({ step, primaryProps }: { step: any; primaryProps: any }) {
   const isChatComposerStep = step?.target === "[data-tour='chat-input']";
   return (
-    <div className={`font-[family-name:var(--font-inter)] w-[calc(100vw-2rem)] ${isChatComposerStep ? "max-w-[648px]" : "max-w-[360px]"}`}>
+    <div
+      className={`font-[family-name:var(--font-inter)] ${
+        isChatComposerStep
+          ? "w-[min(calc(100vw-2.5rem),42rem)]"
+          : "w-[min(calc(100vw-2rem),22.5rem)]"
+      }`}
+    >
       <div className="rounded-2xl bg-white p-6 shadow-[0_8px_30px_rgba(15,27,61,0.15)]">
         <div className="text-center">
           <h3 className="text-[18px] font-extrabold text-[#0F1B3D] mb-1.5 text-balance">{step.title}</h3>

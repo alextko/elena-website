@@ -27,6 +27,8 @@ const PLAN_PRICE_USD: Record<string, number> = {
   premium_annual: 299.99,
 };
 
+const DESKTOP_SIDEBAR_PREF_KEY = "elena_web_sidebar_open";
+
 function getPlanPriceUSD(plan: string): number {
   return PLAN_PRICE_USD[plan] ?? 0;
 }
@@ -73,9 +75,12 @@ function ChatPageInner() {
     if (flag) localStorage.removeItem("elena_post_intake_submit");
     return flag;
   });
-  const [sidebarOpen, setSidebarOpen] = useState(() =>
-    typeof window !== "undefined" ? window.innerWidth >= 768 : true
-  );
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window === "undefined") return true;
+    if (window.innerWidth < 768) return false;
+    const stored = localStorage.getItem(DESKTOP_SIDEBAR_PREF_KEY);
+    return stored === null ? true : stored !== "0";
+  });
   const [activeSessionId, setActiveSessionId] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
       // Don't restore if there's a pending query (e.g. quiz → chat redirect)
@@ -371,6 +376,22 @@ function ChatPageInner() {
   // the legacy upgrade-modal route for the post-onboarding entry point.
   const [tourTrialStep, setTourTrialStep] = useState<1 | 2 | 3 | null>(null);
   const [tourPopoverTab, setTourPopoverTab] = useState<"health" | "visits" | "insurance">("health");
+
+  useEffect(() => {
+    if (typeof window === "undefined" || window.innerWidth < 768) return;
+    localStorage.setItem(DESKTOP_SIDEBAR_PREF_KEY, sidebarOpen ? "1" : "0");
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const syncSidebarForViewport = () => {
+      if (window.innerWidth < 768) return;
+      const stored = localStorage.getItem(DESKTOP_SIDEBAR_PREF_KEY);
+      setSidebarOpen(stored === null ? true : stored !== "0");
+    };
+    window.addEventListener("resize", syncSidebarForViewport);
+    return () => window.removeEventListener("resize", syncSidebarForViewport);
+  }, []);
 
   // Tour handles onboarding end-to-end now — profile form (name/DOB/zip) is a
   // phase inside the tour, so the tour mounts *when* needsOnboarding is true,

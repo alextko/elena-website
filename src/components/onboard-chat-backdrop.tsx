@@ -63,7 +63,7 @@ export function OnboardChatBackdrop() {
               <span className="h-2 w-2 animate-pulse rounded-full bg-[#0F1B3D]/40 [animation-delay:300ms]" />
             </div>
             <div className="mt-auto px-2 pb-4">
-              <div className="mx-auto flex max-w-3xl items-center gap-3 rounded-full border border-[#0F1B3D]/10 bg-white px-5 py-3 shadow-[0_2px_12px_rgba(15,27,61,0.06)]">
+              <div className="mx-auto flex max-w-2xl items-center gap-3 rounded-full border border-[#0F1B3D]/10 bg-white px-5 py-3 shadow-[0_2px_12px_rgba(15,27,61,0.06)]">
                 <span className="text-xl leading-none text-[#0F1B3D]/25">+</span>
                 <span className="flex-1 text-[15px] text-[#0F1B3D]/28">Ask Elena anything...</span>
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0F1B3D]/35 text-white">
