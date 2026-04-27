@@ -115,7 +115,7 @@ function NotificationBell() {
     setNotifications([]);
     setNotifLoaded(false);
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
+    const interval = setInterval(fetchNotifications, 120000);
     return () => clearInterval(interval);
   }, [fetchNotifications, profileId]);
 
