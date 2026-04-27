@@ -406,7 +406,7 @@ export default function FertilityWebLandingPage() {
               <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">all in one place.</em>
             </h1>
             <p className="text-[0.95rem] max-md:text-[0.85rem] font-light text-white/85 mt-5 max-md:mt-3 tracking-wide max-w-[640px] mx-auto leading-relaxed">
-              Elena tracks medications and appointments, compares clinic prices, calls your insurance about coverage, and helps you manage the whole process without the spreadsheets and surprise bills.
+              Elena tracks the meds, appointments, and coverage details so the process feels manageable.
             </p>
 
             <div className="mt-8 max-md:mt-6 flex flex-wrap items-center justify-center gap-3">

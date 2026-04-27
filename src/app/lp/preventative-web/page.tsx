@@ -400,7 +400,7 @@ export default function PreventativeWebLandingPage() {
               <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">the screenings you need?</em>
             </h1>
             <p className="text-[0.95rem] max-md:text-[0.85rem] font-light text-white/85 mt-5 max-md:mt-3 tracking-wide max-w-[620px] mx-auto leading-relaxed">
-              Elena builds a preventative health plan based on your age, family history, and risks. She books the appointments, confirms your insurance covers them, and explains your results in plain English.
+              Elena builds your plan, books the screenings, and makes the results easy to understand.
             </p>
 
             <div className="mt-8 max-md:mt-6 flex flex-wrap items-center justify-center gap-3">

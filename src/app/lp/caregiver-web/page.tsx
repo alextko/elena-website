@@ -403,7 +403,7 @@ export default function CaregiverWebLandingPage() {
               <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">Elena handles it.</em>
             </h1>
             <p className="text-[0.95rem] max-md:text-[0.85rem] font-light text-white/85 mt-5 max-md:mt-3 tracking-wide max-w-[620px] mx-auto leading-relaxed">
-              Calling doctors, fighting insurance, tracking medications. Elena does the hard parts of caring for your parent, spouse, or child so you can focus on being there for them.
+              Elena handles the calls, insurance, and medication tracking so you can focus on your loved one.
             </p>
 
             <div className="mt-8 max-md:mt-6 flex flex-wrap items-center justify-center gap-3">

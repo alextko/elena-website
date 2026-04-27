@@ -406,7 +406,7 @@ export default function PriceTransparencyWebLandingPage() {
               <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">See prices before you go.</em>
             </h1>
             <p className="text-[0.95rem] max-md:text-[0.85rem] font-light text-white/85 mt-5 max-md:mt-3 tracking-wide max-w-[640px] mx-auto leading-relaxed">
-              Elena uses real insurance-negotiated rates and provider follow-up to show you what procedures actually cost at facilities near you. No surprises, no guessing.
+              Elena shows you what care actually costs before you book, so there are no surprises.
             </p>
 
             <div className="mt-8 max-md:mt-6 flex flex-wrap items-center justify-center gap-3">
