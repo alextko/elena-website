@@ -410,7 +410,14 @@ function ChatPageInner() {
         }
       } catch {}
     }
-    const shouldShow = forceTour || needsOnboarding || onboardingJustCompleted || hasSavedTour;
+    const shouldResumeSavedTour = hasSavedTour && (needsOnboarding || onboardingJustCompleted);
+    const shouldShow = forceTour || needsOnboarding || onboardingJustCompleted || shouldResumeSavedTour;
+    if (!forceTour && !needsOnboarding && !onboardingJustCompleted && hasSavedTour && typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("elena_tour_state");
+        sessionStorage.removeItem("elena_tour_state");
+      } catch {}
+    }
     if (!shouldShow) return;
     // Reset the "tour done" flag so a fresh signup always sees the tour.
     if (onboardingJustCompleted || needsOnboarding) localStorage.removeItem("elena_web_tour_done");

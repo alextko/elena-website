@@ -65,6 +65,25 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const ONBOARDING_REQUIRED_PROFILE_FIELDS = ["first_name", "last_name", "date_of_birth", "zip_code"] as const;
+
+function hasCompletedRequiredOnboardingFields(
+  profile:
+    | {
+        first_name?: string | null;
+        last_name?: string | null;
+        date_of_birth?: string | null;
+        zip_code?: string | null;
+      }
+    | null
+    | undefined,
+) {
+  if (!profile) return false;
+  return ONBOARDING_REQUIRED_PROFILE_FIELDS.every((field) => {
+    const value = profile[field];
+    return typeof value === "string" ? value.trim().length > 0 : Boolean(value);
+  });
+}
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
@@ -134,7 +153,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const activeProfile = savedProfile
             || (data.profiles || []).find((p) => p.is_primary)
             || null;
+          const primaryProfile = (data.profiles || []).find((p) => p.is_primary) || activeProfile;
           setProfileId(activeProfile?.id || data.profile_id);
+          setNeedsOnboarding(!(data.onboarding_completed || hasCompletedRequiredOnboardingFields(primaryProfile)));
           if (activeProfile) {
             setProfileData({
               firstName: activeProfile.first_name,
@@ -241,10 +262,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const activeProfile = savedProfile
         || (data.profiles || []).find((p) => p.is_primary)
         || null;
+      const primary = (data.profiles || []).find((p) => p.is_primary) || activeProfile;
 
       setProfileId(activeProfile?.id || data.profile_id);
 
-      const primary = (data.profiles || []).find((p) => p.is_primary);
       if (primary) {
         analytics.identify(currentSessionForProvider?.user?.id || "", {
           $email: data.email,
@@ -279,7 +300,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // want the onboarding modal to show anyway so the user can fill the gap.
       // The modal will pre-fill from profileData so the user only types what's
       // actually missing.
-      if (!data.onboarding_completed) {
+      if (!(data.onboarding_completed || hasCompletedRequiredOnboardingFields(primary))) {
         setNeedsOnboarding(true);
       } else {
         setNeedsOnboarding(false);
