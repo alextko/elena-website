@@ -15,6 +15,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { WebOnboardingTour } from "@/components/web-onboarding-tour";
+import { OnboardChatBackdrop } from "@/components/onboard-chat-backdrop";
 import type { PainAffirmation } from "@/components/onboarding-flushing-screen";
 import { flushTourBuffer, type FlushStage } from "@/lib/tourBuffer";
 import * as analytics from "@/lib/analytics";
@@ -233,7 +234,6 @@ export default function OnboardPage() {
       // transitions to its "ready" state once stage=done + percent=100;
       // the user presses Continue, which fires handleFlushContinue below.
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
   if (loading || (session && !pendingSignupRef.current && !flushingRef.current)) {
@@ -245,13 +245,15 @@ export default function OnboardPage() {
   }
 
   return (
-    <div className="h-dvh bg-[#F7F6F2]">
+    <div className="relative h-dvh overflow-hidden bg-white">
+      <OnboardChatBackdrop />
       {/* Flushing state flows INTO the tour modal as a phase, not as a
           separate overlay — same card, same backdrop, content morphs
           from auth → progress bar → pain-targeted affirmation →
           Continue. Driven by the flushingState prop below; the tour
           swaps its own AnimatePresence content when it's non-null. */}
       <WebOnboardingTour
+        surface="onboard"
         flushingState={
           flushingVisible
             ? {
@@ -261,7 +263,7 @@ export default function OnboardPage() {
                 isNavigating: continuePending || isNavigatingToChat,
                 onContinue: () => {
                   if (continuePending) return;
-                  analytics.track("Onboard Flush Continue Clicked" as any);
+                  analytics.track("Onboard Flush Continue Clicked");
                   setContinuePending(true);
                   pendingSignupRef.current = false;
                   try { sessionStorage.removeItem(PENDING_SIGNUP_KEY); } catch {}

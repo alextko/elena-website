@@ -561,6 +561,28 @@ export const SITUATION_TEMPLATES: Record<string, SituationTemplate> = {
     sourceUrl: "https://www.acog.org/clinical",
   },
 
+  fertility_ivf: {
+    key: "fertility_ivf",
+    label: "Fertility / IVF",
+    conditionName: "Fertility / IVF",
+    medsPrompt: "Any fertility meds part of the plan right now?",
+    medOptions: ["Gonal-F", "Follistim", "Menopur", "Cetrotide", "Ganirelix", "Lupron", "Progesterone", "Prenatal vitamin"],
+    planItems: [
+      { id: "repro_visit", label: "Reproductive endocrinology visit on schedule", todoText: "Book your next fertility visit" },
+      { id: "baseline", label: "Baseline ultrasound and labs on cycle schedule", todoText: "Schedule baseline ultrasound and labs" },
+      { id: "monitoring", label: "Monitoring appointments booked during your cycle", todoText: "Schedule fertility monitoring appointments" },
+      { id: "procedure", label: "Egg retrieval, transfer, or IUI timing confirmed", todoText: "Confirm fertility procedure timing" },
+      { id: "coverage", label: "Coverage, prior auth, and med approval checked", todoText: "Check fertility coverage and prior authorization" },
+    ],
+    heroValues: [
+      "I can coordinate your fertility monitoring appointments.",
+      "I can call your insurance about IVF coverage and prior auth.",
+      "I can price-shop fertility meds, labs, and procedures.",
+    ],
+    source: "ASRM Committee Opinions + SART patient guidance",
+    sourceUrl: "https://www.asrm.org/practice-guidance/",
+  },
+
   menopause: {
     key: "menopause",
     label: "Menopause",
@@ -602,6 +624,28 @@ export const SITUATION_TEMPLATES: Record<string, SituationTemplate> = {
     ],
     source: "American Headache Society Consensus Statement on Migraine (2021)",
     sourceUrl: "https://americanheadachesociety.org/resources/guidelines/",
+  },
+
+  stroke_recovery: {
+    key: "stroke_recovery",
+    label: "Stroke / stroke recovery",
+    conditionName: "Stroke recovery",
+    medsPrompt: "Any of these part of recovery right now?",
+    medOptions: ["Aspirin", "Clopidogrel (Plavix)", "Atorvastatin", "Rosuvastatin", "Lisinopril", "Amlodipine", "Apixaban (Eliquis)", "Warfarin"],
+    planItems: [
+      { id: "neuro", label: "Neurology follow-up on schedule", todoText: "Schedule a neurology follow-up" },
+      { id: "rehab", label: "PT, OT, or speech therapy booked", todoText: "Book PT, OT, or speech therapy" },
+      { id: "pcp", label: "PCP or rehab medicine check-in booked", todoText: "Schedule a PCP or rehab follow-up" },
+      { id: "imaging", label: "Follow-up imaging or cardiac workup if ordered", todoText: "Follow up on stroke imaging or heart testing" },
+      { id: "meds", label: "Secondary-prevention meds reviewed and refilled", todoText: "Stay ahead of stroke prevention med refills" },
+    ],
+    heroValues: [
+      "I can coordinate neurology, rehab, and PCP follow-ups.",
+      "I can call about stroke imaging, testing, and next steps.",
+      "I can keep your stroke prevention meds and refills on track.",
+    ],
+    source: "AHA/ASA Guideline for Adult Stroke Rehabilitation and Recovery + Secondary Stroke Prevention Guideline",
+    sourceUrl: "https://www.stroke.org/en/professionals/stroke-resource-library/prevention",
   },
 
   epilepsy: {
@@ -856,7 +900,7 @@ export const SITUATION_CHIPS: SituationChip[] = [
   { key: "hypertension", label: "High blood pressure", hasTemplate: true, conditionName: "Hypertension" },
   { key: "anxiety_depression", label: "Anxiety or depression", hasTemplate: true, conditionName: "Anxiety or depression" },
   { key: "t2_diabetes", label: "Type 2 diabetes", hasTemplate: true, conditionName: "Type 2 diabetes" },
-  { key: "injury_recovery", label: "An injury I'm healing from", hasTemplate: true, conditionName: null },
+  { key: "fertility_ivf", label: "Fertility / IVF", hasTemplate: true, conditionName: "Fertility / IVF" },
   { key: "other", label: "Something else", hasTemplate: false, conditionName: null },
 ];
 
@@ -884,8 +928,10 @@ export const CONDITION_ALIASES: Record<string, string[]> = {
   post_surgery: ["post surgery", "surgery", "post-op", "post op", "recovery from surgery", "after surgery", "surgical recovery"],
   osteoporosis: ["osteoporosis", "bone density", "osteopenia", "fragile bones"],
   pregnancy: ["pregnant", "pregnancy", "prenatal", "postpartum", "post-partum", "expecting", "expecting a baby", "ttc"],
+  fertility_ivf: ["fertility", "ivf", "iui", "egg retrieval", "embryo transfer", "embryo", "stims", "stim cycle", "fertility treatment", "reproductive endocrinology", "reproductive endocrinologist", "infertility", "trying to conceive", "ttc", "frozen embryo transfer", "fet"],
   menopause: ["menopause", "perimenopause", "peri-menopause", "hot flashes", "hrt"],
   migraine: ["migraine", "migraines", "headache", "headaches", "chronic headache"],
+  stroke_recovery: ["stroke", "tia", "mini stroke", "brain bleed", "cva", "post stroke", "after stroke", "stroke recovery", "rehab after stroke"],
   epilepsy: ["epilepsy", "seizures", "seizure disorder", "seizure"],
   dementia: ["dementia", "alzheimer's", "alzheimers", "alzheimer", "alz", "cognitive decline", "memory loss"],
   sleep_apnea: ["sleep apnea", "osa", "cpap", "snoring"],

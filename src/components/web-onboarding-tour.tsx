@@ -8,6 +8,20 @@ import { useJoyride, EVENTS, STATUS } from "react-joyride";
 import * as analytics from "@/lib/analytics";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/apiFetch";
+import {
+  buildDisplayActionFromTodoText,
+  buildPricingActionFromNeed,
+  buildPricingTodoFromNeed,
+  buildProposedAction,
+  type HeroVariant,
+  type ProposedAction,
+  type RouterChoice,
+  buildProfileSetupTopUpTodos,
+  buildSeedMessageFromActions,
+  buildTodoFromAction,
+  synthesizeFallbackSeed,
+  variantForLine,
+} from "@/lib/onboarding-action-semantics";
 import { setBufferedProfile, addBufferedDependent, addBufferedCondition, addBufferedMedication, addBufferedTodo, type FlushStage } from "@/lib/tourBuffer";
 import { OnboardingFlushingContent, type PainAffirmation } from "./onboarding-flushing-screen";
 import { StreamingText } from "@/components/streaming-text";
@@ -88,6 +102,7 @@ function capitalizeName(s: string): string {
 }
 
 interface WebOnboardingTourProps {
+  surface?: "onboard" | "chat";
   onComplete: () => void;
   onShowPaywall: () => void;
   onProfilePopover: (open: boolean, tab?: "health" | "visits" | "insurance", showSwitcher?: boolean) => void;
@@ -120,12 +135,13 @@ interface WebOnboardingTourProps {
 }
 
 function TourTooltip({ step, primaryProps }: { step: any; primaryProps: any }) {
+  const isChatComposerStep = step?.target === "[data-tour='chat-input']";
   return (
-    <div className="font-[family-name:var(--font-inter)] w-[calc(100vw-2rem)] max-w-[360px]">
+    <div className={`font-[family-name:var(--font-inter)] w-[calc(100vw-2rem)] ${isChatComposerStep ? "max-w-[648px]" : "max-w-[360px]"}`}>
       <div className="rounded-2xl bg-white p-6 shadow-[0_8px_30px_rgba(15,27,61,0.15)]">
         <div className="text-center">
-          <h3 className="text-[18px] font-extrabold text-[#0F1B3D] mb-1.5">{step.title}</h3>
-          <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed">{step.content}</p>
+          <h3 className="text-[18px] font-extrabold text-[#0F1B3D] mb-1.5 text-balance">{step.title}</h3>
+          <p className="text-[14px] text-[#5a6a82] font-light leading-relaxed text-balance">{step.content}</p>
         </div>
         <button onClick={primaryProps.onClick} className="w-full mt-4 py-3 rounded-full text-white font-semibold font-sans text-[14px] hover:opacity-90 shadow-[0_4px_14px_rgba(15,27,61,0.25)]"
           style={{ background: "linear-gradient(135deg, #0F1B3D 0%, #1A3A6E 30%, #2E6BB5 60%)" }}>
@@ -225,6 +241,26 @@ const PROFILE_STEPS: {
 
 type Phase = "intro" | "care" | "care-ack" | "setup-for" | "router" | "pain" | "value" | "profile-form" | "situation" | "meds" | "care-plan" | "validation" | "elena-plan" | "social-proof" | "auth" | "flushing" | "joyride" | "profile" | "chat" | "done";
 
+const PENDING_SIGNUP_KEY = "elena_onboard_signup_pending";
+
+function normalizeRestoredPhase(
+  phase: Phase | undefined,
+  hasSession: boolean,
+  surface: "onboard" | "chat",
+): Phase | undefined {
+  if (!phase || phase === "done") return undefined;
+  if (surface === "onboard" && (phase === "joyride" || phase === "profile" || phase === "chat")) {
+    return "auth";
+  }
+  if (phase !== "flushing") return phase;
+  if (typeof window === "undefined") return "auth";
+  // "flushing" needs live progress props from /onboard. If a stale snapshot
+  // restores it on a mount that doesn't supply those props, the shell opens
+  // with no card content. Resume from the nearest stable phase instead.
+  if (sessionStorage.getItem(PENDING_SIGNUP_KEY) === "1") return "auth";
+  return hasSession ? "joyride" : "auth";
+}
+
 // Map CARE_OPTIONS ids to the backend relationship values used by
 // /profiles. The care phase's "partner" maps to the profile-level
 // "spouse" term since that's what add-family uses.
@@ -252,7 +288,6 @@ function careIdToNounLabel(careId: string): string {
 // on the dependent's profile once the user picks them there, so
 // they're really just doing condition/medications/money FOR that
 // person. No separate caregiver branch downstream.
-type RouterChoice = "condition" | "medications" | "money" | "staying_healthy";
 
 // Hero values rendered on elena-plan for branches that don't have a
 // condition template driving content. First-person "I can" phrasing
@@ -270,7 +305,7 @@ const MEDS_BRANCH_HERO_VALUES = [
 // in front of these, so in practice users usually see 1-2 derived + 1-2
 // of the top base lines.
 const MONEY_BRANCH_HERO_VALUES = [
-  "I can find the best price for your appointments, procedures, and medications.",
+  "I can price-shop your scan, test, or procedure before you book it.",
   "I can call your insurance to check coverage before you go.",
   "I can help you pay bills on time and dispute wrong charges.",
   "I can compare plans and help you get the most out of your insurance.",
@@ -281,45 +316,6 @@ const STAYING_HEALTHY_BRANCH_HERO_VALUES = [
   "I can schedule screenings on the right cadence.",
   "I can price-shop labs and imaging in-network.",
 ];
-
-// Classify a hero line into a visual bucket. Kept in sync with
-// visualForHeroLine below so we can dedupe lines that would render the
-// same mockup (e.g. a derived refill line + a base refill line both
-// hitting CallMini's refill variant). Using string tags makes the
-// dedup work across visual families (CallMini's 3 contexts each count
-// as distinct variants).
-type HeroVariant =
-  | "pain"
-  | "family"
-  | "bill"
-  | "pricing"
-  | "call-refill"
-  | "call-hold"
-  | "call-schedule"
-  | "booking";
-
-function variantForLine(line: string): HeroVariant {
-  const l = line.toLowerCase();
-  if (l.includes("you said")) return "pain";
-  if (l.includes("you're caring for") || l.includes("across the family") || l.includes("care straight")) return "family";
-  if (l.includes("pay ") || l.includes("bill") || l.includes("dispute")) return "bill";
-  if (l.includes("price-shop") || l.includes("best price") || l.includes("compare plans")) return "pricing";
-  // Refill / renewal first — "track when your X runs out and call your
-  // provider to renew" contains both "call" AND booking-adjacent verbs,
-  // and we want it distinct from appointment booking.
-  if (l.includes("refill") || l.includes("renew") || l.includes("runs out") || l.includes("pharmacy")) return "call-refill";
-  // Booking checked BEFORE general "call" so "I can call your PCP to
-  // book your annual physical" and "I can book your next visit" both
-  // collapse to "booking" — they're the same action from the user's
-  // POV (Elena gets you an appointment), and dedup should strip one.
-  if (l.includes("book ") || l.includes(" book") || l.includes("physical") || l.includes("annual") || l.includes("appointment") || l.includes("schedule") || l.includes("coordinate")) return "booking";
-  if (l.includes("call")) {
-    if (l.includes("insurance") || l.includes("coverage")) return "call-hold";
-    return "call-schedule";
-  }
-  if (l.includes("research") || l.includes("find")) return "pricing";
-  return "call-schedule";
-}
 
 // Pick a mini-mockup per hero line so each card shows Elena doing the
 // thing, not just an icon. When multiple lines are "I can call X" we
@@ -384,75 +380,6 @@ function extractCallTarget(line: string): { name: string; label?: string } {
 }
 
 type CallContext = "hold" | "schedule" | "refill";
-
-// Strip Elena-voice prefaces and rewrite to user-voice. Used by both the
-// seed-message builder and the todo-creation path so what Elena receives
-// and what shows up on the game plan stay in sync. Handles both chip-
-// picked hero lines ("I can help bring that down") and custom-typed
-// actions (already user-voice, passed through unchanged except casing).
-function cleanActionToUserVoice(raw: string): string {
-  let s = raw.trim();
-  s = s.replace(/^You said [^.]+\.\s*/i, "");
-  s = s.replace(/^You're caring for [^.]+\.\s*/i, "");
-  s = s.replace(/^I can /i, "");
-  s = s.replace(/\byour\b/gi, "my");
-  if (s.length > 0) s = s.charAt(0).toUpperCase() + s.slice(1);
-  return s;
-}
-
-// Convert the user's picked hero lines (written in Elena's first-person
-// "I can..." voice) into a user-addressed opening message for the chat.
-// Elena's agent receives this as the user's first turn and starts on it.
-// Multi-action picks join as a bulleted request; solo picks become a
-// single imperative sentence. Derived lines that don't start with "I
-// can" (e.g. "You said $X. I can help…") get their "You said" prefix
-// trimmed off so the request reads naturally.
-//
-// Dependent sessions don't need a "caring for X" preamble because the
-// active profile is ALREADY the dependent by the time this seed is
-// sent — Elena's patient_info.first_name is the dependent's. The
-// caregiver framing happens at the profile level, not the message.
-function buildSeedMessageFromActions(actions: string[]): string {
-  const cleaned = actions.map(cleanActionToUserVoice).filter((s) => s.length > 0);
-  if (cleaned.length === 0) return "";
-  if (cleaned.length === 1) return cleaned[0];
-  return `Please help me with these:\n${cleaned.map((s) => `• ${s}`).join("\n")}`;
-}
-
-// Fallback seed synthesizer for users who reach the end of the tour
-// without picking any action on elena-plan. Without this, the chat
-// page falls back to whatever generic seed was stashed from the
-// landing page (e.g. "What can you help me with?"), which lands Elena
-// in a directionless intake instead of starting on the user's goal.
-// Uses routerChoice + condition name + caregiver context to write a
-// goal-oriented opener. Always returns a non-empty string.
-function synthesizeFallbackSeed(args: {
-  routerChoice: RouterChoice | null;
-  conditionName: string;
-  managedFirstName: string;
-  isDependentSetup: boolean;
-}): string {
-  const { routerChoice, conditionName, managedFirstName, isDependentSetup } = args;
-  const who = isDependentSetup && managedFirstName ? managedFirstName : "me";
-  const possessive = isDependentSetup && managedFirstName ? `${managedFirstName}'s` : "my";
-
-  if (routerChoice === "condition") {
-    if (conditionName) {
-      return `Help ${who} build a plan to manage ${possessive} ${conditionName.toLowerCase()}. Start with what ${isDependentSetup ? "we" : "I"} should tackle first.`;
-    }
-    return `Help ${who} build a plan to manage ${possessive} condition. Ask whatever you need.`;
-  }
-  if (routerChoice === "medications") {
-    return `Get ${possessive} prescription refills on autopilot — tell me what you need to make that happen.`;
-  }
-  if (routerChoice === "money") {
-    return `Find the biggest savings in ${possessive} healthcare spend this year. Start with where to look first.`;
-  }
-  if (routerChoice === "staying_healthy") {
-    return `Help ${who} stay on top of ${possessive} preventive care — what's due, what's overdue, and what to book first.`;
-  }
-  return `Help ${who} figure out the single most valuable thing to tackle first. Ask whatever you need.`;
-}
 
 // elena-plan row: selectable action card. Vertical layout with the mini
 // mockup up top and the "Want me to..." proposal text below. Tapping
@@ -721,7 +648,16 @@ function FamilyMini({ count = 3 }: { count?: number }) {
   );
 }
 
-export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover, onSidebar, onSeedQuery, onNeedsAuth, flushingState }: WebOnboardingTourProps) {
+export function WebOnboardingTour({
+  surface = "chat",
+  onComplete,
+  onShowPaywall,
+  onProfilePopover,
+  onSidebar,
+  onSeedQuery,
+  onNeedsAuth,
+  flushingState,
+}: WebOnboardingTourProps) {
   // Auth hooks for the profile-form phase (migrated from the old OnboardingModal)
   const {
     session,
@@ -785,6 +721,9 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       const raw = (localStorage.getItem("elena_tour_state") || sessionStorage.getItem("elena_tour_state"));
       if (!raw) return {};
       const s = JSON.parse(raw);
+      const normalizedPhase = normalizeRestoredPhase(s.phase, !!session, surface);
+      if (normalizedPhase) s.phase = normalizedPhase;
+      else delete s.phase;
       // Previously we fell back joyride→profile here on the theory that
       // joyride controls don't survive a refresh. Under Plan A the tour
       // intentionally resumes at joyride after the /onboard→/chat
@@ -797,7 +736,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     } catch {
       return {};
     }
-  }, []);
+  }, [session, surface]);
 
   const [phase, setPhase] = useState<Phase>(tourSnapshot.phase ?? "intro");
   const [profileStep, setProfileStep] = useState(tourSnapshot.profileStep ?? 0);
@@ -893,6 +832,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   const [selectedMeds, setSelectedMeds] = useState<string[]>(tourSnapshot.selectedMeds ?? []);
   const [customMeds, setCustomMeds] = useState<string[]>(tourSnapshot.customMeds ?? []);
   const [newMedDraft, setNewMedDraft] = useState("");
+  const inferredSituationTemplate = useMemo(
+    () => getTemplate(selectedSituation) ?? findTemplateByAlias(customSituation),
+    [selectedSituation, customSituation],
+  );
   const [checkedPlanItems, setCheckedPlanItems] = useState<string[]>(tourSnapshot.checkedPlanItems ?? []);
   const [savingSituation, setSavingSituation] = useState(false);
   // elena-plan is now an action picker, not a promise read-out. Users
@@ -1079,13 +1022,15 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   // tourSnapshot itself is read only once via useMemo; writes flow back
   // as state updates.
   useEffect(() => {
-    if (phase === "done" || phase === "intro") return;
+    if (phase === "done" || phase === "intro" || phase === "flushing") return;
     try {
       // localStorage (not sessionStorage) so the tour survives tab
       // closures — users expect "pick up where I left off" to work
       // across browser restarts, not just same-tab refreshes. Cleared
       // in finishTour/skipTour so no stale state persists past a
-      // completed tour.
+      // completed tour. Skip "flushing": that phase only renders with
+      // live props from /onboard, so persisting it creates a blank-shell
+      // restore if the user reloads or lands on /chat first.
       localStorage.setItem(
         "elena_tour_state",
         JSON.stringify({
@@ -1593,7 +1538,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
         // fallback otherwise. Previously an empty actions array produced
         // no seed and /chat auto-sent the landing-page default ("What
         // can you help me with?"), which wasted the first turn.
-        const actionSeed = buildSeedMessageFromActions(actions);
+        const actionSeed = buildSeedMessageFromActions(actions, {
+          routerChoice: parsed.branch ?? null,
+          conditionName: parsed.conditionName || "",
+        });
         const seedMessage = actionSeed || synthesizeFallbackSeed({
           routerChoice: parsed.branch ?? null,
           conditionName: parsed.conditionName || "",
@@ -1919,7 +1867,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
 
   const advanceFromSituation = useCallback(() => {
     const chip = getChip(selectedSituation);
-    const tpl = getTemplate(selectedSituation);
+    const tpl = inferredSituationTemplate;
     analytics.track("Web Tour Situation Selected" as any, {
       situation: selectedSituation,
       source: chip ? (chip.conditionName ? "chips" : "chips_freeform") : "alias",
@@ -1942,7 +1890,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     } else {
       setPhase("validation");
     }
-  }, [selectedSituation, customSituation, routerChoice]);
+  }, [customSituation, inferredSituationTemplate, routerChoice, selectedSituation]);
 
   // User tapped the alias-match suggestion card under the "Something else"
   // input. Swap selectedSituation to the matched template key so the rest
@@ -1979,7 +1927,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
   }, [selectedSituation, selectedMeds.length, customMeds.length, routerChoice]);
 
   const advanceFromCarePlan = useCallback(() => {
-    const tpl = getTemplate(selectedSituation);
+    const tpl = inferredSituationTemplate;
     const total = tpl?.planItems.length ?? 0;
     analytics.track("Web Tour Care Plan Reviewed" as any, {
       situation: selectedSituation,
@@ -1987,7 +1935,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       total_items: total,
     });
     setPhase("validation");
-  }, [selectedSituation, checkedPlanItems.length]);
+  }, [selectedSituation, checkedPlanItems.length, inferredSituationTemplate]);
 
   // Validation is now a pure display beat. Writes were moved to
   // advanceFromElenaPlan so every branch saves in one place and the
@@ -2022,7 +1970,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     // seed instead of letting the landing page's generic "what can
     // you help me with" seed reach /chat.
     const situationChip = getChip(selectedSituation);
-    const situationTpl = getTemplate(selectedSituation);
+    const situationTpl = inferredSituationTemplate;
     const resolvedConditionName =
       situationChip?.conditionName || customSituation.trim() || situationTpl?.conditionName || "";
     try {
@@ -2056,7 +2004,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       // fires so /onboard can prime its flush-on-session-appear ref,
       // but the visual continuity is owned by the tour itself.
       const chip = getChip(selectedSituation);
-      const tpl = getTemplate(selectedSituation);
+      const tpl = inferredSituationTemplate;
       const conditionName = chip?.conditionName || customSituation.trim();
       const collectedCondition = routerChoice === "condition" || routerChoice === "medications" || routerChoice === "money";
       if (collectedCondition && conditionName) {
@@ -2079,8 +2027,9 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
         seenTodoTitles.add(key);
         addBufferedTodo({ ...spec, category: "care_plan" });
       };
-      // Care-plan template items (condition branch only).
-      if (tpl && routerChoice === "condition") {
+      // Care-plan template items should survive across every branch that
+      // collected condition context, not just the full condition flow.
+      if (tpl && collectedCondition) {
         const remaining = tpl.planItems.filter((it) => !checkedPlanItems.includes(it.id));
         for (const it of remaining) {
           pushTodo({
@@ -2090,6 +2039,14 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
           });
         }
       }
+      const pricingNeedTodo = buildPricingTodoFromNeed(customSituation);
+      if (pricingNeedTodo && collectedCondition) {
+        pushTodo({
+          title: pricingNeedTodo.title,
+          ...(tpl?.conditionName ? { subtitle: tpl.conditionName } : {}),
+          book_message: pricingNeedTodo.book_message,
+        });
+      }
       // User-selected action todos (every branch).
       if (seededActions.length > 0) {
         const actionSubtitle =
@@ -2097,14 +2054,26 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
             ? (tpl?.conditionName || customSituation.trim() || undefined)
             : undefined;
         for (const raw of seededActions) {
-          const cleanedTitle = cleanActionToUserVoice(raw);
-          if (!cleanedTitle) continue;
-          const lowered = cleanedTitle.charAt(0).toLowerCase() + cleanedTitle.slice(1);
-          const bookStem = lowered.startsWith("help ") ? lowered.slice(5) : lowered;
+          const todo = buildTodoFromAction(raw, {
+            routerChoice,
+            conditionName: tpl?.conditionName || customSituation.trim() || undefined,
+          });
+          if (!todo) continue;
           pushTodo({
-            title: cleanedTitle,
+            title: todo.title,
             ...(actionSubtitle ? { subtitle: actionSubtitle } : {}),
-            book_message: `Help me ${bookStem}`,
+            book_message: todo.book_message,
+          });
+        }
+      }
+      if (seenTodoTitles.size <= 1) {
+        for (const todo of buildProfileSetupTopUpTodos({
+          managedFirstName,
+          isDependentSetup,
+        })) {
+          pushTodo({
+            title: todo.title,
+            book_message: todo.book_message,
           });
         }
       }
@@ -2114,7 +2083,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       // the fallback, users who skipped action selection landed in
       // /chat with a generic "what can you help me with" from the
       // landing page, which defeats the whole tour.
-      const actionSeed = buildSeedMessageFromActions(seededActions);
+      const actionSeed = buildSeedMessageFromActions(seededActions, {
+        routerChoice,
+        conditionName: resolvedConditionName,
+      });
       const seedMessage = actionSeed || synthesizeFallbackSeed({
         routerChoice,
         conditionName: resolvedConditionName,
@@ -2138,7 +2110,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
     }
     setSavingSituation(true);
     const chip = getChip(selectedSituation);
-    const tpl = getTemplate(selectedSituation);
+    const tpl = inferredSituationTemplate;
     const conditionName = chip?.conditionName || customSituation.trim();
     // Branches that collected a condition (condition / medications / money)
     // save it. Staying-healthy didn't collect one.
@@ -2183,8 +2155,9 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
         todoSpecs.push(spec);
       };
 
-      // Care-plan template items (condition branch only)
-      if (profileId && tpl && routerChoice === "condition") {
+      // Care-plan template items should survive across every branch that
+      // collected condition context, not just the full condition flow.
+      if (profileId && tpl && collectedCondition) {
         const remaining = tpl.planItems.filter((it) => !checkedPlanItems.includes(it.id));
         for (const it of remaining) {
           push({
@@ -2193,6 +2166,14 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
             book_message: `Help me ${it.todoText.charAt(0).toLowerCase() + it.todoText.slice(1)}`,
           });
         }
+      }
+      const pricingNeedTodo = buildPricingTodoFromNeed(customSituation);
+      if (profileId && pricingNeedTodo && collectedCondition) {
+        push({
+          title: pricingNeedTodo.title,
+          ...(tpl?.conditionName ? { subtitle: tpl.conditionName } : {}),
+          book_message: pricingNeedTodo.book_message,
+        });
       }
 
       // Action todos — every chip the user picked + any custom-typed
@@ -2211,14 +2192,26 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
             ? (tpl?.conditionName || customSituation.trim() || undefined)
             : undefined;
         for (const raw of seededActions) {
-          const cleanedTitle = cleanActionToUserVoice(raw);
-          if (!cleanedTitle) continue;
-          const lowered = cleanedTitle.charAt(0).toLowerCase() + cleanedTitle.slice(1);
-          const bookStem = lowered.startsWith("help ") ? lowered.slice(5) : lowered;
+          const todo = buildTodoFromAction(raw, {
+            routerChoice,
+            conditionName: tpl?.conditionName || customSituation.trim() || undefined,
+          });
+          if (!todo) continue;
           push({
-            title: cleanedTitle,
+            title: todo.title,
             ...(actionSubtitle ? { subtitle: actionSubtitle } : {}),
-            book_message: `Help me ${bookStem}`,
+            book_message: todo.book_message,
+          });
+        }
+      }
+      if (todoSpecs.length <= 1) {
+        for (const todo of buildProfileSetupTopUpTodos({
+          managedFirstName,
+          isDependentSetup,
+        })) {
+          push({
+            title: todo.title,
+            book_message: todo.book_message,
           });
         }
       }
@@ -2242,19 +2235,19 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
       setSavingSituation(false);
       leaveShellThen(beginJoyride);
     }
-  }, [savingSituation, isAnonymousTour, onNeedsAuth, selectedSituation, customSituation, selectedMeds, customMeds, checkedPlanItems, profileId, routerChoice, confirmedActions, customActionText, beginJoyride, leaveShellThen]);
+  }, [savingSituation, isAnonymousTour, onNeedsAuth, selectedSituation, customSituation, selectedMeds, customMeds, checkedPlanItems, profileId, routerChoice, confirmedActions, customActionText, beginJoyride, leaveShellThen, inferredSituationTemplate]);
 
   // Fire the validation-shown event once when the phase enters (it's the
   // "wow" beat, so we track regardless of what the user does next).
   useEffect(() => {
     if (phase !== "validation") return;
-    const tpl = getTemplate(selectedSituation);
+    const tpl = inferredSituationTemplate;
     analytics.track("Web Tour Validation Shown" as any, {
       situation: selectedSituation,
       done_count: checkedPlanItems.length,
       remaining_count: tpl ? tpl.planItems.length - checkedPlanItems.length : 0,
     });
-  }, [phase, selectedSituation, checkedPlanItems.length]);
+  }, [phase, selectedSituation, checkedPlanItems.length, inferredSituationTemplate]);
 
   useEffect(() => {
     if (phase !== "setup-for") return;
@@ -3175,16 +3168,22 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
             })()}
 
             {phase === "meds" && (() => {
-              const tpl = getTemplate(selectedSituation);
-              if (!tpl) return null;
+              const tpl = inferredSituationTemplate;
               // Short prompt — the template's medsPrompt is encyclopedic
               // ("People managing type 2 diabetes are often on one of
               // these. Any yours?") which takes four lines on mobile.
               // The user just picked the condition in the prior phase, so
               // context is already established. Keep the prompt tight.
-              const medsHeadline = isDependentSetup && managedFirstName
-                ? `Any of these meds for ${managedFirstName}?`
-                : "Any of these your meds?";
+              const medsHeadline = tpl
+                ? (isDependentSetup && managedFirstName
+                    ? `Any of these meds for ${managedFirstName}?`
+                    : "Any of these your meds?")
+                : (isDependentSetup && managedFirstName
+                    ? `Any medications for ${managedFirstName}?`
+                    : "Any medications for that?");
+              const medsSubtitle = tpl
+                ? `Tap what ${isDependentSetup && managedFirstName ? `${managedFirstName} takes` : "you take"}. We'll add them to the profile.`
+                : `Type any medications ${isDependentSetup && managedFirstName ? `${managedFirstName} takes` : "you take"} so Elena can work with the real list.`;
               return (
                 <motion.div
                   key="meds"
@@ -3205,33 +3204,35 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                         transition={{ duration: 0.3, ease: motionEase }}
                         className="text-[14px] max-md:text-[12.5px] text-[#8E8E93] font-light text-balance"
                       >
-                        Tap what {isDependentSetup && managedFirstName ? `${managedFirstName} takes` : "you take"}. We&apos;ll add them to the profile.
+                        {medsSubtitle}
                       </motion.p>
                     </div>
                     {headlineDone && (
                       <>
-                        <RevealStack visible className="flex flex-wrap gap-2 max-md:gap-1.5 justify-center">
-                          {tpl.medOptions.map((m) => {
-                            const active = selectedMeds.includes(m);
-                            return (
-                              <motion.button
-                                key={m}
-                                variants={REVEAL_ITEM}
-                                whileTap={{ scale: 0.97 }}
-                                onClick={() =>
-                                  setSelectedMeds((p) => (p.includes(m) ? p.filter((x) => x !== m) : [...p, m]))
-                                }
-                                className={`px-3.5 py-2 max-md:px-3 max-md:py-1.5 rounded-full border text-[14px] max-md:text-[13px] transition-all duration-200 ${
-                                  active
-                                    ? "border-[#0F1B3D] bg-[#0F1B3D] text-white"
-                                    : "border-[#E5E5EA] bg-white text-[#0F1B3D] hover:border-[#0F1B3D]/30"
-                                }`}
-                              >
-                                {m}
-                              </motion.button>
-                            );
-                          })}
-                        </RevealStack>
+                        {tpl && (
+                          <RevealStack visible className="flex flex-wrap gap-2 max-md:gap-1.5 justify-center">
+                            {tpl.medOptions.map((m) => {
+                              const active = selectedMeds.includes(m);
+                              return (
+                                <motion.button
+                                  key={m}
+                                  variants={REVEAL_ITEM}
+                                  whileTap={{ scale: 0.97 }}
+                                  onClick={() =>
+                                    setSelectedMeds((p) => (p.includes(m) ? p.filter((x) => x !== m) : [...p, m]))
+                                  }
+                                  className={`px-3.5 py-2 max-md:px-3 max-md:py-1.5 rounded-full border text-[14px] max-md:text-[13px] transition-all duration-200 ${
+                                    active
+                                      ? "border-[#0F1B3D] bg-[#0F1B3D] text-white"
+                                      : "border-[#E5E5EA] bg-white text-[#0F1B3D] hover:border-[#0F1B3D]/30"
+                                  }`}
+                                >
+                                  {m}
+                                </motion.button>
+                              );
+                            })}
+                          </RevealStack>
+                        )}
                         {customMeds.length > 0 && (
                           <div className="flex flex-wrap gap-2 max-md:gap-1.5 justify-center">
                             {customMeds.map((m, i) => (
@@ -3306,7 +3307,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
             })()}
 
             {phase === "care-plan" && (() => {
-              const tpl = getTemplate(selectedSituation);
+              const tpl = inferredSituationTemplate;
               if (!tpl) return null;
               return (
                 <motion.div
@@ -3402,7 +3403,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
             })()}
 
             {phase === "validation" && (() => {
-              const tpl = getTemplate(selectedSituation);
+              const tpl = inferredSituationTemplate;
               const total = tpl?.planItems.length ?? 0;
               const done = checkedPlanItems.length;
               const remaining = tpl ? tpl.planItems.filter((it) => !checkedPlanItems.includes(it.id)) : [];
@@ -3519,7 +3520,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
             })()}
 
             {phase === "elena-plan" && (() => {
-              const tpl = getTemplate(selectedSituation);
+              const tpl = inferredSituationTemplate;
               // OTC list for the derived "I can track your X refills" line —
               // only prescription meds warrant a refill-tracking promise.
               const OTC_MARKERS = [
@@ -3539,21 +3540,27 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 OTC_MARKERS.some((kw) => m.toLowerCase().includes(kw));
               const allMeds = [...selectedMeds, ...customMeds];
               const primaryRxMed = allMeds.find((m) => !isOtc(m)) || null;
+              const remainingPlanActions = tpl
+                ? tpl.planItems
+                    .filter((it) => !checkedPlanItems.includes(it.id))
+                    .map((it) => buildDisplayActionFromTodoText(it.todoText))
+                    .filter(Boolean)
+                : [];
               // Base hero lines by branch. Condition branch uses the
               // template's per-condition values (most specific). Other
               // branches use branch-wide constants since they don't have
               // a condition template driving content.
               let baseLines: string[];
               if (routerChoice === "condition" && tpl) {
-                baseLines = tpl.heroValues;
+                baseLines = [...remainingPlanActions, ...tpl.heroValues];
               } else if (routerChoice === "medications") {
-                baseLines = MEDS_BRANCH_HERO_VALUES;
+                baseLines = [...remainingPlanActions, ...MEDS_BRANCH_HERO_VALUES];
               } else if (routerChoice === "money") {
-                baseLines = MONEY_BRANCH_HERO_VALUES;
+                baseLines = [...remainingPlanActions, ...MONEY_BRANCH_HERO_VALUES];
               } else if (routerChoice === "staying_healthy") {
                 baseLines = STAYING_HEALTHY_BRANCH_HERO_VALUES;
               } else {
-                baseLines = tpl?.heroValues || [];
+                baseLines = [...remainingPlanActions, ...(tpl?.heroValues || [])];
               }
               // Derived data-grounded lines: a prescription med pitch for
               // any branch that collected meds (condition / medications),
@@ -3563,6 +3570,10 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
               // what the user just told us (med name, pain number) over
               // generic branch boilerplate.
               const derived: string[] = [];
+              const scanOrProcedurePricing = buildPricingActionFromNeed(customSituation);
+              if (scanOrProcedurePricing) {
+                derived.push(scanOrProcedurePricing);
+              }
               // Rank 1 — prescription refill/renewal. This is our
               // strongest "aha" moment: Elena autonomously calling the
               // pharmacy before your Rx runs out and the prescriber
@@ -3592,9 +3603,17 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   derived.push(`You said ${painOpt.label.toLowerCase()}. I can help bring that down.`);
                 }
               }
-              // Rank 3 — generic dependent framing. Useful but least
-              // specific, stays last among the derived lines.
-              if (setupForCareId && setupForCareId !== "myself" && dependentFirstName.trim()) {
+              // Rank 3 — generic dependent framing. Only use this on the
+              // staying-healthy branch; otherwise it steals the booking slot
+              // from condition-specific actions ("book therapy session",
+              // "book med check-in") and the resulting options feel too
+              // generic even when we know the user's condition.
+              if (
+                routerChoice === "staying_healthy" &&
+                setupForCareId &&
+                setupForCareId !== "myself" &&
+                dependentFirstName.trim()
+              ) {
                 const first = dependentFirstName.trim();
                 derived.push(`I can book ${first}'s next visit.`);
               }
@@ -3642,7 +3661,18 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                 out = out.replace(/\byou\b/g, "them");
                 return out;
               }
-              const lines = dedupedLines.slice(0, 3).map(personalizeForDependent);
+              const semanticActionOptions = dedupedLines
+                .map((raw) => buildProposedAction(raw, {
+                  routerChoice,
+                  conditionName: tpl?.conditionName || customSituation.trim() || undefined,
+                }))
+                .filter((option): option is ProposedAction => !!option);
+              const actionOptions = semanticActionOptions
+                .slice(0, 3)
+                .map((option) => ({
+                  ...option,
+                  display: personalizeForDependent(option.display),
+                }));
               const hasCustomAction = customActionText.trim().length >= 3;
               const canContinue = !savingSituation && (confirmedActions.length > 0 || hasCustomAction);
               return (
@@ -3673,26 +3703,27 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                     </div>
                     {headlineDone && (
                       <div className="flex flex-col gap-2.5 max-md:gap-1.5">
-                        {lines.map((line, i) => (
+                        {actionOptions.map((action, i) => (
                           <ElenaPlanRow
-                            key={`hero-${i}`}
-                            line={line}
+                            key={`hero-${action.raw}-${i}`}
+                            line={action.display}
                             startDelayMs={200 + i * 320}
-                            selected={confirmedActions.includes(line)}
+                            selected={confirmedActions.includes(action.raw)}
                             onToggle={() => {
                               // Single-select: tapping a selected card
                               // clears it; tapping a different card
                               // replaces the selection. Also clears any
                               // custom text so we always seed Elena with
                               // exactly one action to focus on.
-                              const wasSelected = confirmedActions.includes(line);
-                              setConfirmedActions(wasSelected ? [] : [line]);
+                              const wasSelected = confirmedActions.includes(action.raw);
+                              setConfirmedActions(wasSelected ? [] : [action.raw]);
                               if (!wasSelected && customActionText.trim().length > 0) {
                                 setCustomActionText("");
                               }
                               analytics.track("Web Tour Action Toggled" as any, {
                                 branch: routerChoice,
-                                line,
+                                line: action.display,
+                                raw_line: action.raw,
                                 selected: !wasSelected,
                               });
                             }}
@@ -3714,13 +3745,13 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                           placeholder="Something specific you want done?"
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.3, ease: motionEase, delay: 0.2 + lines.length * 0.32 }}
+                          transition={{ duration: 0.3, ease: motionEase, delay: 0.2 + actionOptions.length * 0.32 }}
                           className="w-full rounded-full border border-[#E5E5EA] bg-white px-4 py-3 max-md:px-3.5 max-md:py-2 text-[15px] max-md:text-[14px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors"
                         />
                       </div>
                     )}
                   </div>
-                  <RevealButton visible={headlineDone} delay={0.1 + lines.length * 0.07}>
+                  <RevealButton visible={headlineDone} delay={0.1 + actionOptions.length * 0.07}>
                     <button
                       onClick={advanceFromElenaPlan}
                       disabled={!canContinue}
@@ -3767,7 +3798,7 @@ export function WebOnboardingTour({ onComplete, onShowPaywall, onProfilePopover,
                   <div className="flex-1 flex flex-col justify-center gap-4">
                     <div className="text-center">
                       <h2 className="text-[22px] font-extrabold text-[#0F1B3D] mb-1 text-balance leading-tight">
-                        <StreamingText text="Elena creates lasting relief." onDone={() => setHeadlineDone(true)} />
+                        <StreamingText text="Elena creates lasting relief" onDone={() => setHeadlineDone(true)} />
                       </h2>
                     </div>
                     {headlineDone && (

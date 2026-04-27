@@ -923,8 +923,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (err) {
       console.error("[onboarding] Error:", err);
-      // Still dismiss so user isn't stuck
+      // Still dismiss so user isn't stuck, but keep the post-onboarding
+      // handoff alive so /chat can mount the walkthrough + recovery UI.
       setNeedsOnboarding(false);
+      setOnboardingJustCompleted(true);
       localStorage.setItem("elena_onboarding_done", "1");
     }
   }, [profileData?.email]);

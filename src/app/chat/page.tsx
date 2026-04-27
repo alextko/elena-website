@@ -379,7 +379,17 @@ function ChatPageInner() {
   const [showTour, setShowTour] = useState(false);
   useEffect(() => {
     const forceTour = searchParams.get("tour") === "1";
-    const shouldShow = forceTour || needsOnboarding || onboardingJustCompleted;
+    let hasSavedTour = false;
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("elena_tour_state") || sessionStorage.getItem("elena_tour_state");
+        if (raw) {
+          const parsed = JSON.parse(raw) as { phase?: string };
+          hasSavedTour = !!parsed.phase && parsed.phase !== "done";
+        }
+      } catch {}
+    }
+    const shouldShow = forceTour || needsOnboarding || onboardingJustCompleted || hasSavedTour;
     if (!shouldShow) return;
     // Reset the "tour done" flag so a fresh signup always sees the tour.
     if (onboardingJustCompleted || needsOnboarding) localStorage.removeItem("elena_web_tour_done");
@@ -455,6 +465,7 @@ function ChatPageInner() {
       <TrialFlow step={tourTrialStep} onStepChange={setTourTrialStep} reason="post_onboarding" />
       {showTour && (
         <WebOnboardingTour
+          surface="chat"
           onComplete={() => { setShowTour(false); setTourPopoverOpen(false); }}
           onShowPaywall={() => setTourTrialStep(1)}
           onProfilePopover={(open, tab, showSwitcher) => { setTourPopoverOpen(open); if (tab) setTourPopoverTab(tab); setTourPopoverShowSwitcher(!!showSwitcher); }}

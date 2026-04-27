@@ -65,6 +65,7 @@ export type AnalyticsEvent =
   | "Web Tour Data Skipped"
   // Debug / diagnostics (pre-existing events fired throughout onboard + chat)
   | "Tour Buffer Flushed"
+  | "Onboard Flush Continue Clicked"
   | "Onboard Auth Gate Hit"
   | "Onboard Route Entered"
   | "Form Missing From DOM"
