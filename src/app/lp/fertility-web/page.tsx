@@ -655,7 +655,7 @@ export default function FertilityWebLandingPage() {
 
       <AuthModal
         open={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
+        onOpenChange={setAuthModalOpen}
       />
     </div>
   );
