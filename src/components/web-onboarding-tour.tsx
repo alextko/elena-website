@@ -339,6 +339,47 @@ const STAYING_HEALTHY_BRANCH_HERO_VALUES = [
   "I can price-shop labs and imaging in-network.",
 ];
 
+const STAYING_HEALTHY_FOCUS_OPTIONS = [
+  { key: "annual_physical", label: "Booking my annual physical", focus: "annual physical" },
+  { key: "screenings", label: "Knowing which screenings are due", focus: "screenings and preventive care" },
+  { key: "providers", label: "Keeping my doctors and visits organized", focus: "keeping my doctors and visits organized" },
+  { key: "reminders", label: "Staying on top of reminders and follow-ups", focus: "reminders and follow-ups" },
+  { key: "other", label: "Something else", focus: "" },
+] as const;
+
+function buildStayingHealthyHeroValues(focus: string): string[] {
+  const lower = focus.trim().toLowerCase();
+  if (lower.includes("physical")) {
+    return [
+      "I can call your PCP and book your annual physical.",
+      "I can make sure you know which labs or screenings to ask for at that visit.",
+      "I can keep track of the follow-ups after it's booked.",
+    ];
+  }
+  if (lower.includes("screening") || lower.includes("preventive")) {
+    return [
+      "I can figure out which screenings are due next.",
+      "I can book the highest-priority screening first.",
+      "I can price-shop labs and imaging in-network.",
+    ];
+  }
+  if (lower.includes("doctor") || lower.includes("visit") || lower.includes("provider")) {
+    return [
+      "I can organize your doctors, visits, and what each one is for.",
+      "I can build a clear follow-up list so nothing slips.",
+      "I can help gather records or referral details before the next appointment.",
+    ];
+  }
+  if (lower.includes("reminder") || lower.includes("follow-up") || lower.includes("organ")) {
+    return [
+      "I can turn your loose ends into a care plan with reminders.",
+      "I can keep appointments, meds, and follow-ups in one place.",
+      "I can flag what's due now versus what can wait.",
+    ];
+  }
+  return STAYING_HEALTHY_BRANCH_HERO_VALUES;
+}
+
 // Pick a mini-mockup per hero line so each card shows Elena doing the
 // thing, not just an icon. When multiple lines are "I can call X" we
 // rotate CallMini through 3 semantically-driven variants (hold /
@@ -1682,15 +1723,11 @@ export function WebOnboardingTour({
     setPhase("value");
   }, [painSelection, lpVariant]);
 
-  // Post-profile routing: every branch now collects a condition via
-  // the situation phase. "Staying organized" was previously a
-  // shortcut to elena-plan, but going straight from "Let's get you
-  // set up" to "Which one do you want me to start on?" reads as a
-  // jarring leap — users need one beat of "what are we working
-  // with?" to calibrate. Situation phase for staying_healthy still
-  // makes sense: they can pick an active condition if they have one,
-  // or type something in, and the elena-plan proposals read more
-  // personally.
+  // Post-profile routing: every branch goes through a "what are we
+  // working with?" beat before the Elena plan. staying_healthy keeps
+  // that extra context step, but it now asks for the preventive /
+  // organizational focus directly instead of pretending the user is
+  // naming a condition.
   const routeAfterProfile = useCallback(() => {
     setPhase("situation");
   }, []);
@@ -1888,14 +1925,23 @@ export function WebOnboardingTour({
   }, [routerChoice]);
 
   const advanceFromSituation = useCallback(() => {
+    const stayingHealthy = routerChoice === "staying_healthy";
     const chip = getChip(selectedSituation);
     const tpl = inferredSituationTemplate;
     analytics.track("Web Tour Situation Selected", {
       situation: selectedSituation,
-      source: chip ? (chip.conditionName ? "chips" : "chips_freeform") : "alias",
+      source: stayingHealthy
+        ? (selectedSituation === "other" ? "chips_freeform" : "chips")
+        : chip
+        ? (chip.conditionName ? "chips" : "chips_freeform")
+        : "alias",
       custom_text: customSituation.trim() || undefined,
       branch: routerChoice,
     });
+    if (stayingHealthy) {
+      setPhase("elena-plan");
+      return;
+    }
     // Condition, medications, and money branches all collect meds next.
     // Money also goes through meds so Elena can price-shop the user's
     // specific prescriptions, not just speak in generalities.
@@ -3053,9 +3099,14 @@ export function WebOnboardingTour({
             })()}
 
             {phase === "situation" && (() => {
+              const stayingHealthy = routerChoice === "staying_healthy";
               const chip = getChip(selectedSituation);
-              const needsFreeform = !!chip && chip.conditionName === null;
-              const canContinue = !!chip && (!needsFreeform || customSituation.trim().length > 1);
+              const needsFreeform = stayingHealthy
+                ? selectedSituation === "other"
+                : !!chip && chip.conditionName === null;
+              const canContinue = stayingHealthy
+                ? !!selectedSituation && (!needsFreeform || customSituation.trim().length > 1)
+                : !!chip && (!needsFreeform || customSituation.trim().length > 1);
               // Router-aware prompt: continues the thread from the router
               // pick instead of re-asking a generic "what's going on."
               // Dependent setups reframe the question in third person
@@ -3063,7 +3114,9 @@ export function WebOnboardingTour({
               // themselves.
               let headline: string;
               if (isDependentSetup && managedFirstName) {
-                if (routerChoice === "medications") {
+                if (stayingHealthy) {
+                  headline = `What do you want help staying on top of for ${managedFirstName}?`;
+                } else if (routerChoice === "medications") {
                   headline = `What are ${managedFirstName}'s meds for?`;
                 } else if (routerChoice === "money") {
                   headline = `What care is ${managedFirstName} paying for?`;
@@ -3073,7 +3126,9 @@ export function WebOnboardingTour({
               } else {
                 const firstNamePrefix = firstName.trim() ? `${firstName.trim()}, ` : "";
                 let headlineBase: string;
-                if (routerChoice === "medications") {
+                if (stayingHealthy) {
+                  headlineBase = "what do you want help staying on top of?";
+                } else if (routerChoice === "medications") {
                   headlineBase = "what are your meds for?";
                 } else if (routerChoice === "money") {
                   headlineBase = "what care are you paying for?";
@@ -3088,7 +3143,7 @@ export function WebOnboardingTour({
               // else" path. injury_recovery already has its own template
               // and doesn't need matching.
               const suggestedTemplate =
-                selectedSituation === "other"
+                !stayingHealthy && selectedSituation === "other"
                   ? findTemplateByAlias(customSituation)
                   : null;
               return (
@@ -3114,34 +3169,52 @@ export function WebOnboardingTour({
                         transition={{ duration: 0.3, ease: motionEase }}
                         className="text-[14px] text-[#8E8E93] font-light"
                       >
-                        Pick one, or tell me in your own words.
+                        {stayingHealthy
+                          ? "Pick the thing you'd want Elena to help organize first."
+                          : "Pick one, or tell me in your own words."}
                       </motion.p>
                     </div>
                     {headlineDone && (
                       <>
                         <RevealStack visible className="flex flex-col gap-2">
-                          {SITUATION_CHIPS.map((c) => (
-                            <SelectablePill
-                              key={c.key}
-                              icon={c.hasTemplate ? HeartPulse : HelpCircle}
-                              label={c.label}
-                              selected={selectedSituation === c.key}
-                              onClick={() => {
-                                setSelectedSituation(c.key);
-                                // Reset downstream state so a changed pick doesn't
-                                // carry stale meds/plan selections from a prior
-                                // template (edge case: user backs out and re-picks).
-                                setSelectedMeds([]);
-                                setCustomMeds([]);
-                                setCheckedPlanItems([]);
-                                if (!c.hasTemplate && c.conditionName) {
-                                  setCustomSituation(c.conditionName);
-                                } else if (c.conditionName === null) {
-                                  setCustomSituation("");
-                                }
-                              }}
-                            />
-                          ))}
+                          {stayingHealthy
+                            ? STAYING_HEALTHY_FOCUS_OPTIONS.map((option) => (
+                                <SelectablePill
+                                  key={option.key}
+                                  icon={HelpCircle}
+                                  label={option.label}
+                                  selected={selectedSituation === option.key}
+                                  onClick={() => {
+                                    setSelectedSituation(option.key);
+                                    setSelectedMeds([]);
+                                    setCustomMeds([]);
+                                    setCheckedPlanItems([]);
+                                    setCustomSituation(option.focus);
+                                  }}
+                                />
+                              ))
+                            : SITUATION_CHIPS.map((c) => (
+                                <SelectablePill
+                                  key={c.key}
+                                  icon={c.hasTemplate ? HeartPulse : HelpCircle}
+                                  label={c.label}
+                                  selected={selectedSituation === c.key}
+                                  onClick={() => {
+                                    setSelectedSituation(c.key);
+                                    // Reset downstream state so a changed pick doesn't
+                                    // carry stale meds/plan selections from a prior
+                                    // template (edge case: user backs out and re-picks).
+                                    setSelectedMeds([]);
+                                    setCustomMeds([]);
+                                    setCheckedPlanItems([]);
+                                    if (!c.hasTemplate && c.conditionName) {
+                                      setCustomSituation(c.conditionName);
+                                    } else if (c.conditionName === null) {
+                                      setCustomSituation("");
+                                    }
+                                  }}
+                                />
+                              ))}
                         </RevealStack>
                         {needsFreeform && (
                           <motion.input
@@ -3152,7 +3225,13 @@ export function WebOnboardingTour({
                             type="text"
                             value={customSituation}
                             onChange={(e) => setCustomSituation(e.target.value)}
-                            placeholder={selectedSituation === "injury_recovery" ? "e.g. torn ACL, back strain" : "Tell us in a few words"}
+                            placeholder={
+                              stayingHealthy
+                                ? "Tell me what you'd want Elena to handle first"
+                                : selectedSituation === "injury_recovery"
+                                ? "e.g. torn ACL, back strain"
+                                : "Tell us in a few words"
+                            }
                             className="w-full rounded-full border border-[#E5E5EA] bg-white px-4 py-3 text-[16px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors"
                           />
                         )}
@@ -3183,7 +3262,7 @@ export function WebOnboardingTour({
                       </>
                     )}
                   </div>
-                  <RevealButton visible={headlineDone} delay={0.1 + SITUATION_CHIPS.length * 0.05}>
+                  <RevealButton visible={headlineDone} delay={0.1 + (stayingHealthy ? STAYING_HEALTHY_FOCUS_OPTIONS.length : SITUATION_CHIPS.length) * 0.05}>
                     <button
                       onClick={advanceFromSituation}
                       disabled={!canContinue}
@@ -3193,7 +3272,7 @@ export function WebOnboardingTour({
                       Continue
                     </button>
                   </RevealButton>
-                  {headlineDone && (
+                  {!stayingHealthy && headlineDone && (
                     <button
                       onClick={() => {
                         // Users who originally picked "condition" as their
@@ -3615,7 +3694,7 @@ export function WebOnboardingTour({
               } else if (routerChoice === "money") {
                 baseLines = [...remainingPlanActions, ...MONEY_BRANCH_HERO_VALUES];
               } else if (routerChoice === "staying_healthy") {
-                baseLines = STAYING_HEALTHY_BRANCH_HERO_VALUES;
+                baseLines = buildStayingHealthyHeroValues(customSituation);
               } else {
                 baseLines = [...remainingPlanActions, ...(tpl?.heroValues || [])];
               }
@@ -3681,12 +3760,15 @@ export function WebOnboardingTour({
               // prepends, so personalized lines win over their generic
               // base counterparts. Final order preserved for whichever
               // line was seen first per variant.
-              const seenVariants = new Set<HeroVariant>();
+              const seenVariants = new Set<string>();
               const dedupedLines: string[] = [];
               for (const l of [...derived, ...baseLines]) {
-                const v = variantForLine(l);
-                if (seenVariants.has(v)) continue;
-                seenVariants.add(v);
+                const dedupeKey =
+                  routerChoice === "staying_healthy"
+                    ? l.trim().toLowerCase()
+                    : variantForLine(l);
+                if (seenVariants.has(dedupeKey)) continue;
+                seenVariants.add(dedupeKey);
                 dedupedLines.push(l);
               }
               // When onboarding is running for a dependent, rewrite each
@@ -3745,7 +3827,7 @@ export function WebOnboardingTour({
                     <div className="text-center">
                       <h2 className="text-[22px] max-md:text-[19px] font-extrabold text-[#0F1B3D] mb-2 max-md:mb-1 text-balance leading-tight">
                         <StreamingText
-                          text="Which one do you want me to start on?"
+                          text="What should I take off your plate first?"
                           onDone={() => setHeadlineDone(true)}
                         />
                       </h2>
@@ -3755,7 +3837,7 @@ export function WebOnboardingTour({
                         transition={{ duration: 0.3, ease: motionEase }}
                         className="text-[14px] max-md:text-[12.5px] text-[#8E8E93] font-light text-balance"
                       >
-                        Pick one — we can come back to the others after.
+                        Pick the first thing you want Elena to actually handle.
                       </motion.p>
                     </div>
                     {headlineDone && (

@@ -278,6 +278,9 @@ export function synthesizeFallbackSeed(args: {
     return `Find the biggest savings in ${possessive} healthcare spend this year. Start with where to look first.`;
   }
   if (routerChoice === "staying_healthy") {
+    if (conditionName) {
+      return `Help ${who} stay on top of ${possessive} ${conditionName.toLowerCase()}. Start with the highest-priority thing to book or organize first.`;
+    }
     return `Help ${who} stay on top of ${possessive} preventive care — what's due, what's overdue, and what to book first.`;
   }
   return `Help ${who} figure out the single most valuable thing to tackle first. Ask whatever you need.`;

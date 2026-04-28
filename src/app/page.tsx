@@ -808,18 +808,21 @@ function LandingPage() {
       if (session?.user?.id) {
         trackActivation(session.user.id);
       }
-      // Always stash in localStorage — tour reads it for the value/care
-      // step taglines. Only post to pending_messages on the OLD flow
-      // (signup-first). For the late-signup flow, skip the server-side
-      // row so claim doesn't fire on /chat and wipe the tour's seed.
-      localStorage.setItem("elena_pending_query", query);
+      // Only preserve the landing query for paths that go straight to
+      // chat. In the late-signup onboarding flow, the onboarding tour
+      // owns the first real seed message; keeping the homepage fallback
+      // here can leak a generic opener into /chat before the tour writes
+      // its more specific post-onboarding seed.
       if (!lateSignupFlag) {
+        localStorage.setItem("elena_pending_query", query);
         void postPendingMessage({
           content: query,
           source: typed ? "landing_hero" : "landing_default",
           landing_variant: ref || "homepage",
           pending_doc_name: pendingDocFile?.name ?? null,
         });
+      } else {
+        try { localStorage.removeItem("elena_pending_query"); } catch {}
       }
     }
     // In demo mode with an attached file but no text query, use a default query
