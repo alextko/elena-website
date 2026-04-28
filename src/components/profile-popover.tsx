@@ -41,6 +41,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
+import * as analytics from "@/lib/analytics";
 import { AddFamilyModal } from "@/components/add-family-modal";
 import { HipaaConsentModal } from "@/components/hipaa-consent-modal";
 import { PhotoCropModal } from "@/components/photo-crop-modal";
@@ -585,6 +586,7 @@ export function ProfilePopover({
           {addingProvider && !selectedProvider && !selectedVisit && !editingTodo && (
             <AddProviderPanel
               profileId={profileId}
+              doctorCount={doctors.length}
               onClose={() => setAddingProvider(false)}
               onSaved={() => {
                 setAddingProvider(false);
@@ -2038,6 +2040,11 @@ function VisitDetailPanel({
           summary: editSummary.trim(),
         }),
       });
+      analytics.track("visit_updated", {
+        visit_type: editType.trim() || visit.visit_type || "unknown",
+        source: "manual",
+        created_from: "profile_popover",
+      });
       onUpdated();
     } catch {}
     setSavingEdit(false);
@@ -2046,6 +2053,11 @@ function VisitDetailPanel({
   async function handleDeleteVisit() {
     try {
       await apiFetch(`/care-visits/${visit.id}`, { method: "DELETE" });
+      analytics.track("visit_deleted", {
+        source: "manual",
+        created_from: "profile_popover",
+        deletion_type: "care_visit",
+      });
       onUpdated();
     } catch {}
   }
@@ -2479,6 +2491,13 @@ function ProviderDetailPanel({
           address: address.trim() || undefined,
         }),
       });
+      analytics.track("provider_updated", {
+        source: "manual",
+        created_from: "profile_popover",
+        specialty: specialty || "Other",
+        has_phone: !!phone.trim(),
+        has_address: !!address.trim(),
+      });
       onUpdated();
     } catch {}
     setSaving(false);
@@ -2488,6 +2507,10 @@ function ProviderDetailPanel({
     if (!profileId || !provider.id) return;
     try {
       await apiFetch(`/profile/${profileId}/doctors/${provider.id}`, { method: "DELETE" });
+      analytics.track("provider_deleted", {
+        source: "manual",
+        created_from: "profile_popover",
+      });
       onUpdated();
     } catch {}
   }
@@ -2666,10 +2689,12 @@ const SPECIALTY_OPTIONS = [
 
 function AddProviderPanel({
   profileId,
+  doctorCount,
   onClose,
   onSaved,
 }: {
   profileId: string | null;
+  doctorCount: number;
   onClose: () => void;
   onSaved: (doc: DoctorItem) => void;
 }) {
@@ -2696,6 +2721,14 @@ function AddProviderPanel({
       });
       if (res.ok) {
         const data = await res.json();
+        analytics.track("provider_created", {
+          source: "manual",
+          created_from: "profile_popover",
+          specialty: specialty || "Other",
+          has_phone: !!phone.trim(),
+          has_address: !!address.trim(),
+          is_first_provider: doctorCount === 0,
+        });
         onSaved(data.doctor || { name: name.trim(), specialty });
       }
     } catch {

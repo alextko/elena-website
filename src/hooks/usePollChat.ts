@@ -105,7 +105,7 @@ export function usePollChat(demoMode = false) {
   const sendAndPoll = useCallback(
     async (
       params: PollChatParams,
-      onToolProgress: (label: string | null) => void,
+      onToolProgress: (progress: { label: string | null; step: number }) => void,
       onDone: (result: ChatResponse) => void,
       onError: (error: string) => void,
       options?: { timeoutMs?: number },
@@ -140,9 +140,9 @@ export function usePollChat(demoMode = false) {
         if (demoMatch) {
           log("DEMO INTERCEPT", { message: params.message.slice(0, 50), hasDocuments, match: demoMatch.name });
 
-          onToolProgress(demoMatch.toolLabel);
+          onToolProgress({ label: demoMatch.toolLabel, step: 1 });
           await new Promise((r) => setTimeout(r, demoMatch.delay));
-          onToolProgress(null);
+          onToolProgress({ label: null, step: 0 });
 
           const fakeResponse: ChatResponse = {
             reply: demoMatch.reply,
@@ -317,7 +317,7 @@ export function usePollChat(demoMode = false) {
             if (data.tool_label) {
               log("tool_label:", data.tool_label, { step: data.tool_step, elapsed: data.elapsed_seconds });
             }
-            onToolProgress(data.tool_label);
+            onToolProgress({ label: data.tool_label, step: data.tool_step });
             await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
           }
         } catch (err: unknown) {

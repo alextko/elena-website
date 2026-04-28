@@ -752,6 +752,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (created.frequency === "daily" || created.due_date === today || !created.due_date) {
         setTodayTodos((prev) => [...prev, created]);
       }
+      analytics.track("todo_created", {
+        source: "manual",
+        created_from: "web",
+        todo_kind: created.frequency === "daily" ? "daily" : "care",
+        category: created.category,
+        frequency: created.frequency,
+        has_due_time: !!created.due_time,
+        has_start_date: !!created.due_date,
+      });
       return created;
     } catch {
       return null;
@@ -768,20 +777,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const updated: CareTodo = await res.json();
       setTodos((prev) => prev.map((t) => (t.id === id ? updated : t)));
       setTodayTodos((prev) => prev.map((t) => (t.id === id ? updated : t)));
+      analytics.track("todo_updated", {
+        source: "manual",
+        created_from: "web",
+        todo_kind: updated.frequency === "daily" ? "daily" : "care",
+        category: updated.category,
+        frequency: updated.frequency,
+        update_type: data.status ? "status_change" : "content_edit",
+      });
     } catch {
       // silent
     }
   }, []);
 
   const deleteTodo = useCallback(async (id: string) => {
+    const existing = todos.find((t) => t.id === id) || todayTodos.find((t) => t.id === id) || null;
     setTodos((prev) => prev.filter((t) => t.id !== id));
     setTodayTodos((prev) => prev.filter((t) => t.id !== id));
+    analytics.track("todo_deleted", {
+      source: "manual",
+      created_from: "web",
+      todo_kind: existing?.frequency === "daily" ? "daily" : "care",
+      category: existing?.category,
+    });
     try {
       await apiFetch(`/todos/${id}`, { method: "DELETE" });
     } catch {
       // Already removed from UI
     }
-  }, []);
+  }, [todos, todayTodos]);
 
   const refreshTodos = useCallback(async () => {
     try {

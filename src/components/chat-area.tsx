@@ -7,6 +7,7 @@ import { PanelLeft, Plus, ArrowUp, Square, Paperclip, X } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
 import * as analytics from "@/lib/analytics";
+import { trackChatElementShown, trackChatToolUsage } from "@/lib/chat-analytics";
 import { trackPaywallHit, trackActivation } from "@/lib/tracking-events";
 import { usePollChat } from "@/hooks/usePollChat";
 import { useBookingPoll } from "@/hooks/useBookingPoll";
@@ -85,6 +86,8 @@ type Message = {
   carePlanShown?: import("@/components/chat-cards").CarePlanShownPayload | null;
   scheduledActionCreated?: import("@/components/chat-cards").ScheduledActionCreatedPayload | null;
   needsHipaaConsent?: boolean;
+  appointmentVariant?: "booked" | "rescheduled";
+  calendarPromptMode?: "add" | "remove";
 };
 
 // Streaming text — reveals character by character, snapping to word boundaries.
@@ -234,6 +237,10 @@ export function ChatArea({
   // FormRequestCard so any form with a hipaa_consent field can detect the
   // signature, mark the field "signed," and auto-submit.
   const [hipaaSignedAt, setHipaaSignedAt] = useState<number>(0);
+  const trackedChatArtifactsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    trackedChatArtifactsRef.current.clear();
+  }, [activeSessionId, profileId]);
 
   // Auto-open HIPAA consent modal via ?hipaa=1 URL param
   useEffect(() => {
@@ -276,6 +283,22 @@ export function ChatArea({
     setUpgradeFeature(feature);
     setUpgradeOpen(true);
   }, [user?.id]);
+
+  const makeToolProgressHandler = useCallback(() => {
+    const seenToolSteps = new Set<string>();
+    return ({ label, step }: { label: string | null; step: number }) => {
+      setToolLabel(label);
+      if (!label) return;
+      const key = `${step}:${label}`;
+      if (seenToolSteps.has(key)) return;
+      seenToolSteps.add(key);
+      trackChatToolUsage(profileId, label, {
+        session_id: sessionIdRef.current,
+        tool_step: step,
+        source: "poll_label",
+      });
+    };
+  }, [profileId]);
 
   // Delayed one-shot marketing paywall fired after value-moment actions
   // (upload success, form submit). The 2s delay lets the success land
@@ -583,7 +606,7 @@ export function ChatArea({
         setLoadingMessages(false);
         sendAndPoll(
           { message: lastMsg.content, session_id: sessionId },
-          (label) => setToolLabel(label),
+          makeToolProgressHandler(),
           (chatResult: ChatResponse) => {
             const assistantId = nextId();
             setMessages((prev) => [
@@ -900,6 +923,17 @@ export function ChatArea({
         analytics.track("Booking Failed", { booking_id: id, phase });
       }
 
+      const appointmentVariant = booking.status?.is_reschedule ? "rescheduled" : "booked";
+      const calendarPromptMode = booking.status?.is_cancellation ? "remove" : "add";
+      if (phase === "completed" && result?.status === "confirmed") {
+        analytics.track(booking.status?.is_reschedule ? "visit_updated" : "visit_created", {
+          source: "agent",
+          created_from: "chat_booking",
+          session_id: sessionIdRef.current,
+          visit_type: booking.status?.reason_for_visit || booking.status?.provider_specialty || "unknown",
+        });
+      }
+
       // Add the summary + booking result as an assistant message
       const summaryId = nextId();
       setMessages((prev) => [
@@ -910,6 +944,8 @@ export function ChatArea({
           content: booking.status?.message || "",
           isStreaming: true,
           bookingResult: result || undefined,
+          appointmentVariant: result?.status === "confirmed" ? appointmentVariant : undefined,
+          calendarPromptMode: result?.status === "confirmed" ? calendarPromptMode : undefined,
         },
       ]);
       setStreamingId(summaryId);
@@ -920,6 +956,131 @@ export function ChatArea({
       }
     }
   }, [booking.status, booking.bookingId]);
+
+  useEffect(() => {
+    for (const msg of messages) {
+      if (msg.role !== "assistant" || msg.id === streamingId) continue;
+
+      const base = {
+        session_id: sessionIdRef.current,
+        message_id: msg.id,
+        source: "chat",
+      };
+
+      const trackOnce = (key: string, fn: () => void) => {
+        if (trackedChatArtifactsRef.current.has(key)) return;
+        trackedChatArtifactsRef.current.add(key);
+        fn();
+      };
+
+      if (msg.formRequest) {
+        trackOnce(`${msg.id}:form_request`, () => {
+          trackChatElementShown(profileId, "form_request", {
+            ...base,
+            form_id: msg.formRequest?.form_id,
+            save_to: msg.formRequest?.save_to,
+          });
+        });
+      }
+      if (msg.doctorResults?.length) {
+        trackOnce(`${msg.id}:doctor_results`, () => {
+          trackChatElementShown(profileId, "doctor_results", {
+            ...base,
+            count: msg.doctorResults?.length ?? 0,
+          });
+        });
+      }
+      if (msg.reviewResults) {
+        trackOnce(`${msg.id}:review_results`, () => {
+          trackChatElementShown(profileId, "review_results", base);
+        });
+      }
+      if (msg.locationResults?.length) {
+        trackOnce(`${msg.id}:location_results`, () => {
+          trackChatElementShown(profileId, "location_results", {
+            ...base,
+            count: msg.locationResults?.length ?? 0,
+          });
+        });
+      }
+      if (msg.webSources?.length) {
+        trackOnce(`${msg.id}:web_sources`, () => {
+          trackChatElementShown(profileId, "web_sources", {
+            ...base,
+            count: msg.webSources?.length ?? 0,
+          });
+        });
+      }
+      if (msg.appealStatus) {
+        trackOnce(`${msg.id}:appeal_status`, () => {
+          trackChatElementShown(profileId, "appeal_status", base);
+        });
+      }
+      if (msg.assistanceResult) {
+        trackOnce(`${msg.id}:assistance_programs`, () => {
+          trackChatElementShown(profileId, "assistance_programs", base);
+        });
+      }
+      if (msg.insurancePlanComparison) {
+        trackOnce(`${msg.id}:insurance_plan_comparison`, () => {
+          trackChatElementShown(profileId, "insurance_plan_comparison", base);
+        });
+      }
+      if (msg.carePlanShown) {
+        trackOnce(`${msg.id}:care_plan`, () => {
+          trackChatElementShown(profileId, "care_plan", base);
+        });
+      }
+      if (msg.refillPlanCreated) {
+        trackOnce(`${msg.id}:refill_plan_created`, () => {
+          trackChatElementShown(profileId, "refill_plan_created", base);
+        });
+      }
+      if (msg.scheduledActionCreated) {
+        trackOnce(`${msg.id}:scheduled_action`, () => {
+          trackChatElementShown(profileId, "scheduled_action", {
+            ...base,
+            kind: msg.scheduledActionCreated?.kind,
+            category: msg.scheduledActionCreated?.category,
+            call_type: msg.scheduledActionCreated?.call_type,
+          });
+          if (msg.scheduledActionCreated?.kind === "todo") {
+            analytics.track("todo_created", {
+              source: "agent",
+              created_from: "chat",
+              todo_kind: "care",
+              category: msg.scheduledActionCreated?.category,
+              session_id: sessionIdRef.current,
+              message_id: msg.id,
+            });
+          }
+          if (msg.scheduledActionCreated?.kind === "visit") {
+            analytics.track("visit_created", {
+              source: "agent",
+              created_from: "chat",
+              session_id: sessionIdRef.current,
+              message_id: msg.id,
+              visit_type: msg.scheduledActionCreated?.category || msg.scheduledActionCreated?.title || "unknown",
+            });
+          }
+        });
+      }
+      if (msg.bookingResult?.status === "confirmed") {
+        trackOnce(`${msg.id}:appointment_confirmation`, () => {
+          trackChatElementShown(profileId, "appointment_confirmation", {
+            ...base,
+            variant: msg.appointmentVariant || "booked",
+          });
+        });
+        trackOnce(`${msg.id}:calendar_prompt`, () => {
+          trackChatElementShown(profileId, "calendar_prompt", {
+            ...base,
+            mode: msg.calendarPromptMode || "add",
+          });
+        });
+      }
+    }
+  }, [messages, profileId, streamingId]);
 
   // Poll for escalation resolution — when ops resolves via Slack, inject the message live
   const escalatedBookingRef = useRef<string | null>(null);
@@ -1184,7 +1345,7 @@ export function ChatArea({
           ...(docKeys.length > 0 && { document_keys: docKeys }),
         },
         // onToolProgress
-        (label) => setToolLabel(label),
+        makeToolProgressHandler(),
         // onDone
         (chatResult: ChatResponse) => {
           const assistantId = nextId();
@@ -1766,7 +1927,7 @@ export function ChatArea({
                           setIsLoading(true);
                           sendAndPoll(
                             { message: formMsg, session_id: sessionIdRef.current },
-                            (label) => setToolLabel(label),
+                            makeToolProgressHandler(),
                             (chatResult) => {
                               const assistantId = nextId();
                               setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: chatResult.reply || "" }]);
@@ -1809,7 +1970,7 @@ export function ChatArea({
                               message: formMsg,
                               session_id: sessionIdRef.current,
                             },
-                            (label) => setToolLabel(label),
+                            makeToolProgressHandler(),
                             (chatResult) => {
                               const assistantId = nextId();
                               setMessages((prev) => [
