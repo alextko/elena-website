@@ -202,6 +202,12 @@ export interface FlushResult {
   duration_total_ms?: number;
 }
 
+export interface StorageLike {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem?(key: string): void;
+}
+
 /** Progress stages the flush reports as it runs. Consumers show these
  *  as labels on a loading screen so the user sees something happening. */
 export type FlushStage =
@@ -229,6 +235,42 @@ export async function flushTourBuffer(opts: {
    *  a running label + progress bar. */
   onProgress?: (stage: FlushStage, percent: number) => void;
 }): Promise<FlushResult> {
+  const buf = readTourBuffer();
+  const { apiFetch } = await import("./apiFetch");
+  const localStore =
+    typeof window !== "undefined" ? localStorage : undefined;
+  const sessionStore =
+    typeof window !== "undefined" ? sessionStorage : undefined;
+  return flushBufferedTourData(buf, {
+    ...opts,
+    apiFetch,
+    localStorage: localStore,
+    sessionStorage: sessionStore,
+    clearBuffer: clearTourBuffer,
+  });
+}
+
+export async function flushBufferedTourData(
+  buf: TourBuffer,
+  opts: {
+    apiFetch: (
+      path: string,
+      options?: RequestInit,
+    ) => Promise<Response>;
+    switchProfile: (id: string) => Promise<void> | void;
+    refreshProfiles: () => Promise<void> | void;
+    completeOnboarding: (data: {
+      first_name?: string;
+      last_name?: string;
+      date_of_birth?: string;
+      home_address?: string;
+    }) => Promise<void>;
+    onProgress?: (stage: FlushStage, percent: number) => void;
+    localStorage?: StorageLike;
+    sessionStorage?: StorageLike;
+    clearBuffer?: () => void;
+  },
+): Promise<FlushResult> {
   const result: FlushResult = {
     profile_saved: false,
     dependents_created: 0,
@@ -236,7 +278,6 @@ export async function flushTourBuffer(opts: {
     prewarmed_session_id: null,
     errors: [],
   };
-  const buf = readTourBuffer();
   if (!buf.profile && buf.dependents.length === 0 && !buf.seed_query) {
     // Nothing buffered — user probably came through OAuth without the
     // anonymous tour (e.g. direct signup on /login). Nothing to flush.
@@ -267,7 +308,6 @@ export async function flushTourBuffer(opts: {
   let currentStage: FlushStage = "saving_profile";
   let currentStageStart = flushStartedAt;
 
-  const { apiFetch } = await import("./apiFetch");
   const report = (stage: FlushStage, percent: number) => {
     try { opts.onProgress?.(stage, percent); } catch {}
     const now = typeof performance !== "undefined" ? performance.now() : Date.now();
@@ -319,7 +359,7 @@ export async function flushTourBuffer(opts: {
           if (dep.label) body.label = dep.label;
           if (dep.date_of_birth) body.date_of_birth = dep.date_of_birth;
           if (dep.zip_code) body.zip_code = dep.zip_code;
-          const res = await apiFetch("/profiles", {
+          const res = await opts.apiFetch("/profiles", {
             method: "POST",
             body: JSON.stringify(body),
           });
@@ -385,7 +425,7 @@ export async function flushTourBuffer(opts: {
   let activeProfileId: string | null = result.primary_dependent_id;
   if (!activeProfileId) {
     try {
-      const meRes = await apiFetch("/auth/me");
+      const meRes = await opts.apiFetch("/auth/me");
       if (meRes.ok) {
         const me = await meRes.json();
         activeProfileId = me?.profile_id || null;
@@ -409,7 +449,7 @@ export async function flushTourBuffer(opts: {
             if (c.status) body.status = c.status;
             if (c.diagnosed_date) body.diagnosed_date = c.diagnosed_date;
             if (c.notes) body.notes = c.notes;
-            const res = await apiFetch(`/profile/${activeProfileId}/conditions/add`, {
+            const res = await opts.apiFetch(`/profile/${activeProfileId}/conditions/add`, {
               method: "POST",
               body: JSON.stringify(body),
             });
@@ -428,7 +468,7 @@ export async function flushTourBuffer(opts: {
             if (m.indication) body.indication = m.indication;
             if (m.dosage_strength) body.dosage_strength = m.dosage_strength;
             if (m.frequency) body.frequency = m.frequency;
-            const res = await apiFetch(`/profile/${activeProfileId}/medications/add`, {
+            const res = await opts.apiFetch(`/profile/${activeProfileId}/medications/add`, {
               method: "POST",
               body: JSON.stringify(body),
             });
@@ -449,7 +489,7 @@ export async function flushTourBuffer(opts: {
             if (t.frequency) body.frequency = t.frequency;
             if (t.due_date) body.due_date = t.due_date;
             if (t.book_message) body.book_message = t.book_message;
-            const res = await apiFetch("/todos", {
+            const res = await opts.apiFetch("/todos", {
               method: "POST",
               body: JSON.stringify(body),
             });
@@ -475,7 +515,7 @@ export async function flushTourBuffer(opts: {
   healthAndWelcomeTasks.push(
     (async () => {
       try {
-        const res = await apiFetch("/chat/welcome", {
+        const res = await opts.apiFetch("/chat/welcome", {
           method: "POST",
           body: JSON.stringify({}),
         });
@@ -484,12 +524,12 @@ export async function flushTourBuffer(opts: {
         const sid: string | null = data?.session_id || null;
         if (sid) {
           result.prewarmed_session_id = sid;
-          try { sessionStorage.setItem("elena_active_session_id", sid); } catch {}
+          try { opts.sessionStorage?.setItem("elena_active_session_id", sid); } catch {}
           // Also seed the welcome-message cache chat-area reads so it
           // doesn't re-fetch on mount. Key matches chat-area's convention.
           try {
             if (data.heading || data.message) {
-              sessionStorage.setItem(
+              opts.sessionStorage?.setItem(
                 "elena_prewarmed_welcome",
                 JSON.stringify({ session_id: sid, heading: data.heading, message: data.message, suggestions: data.suggestions || [] }),
               );
@@ -528,17 +568,19 @@ export async function flushTourBuffer(opts: {
   //    the seed while the walkthrough overlay was still up, producing
   //    an agent response underneath the tour cards. The authed flow's
   //    timing is "seed fires on finishTour" — we preserve that.
-  if (typeof window !== "undefined") {
+  if (opts.localStorage || opts.sessionStorage) {
     try {
       // Tour state moved to localStorage for cross-tab durability;
       // fall back to sessionStorage for any in-flight sessions that
       // still have old keys.
-      const raw = localStorage.getItem("elena_tour_state") || sessionStorage.getItem("elena_tour_state");
+      const raw =
+        opts.localStorage?.getItem("elena_tour_state") ||
+        opts.sessionStorage?.getItem("elena_tour_state");
       if (raw) {
         const state = JSON.parse(raw);
         state.phase = "joyride";
         state.profileStep = 0;
-        localStorage.setItem("elena_tour_state", JSON.stringify(state));
+        opts.localStorage?.setItem("elena_tour_state", JSON.stringify(state));
       }
     } catch {}
     // Ensure finishTour (at the end of profile walkthrough) has an
@@ -554,7 +596,7 @@ export async function flushTourBuffer(opts: {
   // buffer around would replay on a later tour attempt. elena_tour_state
   // + elena_tour_seeded_actions stay (finishTour consumes them at the
   // end of the resumed profile walkthrough).
-  clearTourBuffer();
+  try { opts.clearBuffer?.(); } catch {}
   report("done", 100);
 
   // End-of-flush summary. Mirrors what the loading-screen progress bar
