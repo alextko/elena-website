@@ -74,7 +74,9 @@ export function AuthModal({
     analytics.track("Auth Method Selected", { method: "email", mode });
 
     const result =
-      mode === "signin" ? await signIn(email, password) : await signUp(email, password);
+      mode === "signin"
+        ? await signIn(email, password, { source: "auth_modal" })
+        : await signUp(email, password, { source: "auth_modal" });
 
     setSubmitting(false);
 
@@ -105,7 +107,7 @@ export function AuthModal({
   async function handleGoogleSignIn() {
     setError(null);
     analytics.track("Auth Method Selected", { method: "google" });
-    const result = await signInWithGoogle(oauthRedirectTo);
+    const result = await signInWithGoogle(oauthRedirectTo, { intent: mode, source: "auth_modal" });
     if (result.error) {
       analytics.track("Auth Error", { method: "google", error_type: result.error });
       setError(result.error);

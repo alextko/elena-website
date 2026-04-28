@@ -40,6 +40,7 @@ const DEFAULT_AFFIRMATION: PainAffirmation = {
   headline: "You're all set.",
   subtitle: "Elena is ready to help you stay on top of everything.",
 };
+const ONBOARD_ROUTE_TRACKED_KEY = "elena_onboard_route_tracked";
 
 function deriveAffirmation(): PainAffirmation {
   if (typeof window === "undefined") return DEFAULT_AFFIRMATION;
@@ -128,6 +129,24 @@ export default function OnboardPage() {
   // the paywall never fires — Meta's optimizer sees no StartTrial event.
   useEffect(() => {
     try { sessionStorage.setItem("elena_tour_post_seed_gate", "1"); } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      const alreadyTracked = sessionStorage.getItem(ONBOARD_ROUTE_TRACKED_KEY) === "1";
+      sessionStorage.removeItem(ONBOARD_ROUTE_TRACKED_KEY);
+      if (!alreadyTracked) {
+        analytics.track("Onboard Route Entered", {
+          source: "direct_onboard",
+          landing_variant: localStorage.getItem("elena_lp_variant") || "homepage",
+        });
+      }
+    } catch {
+      analytics.track("Onboard Route Entered", {
+        source: "direct_onboard",
+        landing_variant: "homepage",
+      });
+    }
   }, []);
 
   useEffect(() => {
@@ -229,12 +248,28 @@ export default function OnboardPage() {
           duration_total_ms: result.duration_total_ms,
           stage_timings_ms: result.stage_timings_ms,
         });
+        if (result.profile_saved) {
+          analytics.track("Onboarding Completed", {
+            source: "tour_flush",
+            setup_for: result.primary_dependent_id ? "dependent" : "self",
+            prewarmed_session: !!result.prewarmed_session_id,
+            error_count: result.errors.length,
+          });
+        }
         if (result.errors.length > 0) {
           console.warn("[onboard] flushTourBuffer partial errors:", result.errors);
         }
         console.log("[onboard] flush done, waiting on Continue");
       } catch (e) {
         console.error("[onboard] flushTourBuffer threw:", e);
+        analytics.track("Tour Buffer Flush Failed", {
+          error:
+            e instanceof Error
+              ? e.message
+              : typeof e === "string"
+              ? e
+              : "unknown",
+        });
       }
       // Intentionally NOT redirecting here anymore. The flushing screen
       // transitions to its "ready" state once stage=done + percent=100;

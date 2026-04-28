@@ -43,7 +43,7 @@ export default function LoginPage() {
     setError(null);
     setSubmitting(true);
     analytics.track("Auth Method Selected", { method: "email", mode: "signin" });
-    const result = await signIn(email, password);
+    const result = await signIn(email, password, { source: "login_page" });
     setSubmitting(false);
     if (result.error) {
       analytics.track("Auth Error", { method: "email", mode: "signin", error_type: result.error });
@@ -88,7 +88,7 @@ export default function LoginPage() {
 
           {/* Google OAuth */}
           <button
-            onClick={() => { analytics.track("Auth Method Selected", { method: "google" }); signInWithGoogle(); }}
+            onClick={() => { analytics.track("Auth Method Selected", { method: "google" }); signInWithGoogle(undefined, { intent: "signin", source: "login_page" }); }}
             className="flex w-full items-center justify-center gap-3 rounded-full py-4 text-base font-medium text-white transition-all mb-3"
             style={{
               background: "rgba(66, 133, 244, 0.7)",

@@ -327,6 +327,7 @@ export default function PriceTransparencyWebLandingPage() {
       }
 
       try { sessionStorage.setItem("elena_tour_post_seed_gate", "1"); } catch {}
+      try { sessionStorage.setItem("elena_onboard_route_tracked", "1"); } catch {}
       analytics.track("Onboard Route Entered", {
         source,
         landing_variant: "price_transparency_web",

@@ -56,16 +56,52 @@ interface AuthContextValue {
   profileDetailsLoaded: boolean;
   fetchProfileDetails: () => Promise<void>;
   refreshSubscription: () => Promise<void>;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string) => Promise<{ error: string | null }>;
-  signInWithGoogle: (redirectTo?: string) => Promise<{ error: string | null }>;
-  signInWithApple: (redirectTo?: string) => Promise<{ error: string | null }>;
+  signIn: (email: string, password: string, options?: { source?: string }) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, options?: { source?: string }) => Promise<{ error: string | null }>;
+  signInWithGoogle: (redirectTo?: string, options?: { intent?: "signup" | "signin"; source?: string }) => Promise<{ error: string | null }>;
+  signInWithApple: (redirectTo?: string, options?: { intent?: "signup" | "signin"; source?: string }) => Promise<{ error: string | null }>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 const ONBOARDING_REQUIRED_PROFILE_FIELDS = ["first_name", "last_name", "date_of_birth", "zip_code"] as const;
+const AUTH_INTENT_KEY = "elena_auth_intent";
+const ONBOARD_PENDING_SIGNUP_KEY = "elena_onboard_signup_pending";
+
+type AuthIntent = {
+  intent: "signup" | "signin";
+  source?: string;
+};
+
+function storeAuthIntent(intent: "signup" | "signin", source?: string) {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(AUTH_INTENT_KEY, JSON.stringify({ intent, source } satisfies AuthIntent));
+  } catch {}
+}
+
+function consumeAuthIntent(): AuthIntent | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(AUTH_INTENT_KEY);
+    if (!raw) return null;
+    sessionStorage.removeItem(AUTH_INTENT_KEY);
+    const parsed = JSON.parse(raw) as Partial<AuthIntent>;
+    if (parsed.intent === "signup" || parsed.intent === "signin") {
+      return { intent: parsed.intent, source: parsed.source };
+    }
+  } catch {}
+  return null;
+}
+
+function isLikelyFirstAuthSession(user: User | null | undefined) {
+  if (!user?.created_at || !user?.last_sign_in_at) return false;
+  const created = new Date(user.created_at).getTime();
+  const lastSignIn = new Date(user.last_sign_in_at).getTime();
+  if (!Number.isFinite(created) || !Number.isFinite(lastSignIn)) return false;
+  return Math.abs(lastSignIn - created) < 2 * 60 * 1000;
+}
 
 function hasCompletedRequiredOnboardingFields(
   profile:
@@ -185,6 +221,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Identify user in Mixpanel
       const { data: { session: currentSessionForProvider } } = await supabase.auth.getSession();
       const provider = currentSessionForProvider?.user?.app_metadata?.provider || "email";
+      const authIntent = consumeAuthIntent();
+      const firstAuthSession = isLikelyFirstAuthSession(currentSessionForProvider?.user);
+      const onboardingCollectedPreAuth =
+        typeof window !== "undefined" && sessionStorage.getItem(ONBOARD_PENDING_SIGNUP_KEY) === "1";
 
       // New user with no profile - show onboarding popup
       // Use has_profile from backend as source of truth (not localStorage which is per-browser)
@@ -194,7 +234,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           $email: data.email,
           has_profile: false,
         });
-        analytics.track("Signup Completed", { method: provider });
+        analytics.track("Signup Completed", {
+          method: provider,
+          source: authIntent?.source || "unknown",
+          auth_intent: authIntent?.intent || "unknown",
+          onboarding_collected_pre_auth: onboardingCollectedPreAuth,
+          first_auth_session: firstAuthSession,
+        });
         // Ad pixel CompleteRegistration fires after onboarding completes (in completeOnboarding),
         // not here — firing here would count users who sign up but never finish onboarding.
         console.log("[auth] No profile found, showing onboarding");
@@ -272,7 +318,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           $name: `${primary.first_name} ${primary.last_name}`.trim(),
           has_profile: true,
         });
-        analytics.track("Login Completed", { method: provider });
+        analytics.track(
+          authIntent?.intent === "signup" && firstAuthSession ? "Signup Completed" : "Login Completed",
+          {
+            method: provider,
+            source: authIntent?.source || "unknown",
+            auth_intent: authIntent?.intent || "unknown",
+            onboarding_collected_pre_auth: onboardingCollectedPreAuth,
+            first_auth_session: firstAuthSession,
+            classification:
+              authIntent?.intent === "signup" && firstAuthSession
+                ? "intent_plus_first_auth"
+                : "existing_profile_or_signin",
+          },
+        );
       }
 
       if (activeProfile) {
@@ -1015,7 +1074,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [profiles, setProfileId]);
 
   const signIn = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string, options?: { source?: string }) => {
+      storeAuthIntent("signin", options?.source);
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -1026,7 +1086,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signUp = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string, options?: { source?: string }) => {
+      storeAuthIntent("signup", options?.source);
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -1038,7 +1099,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const signInWithGoogle = useCallback(async (redirectTo?: string) => {
+  const signInWithGoogle = useCallback(async (redirectTo?: string, options?: { intent?: "signup" | "signin"; source?: string }) => {
+    storeAuthIntent(options?.intent || "signin", options?.source);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: redirectTo || `${window.location.origin}/chat` },
@@ -1065,7 +1127,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const signInWithApple = useCallback(async (redirectTo?: string) => {
+  const signInWithApple = useCallback(async (redirectTo?: string, options?: { intent?: "signup" | "signin"; source?: string }) => {
+    storeAuthIntent(options?.intent || "signin", options?.source);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "apple",
       options: { redirectTo: redirectTo || `${window.location.origin}/chat` },

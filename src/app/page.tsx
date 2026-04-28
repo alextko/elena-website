@@ -871,6 +871,7 @@ function LandingPage() {
       // guarantees every late-signup user is subject to the gate, and
       // the tour's line-1566 setter becomes a no-op reinforcement.
       try { sessionStorage.setItem("elena_tour_post_seed_gate", "1"); } catch {}
+      try { sessionStorage.setItem("elena_onboard_route_tracked", "1"); } catch {}
       analytics.track("Onboard Route Entered", { source: "landing_hero", landing_variant: ref || "homepage" });
       router.push("/onboard");
       return;
@@ -1156,14 +1157,14 @@ function LandingPage() {
             </p>
           </div>
           <div className="grid gap-5 md:grid-cols-[0.92fr_1.08fr]">
-            <div className="rounded-[32px] border border-[#d4deeb] bg-white p-8 shadow-[0_18px_48px_rgba(15,27,61,0.08)]">
-              <div className="inline-flex items-center rounded-full border border-[#c7d3e3] bg-[#eef3f9] px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[1.8px] text-[#3f5373] mb-6 shadow-[0_6px_18px_rgba(15,27,61,0.05)]">
+            <div className="rounded-[32px] border border-[#cfdcec] bg-[linear-gradient(180deg,#ffffff_0%,#f5f9ff_100%)] p-8 shadow-[0_18px_48px_rgba(15,27,61,0.08)]">
+              <div className="inline-flex items-center rounded-full border border-[#b8cbdf] bg-[linear-gradient(180deg,#eff5fd_0%,#e3edf9_100%)] px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[1.8px] text-[#355178] mb-6 shadow-[0_8px_20px_rgba(79,111,158,0.12)]">
                 Without Elena
               </div>
               <div className="space-y-4">
                 {HOMEPAGE_BEFORE_AFTER.map((item) => (
-                  <div key={item.before} className="rounded-[24px] border border-[#d5deea] bg-[#f3f7fc] px-5 py-4 shadow-[0_8px_22px_rgba(15,27,61,0.05),inset_0_1px_0_rgba(255,255,255,0.92)]">
-                    <p className="text-[0.98rem] leading-[1.7] text-[#2f4466]">{item.before}</p>
+                  <div key={item.before} className="rounded-[24px] border border-[#cad8ea] bg-[linear-gradient(180deg,#f1f6fd_0%,#e6eef9_100%)] px-5 py-4 shadow-[0_10px_24px_rgba(64,92,138,0.1),inset_0_1px_0_rgba(255,255,255,0.9)]">
+                    <p className="text-[0.98rem] leading-[1.7] text-[#2d4770]">{item.before}</p>
                   </div>
                 ))}
               </div>

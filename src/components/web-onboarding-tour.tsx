@@ -1012,7 +1012,7 @@ export function WebOnboardingTour({
     try {
       setForcePrompts(new URLSearchParams(window.location.search).get("force_prompts") === "1");
     } catch {}
-    analytics.track("Web Tour Started" as any);
+    analytics.track("Web Tour Started");
     // Suppress the App Store CTA while the tour is running so users aren't
     // double-nudged in the middle of data entry. Cleared on finish/skip.
     try { sessionStorage.setItem("elena_tour_in_progress", "1"); } catch {}
@@ -1217,7 +1217,7 @@ export function WebOnboardingTour({
     guardRef.current = true;
     setTimeout(() => { guardRef.current = false; }, 600);
 
-    analytics.track("Web Tour Step Viewed" as any, { step: profileStep + 2, step_name: PROFILE_STEPS[profileStep]?.title });
+    analytics.track("Web Tour Step Viewed", { step: profileStep + 2, step_name: PROFILE_STEPS[profileStep]?.title });
 
     // Clear per-card form state so the next card starts fresh.
     setItemError(null);
@@ -1517,7 +1517,7 @@ export function WebOnboardingTour({
   const finishTour = useCallback(() => {
     if (finishedRef.current) return;
     finishedRef.current = true;
-    analytics.track("Web Tour Completed" as any);
+    analytics.track("Web Tour Completed");
     localStorage.setItem("elena_web_tour_done", "true");
     try { sessionStorage.removeItem("elena_tour_in_progress"); } catch {}
     try { localStorage.removeItem("elena_tour_state"); sessionStorage.removeItem("elena_tour_state"); } catch {}
@@ -1574,7 +1574,7 @@ export function WebOnboardingTour({
           // reads this flag in its handleSend to intercept send #2.
           try { sessionStorage.setItem("elena_tour_post_seed_gate", "1"); } catch {}
         }
-        analytics.track("Web Tour Seed Query Written" as any, {
+        analytics.track("Web Tour Seed Query Written", {
           action_count: actions.length,
           synthesized: !actionSeed,
           via: onSeedQuery ? "callback+localStorage" : "localStorage",
@@ -1617,7 +1617,7 @@ export function WebOnboardingTour({
   const hasNonSelfCareSelections = careSelections.some((id) => id !== "myself");
 
   const advanceFromCare = useCallback(() => {
-    if (careSelections.length > 0) analytics.track("Web Tour Care Context" as any, { care_for: careSelections });
+    if (careSelections.length > 0) analytics.track("Web Tour Care Context", { care_for: careSelections });
     // Caregivers managing more than one person get an acknowledgment beat
     // first so they feel seen about the multi-person load. Single-person
     // selections (including myself-only) skip straight to setup-for /
@@ -1634,7 +1634,7 @@ export function WebOnboardingTour({
   }, [careSelections, hasNonSelfCareSelections]);
 
   const advanceFromCareAck = useCallback(() => {
-    analytics.track("Web Tour Care Ack Continued" as any, { count: careSelections.length });
+    analytics.track("Web Tour Care Ack Continued", { count: careSelections.length });
     if (hasNonSelfCareSelections) {
       setPhase("setup-for");
     } else {
@@ -1648,7 +1648,7 @@ export function WebOnboardingTour({
   // create the linked profile after profile-form and switch to it.
   const advanceFromSetupFor = useCallback(() => {
     if (!setupForCareId) return;
-    analytics.track("Web Tour Setup For Selected" as any, {
+    analytics.track("Web Tour Setup For Selected", {
       care_id: setupForCareId,
       self: setupForCareId === "myself",
       has_name: dependentFirstName.trim().length > 0,
@@ -1661,8 +1661,8 @@ export function WebOnboardingTour({
   }, [setupForCareId, dependentFirstName]);
 
   const advanceFromPain = useCallback(() => {
-    analytics.track("Web Tour Pain Step" as any, { bucket: painSelection });
-    analytics.track("Web Tour Value Step Shown" as any, { lp_variant: lpVariant || "homepage" });
+    analytics.track("Web Tour Pain Step", { bucket: painSelection });
+    analytics.track("Web Tour Value Step Shown", { lp_variant: lpVariant || "homepage" });
     setPhase("value");
   }, [painSelection, lpVariant]);
 
@@ -1761,7 +1761,7 @@ export function WebOnboardingTour({
   }, [setupForCareId, dependentFirstName, dependentLastName, dependentDob, dependentZip, careSelections, refreshProfiles, switchProfile]);
 
   const advanceFromValue = useCallback(async () => {
-    analytics.track("Web Tour Value Step Continued" as any, { lp_variant: lpVariant || "homepage" });
+    analytics.track("Web Tour Value Step Continued", { lp_variant: lpVariant || "homepage" });
     // Fresh signup without pre-filled profile → collect name/DOB/zip first;
     // handleProfileSubmit then routes into the appropriate branch.
     //
@@ -1801,11 +1801,6 @@ export function WebOnboardingTour({
       // name gets captured in the buffer for post-signup flush (anon
       // path). Then we create/buffer the dependent with the full set
       // of captured fields and switch active to them.
-      analytics.track("Onboarding Completed" as any, {
-        fields_filled: ["first_name", "last_name", dependentDob && "dob", "zip_code"].filter(Boolean),
-        source: "tour",
-        setup_for: "dependent",
-      });
       if (isAnonymousTour) {
         // Primary name might be empty (we don't collect it in dependent
         // setup — OAuth name isn't available until post-signup). Buffer
@@ -1819,20 +1814,15 @@ export function WebOnboardingTour({
           first_name: profileData?.firstName || firstName.trim() || "",
           last_name: profileData?.lastName || lastName.trim() || "",
         });
+        analytics.track("Onboarding Completed", {
+          fields_filled: ["first_name", "last_name", dependentDob && "dob", "zip_code"].filter(Boolean),
+          source: "tour",
+          setup_for: "dependent",
+        });
       }
       await createDependentAndSwitch();
     } else {
       // Self setup — the form captured the PRIMARY user's data.
-      analytics.track("Onboarding Completed" as any, {
-        fields_filled: [
-          firstName.trim() && "first_name",
-          lastName.trim() && "last_name",
-          dob && "dob",
-          zipCode.trim() && "zip_code",
-        ].filter(Boolean),
-        source: "tour",
-        setup_for: "self",
-      });
       if (isAnonymousTour) {
         setBufferedProfile({
           first_name: cap(firstName.trim()),
@@ -1847,6 +1837,16 @@ export function WebOnboardingTour({
           date_of_birth: displayToIsoDate(dob) || undefined,
           home_address: zipCode.trim(),
         });
+        analytics.track("Onboarding Completed", {
+          fields_filled: [
+            firstName.trim() && "first_name",
+            lastName.trim() && "last_name",
+            dob && "dob",
+            zipCode.trim() && "zip_code",
+          ].filter(Boolean),
+          source: "tour",
+          setup_for: "self",
+        });
       }
     }
     setSavingProfile(false);
@@ -1857,7 +1857,7 @@ export function WebOnboardingTour({
   // preserving data continuity with the prior OnboardingModal. (Event name kept
   // the same on purpose — so dashboards keep working.)
   useEffect(() => {
-    if (phase === "profile-form") analytics.track("Onboarding Modal Shown" as any, { source: "tour" });
+    if (phase === "profile-form") analytics.track("Onboarding Modal Shown", { source: "tour" });
   }, [phase]);
 
   // Router → pain. The router's 5 buckets also drive the pain variant:
@@ -1867,14 +1867,14 @@ export function WebOnboardingTour({
   // routeAfterProfile, after value + profile-form.
   const advanceFromRouter = useCallback(() => {
     if (!routerChoice) return;
-    analytics.track("Web Tour Router Selected" as any, { choice: routerChoice });
+    analytics.track("Web Tour Router Selected", { choice: routerChoice });
     setPhase("pain");
   }, [routerChoice]);
 
   const advanceFromSituation = useCallback(() => {
     const chip = getChip(selectedSituation);
     const tpl = inferredSituationTemplate;
-    analytics.track("Web Tour Situation Selected" as any, {
+    analytics.track("Web Tour Situation Selected", {
       situation: selectedSituation,
       source: chip ? (chip.conditionName ? "chips" : "chips_freeform") : "alias",
       custom_text: customSituation.trim() || undefined,
@@ -1906,7 +1906,7 @@ export function WebOnboardingTour({
     setSelectedMeds([]);
     setCustomMeds([]);
     setCheckedPlanItems([]);
-    analytics.track("Web Tour Situation Selected" as any, {
+    analytics.track("Web Tour Situation Selected", {
       situation: templateKey,
       source: "alias",
       custom_text: customSituation.trim(),
@@ -1916,7 +1916,7 @@ export function WebOnboardingTour({
   }, [customSituation, routerChoice]);
 
   const advanceFromMeds = useCallback(() => {
-    analytics.track("Web Tour Meds Selected" as any, {
+    analytics.track("Web Tour Meds Selected", {
       situation: selectedSituation,
       count: selectedMeds.length,
       custom_count: customMeds.length,
@@ -1935,7 +1935,7 @@ export function WebOnboardingTour({
   const advanceFromCarePlan = useCallback(() => {
     const tpl = inferredSituationTemplate;
     const total = tpl?.planItems.length ?? 0;
-    analytics.track("Web Tour Care Plan Reviewed" as any, {
+    analytics.track("Web Tour Care Plan Reviewed", {
       situation: selectedSituation,
       checked_count: checkedPlanItems.length,
       total_items: total,
@@ -1963,7 +1963,7 @@ export function WebOnboardingTour({
       ...confirmedActions,
       ...(trimmedCustom.length >= 3 ? [trimmedCustom] : []),
     ];
-    analytics.track("Web Tour Elena Plan Continued" as any, {
+    analytics.track("Web Tour Elena Plan Continued", {
       situation: selectedSituation,
       branch: routerChoice,
       confirmed_count: confirmedActions.length,
@@ -2248,7 +2248,7 @@ export function WebOnboardingTour({
   useEffect(() => {
     if (phase !== "validation") return;
     const tpl = inferredSituationTemplate;
-    analytics.track("Web Tour Validation Shown" as any, {
+    analytics.track("Web Tour Validation Shown", {
       situation: selectedSituation,
       done_count: checkedPlanItems.length,
       remaining_count: tpl ? tpl.planItems.length - checkedPlanItems.length : 0,
@@ -2257,14 +2257,14 @@ export function WebOnboardingTour({
 
   useEffect(() => {
     if (phase !== "setup-for") return;
-    analytics.track("Web Tour Setup For Shown" as any, {
+    analytics.track("Web Tour Setup For Shown", {
       selection_count: careSelections.filter((id) => id !== "myself").length,
     });
   }, [phase, careSelections]);
 
   useEffect(() => {
     if (phase !== "elena-plan") return;
-    analytics.track("Web Tour Elena Plan Shown" as any, {
+    analytics.track("Web Tour Elena Plan Shown", {
       situation: selectedSituation,
       med_count: selectedMeds.length + customMeds.length,
     });
@@ -2272,8 +2272,16 @@ export function WebOnboardingTour({
 
   useEffect(() => {
     if (phase !== "care-ack") return;
-    analytics.track("Web Tour Care Ack Shown" as any, { count: careSelections.length });
+    analytics.track("Web Tour Care Ack Shown", { count: careSelections.length });
   }, [phase, careSelections.length]);
+
+  useEffect(() => {
+    if (phase !== "auth") return;
+    analytics.track("Onboard Auth Step Viewed", {
+      surface,
+      mode: authMode,
+    });
+  }, [phase, surface, authMode]);
 
   if (!mounted || phase === "done") return null;
 
@@ -3158,7 +3166,7 @@ export function WebOnboardingTour({
                         // leaveShellThen(beginJoyride), which jumped past
                         // social-proof → auth → flush and dead-ended
                         // anonymous users without signup.
-                        analytics.track("Web Tour Situation Skipped" as any);
+                        analytics.track("Web Tour Situation Skipped");
                         setRouterChoice("staying_healthy");
                         setPhase("elena-plan");
                       }}
@@ -3726,7 +3734,7 @@ export function WebOnboardingTour({
                               if (!wasSelected && customActionText.trim().length > 0) {
                                 setCustomActionText("");
                               }
-                              analytics.track("Web Tour Action Toggled" as any, {
+                              analytics.track("Web Tour Action Toggled", {
                                 branch: routerChoice,
                                 line: action.display,
                                 raw_line: action.raw,
@@ -3949,7 +3957,7 @@ export function WebOnboardingTour({
                   <RevealButton visible={headlineDone} delay={2.4}>
                     <GradientButton
                       onClick={() => {
-                        analytics.track("Web Tour Social Proof Continued" as any, {
+                        analytics.track("Web Tour Social Proof Continued", {
                           pain_bucket: painSelection ?? null,
                           router_choice: routerChoice,
                         });
@@ -4006,7 +4014,10 @@ export function WebOnboardingTour({
                         setAuthSubmitting(true);
                         analytics.track("Auth Method Selected", { method: "google", surface: "tour_inline" });
                         const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/onboard` : undefined;
-                        const result = await signInWithGoogle(redirectTo);
+                        const result = await signInWithGoogle(redirectTo, {
+                          intent: authMode,
+                          source: "tour_inline",
+                        });
                         if (result.error) {
                           analytics.track("Auth Error", { method: "google", surface: "tour_inline", error_type: result.error });
                           setAuthError(result.error);
@@ -4059,8 +4070,8 @@ export function WebOnboardingTour({
                         setAuthSubmitting(true);
                         analytics.track("Auth Method Selected", { method: "email", mode: authMode, surface: "tour_inline" });
                         const result = authMode === "signup"
-                          ? await signUp(authEmail, authPassword)
-                          : await signIn(authEmail, authPassword);
+                          ? await signUp(authEmail, authPassword, { source: "tour_inline" })
+                          : await signIn(authEmail, authPassword, { source: "tour_inline" });
                         setAuthSubmitting(false);
                         if (result.error) {
                           analytics.track("Auth Error", { method: "email", mode: authMode, surface: "tour_inline", error_type: result.error });
