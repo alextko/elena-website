@@ -1828,21 +1828,27 @@ export function ChatArea({
                   <div className={`${msg.isStreaming === false || !msg.isStreaming ? "elena-card-enter" : ""} max-md:scale-[0.88] max-md:origin-top-left`}>
                     {/* Show location card if present (pharmacies, labs, etc.), otherwise doctor card — skip if form is shown */}
                     {!msg.formRequest && msg.locationResults && msg.locationResults.length > 0 ? (
-                      <LocationResultsCard
-                        locations={msg.locationResults}
-                        onCall={(loc) => handleSend(`Call ${loc.name} at ${loc.phone_number}`)}
-                        onSelect={(loc) => {
-                          // Disambiguate when multiple results share a
-                          // name (e.g. 7 CVSs) by including the address.
-                          // Without this, Elena gets "Let's go with CVS"
-                          // and can't pick one.
-                          const locLabel = [loc.address, loc.city].filter(Boolean).join(", ");
-                          const msg = locLabel
-                            ? `Let's go with ${loc.name} at ${locLabel}`
-                            : `Let's go with ${loc.name}`;
-                          handleSend(msg);
-                        }}
-                      />
+                        <LocationResultsCard
+                          locations={msg.locationResults}
+                          onCall={(loc) => handleSend(`Call ${loc.name} at ${loc.phone_number}`)}
+                          onSelect={(loc) => {
+                            // Keep the user's selection natural while still
+                            // including enough detail to uniquely identify the
+                            // chosen location when names repeat.
+                            const parts = [
+                              loc.address,
+                              [loc.city, loc.state, loc.postal_code]
+                                .filter(Boolean)
+                                .join(", ")
+                                .replace(/^,\s*|,\s*$/g, ""),
+                              loc.phone_number ? `phone ${loc.phone_number}` : null,
+                            ].filter(Boolean);
+                            const selectionMessage = parts.length
+                              ? `I'll do ${loc.name}. ${parts.join(". ")}.`
+                              : `I'll do ${loc.name}.`;
+                            handleSend(selectionMessage);
+                          }}
+                        />
                     ) : !msg.formRequest && msg.doctorResults && msg.doctorResults.length > 0 ? (
                       (() => {
                         // Provider names aren't unique (same doctor across

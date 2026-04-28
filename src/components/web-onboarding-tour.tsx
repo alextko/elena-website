@@ -101,6 +101,22 @@ function capitalizeName(s: string): string {
   return s.replace(/(^|\s)([a-z])/g, (_m, sep, ch) => sep + ch.toUpperCase());
 }
 
+function normalizeMedicationList(...lists: Array<string[] | undefined>): string[] {
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+  for (const list of lists) {
+    for (const raw of list || []) {
+      const name = raw.trim();
+      if (!name) continue;
+      const key = name.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      normalized.push(name);
+    }
+  }
+  return normalized;
+}
+
 interface WebOnboardingTourProps {
   surface?: "onboard" | "chat";
   onComplete: () => void;
@@ -1916,10 +1932,19 @@ export function WebOnboardingTour({
   }, [customSituation, routerChoice]);
 
   const advanceFromMeds = useCallback(() => {
+    const pendingDraft = newMedDraft.trim();
+    const mergedCustomMeds = pendingDraft
+      ? normalizeMedicationList(customMeds, [pendingDraft])
+      : normalizeMedicationList(customMeds);
+    const allMeds = normalizeMedicationList(selectedMeds, mergedCustomMeds);
+    if (pendingDraft || mergedCustomMeds.length !== customMeds.length) {
+      setCustomMeds(mergedCustomMeds);
+      setNewMedDraft("");
+    }
     analytics.track("Web Tour Meds Selected", {
       situation: selectedSituation,
-      count: selectedMeds.length,
-      custom_count: customMeds.length,
+      count: allMeds.length,
+      custom_count: mergedCustomMeds.length,
       branch: routerChoice,
     });
     // Medications and money branches skip the care-plan review +
@@ -1930,7 +1955,7 @@ export function WebOnboardingTour({
     } else {
       setPhase("care-plan");
     }
-  }, [selectedSituation, selectedMeds.length, customMeds.length, routerChoice]);
+  }, [selectedSituation, selectedMeds, customMeds, newMedDraft, routerChoice]);
 
   const advanceFromCarePlan = useCallback(() => {
     const tpl = inferredSituationTemplate;
@@ -2013,13 +2038,18 @@ export function WebOnboardingTour({
       const tpl = inferredSituationTemplate;
       const conditionName = chip?.conditionName || customSituation.trim();
       const collectedCondition = routerChoice === "condition" || routerChoice === "medications" || routerChoice === "money";
+      const medIndication = tpl?.conditionName || conditionName || undefined;
       if (collectedCondition && conditionName) {
         addBufferedCondition({ name: conditionName, status: "active" });
       }
-      if (tpl && (routerChoice === "condition" || routerChoice === "medications" || routerChoice === "money")) {
-        const allMeds = [...selectedMeds, ...customMeds.map((m) => m.trim()).filter(Boolean)];
+      if (routerChoice === "condition" || routerChoice === "medications" || routerChoice === "money") {
+        const allMeds = normalizeMedicationList(
+          selectedMeds,
+          customMeds,
+          newMedDraft.trim() ? [newMedDraft] : undefined,
+        );
         for (const name of allMeds) {
-          addBufferedMedication({ name, indication: tpl.conditionName });
+          addBufferedMedication({ name, indication: medIndication });
         }
       }
       // Todo dedup — mirrors the authed path's seenTitles set. Lowercase,
@@ -2118,6 +2148,7 @@ export function WebOnboardingTour({
     const chip = getChip(selectedSituation);
     const tpl = inferredSituationTemplate;
     const conditionName = chip?.conditionName || customSituation.trim();
+    const medIndication = tpl?.conditionName || conditionName || undefined;
     // Branches that collected a condition (condition / medications / money)
     // save it. Staying-healthy didn't collect one.
     const collectedCondition = routerChoice === "condition" || routerChoice === "medications" || routerChoice === "money";
@@ -2130,13 +2161,17 @@ export function WebOnboardingTour({
       }
       // Meds: condition, medications, and money branches all collect
       // them. Only staying_healthy skipped this step.
-      if (profileId && tpl && (routerChoice === "condition" || routerChoice === "medications" || routerChoice === "money")) {
-        const allMeds = [...selectedMeds, ...customMeds.map((m) => m.trim()).filter(Boolean)];
+      if (profileId && (routerChoice === "condition" || routerChoice === "medications" || routerChoice === "money")) {
+        const allMeds = normalizeMedicationList(
+          selectedMeds,
+          customMeds,
+          newMedDraft.trim() ? [newMedDraft] : undefined,
+        );
         await Promise.all(
           allMeds.map((name) =>
             apiFetch(`/profile/${profileId}/medications/add`, {
               method: "POST",
-              body: JSON.stringify({ name, indication: tpl.conditionName }),
+              body: JSON.stringify({ name, indication: medIndication }),
             }).catch((e) => console.log("[tour] med save failed", name, e)),
           ),
         );
@@ -2241,7 +2276,7 @@ export function WebOnboardingTour({
       setSavingSituation(false);
       leaveShellThen(beginJoyride);
     }
-  }, [savingSituation, isAnonymousTour, onNeedsAuth, selectedSituation, customSituation, selectedMeds, customMeds, checkedPlanItems, profileId, routerChoice, confirmedActions, customActionText, beginJoyride, leaveShellThen, inferredSituationTemplate]);
+  }, [savingSituation, isAnonymousTour, onNeedsAuth, selectedSituation, customSituation, selectedMeds, customMeds, newMedDraft, checkedPlanItems, profileId, routerChoice, confirmedActions, customActionText, beginJoyride, leaveShellThen, inferredSituationTemplate]);
 
   // Fire the validation-shown event once when the phase enters (it's the
   // "wow" beat, so we track regardless of what the user does next).
@@ -2266,9 +2301,13 @@ export function WebOnboardingTour({
     if (phase !== "elena-plan") return;
     analytics.track("Web Tour Elena Plan Shown", {
       situation: selectedSituation,
-      med_count: selectedMeds.length + customMeds.length,
+      med_count: normalizeMedicationList(
+        selectedMeds,
+        customMeds,
+        newMedDraft.trim() ? [newMedDraft] : undefined,
+      ).length,
     });
-  }, [phase, selectedSituation, selectedMeds.length, customMeds.length]);
+  }, [phase, selectedSituation, selectedMeds, customMeds, newMedDraft]);
 
   useEffect(() => {
     if (phase !== "care-ack") return;
@@ -3552,7 +3591,11 @@ export function WebOnboardingTour({
               ];
               const isOtc = (m: string) =>
                 OTC_MARKERS.some((kw) => m.toLowerCase().includes(kw));
-              const allMeds = [...selectedMeds, ...customMeds];
+              const allMeds = normalizeMedicationList(
+                selectedMeds,
+                customMeds,
+                newMedDraft.trim() ? [newMedDraft] : undefined,
+              );
               const primaryRxMed = allMeds.find((m) => !isOtc(m)) || null;
               const remainingPlanActions = tpl
                 ? tpl.planItems
