@@ -280,11 +280,29 @@ export async function flushTourBuffer(opts: {
     }
   };
 
-  // Stage 1 — primary profile + dependents in parallel. Both hit
-  // different DB tables and don't depend on each other's output, so
-  // racing them cuts ~300-600ms on the typical caregiver flow.
+  // Stage 1 — create the primary profile first, then create any
+  // dependents. This ordering is deliberate: if the backend ever
+  // requires a primary profile row / active-profile context before it
+  // can safely create managed profiles, running these in parallel can
+  // strand the signup in a "dependent exists, me profile missing"
+  // state. The app hit this class of bug already; web should not take
+  // the same risk for a few hundred ms of latency savings.
   report("saving_profile", 10);
-  const dependentTask = (async () => {
+  if (buf.profile) {
+    try {
+      await opts.completeOnboarding({
+        first_name: buf.profile.first_name,
+        last_name: buf.profile.last_name,
+        date_of_birth: buf.profile.date_of_birth,
+        home_address: buf.profile.zip_code || buf.profile.home_address,
+      });
+      result.profile_saved = true;
+    } catch (e) {
+      result.errors.push(`completeOnboarding threw: ${(e as Error).message}`);
+    }
+  }
+
+  const createDependents = async () => {
     // Primary dependent first in the response order so we can pick
     // its id out synchronously after Promise.all.
     const primary = buf.dependents.find((d) => d.is_primary_dependent);
@@ -323,25 +341,9 @@ export async function flushTourBuffer(opts: {
       }),
     );
     return responses;
-  })();
+  };
 
-  const primaryProfileTask = buf.profile
-    ? (async () => {
-        try {
-          await opts.completeOnboarding({
-            first_name: buf.profile!.first_name,
-            last_name: buf.profile!.last_name,
-            date_of_birth: buf.profile!.date_of_birth,
-            home_address: buf.profile!.zip_code || buf.profile!.home_address,
-          });
-          result.profile_saved = true;
-        } catch (e) {
-          result.errors.push(`completeOnboarding threw: ${(e as Error).message}`);
-        }
-      })()
-    : Promise.resolve();
-
-  await Promise.all([primaryProfileTask, dependentTask]);
+  await createDependents();
   report("creating_family", 40);
 
   // Stage 2 — refresh profiles + switch to primary dependent (if any).
