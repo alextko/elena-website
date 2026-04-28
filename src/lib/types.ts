@@ -116,6 +116,7 @@ export interface SubscriptionResponse {
   plan: string;
   tier: string;  // free / standard / premium
   status: string;
+  management_channel?: string | null;
   current_period_end?: string | null;
   cancel_at_period_end: boolean;
   calls_remaining?: number | null;    // phone calls remaining this period

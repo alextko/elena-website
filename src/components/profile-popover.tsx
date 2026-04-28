@@ -258,6 +258,8 @@ export function ProfilePopover({
   const [unlinking, setUnlinking] = useState(false);
   const [personalPanel, setPersonalPanel] = useState<"details" | "health" | "documents" | null>(null);
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
+  const [managingSubscription, setManagingSubscription] = useState(false);
+  const [subscriptionPortalError, setSubscriptionPortalError] = useState<string | null>(null);
   const [healthData, setHealthData] = useState<HealthData | null>(null);
   const [personalDocuments, setPersonalDocuments] = useState<ProfileDocument[]>([]);
   const personalDataLoadedRef = useRef(false);
@@ -396,6 +398,45 @@ export function ProfilePopover({
     }
     setUploadingPhoto(false);
     closeCropModal();
+  }
+
+  async function handleManageSubscription() {
+    if (!subscription || managingSubscription) return;
+
+    if (subscription.management_channel === "app_store") {
+      setSubscriptionPortalError("This subscription is managed in the app store.");
+      return;
+    }
+
+    setManagingSubscription(true);
+    setSubscriptionPortalError(null);
+    try {
+      const res = await apiFetch("/web/portal", { method: "POST" });
+      if (!res.ok) {
+        let detail = "Could not open subscription settings right now.";
+        try {
+          const data = await res.json();
+          if (typeof data?.detail === "string" && data.detail.trim()) {
+            detail = data.detail;
+          }
+        } catch {
+          // keep fallback detail
+        }
+        setSubscriptionPortalError(detail);
+        return;
+      }
+
+      const data: { portal_url?: string | null } = await res.json();
+      if (!data.portal_url) {
+        setSubscriptionPortalError("Could not open subscription settings right now.");
+        return;
+      }
+      window.location.href = data.portal_url;
+    } catch {
+      setSubscriptionPortalError("Could not open subscription settings right now.");
+    } finally {
+      setManagingSubscription(false);
+    }
   }
 
   useEffect(() => {
@@ -1447,6 +1488,35 @@ export function ProfilePopover({
                           ? "Weekly plan"
                           : "Monthly plan"}
                       </p>
+                      {subscription?.cancel_at_period_end && subscription?.current_period_end && (
+                        <p className="mt-2 text-[13px] text-white/72">
+                          Cancels on{" "}
+                          {new Date(subscription.current_period_end).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleManageSubscription}
+                        disabled={managingSubscription}
+                        className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full border border-white/18 bg-white/16 px-5 text-[14px] font-semibold text-white transition-all hover:bg-white/24 disabled:cursor-not-allowed disabled:opacity-70"
+                      >
+                        {managingSubscription
+                          ? "Opening…"
+                          : subscription?.management_channel === "app_store"
+                          ? "Managed in app store"
+                          : subscription?.status === "trialing"
+                          ? "Manage trial"
+                          : "Manage subscription"}
+                      </button>
+                      {subscriptionPortalError && (
+                        <p className="mt-3 text-[13px] leading-5 text-[#FFD8C2]">
+                          {subscriptionPortalError}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}

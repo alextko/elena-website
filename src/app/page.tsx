@@ -6,7 +6,6 @@ import { useAuth } from "@/lib/auth-context";
 import { trackViewContent, trackActivation } from "@/lib/tracking-events";
 import * as analytics from "@/lib/analytics";
 import { AuthModal } from "@/components/auth-modal";
-import Spotlights from "@/components/landing/spotlights";
 import { postPendingMessage } from "@/lib/pendingMessage";
 import "./landing.css";
 
@@ -100,7 +99,7 @@ function StatsBar({ persona }: { persona?: string | null }) {
 
   return (
     <section
-      id="how-it-works"
+      id="system-stats"
       ref={ref}
       className="relative z-10 py-20 px-8 max-md:py-14 max-md:px-5 overflow-hidden"
       style={{
@@ -214,6 +213,79 @@ const SUGGESTIONS: {
   },
 ];
 
+const HOMEPAGE_USE_CASE_ACTIONS = [
+  {
+    title: "Fight a bill",
+    prompt: "I have a medical bill I think is wrong. Help me audit it and fight whatever's overcharged.",
+  },
+  {
+    title: "Compare prices",
+    prompt: "I need a procedure done. Compare prices at every provider near me and tell me the lowest-cost option that takes my insurance.",
+  },
+  {
+    title: "Manage family care",
+    prompt: "Help me set up everything for the person I'm caring for - meds, doctors, upcoming appointments - so I can stop juggling it.",
+  },
+  {
+    title: "Find care fast",
+    prompt: "I need care today. Find me a nearby provider who takes my insurance and tell me what it'll cost before I go.",
+  },
+];
+
+const HOMEPAGE_BEFORE_AFTER = [
+  {
+    before: "Open five tabs, call two offices, and still not know what care will cost.",
+    after: "See your options, compare real prices, and book with a clear answer.",
+  },
+  {
+    before: "Spend your lunch break on hold trying to understand what insurance will cover.",
+    after: "Let Elena handle the calls, coverage questions, and follow-up for you.",
+  },
+  {
+    before: "Manage your own care or a family member's care through texts, notes, and memory.",
+    after: "Keep appointments, meds, and loose ends organized in one place.",
+  },
+];
+
+const HOMEPAGE_STEPS = [
+  {
+    step: "01",
+    title: "Tell Elena what is going on",
+    body: "Describe the bill, appointment, medication, or insurance problem in plain English.",
+  },
+  {
+    step: "02",
+    title: "She does the legwork",
+    body: "Elena compares prices, calls insurance, tracks details, and organizes the next moves.",
+  },
+  {
+    step: "03",
+    title: "You get a clear next step",
+    body: "Instead of a mess of tabs and hold music, you get an answer and a plan.",
+  },
+];
+
+const HOMEPAGE_BENEFITS = [
+  {
+    title: "Calls and insurance",
+    body: "Coverage checks, claim questions, prior authorizations, and the hold music most people never get through.",
+  },
+  {
+    title: "Prices before you book",
+    body: "Compare facilities, cash rates, and in-network options before a surprise bill shows up.",
+  },
+  {
+    title: "Appointments and follow-through",
+    body: "Find the next step, keep track of it, and make sure the paperwork and scheduling actually happen.",
+  },
+  {
+    title: "Family healthcare admin",
+    body: "Stay on top of medications, appointments, and loose ends for the people you care for.",
+  },
+];
+
+const APP_STORE_URL = "https://apps.apple.com/us/app/elena-ai-health-navigator/id6760362771";
+
 const TESTIMONIALS = [
   { name: "Alex", text: <><span className="font-bold">Alex</span> saved <span className="font-bold">$650</span> on a CT scan by comparing prices before the appointment.</>, logo: "/images/insurers/oscar.svg", logoAlt: "Oscar" },
   { name: "Elena", text: <><span className="font-bold">Elena</span> negotiated an out-of-network ambulance ride down by <span className="font-bold">$1,000</span>.</>, logo: "/images/insurers/humana.svg", logoAlt: "Humana" },
@@ -223,6 +295,12 @@ const TESTIMONIALS = [
   { name: "Maria", text: <><span className="font-bold">Maria</span> got her prior authorization for her inhaler approved after being rejected.</>, logo: "/images/insurers/humana.svg", logoAlt: "Humana" },
   { name: "Doriam", text: <><span className="font-bold">Doriam</span> found the best price for her blood work and cardiology appointments.</>, logo: "/images/insurers/uhc.svg", logoAlt: "UnitedHealthcare" },
   { name: "Andy", text: <><span className="font-bold">Andy</span> figured out the best insurance plan for him and his family.</>, logo: "/images/insurers/medicare.svg", logoAlt: "Medicare" },
+];
+
+const HOMEPAGE_FEATURED_STORIES = [
+  TESTIMONIALS[0],
+  TESTIMONIALS[2],
+  TESTIMONIALS[4],
 ];
 
 const PERSONA_TESTIMONIALS: Record<string, typeof TESTIMONIALS> = {
@@ -672,13 +750,15 @@ function LandingPage() {
     };
   }, []);
 
-  const handleSend = useCallback((opts?: { preferPrefill?: boolean }) => {
+  const handleSend = useCallback((opts?: { preferPrefill?: boolean; overrideQuery?: string }) => {
     // preferPrefill (used by the bottom CTA) skips the rotating placeholder text so
     // clicking "Get started" without typing sends the canonical persona prefill
     // instead of whatever random example query was animating in the hero input.
-    const typed = opts?.preferPrefill && !userHasEdited
-      ? ""
-      : sendQuery.trim();
+    const typed = opts?.overrideQuery?.trim() ?? (
+      opts?.preferPrefill && !userHasEdited
+        ? ""
+        : sendQuery.trim()
+    );
     // Fall back to the LP's prefill so users arriving via the mobile "Get
     // started" CTA (no input shown) or hitting send with an empty field open
     // chat with a coherent first message in Elena's voice. Ref-specific LPs
@@ -808,6 +888,11 @@ function LandingPage() {
     setManualInput(suggestion.text);
     inputRef.current?.focus();
   }, []);
+
+  const handleUseCaseClick = useCallback((title: string, prompt: string) => {
+    analytics.track("Suggested Prompt Clicked", { prompt_label: title, source: "homepage_use_case" });
+    handleSend({ overrideQuery: prompt });
+  }, [handleSend]);
 
   if (loading || (session && !demoMode)) {
     return (
@@ -1057,25 +1142,166 @@ function LandingPage() {
       {/* STATS BAR */}
       <StatsBar persona={ref} />
 
-      {/* MANIFESTO */}
-      <section className="relative z-10 py-[120px] px-8 bg-[#F7F6F2] max-md:py-20 max-md:px-5">
+      <section className="relative py-[120px] px-8 bg-[#F7F6F2] max-md:py-20 max-md:px-5">
+        <div className="mx-auto max-w-[1040px]">
+          <div className="max-w-[640px] mb-16 max-md:mb-12">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[2px] text-[#2E6BB5] mb-4">The shift</p>
+            <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-semibold tracking-tight text-[#0F1B3D] leading-tight">
+              Stop doing healthcare the hard way.
+              {" "}
+              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#2E6BB5]">Hand it off.</em>
+            </h2>
+            <p className="mt-5 text-[1rem] text-[#5a6a82] leading-[1.75]">
+              The difference is not subtle. Without help, healthcare turns into admin sprawl. With Elena, the work collapses into a clear next step.
+            </p>
+          </div>
+          <div className="grid gap-5 md:grid-cols-[0.92fr_1.08fr]">
+            <div className="rounded-[32px] border border-[#d4deeb] bg-white p-8 shadow-[0_18px_48px_rgba(15,27,61,0.08)]">
+              <div className="inline-flex items-center rounded-full border border-[#c7d3e3] bg-[#eef3f9] px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[1.8px] text-[#3f5373] mb-6 shadow-[0_6px_18px_rgba(15,27,61,0.05)]">
+                Without Elena
+              </div>
+              <div className="space-y-4">
+                {HOMEPAGE_BEFORE_AFTER.map((item) => (
+                  <div key={item.before} className="rounded-[24px] border border-[#d5deea] bg-[#f3f7fc] px-5 py-4 shadow-[0_8px_22px_rgba(15,27,61,0.05),inset_0_1px_0_rgba(255,255,255,0.92)]">
+                    <p className="text-[0.98rem] leading-[1.7] text-[#2f4466]">{item.before}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="relative overflow-hidden rounded-[32px] border border-[#2a4f88] bg-[linear-gradient(135deg,#0D1A3A_0%,#16315F_48%,#2A5EAB_100%)] p-8 text-white shadow-[0_24px_70px_rgba(15,27,61,0.26)]">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_110%,rgba(244,176,132,0.22)_0%,transparent_52%)]" />
+              <div className="relative">
+                <div className="inline-flex items-center rounded-full border border-white/20 bg-white/[0.1] px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[1.8px] text-white/88 mb-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                  With Elena
+                </div>
+                <div className="space-y-4">
+                  {HOMEPAGE_BEFORE_AFTER.map((item) => (
+                    <div key={item.after} className="rounded-[24px] border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.11)_0%,rgba(255,255,255,0.07)_100%)] px-5 py-4 backdrop-blur-[12px] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
+                      <p className="text-[1rem] leading-[1.7] text-white">{item.after}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-7 flex flex-wrap gap-2.5">
+                  {HOMEPAGE_USE_CASE_ACTIONS.map((item) => (
+                    <button
+                      key={item.title}
+                      onClick={() => handleUseCaseClick(item.title, item.prompt)}
+                      className="inline-flex items-center justify-center h-10 rounded-full border border-white/18 bg-white/[0.12] px-4 text-[0.86rem] font-semibold text-white transition-all hover:bg-white/[0.22] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                    >
+                      {item.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="how-it-works" className="relative py-[120px] px-8 bg-[#FBFAF7] max-md:py-20 max-md:px-5">
+        <div className="mx-auto max-w-[1040px]">
+          <div className="max-w-[640px] mb-16 max-md:mb-12">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[2px] text-[#2E6BB5] mb-4">How it works</p>
+            <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-semibold tracking-tight text-[#0F1B3D] leading-tight">
+              Three steps.
+              {" "}
+              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#2E6BB5]">No hold music.</em>
+            </h2>
+          </div>
+          <div className="grid gap-8 md:grid-cols-3">
+            {HOMEPAGE_STEPS.map((item) => (
+              <div key={item.step} className="relative">
+                <div className="text-[3rem] font-light leading-none text-[#2E6BB5]/20 font-[family-name:var(--font-dm-serif)] mb-3">
+                  {item.step}
+                </div>
+                <h3 className="text-[1.25rem] font-semibold text-[#0F1B3D] mb-3 tracking-tight">{item.title}</h3>
+                <p className="text-[0.98rem] text-[#5a6a82] leading-[1.7]">{item.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="features" className="relative py-[120px] px-8 overflow-hidden max-md:py-20 max-md:px-5">
+        <div className="absolute inset-0 z-0 bg-[linear-gradient(180deg,#0F1B3D_0%,#1A3A6E_60%,#0F1B3D_100%)]">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_0%,rgba(244,176,132,0.18)_0%,transparent_55%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_90%_100%,rgba(46,107,181,0.35)_0%,transparent_55%)]" />
+        </div>
+        <div className="relative z-[2] mx-auto max-w-[1040px]">
+          <div className="max-w-[640px] mb-16 max-md:mb-12">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[2px] text-[#F4B084] mb-4">What she handles</p>
+            <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-light tracking-tight text-white leading-tight">
+              The messy parts of healthcare,
+              {" "}
+              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">handled.</em>
+            </h2>
+            <p className="mt-5 text-[1rem] text-white/70 leading-relaxed">
+              Billing, insurance, scheduling, prices, medication logistics, and the follow-through most people do not have time to manage well.
+            </p>
+          </div>
+          <div className="grid gap-5 md:grid-cols-2">
+            {HOMEPAGE_BENEFITS.map((item) => (
+              <div
+                key={item.title}
+                className="bg-white/[0.06] backdrop-blur-xl border border-white/[0.14] rounded-3xl p-7 shadow-[0_4px_24px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.12)]"
+              >
+                <h3 className="text-[1.1rem] font-semibold text-white tracking-tight mb-3">{item.title}</h3>
+                <p className="text-[0.95rem] text-white/70 leading-relaxed">{item.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="relative py-[120px] px-8 bg-[#F7F6F2] max-md:py-20 max-md:px-5">
+        <div className="mx-auto max-w-[1040px]">
+          <div className="max-w-[640px] mb-14 max-md:mb-10">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[2px] text-[#2E6BB5] mb-4">Real wins</p>
+            <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-semibold tracking-tight text-[#0F1B3D] leading-tight">
+              What it looks like when
+              {" "}
+              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#2E6BB5]">someone does the work for you.</em>
+            </h2>
+          </div>
+          <div className="grid gap-5 md:grid-cols-3">
+            {HOMEPAGE_FEATURED_STORIES.map((t) => (
+              <div
+                key={t.name}
+                className="bg-white border border-[#0F1B3D]/10 rounded-3xl p-7 shadow-[0_4px_24px_rgba(15,27,61,0.06)]"
+              >
+                <div className="flex gap-1 mb-4 text-[#F4B084]">
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <svg key={i} viewBox="0 0 20 20" className="h-4 w-4 fill-current" aria-hidden="true">
+                      <path d="M10 1.8l2.5 5.05 5.58.81-4.04 3.94.95 5.56L10 14.5 5.01 17.16l.95-5.56L1.92 7.66l5.58-.81L10 1.8z" />
+                    </svg>
+                  ))}
+                </div>
+                <p className="text-[1rem] text-[#0F1B3D] leading-relaxed">{t.text}</p>
+                <div className="mt-5 pt-4 border-t border-[#0F1B3D]/[0.08] flex items-center justify-between">
+                  <span className="text-[0.75rem] uppercase tracking-[1.5px] text-[#5a6a82]/70 font-semibold">Insured with</span>
+                  <img src={t.logo} alt={t.logoAlt} className="h-6 opacity-80" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="relative py-[110px] px-8 bg-[#FBFAF7] max-md:py-20 max-md:px-5">
         <div className="mx-auto max-w-[960px] flex items-center gap-16 max-md:flex-col max-md:text-center">
           <div className="flex-1">
-            <p className="text-[1.05rem] font-light text-[#5a6a82] leading-[1.7] mb-4">
-              The healthcare system isn&apos;t built for you.
-            </p>
-            <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-semibold tracking-tight text-[#0F1B3D] leading-tight mb-7">
-              Elena is.
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[2px] text-[#2E6BB5] mb-4">Also on your phone</p>
+            <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-semibold tracking-tight text-[#0F1B3D] leading-tight mb-6">
+              Start on the web.
+              {" "}
+              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#2E6BB5]">Keep Elena with you after.</em>
             </h2>
-            <p className="text-[1.05rem] font-light text-[#5a6a82] leading-[1.7]">
-              The center of your healthcare used to be your PCP, but most people today don&apos;t have one. They see dozens of providers across multiple health systems. Data gets scattered. Follow-ups get lost. Bills pile up. No one is watching your back.
-            </p>
-            <p className="text-[1.05rem] font-light text-[#5a6a82] leading-[1.7] mt-3">
-              Patients should be at the center of their own care. Elena puts a teammate in your pocket that helps you use the system and fights for you.
+            <p className="text-[1rem] font-light text-[#5a6a82] leading-[1.75]">
+              Use the website when you want to start fast. Keep using Elena on your phone for updates, reminders, and follow-through throughout the week.
             </p>
           </div>
           <div className="shrink-0 flex flex-col items-center gap-5">
-            <a href="https://apps.apple.com/us/app/elena-ai-health-navigator/id6760362771" target="_blank" rel="noopener noreferrer">
+            <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
               <img
                 src="/images/elena-icon.png"
                 alt="Elena"
@@ -1083,7 +1309,7 @@ function LandingPage() {
               />
             </a>
             <a
-              href="https://apps.apple.com/us/app/elena-ai-health-navigator/id6760362771"
+              href={APP_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 rounded-full bg-[#0F1B3D] px-5 py-2.5 shadow-[0_2px_12px_rgba(15,27,61,0.25)] hover:shadow-[0_4px_16px_rgba(15,27,61,0.35)] hover:scale-[1.02] transition-all"
@@ -1094,9 +1320,6 @@ function LandingPage() {
           </div>
         </div>
       </section>
-
-      {/* SPOTLIGHTS */}
-      <Spotlights persona={ref} />
 
       {/* BOTTOM CTA */}
       <section className="relative z-10 py-24 px-8 bg-[#F7F6F2] max-md:py-16 max-md:px-5">
