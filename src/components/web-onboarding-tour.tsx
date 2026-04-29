@@ -973,7 +973,8 @@ export function WebOnboardingTour({
     ? dependentFirstName.trim()
     : (firstName.trim() || profileData?.firstName || "");
 
-  // Sync form fields from profileData when it arrives (OAuth name, quiz-funnel DOB/zip).
+  // Sync form fields from profileData when it arrives (OAuth name and any
+  // previously captured optional details).
   useEffect(() => {
     if (profileData?.firstName && !firstName) setFirstName(profileData.firstName);
     if (profileData?.lastName && !lastName) setLastName(profileData.lastName);
@@ -985,15 +986,13 @@ export function WebOnboardingTour({
   const hasOAuthName = !!(profileData?.firstName);
   // Profile-form submit gate depends on who the session is for. When
   // setting up a dependent, the form asks for DEPENDENT's fields —
-  // first/last came from setup-for, DOB/zip from this phase. Self
-  // setup keeps the original primary-user gate.
+  // first/last came from setup-for. We only require name here now;
+  // DOB/zip get collected later if a downstream action actually needs them.
   const canSubmitProfile = isDependentSetup
     ? dependentFirstName.trim().length > 0
       && dependentLastName.trim().length > 0
-      && dependentZip.trim().length === 5
     : firstName.trim().length > 0
-      && lastName.trim().length > 0
-      && zipCode.trim().length === 5;
+      && lastName.trim().length > 0;
   // Headline + subtitle stream with a typewriter effect; these gate the
   // reveal of the rest of the card's content. Reset whenever phase changes
   // so each step starts fresh.
@@ -1827,18 +1826,16 @@ export function WebOnboardingTour({
 
   const advanceFromValue = useCallback(async () => {
     analytics.track("Web Tour Value Step Continued", { lp_variant: lpVariant || "homepage" });
-    // Fresh signup without pre-filled profile → collect name/DOB/zip first;
+    // Fresh signup without pre-filled profile → collect name first;
     // handleProfileSubmit then routes into the appropriate branch.
     //
     // Plan A anonymous tour: no auth-context session means needsOnboarding
-    // is false, but we DEFINITELY still need name/DOB/zip (nothing is
+    // is false, but we DEFINITELY still need name (nothing is
     // saved server-side yet — it all rides on the buffer through signup
     // to flushTourBuffer). Force the profile-form phase whenever the
-    // tour is anonymous OR we haven't captured those fields yet.
+    // tour is anonymous OR we haven't captured name yet.
     const hasName = !!(firstName.trim() || profileData?.firstName);
-    const hasDob = !!(dob.trim() || profileData?.dob);
-    const hasZip = !!(zipCode.trim() || profileData?.zipCode);
-    if (isAnonymousTour || needsOnboarding || !hasName || !hasDob || !hasZip) {
+    if (isAnonymousTour || needsOnboarding || !hasName) {
       setPhase("profile-form");
       return;
     }
@@ -1880,7 +1877,7 @@ export function WebOnboardingTour({
           last_name: profileData?.lastName || lastName.trim() || "",
         });
         analytics.track("Onboarding Completed", {
-          fields_filled: ["first_name", "last_name", dependentDob && "dob", "zip_code"].filter(Boolean),
+          fields_filled: ["first_name", "last_name"],
           source: "tour",
           setup_for: "dependent",
         });
@@ -1892,22 +1889,16 @@ export function WebOnboardingTour({
         setBufferedProfile({
           first_name: cap(firstName.trim()),
           last_name: cap(lastName.trim()),
-          date_of_birth: displayToIsoDate(dob) || undefined,
-          zip_code: zipCode.trim(),
         });
       } else {
         await completeOnboarding({
           first_name: cap(firstName.trim()),
           last_name: cap(lastName.trim()),
-          date_of_birth: displayToIsoDate(dob) || undefined,
-          home_address: zipCode.trim(),
         });
         analytics.track("Onboarding Completed", {
           fields_filled: [
             firstName.trim() && "first_name",
             lastName.trim() && "last_name",
-            dob && "dob",
-            zipCode.trim() && "zip_code",
           ].filter(Boolean),
           source: "tour",
           setup_for: "self",
@@ -1916,7 +1907,7 @@ export function WebOnboardingTour({
     }
     setSavingProfile(false);
     routeAfterProfile();
-  }, [canSubmitProfile, firstName, lastName, dob, zipCode, dependentDob, isDependentSetup, isAnonymousTour, profileData?.firstName, profileData?.lastName, completeOnboarding, routeAfterProfile, createDependentAndSwitch]);
+  }, [canSubmitProfile, firstName, lastName, isDependentSetup, isAnonymousTour, profileData?.firstName, profileData?.lastName, completeOnboarding, routeAfterProfile, createDependentAndSwitch]);
 
   // Fire "Onboarding Modal Shown" analytics when the profile-form phase opens,
   // preserving data continuity with the prior OnboardingModal. (Event name kept
@@ -2882,20 +2873,18 @@ export function WebOnboardingTour({
 
             {phase === "profile-form" && (() => {
               // Copy + field bindings adapt to who this session is
-              // about. Self-setup keeps the existing onboarding form
-              // (first/last/DOB/zip for the login user). Dependent
-              // setup shows the dependent's name read-only (already
-              // captured in setup-for) and asks for DOB/zip bound to
-              // dependentDob / dependentZip so the data saves to
-              // their chart. Either way, the submit button reads
+              // about. Self-setup keeps only the login user's name here.
+              // Dependent setup shows the dependent's name read-only
+              // (already captured in setup-for). Either way, the
+              // submit button reads
               // "Get started" and handleProfileSubmit handles the
               // split at save time.
               const formHeadline = isDependentSetup
                 ? `Let's get ${managedFirstName || "them"} set up.`
                 : "Let's get you set up.";
               const formSubtitle = isDependentSetup
-                ? `Just a few details about ${managedFirstName || "them"}.`
-                : "Just a few quick details.";
+                ? `Just confirm ${managedFirstName || "their"} name and we'll keep going.`
+                : "Just your name so I can personalize this.";
               return (
               <motion.div
                 key="profile-form"
@@ -2969,50 +2958,10 @@ export function WebOnboardingTour({
                           </p>
                         </motion.div>
                       )}
-                      <motion.div variants={REVEAL_ITEM}>
-                        <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">
-                          {isDependentSetup ? `${managedFirstName || "Their"}'s date of birth` : "Date of birth"}
-                        </label>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          name="bday"
-                          autoComplete={isDependentSetup ? "off" : "bday"}
-                          maxLength={10}
-                          placeholder="MM/DD/YYYY"
-                          value={isDependentSetup ? dependentDob : dob}
-                          onChange={(e) => {
-                            const masked = maskDateInput(e.target.value);
-                            if (isDependentSetup) setDependentDob(masked); else setDob(masked);
-                          }}
-                          className="mt-1 w-full rounded-full border border-[#E5E5EA] bg-white px-4 py-3 text-[16px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors"
-                        />
-                      </motion.div>
-                      <motion.div variants={REVEAL_ITEM}>
-                        <label className="text-[12px] font-semibold text-[#8E8E93] uppercase tracking-wider">
-                          {isDependentSetup ? `${managedFirstName || "Their"}'s zip code` : "Zip code"}
-                          <span className="text-[#FF3B30] ml-0.5">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          inputMode="numeric"
-                          name="postal-code"
-                          autoComplete={isDependentSetup ? "off" : "postal-code"}
-                          maxLength={5}
-                          value={isDependentSetup ? dependentZip : zipCode}
-                          onChange={(e) => {
-                            const digits = e.target.value.replace(/\D/g, "").slice(0, 5);
-                            if (isDependentSetup) setDependentZip(digits); else setZipCode(digits);
-                          }}
-                          placeholder="10001"
-                          className="mt-1 w-full rounded-full border border-[#E5E5EA] bg-white px-4 py-3 text-[16px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors"
-                        />
-                      </motion.div>
                     </RevealStack>
                   )}
                 </div>
-                <RevealButton visible={subtitleDone} delay={(hasOAuthName ? 2 : 3) * 0.07 + 0.1}>
+                <RevealButton visible={subtitleDone} delay={(hasOAuthName ? 1 : 2) * 0.07 + 0.1}>
                   <button
                     onClick={handleProfileSubmit}
                     disabled={savingProfile || !canSubmitProfile}
