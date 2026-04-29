@@ -1332,6 +1332,7 @@ export function FormRequestCard({
   onSubmitted,
   onOpenHipaa,
   hipaaSignedAt,
+  initialSubmitted = false,
 }: {
   form: FormRequest;
   onSubmitted?: (data: Record<string, string>) => void;
@@ -1341,6 +1342,7 @@ export function FormRequestCard({
    *  auto-submits on the next render. */
   onOpenHipaa?: () => void;
   hipaaSignedAt?: number;
+  initialSubmitted?: boolean;
 }) {
   // Initialize values from default_value fields
   const [values, setValues] = useState<Record<string, string>>(() => {
@@ -1351,7 +1353,7 @@ export function FormRequestCard({
     return defaults;
   });
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState(!!initialSubmitted);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeImageField, setActiveImageField] = useState<string | null>(null);
   // Tracks which image field is currently uploading/OCR-processing so the
@@ -2001,9 +2003,10 @@ function ItemPill({ label, onEdit, onDelete }: { label: string; onEdit: () => vo
   );
 }
 
-export function HealthProfileIntakeCard({ form, onSubmitted }: {
+export function HealthProfileIntakeCard({ form, onSubmitted, initialSubmitted = false }: {
   form: FormRequest;
   onSubmitted?: (data: Record<string, string>) => void;
+  initialSubmitted?: boolean;
 }) {
   const { profileId } = useAuth();
   const sections = form.sections || ["conditions", "medications", "allergies"];
@@ -2038,7 +2041,7 @@ export function HealthProfileIntakeCard({ form, onSubmitted }: {
   });
 
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState(!!initialSubmitted);
 
   const currentSection = sections[currentPage];
   const isLastPage = currentPage === sections.length - 1;

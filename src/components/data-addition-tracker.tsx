@@ -18,6 +18,7 @@ import { useAppCta } from "@/lib/app-cta-context";
  */
 
 const THRESHOLD = 2;
+const TODO_CTA_THRESHOLD = 3;
 // Delay after a count increase so we don't interrupt rapid consecutive adds
 // (e.g., submitting a form that saves two items) and we only surface once
 // the activity has settled.
@@ -30,6 +31,7 @@ type Counts = { doctors: number; visits: number; insurance: number };
 
 function countsKey(profileId: string) { return `elena_data_counts_last:${profileId}`; }
 function totalKey(profileId: string) { return `elena_data_additions_total:${profileId}`; }
+function todosKey(profileId: string) { return `elena_todo_count_last:${profileId}`; }
 
 function readCounts(profileId: string): Counts | null {
   if (typeof window === "undefined") return null;
@@ -67,10 +69,22 @@ function writeTotal(profileId: string, n: number) {
   try { localStorage.setItem(totalKey(profileId), String(n)); } catch {}
 }
 
+function readTodoCount(profileId: string): number | null {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem(todosKey(profileId));
+  const n = raw ? parseInt(raw, 10) : NaN;
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+function writeTodoCount(profileId: string, n: number) {
+  if (typeof window === "undefined") return;
+  try { localStorage.setItem(todosKey(profileId), String(n)); } catch {}
+}
+
 function sum(c: Counts) { return c.doctors + c.visits + c.insurance; }
 
 export function DataAdditionTracker() {
-  const { doctors, careVisits, insuranceCards, profileId, profileDetailsLoaded } = useAuth();
+  const { doctors, careVisits, insuranceCards, todos, profileId, profileDetailsLoaded } = useAuth();
   const { showAppCta } = useAppCta();
 
   // Keep current counts in a ref so timer callbacks always read the latest
@@ -81,6 +95,8 @@ export function DataAdditionTracker() {
     visits: careVisits.length,
     insurance: insuranceCards.length,
   };
+  const todoCountRef = useRef(0);
+  todoCountRef.current = todos.length;
 
   const readyRef = useRef(false);
   const readyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -110,10 +126,13 @@ export function DataAdditionTracker() {
     const evaluate = () => {
       const current = countsRef.current;
       const last = readCounts(profileId);
+      const currentTodoCount = todoCountRef.current;
+      const lastTodoCount = readTodoCount(profileId);
       if (!last) {
         // No baseline yet — seed it and bail. Shouldn't normally happen here
         // (the ready-timer seeds first) but guards against racy clears.
         writeCounts(profileId, current);
+        writeTodoCount(profileId, currentTodoCount);
         return;
       }
       const delta = sum(current) - sum(last);
@@ -148,6 +167,30 @@ export function DataAdditionTracker() {
         // subsequent re-add doesn't inflate the additions counter.
         writeCounts(profileId, current);
       }
+
+      if (lastTodoCount == null) {
+        writeTodoCount(profileId, currentTodoCount);
+      } else if (currentTodoCount > lastTodoCount) {
+        writeTodoCount(profileId, currentTodoCount);
+        if (lastTodoCount < TODO_CTA_THRESHOLD && currentTodoCount >= TODO_CTA_THRESHOLD) {
+          if (triggerTimerRef.current) clearTimeout(triggerTimerRef.current);
+          triggerTimerRef.current = setTimeout(() => {
+            triggerTimerRef.current = null;
+            if (
+              typeof window !== "undefined" &&
+              sessionStorage.getItem("elena_tour_in_progress") === "1"
+            ) {
+              return;
+            }
+            showAppCta("todo_threshold", {
+              todo_count: currentTodoCount,
+              threshold: TODO_CTA_THRESHOLD,
+            });
+          }, TRIGGER_DELAY_MS);
+        }
+      } else if (currentTodoCount < lastTodoCount) {
+        writeTodoCount(profileId, currentTodoCount);
+      }
     };
 
     if (readyRef.current) {
@@ -157,15 +200,18 @@ export function DataAdditionTracker() {
 
     // Not yet ready — schedule the baseline seed, but only once per profile.
     if (readyTimerRef.current) return;
-    readyTimerRef.current = setTimeout(() => {
-      readyTimerRef.current = null;
-      readyRef.current = true;
-      if (!readCounts(profileId)) {
-        writeCounts(profileId, countsRef.current);
-      }
-      // In case counts already grew past the fresh baseline during the wait
-      // (user added something in the 2s window), evaluate once now.
-      evaluate();
+      readyTimerRef.current = setTimeout(() => {
+        readyTimerRef.current = null;
+        readyRef.current = true;
+        if (!readCounts(profileId)) {
+          writeCounts(profileId, countsRef.current);
+        }
+        if (readTodoCount(profileId) == null) {
+          writeTodoCount(profileId, todoCountRef.current);
+        }
+        // In case counts already grew past the fresh baseline during the wait
+        // (user added something in the 2s window), evaluate once now.
+        evaluate();
     }, READY_DELAY_MS);
   }, [
     profileId,
@@ -173,6 +219,7 @@ export function DataAdditionTracker() {
     doctors.length,
     careVisits.length,
     insuranceCards.length,
+    todos.length,
     showAppCta,
   ]);
 

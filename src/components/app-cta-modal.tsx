@@ -9,6 +9,8 @@ export function AppCtaModal() {
   const { open, reason, dismiss, onDownloadClick } = useAppCta();
   const subtitle = reason === "upgrade"
     ? "To get more out of your subscription."
+    : reason === "todo_threshold"
+    ? "You have a few things in motion now. The app is the easiest way to keep your Game Plan, visits, and providers all in one place."
     : "Keep your providers, visits, and bills with you on the go.";
 
   return (

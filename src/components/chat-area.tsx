@@ -88,7 +88,129 @@ type Message = {
   needsHipaaConsent?: boolean;
   appointmentVariant?: "booked" | "rescheduled";
   calendarPromptMode?: "add" | "remove";
+  formSubmitted?: boolean;
 };
+
+const FORM_SUBMITTED_RE = /^\[FORM SUBMITTED:\s*([^\]]+)\]/i;
+
+function getSubmittedFormId(text?: string | null): string | null {
+  const match = text?.trim().match(FORM_SUBMITTED_RE);
+  return match?.[1]?.trim() || null;
+}
+
+function markRestoredFormSubmitted(restored: Message[], submittedFormId: string | null): boolean {
+  for (let i = restored.length - 1; i >= 0; i -= 1) {
+    const candidate = restored[i];
+    if (candidate.role !== "assistant" || !candidate.formRequest) continue;
+    const candidateFormId = candidate.formRequest.form_id?.trim();
+    if (submittedFormId && candidateFormId && candidateFormId !== submittedFormId) continue;
+    restored[i] = {
+      ...candidate,
+      formSubmitted: true,
+    };
+    return true;
+  }
+  return false;
+}
+
+function summarizeHealthProfileSubmission(data: Record<string, string>): string {
+  const parts: string[] = [];
+
+  if (data.basics) {
+    try {
+      const basics = JSON.parse(data.basics) as Record<string, string>;
+      const basicsSummary = [
+        basics.first_name || basics.last_name ? `name ${[basics.first_name, basics.last_name].filter(Boolean).join(" ")}` : null,
+        basics.date_of_birth ? `DOB ${basics.date_of_birth}` : null,
+        basics.zip_code ? `ZIP ${basics.zip_code}` : null,
+      ].filter(Boolean);
+      if (basicsSummary.length) parts.push(`Basics: ${basicsSummary.join(", ")}`);
+    } catch {}
+  }
+
+  if (data.conditions) {
+    try {
+      const conditions = JSON.parse(data.conditions) as Array<Record<string, string>>;
+      if (conditions.length) {
+        const summary = conditions
+          .map((item) => [item.name, item.status, item.diagnosed_date].filter(Boolean).join(" | "))
+          .filter(Boolean)
+          .join("; ");
+        if (summary) parts.push(`Conditions: ${summary}`);
+      }
+    } catch {}
+  }
+
+  if (data.medications) {
+    try {
+      const medications = JSON.parse(data.medications) as Array<Record<string, string | boolean>>;
+      if (medications.length) {
+        const summary = medications
+          .map((item) => [
+            item.name,
+            typeof item.dosage_strength === "string" ? item.dosage_strength : "",
+            typeof item.frequency === "string" ? item.frequency : "",
+            typeof item.indication === "string" ? item.indication : "",
+          ].filter(Boolean).join(" | "))
+          .filter(Boolean)
+          .join("; ");
+        if (summary) parts.push(`Medications: ${summary}`);
+      }
+    } catch {}
+  }
+
+  if (data.allergies) {
+    try {
+      const allergies = JSON.parse(data.allergies) as Array<Record<string, string>>;
+      if (allergies.length) {
+        const summary = allergies
+          .map((item) => [item.name, item.reaction, item.severity].filter(Boolean).join(" | "))
+          .filter(Boolean)
+          .join("; ");
+        if (summary) parts.push(`Allergies: ${summary}`);
+      }
+    } catch {}
+  }
+
+  if (data.doctors) {
+    try {
+      const doctors = JSON.parse(data.doctors) as Array<Record<string, string>>;
+      if (doctors.length) {
+        const summary = doctors
+          .map((item) => [
+            item.name || item.practice_name,
+            item.specialty,
+            item.practice_name && item.name ? `practice ${item.practice_name}` : "",
+            item.phone ? `phone ${item.phone}` : "",
+            item.address ? `address ${item.address}` : "",
+          ].filter(Boolean).join(" | "))
+          .filter(Boolean)
+          .join("; ");
+        if (summary) parts.push(`Doctors: ${summary}`);
+      }
+    } catch {}
+  }
+
+  if (data.visits) {
+    try {
+      const visits = JSON.parse(data.visits) as Array<Record<string, string>>;
+      if (visits.length) {
+        const summary = visits
+          .map((item) => [
+            item.provider_name,
+            item.visit_type,
+            item.visit_date,
+            item.notes,
+          ].filter(Boolean).join(" | "))
+          .filter(Boolean)
+          .join("; ");
+        if (summary) parts.push(`Visits: ${summary}`);
+      }
+    } catch {}
+  }
+
+  return parts.length ? parts.join(". ") : "No items added";
+}
 
 // Streaming text — reveals character by character, snapping to word boundaries.
 // The underlying content is already complete (backend is poll-based, not SSE);
@@ -573,12 +695,24 @@ export function ChatArea({
           });
         }
       });
-      // Deduplicate consecutive identical user messages (from retries after errors)
-      const mapped = raw.filter((m, i) => {
-        if (i === 0 || m.role !== "user") return true;
-        const prev = raw[i - 1];
-        return !(prev.role === "user" && prev.content === m.content);
-      });
+      const restored: Message[] = [];
+      for (let i = 0; i < raw.length; i += 1) {
+        const message = raw[i];
+        const submittedFormId = message.role === "user" ? getSubmittedFormId(message.content) : null;
+        if (submittedFormId && markRestoredFormSubmitted(restored, submittedFormId)) {
+          continue;
+        }
+        if (
+          message.role === "user"
+          && restored.length > 0
+          && restored[restored.length - 1].role === "user"
+          && restored[restored.length - 1].content === message.content
+        ) {
+          continue;
+        }
+        restored.push(message);
+      }
+      const mapped = restored;
       setMessages(mapped);
       // Empty session — show welcome screen rather than leaving the page blank.
       // Mark ready so the auto-send effect can fire when there's a claimed
@@ -1913,22 +2047,10 @@ export function ChatArea({
                     {msg.formRequest && msg.formRequest.save_to === "health_profile" ? (
                       <HealthProfileIntakeCard
                         form={msg.formRequest}
+                        initialSubmitted={!!msg.formSubmitted}
                         onSubmitted={async (data) => {
                           analytics.track("Form Submitted", { form_id: msg.formRequest?.form_id, type: "health_profile" });
-                          const parts: string[] = [];
-                          if (data.basics) {
-                            try {
-                              const b = JSON.parse(data.basics) as Record<string, string>;
-                              const filled = Object.values(b).filter((v) => (v || "").toString().trim()).length;
-                              if (filled > 0) parts.push(`basics (${filled} field${filled === 1 ? "" : "s"})`);
-                            } catch {}
-                          }
-                          if (data.conditions) { try { parts.push(`${JSON.parse(data.conditions).length} condition(s)`); } catch {} }
-                          if (data.medications) { try { parts.push(`${JSON.parse(data.medications).length} medication(s)`); } catch {} }
-                          if (data.allergies) { try { parts.push(`${JSON.parse(data.allergies).length} allergy/allergies`); } catch {} }
-                          if (data.doctors) { try { parts.push(`${JSON.parse(data.doctors).length} doctor(s)`); } catch {} }
-                          if (data.visits) { try { parts.push(`${JSON.parse(data.visits).length} past visit(s)`); } catch {} }
-                          const summary = parts.length > 0 ? `Added: ${parts.join(", ")}` : "No items added";
+                          const summary = summarizeHealthProfileSubmission(data);
                           const formMsg = `[FORM SUBMITTED: ${msg.formRequest?.form_id || "unknown"}] Health profile updated. ${summary}`;
                           setIsLoading(true);
                           sendAndPoll(
@@ -1948,6 +2070,7 @@ export function ChatArea({
                     ) : msg.formRequest ? (
                       <FormRequestCard
                         form={msg.formRequest}
+                        initialSubmitted={!!msg.formSubmitted}
                         onOpenHipaa={() => setHipaaConsentOpen(true)}
                         hipaaSignedAt={hipaaSignedAt}
                         onSubmitted={async (data) => {
