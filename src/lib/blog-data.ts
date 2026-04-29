@@ -67,6 +67,15 @@ export const BLOG_POSTS: BlogPost[] = [
 
 <p>That is where people lose hours. They are forced to compare hospital systems, outpatient imaging centers, insurer cost estimators, prior authorization rules, deductibles, and whatever cash-pay rates they can get by phone. CMS price transparency rules were supposed to make this easier by requiring hospitals to publish their standard charges, including discounted cash prices and payer-negotiated rates. But the burden of turning that information into a real decision still sits on the patient.<sup>2</sup></p>
 
+<p>In practice, the patient usually has to answer at least four separate questions before booking:</p>
+
+<ul>
+  <li>What exact scan am I pricing?</li>
+  <li>Am I comparing a hospital-based facility to a freestanding imaging center?</li>
+  <li>What will I actually owe through insurance, given my deductible and coinsurance?</li>
+  <li>Is there a cash-pay option that is cleaner or cheaper?</li>
+</ul>
+
 <h2>What Elena actually did</h2>
 
 <p>In this case, Elena helped with the tactical work most patients hate doing:</p>
@@ -90,7 +99,15 @@ export const BLOG_POSTS: BlogPost[] = [
 
 <p>So when Elena helped this user find a cheaper cash-pay option and save about <strong>$1,200</strong>, the lesson was not just “great, one person saved money.” The lesson was: this is exactly the kind of decision patients keep getting pushed into without enough support.</p>
 
-<p>And it is avoidable. If you know the order, the CPT-level service you are roughly trying to price, the type of facility you are comparing, and whether your deductible or coinsurance makes insurance unattractive, you can often rule out bad options before you ever schedule.</p>
+<p>And it is avoidable. Before you schedule, the practical checklist looks more like this:</p>
+
+<ol>
+  <li>Confirm the order and the kind of MRI you are actually pricing.</li>
+  <li>Compare the site of service, not just the brand name on the building.</li>
+  <li>Ask what your real out-of-pocket cost would be through insurance.</li>
+  <li>Ask whether there is a discounted cash price worth comparing.</li>
+  <li>Rule out the obviously bad options before you book.</li>
+</ol>
 
 ${`<div class="blog-cta-inline fade-in">
   <p class="blog-cta-context">This is where Elena is most useful: before you book the expensive default.</p>
@@ -166,6 +183,14 @@ ${`<div class="blog-cta-inline fade-in">
 
 <p>This is where prevention often breaks down. People are told to “be proactive,” but they are rarely given a method for translating old labs, family history, symptoms, screening history, and genetics into a concrete plan.</p>
 
+<p>The actual work is usually to sort information into three buckets:</p>
+
+<ul>
+  <li>What already points to a meaningful risk or follow-up need?</li>
+  <li>What is interesting but not actionable yet?</li>
+  <li>What gaps are real enough to justify a new question, lab, screening, or referral?</li>
+</ul>
+
 <p>So they either freeze, or they over-order. Neither is good medicine.</p>
 
 <h2>What Elena actually helped with</h2>
@@ -189,7 +214,7 @@ ${`<div class="blog-cta-inline fade-in">
 
 <p>People often think preventive care means adding more tests. But screening and follow-up have tradeoffs. The CDC’s genetics guidance makes the same basic point: genetic testing can guide care, but the right next step depends on personal and family history, and genetic counseling can help decide whether further testing is actually appropriate.<sup>3</sup></p>
 
-<p>That is why Elena’s job here was not to generate a giant “do everything” list. It was to help the user ask better questions:</p>
+<p>That is why Elena’s job here was not to generate a giant “do everything” list. It was to help the user work through a cleaner decision framework:</p>
 
 <ul>
   <li>Which abnormalities or patterns in my existing labs deserve follow-up?</li>
