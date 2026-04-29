@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
+import { motion } from "framer-motion";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { trackViewContent, trackActivation } from "@/lib/tracking-events";
@@ -187,50 +188,93 @@ function StatsBar({ persona }: { persona?: string | null }) {
   );
 }
 
-const SUGGESTIONS: {
-  label: string;
-  text: string;
-}[] = [
+const HOMEPAGE_USE_CASE_ACTIONS = [
   {
-    label: "Compare Prices",
-    text: "Help me find the cheapest MRI near me",
+    title: "Lower a medical bill",
+    prompt: "I got a medical bill that seems too high. Help me review it, find errors, and lower what I owe.",
   },
   {
-    label: "Dispute a Bill",
-    text: "Help me fight a medical bill",
+    title: "Automate your meds",
+    prompt: "Help me stay on top of my medications by organizing refills, reminders, and anything that could fall through the cracks.",
   },
   {
-    label: "Find a Doctor",
-    text: "Help me find an in-network doctor near me",
+    title: "Coordinate family care",
+    prompt: "Help me organize care for my family member so appointments, medications, and follow-ups stop feeling chaotic.",
   },
   {
-    label: "Manage Family Care",
-    text: "Help me manage my parents' healthcare from my phone",
-  },
-  {
-    label: "Find Insurance",
-    text: "Help me find the right insurance plan",
+    title: "Find care faster",
+    prompt: "I need care soon. Help me find the right nearby provider who takes my insurance and tell me what it will cost.",
   },
 ];
 
-const HOMEPAGE_USE_CASE_ACTIONS = [
-  {
-    title: "Fight a bill",
-    prompt: "I have a medical bill I think is wrong. Help me audit it and fight whatever's overcharged.",
+/* ─────────────────────────────────────────────────────────
+ * HERO ACTION STORYBOARD
+ *
+ * Read top-to-bottom. Each `at` value is ms after mount.
+ *
+ *    0ms   hero label fades in
+ *  120ms   primary action pills fall gently into place (staggered 90ms)
+ *  620ms   soft glint sweeps across each pill
+ *  760ms   secondary fallback CTA settles in last
+ * ───────────────────────────────────────────────────────── */
+
+const HERO_ACTION_TIMING = {
+  label:        0,    // intro label appears first
+  pills:      120,    // primary pills begin staggering in
+  pillStagger: 90,    // spacing between pill entrances
+  glint:      620,    // glint sweep begins after pills settle
+  fallback:   760,    // secondary CTA appears last
+};
+
+const HERO_ACTION_MOTION = {
+  label: {
+    hidden:  { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as const, delay: HERO_ACTION_TIMING.label / 1000 },
+    },
   },
-  {
-    title: "Compare prices",
-    prompt: "I need a procedure done. Compare prices at every provider near me and tell me the lowest-cost option that takes my insurance.",
+  pill: {
+    hidden:  { opacity: 0, y: -14 },
+    visible: (index: number) => ({
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring" as const,
+        stiffness: 240,
+        damping: 22,
+        mass: 0.9,
+        delay: (HERO_ACTION_TIMING.pills + index * HERO_ACTION_TIMING.pillStagger) / 1000,
+      },
+    }),
   },
-  {
-    title: "Manage family care",
-    prompt: "Help me set up everything for the person I'm caring for - meds, doctors, upcoming appointments - so I can stop juggling it.",
+  glint: (index: number) => ({
+    initial: { x: "-135%", opacity: 0 },
+    animate: {
+      x: ["-135%", "220%"],
+      opacity: [0, 0.18, 0],
+      transition: {
+        duration: 0.9,
+        ease: "easeInOut" as const,
+        delay: (HERO_ACTION_TIMING.glint + index * 70) / 1000,
+      },
+    },
+  }),
+  fallback: {
+    hidden:  { opacity: 0, y: -10 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring" as const,
+        stiffness: 210,
+        damping: 22,
+        mass: 0.95,
+        delay: HERO_ACTION_TIMING.fallback / 1000,
+      },
+    },
   },
-  {
-    title: "Find care fast",
-    prompt: "I need care today. Find me a nearby provider who takes my insurance and tell me what it'll cost before I go.",
-  },
-];
+};
 
 const HOMEPAGE_BEFORE_AFTER = [
   {
@@ -460,150 +504,6 @@ const BLOBS = [
   "w-[450px] h-[450px] bg-[radial-gradient(circle,rgba(232,149,109,0.25)_0%,transparent_70%)] bottom-[10%] left-[5%]",
 ];
 
-const ROTATING_QUERIES: Record<string, string[]> = {
-  homepage: [
-    "Help me find the cheapest MRI near me",
-    "Help me fight a medical bill",
-    "Help me find an in-network doctor near me",
-    "Call my insurance for me and tell me what's covered",
-    "Help me manage my parents' healthcare from my phone",
-    "Help me find the right insurance plan",
-  ],
-  bill_fighting: [
-    "Check whether my $4,200 ER bill is correct",
-    "Help me appeal my denied insurance claim",
-    "Review this $800 blood work bill for mistakes",
-    "Help me negotiate this hospital bill down",
-    "Help me fight this surprise out-of-network bill",
-    "Check whether my insurance should have covered this",
-    "Help me dispute this bill for preventive care",
-  ],
-  calls: [
-    "Call UnitedHealthcare for me about my denied claim",
-    "Call my insurance for me and ask why my referral was rejected",
-    "Call Aetna for me and dispute this $800 charge",
-    "Call Blue Cross for me and check if my MRI is covered",
-    "Call my provider for me and negotiate my balance",
-    "Call Cigna for me and get my prior authorization status",
-  ],
-  meds: [
-    "Help me find the cheapest Ozempic near me",
-    "Help me find the cheapest Adderall near me",
-    "Help me find the cheapest place to get Eliquis",
-    "Help me find the best price on my Humira prescription",
-    "Tell me whether GoodRx or my insurance is cheaper for Lipitor",
-    "Help me find the pharmacy near me with the cheapest generics",
-    "Help me find affordable insulin near me",
-  ],
-  fertility: [
-    "Help me navigate my fertility journey",
-    "Help me compare IVF clinic prices near me",
-    "Check whether my insurance covers fertility treatments",
-    "Tell me what egg freezing costs with my plan",
-    "Help me keep track of my fertility appointments",
-    "Find me a fertility specialist that takes my insurance",
-    "Tell me what my plan covers for IUI",
-  ],
-  caregiver: [
-    "Help me manage my mom's medications and refills",
-    "Find me a geriatrician near my parents that takes Medicare",
-    "Help me dispute my dad's $3,200 bill",
-    "Schedule my mom's annual checkup with her PCP for me",
-    "Find cheaper alternatives to my dad's prescriptions",
-    "Call my mom's insurance for me about her denied claim",
-    "Help me keep track of my parents' upcoming appointments",
-  ],
-  chronic: [
-    "Help me find the cheapest insulin near me",
-    "Help me find an endocrinologist that takes my insurance",
-    "Help me find the cheapest Humira prescription",
-    "Help me find a therapist near me that takes Blue Cross",
-    "Tell me what blood tests I should get for my thyroid this year",
-    "Help me find a rheumatologist for my autoimmune condition",
-    "Find out whether there's a generic alternative to my antidepressant",
-  ],
-  insurance: [
-    "Find me the best marketplace plan for my medications",
-    "Find me the plan with the lowest out-of-pocket for a family of 4",
-    "Check whether this plan covers my current doctors",
-    "Help me understand the difference between HMO and PPO",
-    "I'm turning 65, walk me through my Medicare options",
-    "Find me the plan with the best mental health coverage",
-    "Find me the Silver plan with the lowest deductible in my area",
-  ],
-  care_now: [
-    "Help me find an urgent care near me that's open right now",
-    "Help me find a same-day appointment with a doctor",
-    "Tell me whether urgent care or the ER is cheaper for this",
-    "Help me find a telehealth doctor I can see in the next hour",
-    "Help me find a place to get an X-ray today without a referral",
-    "Help me find a walk-in clinic near me that takes Aetna",
-    "Help me get a prescription refill today",
-  ],
-  prices: [
-    "Tell me how much an MRI costs near me",
-    "Help me find the cheapest colonoscopy near me",
-    "Tell me what a knee replacement will cost with my insurance",
-    "Help me find the cheapest place to get blood work done near me",
-    "Tell me how much physical therapy costs per session",
-    "Help me find the cheapest CT scan near me",
-    "Tell me the cash price vs insurance price for an ultrasound",
-  ],
-};
-
-function useRotatingQuery(
-  queries: string[] | undefined,
-  paused: boolean,
-) {
-  const [displayed, setDisplayed] = useState(queries?.[0] ?? "");
-  const [queryIndex, setQueryIndex] = useState(0);
-  const [charIndex, setCharIndex] = useState(queries?.[0]?.length ?? 0);
-  const [phase, setPhase] = useState<"idle" | "erasing" | "typing">("idle");
-
-  // The full query the animation is currently targeting
-  const fullQuery = queries?.[queryIndex] ?? "";
-
-  useEffect(() => {
-    if (!queries || queries.length <= 1 || paused) return;
-
-    if (phase === "idle") {
-      const t = setTimeout(() => setPhase("erasing"), 3000);
-      return () => clearTimeout(t);
-    }
-
-    if (phase === "erasing") {
-      if (charIndex > 0) {
-        const t = setTimeout(() => {
-          setCharIndex((c) => c - 1);
-          setDisplayed(queries[queryIndex].slice(0, charIndex - 1));
-        }, 20);
-        return () => clearTimeout(t);
-      }
-      const next = (queryIndex + 1) % queries.length;
-      setQueryIndex(next);
-      setCharIndex(0);
-      setDisplayed("");
-      setPhase("typing");
-      return;
-    }
-
-    if (phase === "typing") {
-      const target = queries[queryIndex % queries.length];
-      if (charIndex < target.length) {
-        const t = setTimeout(() => {
-          setCharIndex((c) => c + 1);
-          setDisplayed(target.slice(0, charIndex + 1));
-        }, 35);
-        return () => clearTimeout(t);
-      }
-      setPhase("idle");
-      return;
-    }
-  }, [phase, charIndex, queryIndex, queries, paused]);
-
-  return { displayed, fullQuery };
-}
-
 export default function LandingPageWrapper() {
   return (
     <Suspense fallback={<div className="flex h-dvh items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[#0F1B3D] border-t-transparent" /></div>}>
@@ -656,24 +556,10 @@ function LandingPage() {
     LP_PATH_MAP[pathname] ||
     (utmContentRef && HERO_COPY[utmContentRef] ? utmContentRef : null);
   const hero = (ref && HERO_COPY[ref]) || null;
-  const queries = ref ? ROTATING_QUERIES[ref] : ROTATING_QUERIES.homepage;
-  const [userHasEdited, setUserHasEdited] = useState(false);
-  const [inputFocused, setInputFocused] = useState(false);
-  const { displayed: rotatingText, fullQuery } = useRotatingQuery(queries, userHasEdited || inputFocused);
-  const [manualInput, setManualInput] = useState("");
-  const input = userHasEdited ? manualInput : (queries ? rotatingText : (hero?.prefill || ""));
-  // When sending mid-animation, use the full target query instead of partial text
-  const sendQuery = userHasEdited ? manualInput : (queries ? fullQuery : (hero?.prefill || ""));
-  const setInput = useCallback((val: string) => { setUserHasEdited(true); setManualInput(val); }, []);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [chatPreviewVisible, setChatPreviewVisible] = useState(false);
   const [chatPreviewQuery, setChatPreviewQuery] = useState<string>("");
   const [authDefaultMode, setAuthDefaultMode] = useState<"signin" | "signup">("signup");
-  const [pendingDocFile, setPendingDocFile] = useState<File | null>(null);
-  const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const landingDragCounter = useRef(0);
-  const landingFileInputRef = useRef<HTMLInputElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
   const heroRef = useRef<HTMLElement>(null);
   const blobRefs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -750,20 +636,12 @@ function LandingPage() {
     };
   }, []);
 
-  const handleSend = useCallback((opts?: { preferPrefill?: boolean; overrideQuery?: string }) => {
-    // preferPrefill (used by the bottom CTA) skips the rotating placeholder text so
-    // clicking "Get started" without typing sends the canonical persona prefill
-    // instead of whatever random example query was animating in the hero input.
-    const typed = opts?.overrideQuery?.trim() ?? (
-      opts?.preferPrefill && !userHasEdited
-        ? ""
-        : sendQuery.trim()
-    );
+  const handleSend = useCallback((opts?: { overrideQuery?: string }) => {
+    const typed = opts?.overrideQuery?.trim() ?? "";
     // Fall back to the LP's prefill so users arriving via the mobile "Get
-    // started" CTA (no input shown) or hitting send with an empty field open
-    // chat with a coherent first message in Elena's voice. Ref-specific LPs
-    // use their own prefill; the homepage gets HOMEPAGE_DEFAULT_QUERY so the
-    // agent doesn't land with "I don't have your data".
+    // started" CTA open chat with a coherent first message in Elena's voice.
+    // Ref-specific LPs use their own prefill; the homepage gets
+    // HOMEPAGE_DEFAULT_QUERY so the agent doesn't land with "I don't have your data".
     const query = typed || hero?.prefill || HOMEPAGE_DEFAULT_QUERY;
     // Late-signup is the default funnel. The user goes through the onboarding
     // tour first and is only prompted to sign up at the elena-plan Continue
@@ -798,7 +676,7 @@ function LandingPage() {
       analytics.track("Hero Input Submitted", { query_length: query.length });
       analytics.track("Message Sent", {
         is_first_message: true,
-        has_attachment: !!pendingDocFile,
+        has_attachment: false,
         message_length: query.length,
         authenticated: !!session,
         source: "landing_page",
@@ -813,32 +691,17 @@ function LandingPage() {
       // owns the first real seed message; keeping the homepage fallback
       // here can leak a generic opener into /chat before the tour writes
       // its more specific post-onboarding seed.
-      if (!lateSignupFlag) {
-        localStorage.setItem("elena_pending_query", query);
-        void postPendingMessage({
-          content: query,
-          source: typed ? "landing_hero" : "landing_default",
-          landing_variant: ref || "homepage",
-          pending_doc_name: pendingDocFile?.name ?? null,
-        });
-      } else {
-        try { localStorage.removeItem("elena_pending_query"); } catch {}
-      }
-    }
-    // In demo mode with an attached file but no text query, use a default query
-    if (!query && pendingDocFile && demoMode) {
-      const fallback = "Help me understand this bill";
-      localStorage.setItem("elena_pending_query", fallback);
-      void postPendingMessage({
-        content: fallback,
-        source: "demo",
-        landing_variant: ref || "homepage",
-        pending_doc_name: pendingDocFile?.name ?? null,
-      });
-    }
-    // Store pending doc name for the chat page
-    if (pendingDocFile) {
-      localStorage.setItem("elena_pending_doc", pendingDocFile.name);
+        if (!lateSignupFlag) {
+          localStorage.setItem("elena_pending_query", query);
+          void postPendingMessage({
+            content: query,
+            source: typed ? "landing_hero" : "landing_default",
+            landing_variant: ref || "homepage",
+            pending_doc_name: null,
+          });
+        } else {
+          try { localStorage.removeItem("elena_pending_query"); } catch {}
+        }
     }
     // Existing signed-in users should never be routed back through the
     // anonymous onboarding funnel. Preserve their drafted query and send them
@@ -884,14 +747,7 @@ function LandingPage() {
     setChatPreviewQuery(query || "");
     setChatPreviewVisible(true);
     setAuthModalOpen(true);
-  }, [sendQuery, ref, hero, demoMode, session, pendingDocFile, router, userHasEdited, needsOnboarding, profileChecked]);
-
-  const handleChipClick = useCallback((suggestion: typeof SUGGESTIONS[number]) => {
-    analytics.track("Suggested Prompt Clicked", { prompt_label: suggestion.label });
-    setUserHasEdited(true);
-    setManualInput(suggestion.text);
-    inputRef.current?.focus();
-  }, []);
+  }, [ref, hero, demoMode, session, router, needsOnboarding, profileChecked]);
 
   const handleUseCaseClick = useCallback((title: string, prompt: string) => {
     analytics.track("Suggested Prompt Clicked", { prompt_label: title, source: "homepage_use_case" });
@@ -986,118 +842,54 @@ function LandingPage() {
             )}
           </p>
 
-          {/* Chat input bar (desktop only — mobile gets a single CTA button below) */}
-          <div
-            className={`max-md:hidden flex flex-col bg-white/95 rounded-[20px] max-md:rounded-[16px] border max-w-[580px] w-full mx-auto mt-8 max-md:mt-5 shadow-[0_4px_24px_rgba(0,0,0,0.1)] transition-all ${isDraggingOver ? "border-[#2E6BB5] ring-2 ring-[#2E6BB5]/30" : "border-white/30"}`}
-            onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); landingDragCounter.current++; setIsDraggingOver(true); }}
-            onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); landingDragCounter.current--; if (landingDragCounter.current <= 0) { landingDragCounter.current = 0; setIsDraggingOver(false); } }}
-            onDragOver={(e) => { e.preventDefault(); }}
-            onDrop={(e) => {
-              e.preventDefault(); e.stopPropagation();
-              landingDragCounter.current = 0; setIsDraggingOver(false);
-              const file = e.dataTransfer.files?.[0];
-              if (file) setPendingDocFile(file);
-            }}
-          >
-            {isDraggingOver && (
-              <div className="flex items-center justify-center py-6 text-sm font-medium text-[#2E6BB5]">
-                Drop file here
-              </div>
-            )}
-            <div className={`px-5 max-md:px-3.5 pt-[18px] max-md:pt-3.5 pb-3 max-md:pb-2 relative min-h-[3.5rem] max-md:min-h-[2.5rem] ${isDraggingOver ? "hidden" : ""}`}>
-              <textarea
-                ref={inputRef}
-                value={input}
-                onFocus={() => setInputFocused(true)}
-                onBlur={() => setInputFocused(false)}
-                onChange={(e) => {
-                  setUserHasEdited(true);
-                  setManualInput(e.target.value);
-                  e.target.style.height = "auto";
-                  e.target.style.height = `${e.target.scrollHeight}px`;
-                }}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                placeholder="Ask Elena anything..."
-                rows={1}
-                className={`w-full border-none outline-none bg-transparent text-base max-md:text-sm text-[#1C1C1E] placeholder:text-[#AEAEB2] resize-none max-h-32 overflow-y-auto ${queries && !userHasEdited && !inputFocused ? "caret-transparent" : ""}`}
-              />
-              {queries && !userHasEdited && !inputFocused && (
-                <span className="pointer-events-none absolute top-[18px] left-5 text-base max-md:text-sm text-transparent whitespace-pre" aria-hidden>
-                  {input}<span className="animate-[cursor-blink_1s_step-end_infinite] text-[#1C1C1E]">|</span>
-                </span>
-              )}
+          <div className="mt-8 flex flex-col items-center gap-4">
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={HERO_ACTION_MOTION.label}
+              className="text-[11px] font-semibold uppercase tracking-[1.5px] text-white/45 text-center"
+            >
+              Start with one of these
+            </motion.div>
+            <div className="flex w-full max-w-[980px] flex-wrap justify-center gap-2.5 max-md:max-w-[720px]">
+              {HOMEPAGE_USE_CASE_ACTIONS.map((item, index) => (
+                <motion.button
+                  key={item.title}
+                  onClick={() => handleUseCaseClick(item.title, item.prompt)}
+                  custom={index}
+                  initial="hidden"
+                  animate="visible"
+                  variants={HERO_ACTION_MOTION.pill}
+                  whileHover={{
+                    y: [0, -3, 0],
+                    transition: { duration: 0.38, ease: "easeOut" },
+                  }}
+                  className="relative overflow-hidden rounded-full border border-white/35 bg-white px-5 py-3 text-[0.92rem] font-semibold text-[#0F1B3D] shadow-[0_12px_30px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.35)] transition-[background-color,border-color,box-shadow] duration-300 hover:bg-[#F7F6F2] hover:border-white/50 hover:shadow-[0_18px_36px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.35)]"
+                >
+                  <motion.span
+                    aria-hidden="true"
+                    initial={HERO_ACTION_MOTION.glint(index).initial}
+                    animate={HERO_ACTION_MOTION.glint(index).animate}
+                    className="pointer-events-none absolute inset-y-[-20%] left-0 w-[42%] skew-x-[-24deg] bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.95)_50%,rgba(255,255,255,0)_100%)]"
+                  />
+                  <span>{item.title}</span>
+                </motion.button>
+              ))}
             </div>
-            {/* Pending file chip */}
-            {pendingDocFile && (
-              <div className="flex items-center gap-1.5 px-5 max-md:px-3.5 pb-1">
-                <span className="inline-flex items-center gap-1.5 bg-[#0F1B3D]/[0.08] px-3 py-1 rounded-full text-xs text-[#0F1B3D]/70">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
-                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
-                  </svg>
-                  <span className="max-w-[140px] truncate">{pendingDocFile.name}</span>
-                  <button onClick={() => setPendingDocFile(null)} className="ml-0.5 text-[#0F1B3D]/40 hover:text-[#0F1B3D]/70">
-                    <svg viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z" /></svg>
-                  </button>
-                </span>
-              </div>
-            )}
-            <div className="flex items-center justify-between px-3 max-md:px-2 pb-3 max-md:pb-2 pt-1">
-              <input
-                ref={landingFileInputRef}
-                type="file"
-                className="hidden"
-                accept=".pdf,image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) setPendingDocFile(file);
-                  e.target.value = "";
-                }}
-              />
-              <button
-                onClick={() => landingFileInputRef.current?.click()}
-                className="w-9 h-9 max-md:w-7 max-md:h-7 rounded-full flex items-center justify-center text-[#AEAEB2] hover:text-[#8E8E93] hover:bg-black/[0.04] transition-all"
-                aria-label="Attach document"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 max-md:w-4 max-md:h-4">
-                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
-                </svg>
-              </button>
-              <button
-                onClick={() => handleSend()}
-                className="w-10 h-10 max-md:w-8 max-md:h-8 rounded-full bg-[#0F1B3D] flex items-center justify-center cursor-pointer transition-colors hover:bg-[#1A3A6E]"
-                aria-label="Send"
-              >
-                <svg viewBox="0 0 20 20" fill="none" className="w-[18px] h-[18px]">
-                  <path d="M10 16V4M4 10l6-6 6 6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile-only CTA: replace the whole input + chips with a single
-              "Get started" button matching the caregiver LP. */}
-          <button
-            onClick={() => handleSend({ preferPrefill: true })}
-            className="md:hidden block w-auto mx-auto mt-6 h-12 px-10 rounded-full bg-white/[0.18] backdrop-blur-[40px] border border-white/30 border-t-white/50 text-white text-[0.95rem] font-semibold shadow-[0_10px_32px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] active:scale-[0.97] transition-transform"
-            style={{ WebkitBackdropFilter: "blur(40px) saturate(1.8)" }}
-          >
-            Get started
-          </button>
-
-          {/* Suggestion chips (desktop only — mobile hides these with the input) */}
-          <div className="max-md:hidden text-[11px] max-md:text-[9px] font-semibold uppercase tracking-[1.5px] text-white/40 text-center mt-7 max-md:mt-4 mb-3.5 max-md:mb-2">
-            Common problems Elena can solve
-          </div>
-          <div className="max-md:hidden flex gap-2.5 justify-center flex-nowrap px-3 max-md:overflow-x-auto max-md:justify-start max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden max-md:[mask-image:linear-gradient(to_right,black_80%,transparent_100%)]">
-            {SUGGESTIONS.map((s) => (
-              <button
-                key={s.label}
-                onClick={() => handleChipClick(s)}
-                className="rounded-[22px] px-[18px] py-2.5 max-md:px-3 max-md:py-1.5 text-sm max-md:text-[11px] font-normal whitespace-nowrap cursor-pointer transition-all active:scale-[0.97] bg-white/10 border border-white/20 text-white/90 hover:bg-white/[0.18] hover:border-white/[0.35]"
-              >
-                {s.label}
-              </button>
-            ))}
+            <motion.button
+              onClick={() => handleSend()}
+              initial="hidden"
+              animate="visible"
+              variants={HERO_ACTION_MOTION.fallback}
+              whileHover={{
+                y: [0, -2, 0],
+                transition: { duration: 0.34, ease: "easeOut" },
+              }}
+              className="mt-1 inline-flex h-11 items-center justify-center rounded-full border border-white/18 bg-white/[0.08] px-8 text-[0.88rem] font-medium text-white/88 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-all hover:bg-white/[0.14] hover:text-white"
+              style={{ WebkitBackdropFilter: "blur(40px) saturate(1.8)" }}
+            >
+              Or just get started
+            </motion.button>
           </div>
         </div>
 
@@ -1335,7 +1127,7 @@ function LandingPage() {
             Elena&apos;s got your back. Start the conversation in seconds.
           </p>
           <button
-            onClick={() => handleSend({ preferPrefill: true })}
+            onClick={() => handleSend()}
             className="cta-shimmer inline-flex items-center justify-center h-14 max-md:h-12 px-12 max-md:px-10 rounded-full bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_45%,#2E6BB5_100%)] text-white text-[1.05rem] max-md:text-[0.95rem] font-semibold shadow-[0_10px_30px_rgba(15,27,61,0.28)] hover:shadow-[0_14px_38px_rgba(15,27,61,0.38)] hover:scale-[1.02] transition-all cursor-pointer"
           >
             <span className="relative z-[2]">Get started</span>
