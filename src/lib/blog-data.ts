@@ -18,6 +18,250 @@ export interface BlogPost {
 }
 
 export const BLOG_POSTS: BlogPost[] = [
+  // ── Post 0: breast-mri-saved-1200 ───────────────────────────────────
+  {
+    slug: "breast-mri-saved-1200",
+    title: "How Elena Helped One User Save $1,200 on a Breast MRI",
+    htmlTitle: "How Elena Helped One User Save $1,200 on a Breast MRI",
+    description:
+      "A real Elena story: one user came in needing a breast MRI, and Elena helped her find a much cheaper cash-pay option instead of overpaying through the usual path.",
+    ogTitle: "How Elena Helped One User Save $1,200 on a Breast MRI",
+    ogDescription:
+      "One user needed a breast MRI. Elena helped her find a cash-pay option and save $1,200.",
+    category: "Customer Story",
+    author: "Alex Reinhart",
+    date: "April 2026",
+    datePublished: "2026-04-29",
+    readTime: "5 min read",
+    ldJson: {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: "How Elena Helped One User Save $1,200 on a Breast MRI",
+      author: { "@type": "Person", name: "Alex Reinhart" },
+      datePublished: "2026-04-29",
+      publisher: { "@type": "Organization", name: "Elena Health" },
+      description:
+        "A customer story about using Elena to compare MRI pricing and find a lower-cost cash-pay option for a breast MRI.",
+    },
+    bottomCta: {
+      heading: "Need imaging, but don’t know what it should cost?",
+      text: "Elena helps you compare options before you book, so you can see when the cash-pay route beats the usual hospital or in-network path.",
+    },
+    exitModal: {
+      heading: "Don’t book the first MRI you’re quoted.",
+      text: "Elena helps you compare imaging options and find the cheaper path before you get stuck with the wrong bill.",
+    },
+    inlineCtaHtml: `<div class="blog-cta-inline fade-in">
+  <p class="blog-cta-context">This is the kind of navigation problem Elena is built for.</p>
+  <h3>Find the cheaper imaging option before you book.</h3>
+  <p class="blog-cta-context">Tell Elena what scan you need, upload your insurance card if you have one, and she can help you compare the paths in front of you.</p>
+  <a href="/" class="blog-cta-link">Try Elena Free &rarr;</a>
+</div>`,
+    content: `<p class="blog-lede">A user came to Elena needing a breast MRI. She already knew she needed the scan. The hard part was figuring out where to go without getting destroyed on price. Elena helped her compare the options in front of her and find a cash-pay route that saved her about $1,200.</p>
+
+<p>That story captures something people run into constantly in healthcare: the medical decision is already made, but the logistics and pricing are still a mess. You know you need the imaging. You still have no idea what it will cost, whether insurance will actually help, or whether a totally different facility would be dramatically cheaper.</p>
+
+<h2>The problem wasn’t whether to get the MRI. It was where.</h2>
+
+<p>In this case, the user needed a breast MRI and was trying to navigate the normal maze: hospital systems, imaging centers, insurance uncertainty, and the usual fear that booking the wrong place would leave her with a huge bill afterward.</p>
+
+<p>That is exactly the kind of moment where the healthcare system breaks down for normal people. There may be a medically appropriate next step, but there is almost never a clear consumer path for carrying it out.</p>
+
+<p>Instead, you end up piecing together answers from portals, price estimator tools, front-desk staff, insurance reps, and random internet searches. Even when you’re proactive, it’s hard to know whether you’re comparing the right things.</p>
+
+<h2>What Elena actually helped with</h2>
+
+<p>Elena helped her pressure-test the different options instead of just defaulting to the first route in front of her. That included:</p>
+
+<ul>
+  <li>clarifying what kind of scan she needed</li>
+  <li>helping compare likely imaging options instead of assuming the hospital path was best</li>
+  <li>surfacing the possibility that a cash-pay option could actually be cheaper</li>
+  <li>helping her think through the tradeoff between “covered” and “actually lower-cost”</li>
+</ul>
+
+<p>The important point is that this wasn’t a diagnosis question. It was a navigation and cost question. That’s a huge category of healthcare work that still falls on the patient, even though most people are not equipped to do it well.</p>
+
+<blockquote>
+  <p>She didn’t need more medical information. She needed someone to help her find the sane path through the system.</p>
+</blockquote>
+
+<h2>The result: a cheaper cash-pay option and about $1,200 saved</h2>
+
+<p>Instead of overpaying through the more obvious route, she found a cheaper cash-pay option for the same type of imaging. The savings were about <strong>$1,200</strong>.</p>
+
+<p>That number matters, but the bigger point is what it represents: in healthcare, the “insured” path is not always the cheapest path. People assume insurance automatically protects them from bad pricing decisions. A lot of the time, it doesn’t.</p>
+
+<p>Sometimes the in-network hospital route is still much more expensive than an independent center’s cash-pay rate. Sometimes your deductible makes the insurance path painful anyway. Sometimes the only way to know is to compare multiple options before you book.</p>
+
+${`<div class="blog-cta-inline fade-in">
+  <p class="blog-cta-context">That comparison work is exactly what most people do not have time or energy for.</p>
+  <h3>Elena helps you compare the real-world path, not just the theoretical one.</h3>
+  <p class="blog-cta-context">Costs, facilities, and logistics all matter. The right next step medically is only half the battle.</p>
+  <a href="/" class="blog-cta-link">Try Elena Free &rarr;</a>
+</div>`}
+
+<h2>Why this story matters</h2>
+
+<p>We talk a lot about surprise bills, insurance confusion, and impossible hold times. But there’s another category of pain that is just as common: <strong>high-stakes healthcare shopping with terrible information</strong>.</p>
+
+<p>Imaging is one of the clearest examples. The same MRI can vary wildly in price depending on where you go. And the person booking it usually has almost no confidence that they are seeing the true cost ahead of time.</p>
+
+<p>That means people do one of three things:</p>
+
+<ol>
+  <li>They book the first place their doctor or health system points them to.</li>
+  <li>They delay the scan because they’re afraid of the bill.</li>
+  <li>They spend hours trying to compare options and still aren’t sure they got it right.</li>
+</ol>
+
+<p>None of those outcomes are good. The system should make it easy to get the right care at a reasonable price. Instead, people are forced to become ad hoc care coordinators and price negotiators for themselves.</p>
+
+<h2>What we’re learning from stories like this</h2>
+
+<p>Stories like this one are a strong signal about where Elena can be most useful. Not every healthcare problem is about diagnosis. A lot of the value is in helping people:</p>
+
+<ul>
+  <li>understand what step they’re actually trying to take</li>
+  <li>compare their real options</li>
+  <li>spot when a “covered” path is still financially bad</li>
+  <li>make a decision without having to do all the back-and-forth themselves</li>
+</ul>
+
+<p>That is the kind of work users are already asking us for: pricing help, provider search, scheduling help, insurance interpretation, and practical decision support around the next thing they need to get done.</p>
+
+<h2>The bigger takeaway</h2>
+
+<p>If one user can save $1,200 on a breast MRI just by finding a better path, that tells you something uncomfortable about the system: people are overpaying for care every day simply because they do not have clear, timely help navigating it.</p>
+
+<p>That’s the opportunity Elena is built around. Not replacing doctors. Not pretending everything is a chatbot question. Helping people get through the operational parts of healthcare with better judgment, better information, and less waste.</p>
+
+    <p>If you’ve ever had to price-shop imaging, labs, or a procedure and felt like you were flying blind, you already understand the problem.</p>`,
+  },
+
+  // ── Post 0b: genetic-testing-prevention-plan ───────────────────────
+  {
+    slug: "genetic-testing-prevention-plan",
+    title: "How Elena Helped One User Turn Genetic Testing and Bloodwork Into a Prevention Plan",
+    htmlTitle: "How Elena Helped One User Turn Genetic Testing and Bloodwork Into a Prevention Plan",
+    description:
+      "A real Elena story: one user uploaded genetic testing and bloodwork, and Elena helped narrow which preventive follow-up panels and next steps actually made sense.",
+    ogTitle: "How Elena Helped One User Turn Genetic Testing and Bloodwork Into a Prevention Plan",
+    ogDescription:
+      "One user came in with genetic testing and bloodwork. Elena helped turn it into a clearer preventive-care plan.",
+    category: "Customer Story",
+    author: "Alex Reinhart",
+    date: "April 2026",
+    datePublished: "2026-04-29",
+    readTime: "6 min read",
+    ldJson: {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: "How Elena Helped One User Turn Genetic Testing and Bloodwork Into a Prevention Plan",
+      author: { "@type": "Person", name: "Alex Reinhart" },
+      datePublished: "2026-04-29",
+      publisher: { "@type": "Organization", name: "Elena Health" },
+      description:
+        "A customer story about using Elena to interpret existing bloodwork and genetic testing into a clearer preventive-care follow-up plan.",
+    },
+    bottomCta: {
+      heading: "Already have labs, screenings, or genetic testing?",
+      text: "Elena helps you figure out what those results mean for your actual next steps, so you don’t end up guessing or ordering a bunch of unnecessary follow-up.",
+    },
+    exitModal: {
+      heading: "Turn your results into a real prevention plan.",
+      text: "Elena helps you organize bloodwork, genetic testing, and screening history into clearer next steps you can actually act on.",
+    },
+    inlineCtaHtml: `<div class="blog-cta-inline fade-in">
+  <p class="blog-cta-context">A lot of preventive care confusion starts after the testing, not before it.</p>
+  <h3>Elena helps you figure out what follow-up actually makes sense.</h3>
+  <p class="blog-cta-context">Upload what you already have, tell Elena what you’re trying to understand, and get to a more organized next-step plan.</p>
+  <a href="/" class="blog-cta-link">Try Elena Free &rarr;</a>
+</div>`,
+    content: `<p class="blog-lede">One user came to Elena with a pile of existing health information: genetic testing results, prior bloodwork, and a pretty reasonable question. Given everything already on the table, what follow-up panels and preventive next steps actually made sense?</p>
+
+<p>That question is bigger than it sounds. A lot of people have more data about their health than they know what to do with. They have labs from one doctor, screening recommendations from another, genetics results from somewhere else, and a growing sense that they should probably be doing something more proactive. The hard part is deciding what matters and what is just noise.</p>
+
+<h2>The problem wasn’t getting more information. It was organizing it.</h2>
+
+<p>By the time this user came to Elena, he did not need another generic preventive-care checklist. He already had information. What he needed was help turning that information into a sane plan.</p>
+
+<p>That’s a recurring healthcare problem we keep seeing: people don’t just need new tests. They need help understanding how their existing bloodwork, family history, genetic testing, symptoms, and previous screenings fit together.</p>
+
+<p>Without that, they end up in one of two bad places:</p>
+
+<ol>
+  <li>They do nothing because the whole picture feels too overwhelming.</li>
+  <li>They chase every possible panel, screening, and follow-up because more data feels safer.</li>
+</ol>
+
+<p>Neither is a great version of prevention.</p>
+
+<h2>What Elena actually helped with</h2>
+
+<p>Elena helped this user pull the scattered pieces into something more practical. The work was less about “medical advice” and more about structure:</p>
+
+<ul>
+  <li>reviewing the bloodwork and genetic testing he had already uploaded</li>
+  <li>separating what was already known from what still needed clarification</li>
+  <li>identifying which follow-up panels were worth prioritizing next</li>
+  <li>making the prevention conversation concrete instead of open-ended</li>
+</ul>
+
+<p>That’s an important distinction. In healthcare, “preventive care” often gets marketed as an annual checkup and a vague sense that you should stay on top of things. But for a lot of people, especially those who already have results in hand, the real challenge is deciding what to do next without duplicating work or spinning out into unnecessary testing.</p>
+
+<blockquote>
+  <p>The value wasn’t in generating more health data. It was in helping him make sense of the data he already had.</p>
+</blockquote>
+
+<h2>The result: a narrower, more useful prevention plan</h2>
+
+<p>Instead of treating every possible risk as equally urgent, Elena helped narrow the next steps into a smaller set of follow-up panels and preventive actions that were actually worth paying attention to.</p>
+
+<p>That kind of narrowing matters. It reduces the cognitive load of prevention, which is one of the main reasons people avoid dealing with it in the first place. A giant pile of “things to maybe check someday” is not a plan. A shorter list of concrete next steps is.</p>
+
+${`<div class="blog-cta-inline fade-in">
+  <p class="blog-cta-context">This is the kind of prevention help most people never really get.</p>
+  <h3>Elena helps turn scattered results into actionable next steps.</h3>
+  <p class="blog-cta-context">Not every test matters equally. Not every follow-up is worth doing immediately. The hard part is figuring out what deserves attention now.</p>
+  <a href="/" class="blog-cta-link">Try Elena Free &rarr;</a>
+</div>`}
+
+<h2>Why this story matters for SEO and for the product</h2>
+
+<p>There are a lot of people searching versions of the same question:</p>
+
+<ul>
+  <li>What blood tests should I get based on my family history?</li>
+  <li>How do I interpret genetic testing for preventive care?</li>
+  <li>What follow-up labs actually make sense for me?</li>
+  <li>How do I turn old lab results into a preventive plan?</li>
+</ul>
+
+<p>Most of the content out there either goes too broad or too clinical. It either says “talk to your doctor” and stops, or it overwhelms people with an endless list of possible tests. Real users are somewhere in the middle. They want help taking the information they already have and deciding what to do with it.</p>
+
+<h2>What we’re learning from users like this</h2>
+
+<p>Stories like this push Elena toward a more useful version of preventive care support. Not just reminding people that prevention matters, but helping them:</p>
+
+<ul>
+  <li>organize prior bloodwork and testing</li>
+  <li>understand which questions are still unanswered</li>
+  <li>prioritize the next panels or screenings instead of doing everything at once</li>
+  <li>prepare for more productive follow-up with a doctor</li>
+</ul>
+
+<p>That is a much better product wedge than “we do prevention.” People do not need another abstract message about staying healthy. They need help turning what they already know into a smaller, clearer set of actions.</p>
+
+<h2>The bigger takeaway</h2>
+
+<p>Prevention is not just about getting more tests. A lot of the time, it’s about reducing confusion. If someone already has bloodwork and genetic testing, the best next step is rarely “collect even more information immediately.” It’s usually: figure out what the existing picture suggests, what gaps are real, and what should happen next.</p>
+
+<p>That’s exactly the kind of help Elena can provide well: not replacing medical judgment, but helping people structure the chaos so their next move is more thoughtful, more efficient, and easier to act on.</p>
+
+<p>If you’ve ever had lab results, imaging, or genetic testing sitting in a portal and felt unsure what any of it should lead to, you already understand the problem this user was trying to solve.</p>`,
+  },
+
   // ── Post 1: 47-minutes-on-hold ──────────────────────────────────────
   {
     slug: "47-minutes-on-hold",
@@ -1297,6 +1541,18 @@ export const BLOG_POSTS: BlogPost[] = [
 
 // ── Blog index for the listing page ───────────────────────────────────
 export const BLOG_INDEX = [
+  {
+    slug: "breast-mri-saved-1200",
+    title: "How Elena Helped One User Save $1,200 on a Breast MRI",
+    description:
+      "A real Elena story about helping a user compare imaging options and find a much cheaper cash-pay path.",
+  },
+  {
+    slug: "genetic-testing-prevention-plan",
+    title: "How Elena Helped One User Turn Genetic Testing and Bloodwork Into a Prevention Plan",
+    description:
+      "A real Elena story about using existing bloodwork and genetic testing to figure out which preventive next steps actually made sense.",
+  },
   {
     slug: "medical-bill-errors",
     title: "How to Check Your Medical Bill for Errors",

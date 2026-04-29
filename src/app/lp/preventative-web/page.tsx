@@ -10,7 +10,7 @@ import { postPendingMessage } from "@/lib/pendingMessage";
 import "../../landing.css";
 
 const LP_VARIANT = "preventative";
-const DEFAULT_PREFILL = "I want to make sure I'm getting the right screenings. Where should I start?";
+const DEFAULT_PREFILL = "I already have bloodwork and genetic testing. Help me figure out what preventive follow-up actually makes sense.";
 
 const BLOB_SPEEDS = [0.04, -0.03, 0.025, -0.02];
 const BLOBS = [
@@ -43,58 +43,58 @@ type Testimonial = {
 // Pulled from the homepage TESTIMONIALS array (already live on the current site).
 const SHOWN_TESTIMONIALS: Testimonial[] = [
   { name: "Ryan", text: <><span className="font-semibold">Ryan</span> found an in-network MRI for <span className="font-semibold">$350</span> instead of the <span className="font-semibold">$1,200</span> quoted.</>, logo: "/images/insurers/uhc.svg", logoAlt: "UnitedHealthcare" },
-  { name: "Doriam", text: <><span className="font-semibold">Doriam</span> found the best price for her blood work and cardiology appointments.</>, logo: "/images/insurers/uhc.svg", logoAlt: "UnitedHealthcare" },
+  { name: "Chris", text: <><span className="font-semibold">Chris</span> uploaded genetic testing and bloodwork, then narrowed which preventive panels were actually worth doing next.</>, logo: "/images/insurers/uhc.svg", logoAlt: "UnitedHealthcare" },
   { name: "Andy", text: <><span className="font-semibold">Andy</span> figured out the best insurance plan for him and his family.</>, logo: "/images/insurers/medicare.svg", logoAlt: "Medicare" },
 ];
 
 type Step = { title: string; body: string };
 const STEPS: Step[] = [
   {
-    title: "Tell Elena about you",
-    body: "Your age, your family history, anything you're already tracking. Takes a couple of minutes.",
+    title: "Upload what you already have",
+    body: "Bloodwork, genetic testing, family history, old screenings. Elena starts with the information you already collected.",
   },
   {
-    title: "She builds your screening plan",
-    body: "What you should screen for, when, and who to see. Tailored to your age, history, and insurance.",
+    title: "She narrows what matters",
+    body: "Instead of dumping every possible test on you, Elena helps figure out which follow-up panels, screenings, and next questions are actually worth prioritizing.",
   },
   {
-    title: "She books it and follows up",
-    body: "Elena confirms your insurance covers each visit, books the appointments, and reads the results back in plain English.",
+    title: "She helps you act on it",
+    body: "Elena can help check coverage, line up the next visit or lab, and keep the follow-up organized instead of leaving it buried in a portal.",
   },
 ];
 
 type Benefit = { title: string; body: string; icon: string };
 const BENEFITS: Benefit[] = [
   {
-    title: "She builds the right plan for you",
-    body: "Colonoscopy at 45. Mammogram timing tied to family history. Skin checks if you had a lot of sun as a kid. Elena lines up the screenings your body should actually be getting.",
+    title: "She turns scattered results into a plan",
+    body: "Existing bloodwork, genetic testing, family history, old screening notes. Elena helps pull them together and figure out what deserves attention now.",
     icon: "plan",
   },
   {
-    title: "She books the appointments",
-    body: "In network, accepting new patients, close enough to drive to. Elena calls around and puts the visit on your calendar.",
+    title: "She narrows which follow-up is worth doing",
+    body: "Not every panel or screening belongs on your list right now. Elena helps separate useful next steps from noise so prevention feels manageable.",
     icon: "calendar",
   },
   {
     title: "She confirms it's covered",
-    body: "Most preventive visits are free under the ACA, but the fine print trips people up. Elena calls your insurer before you go so you don't get a surprise bill.",
+    body: "Preventive visits are one thing. Follow-up labs and specialty screenings are another. Elena helps check the insurance angle before you walk into a bill you didn’t expect.",
     icon: "shield",
   },
   {
-    title: "She explains your results",
-    body: "Labs, imaging reports, screening letters. Elena turns the jargon into a plain-English summary and tells you what, if anything, needs a follow-up.",
+    title: "She explains what your results point to",
+    body: "Labs, genetic testing, screening letters, imaging summaries. Elena turns the jargon into plain English and helps frame the next-step conversation more clearly.",
     icon: "note",
   },
 ];
 
 const INCLUDED: string[] = [
-  "Building a screening plan based on your age, sex, and family history",
+  "Organizing bloodwork, genetic testing, and screening history in one place",
+  "Building a preventive-care plan from your age, family history, and existing results",
+  "Narrowing which follow-up labs or panels are worth prioritizing next",
   "Finding in-network providers who are taking new patients",
-  "Booking annual physicals, labs, imaging, and specialty screenings",
-  "Calling your insurer to confirm preventive-care coverage",
+  "Booking labs, imaging, annual visits, and specialty screenings",
+  "Calling your insurer to confirm preventive-care coverage and follow-up costs",
   "Summarizing lab and imaging reports in plain English",
-  "Reminders for follow-ups, labs, and annual visits",
-  "Flagging family-history risks to bring up with your doctor",
   "Comparing prices for tests that aren't fully covered",
 ];
 
@@ -124,20 +124,24 @@ const GUARANTEES: Guarantee[] = [
 type Faq = { q: string; a: string };
 const FAQ: Faq[] = [
   {
-    q: "What screenings should I actually be getting?",
-    a: "It depends on your age, sex, family history, and risk factors. Elena pulls from USPSTF guidelines and your personal profile to tell you which screenings apply to you right now, which are coming up, and which can wait.",
+    q: "Can Elena help if I already have bloodwork or genetic testing?",
+    a: "Yes. That’s one of the best places to start. Elena can help organize what you already have, figure out what it suggests, and narrow which preventive follow-ups or panels are worth paying attention to next.",
+  },
+  {
+    q: "What preventive labs or screenings should I actually be getting?",
+    a: "It depends on your age, family history, risk factors, and anything you’ve already had done. Elena helps turn that information into a more concrete plan so you’re not guessing or doing everything at once.",
   },
   {
     q: "Will my insurance cover preventive visits?",
-    a: "Under the ACA, most preventive visits and screenings are covered at 100% when you see an in-network provider. Elena calls your insurer before every visit to confirm what's covered and flags anything that might generate a bill, so you're never surprised.",
+    a: "Under the ACA, many preventive visits and screenings are covered at 100% when you stay in network. The confusing part is that follow-up labs, extra panels, and specialty visits don’t always fall into the same bucket. Elena helps check that before you book.",
   },
   {
     q: "Is this medical advice?",
     a: "No. Elena is an administrative assistant for the healthcare system. She helps you act on existing guidelines and connects you with the right doctors, but she doesn't diagnose, prescribe, or replace medical professionals.",
   },
   {
-    q: "What if I have a family history of cancer or heart disease?",
-    a: "Family history changes screening timing and which tests make sense. Elena factors it in and writes a plan that accounts for it, then helps you bring it up with your doctor at your next visit.",
+    q: "What if I have a family history of cancer, heart disease, or something genetic?",
+    a: "That’s exactly the kind of context Elena is meant to help organize. Family history changes screening timing and what follow-up questions are worth asking. Elena helps make that conversation more concrete before your next visit.",
   },
   {
     q: "What does Elena cost?",
@@ -394,14 +398,14 @@ export default function PreventativeWebLandingPage() {
           <div className="relative z-[4] text-center max-w-[700px] md:max-w-[880px] w-full px-6 max-md:px-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.08] backdrop-blur px-4 py-1.5 text-[0.75rem] font-medium text-white/80 mb-7">
               <span className="h-1.5 w-1.5 rounded-full bg-[#F4B084]" />
-              Preventative health, done right
+              Preventive care, made actionable
             </div>
             <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[2.15rem] max-sm:text-[1.82rem] font-light leading-[1.15] max-sm:leading-[1.08] tracking-tight text-white">
-              Are you getting{" "}
-              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">the screenings you need?</em>
+              Already have labs or genetic testing, but not sure{" "}
+              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">what to do next?</em>
             </h1>
             <p className="text-[0.95rem] max-md:text-[0.85rem] font-light text-white/85 mt-5 max-md:mt-3 tracking-wide max-w-[620px] mx-auto leading-relaxed">
-              Elena builds your plan, books the screenings, and makes the results easy to understand.
+              Elena helps turn bloodwork, screening history, and genetic testing into a clearer preventive-care plan, then helps you act on it.
             </p>
 
             <div className="mt-8 max-md:mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -420,7 +424,7 @@ export default function PreventativeWebLandingPage() {
               </button>
             </div>
             <p className="mt-5 text-[0.75rem] text-white/50">
-              3-day free trial. No credit card for chat. Private and encrypted.
+              3-day free trial. Upload what you already have. Private and encrypted.
             </p>
           </div>
         </div>
@@ -479,7 +483,7 @@ export default function PreventativeWebLandingPage() {
           <div className="max-w-[640px] mb-16 max-md:mb-12">
             <p className="text-[0.72rem] font-semibold uppercase tracking-[2px] text-[#2E6BB5] mb-4">How it works</p>
             <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-semibold tracking-tight text-[#0F1B3D] leading-tight">
-              From guesswork to a clear plan{" "}
+              From scattered results to a clear plan{" "}
               <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#2E6BB5]">in one afternoon.</em>
             </h2>
           </div>
@@ -508,10 +512,10 @@ export default function PreventativeWebLandingPage() {
             <p className="text-[0.72rem] font-semibold uppercase tracking-[2px] text-[#F4B084] mb-4">What she handles</p>
             <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-light tracking-tight text-white leading-tight">
               Everything between{" "}
-              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">you and the screening.</em>
+              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">you and a usable prevention plan.</em>
             </h2>
             <p className="mt-5 text-[1rem] text-white/70 leading-relaxed">
-              The screenings exist. The coverage exists. The doctors exist. Getting from here to the appointment is where most people get stuck. Elena does that part.
+              The tests exist. The results exist. The doctor follow-up exists. Figuring out what any of it should add up to is where most people get stuck. Elena helps with that part.
             </p>
           </div>
           <div className="grid gap-5 md:grid-cols-2">
@@ -558,6 +562,14 @@ export default function PreventativeWebLandingPage() {
                 </div>
               </div>
             ))}
+          </div>
+          <div className="mt-8 flex flex-wrap gap-4">
+            <a href="/blog/breast-mri-saved-1200" className="text-[0.92rem] font-medium text-[#2E6BB5] no-underline hover:text-[#0F1B3D]">
+              Read the MRI savings story &rarr;
+            </a>
+            <a href="/blog/genetic-testing-prevention-plan" className="text-[0.92rem] font-medium text-[#2E6BB5] no-underline hover:text-[#0F1B3D]">
+              Read the genetic testing prevention story &rarr;
+            </a>
           </div>
         </div>
       </section>
@@ -616,7 +628,7 @@ export default function PreventativeWebLandingPage() {
               <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#2E6BB5]">Upgrade when you need her hands.</em>
             </h2>
             <p className="mt-4 text-[0.98rem] text-[#5a6a82] leading-relaxed">
-              Chat is free. The paid plan lets Elena book visits, call insurance, and track your screenings. Start with a 3-day trial.
+              Chat is free. The paid plan lets Elena help organize follow-up, call insurance, and book the next steps once your plan is clear. Start with a 3-day trial.
             </p>
           </div>
           <div className="grid gap-5 md:grid-cols-2 max-w-[720px] mx-auto">
@@ -729,7 +741,7 @@ export default function PreventativeWebLandingPage() {
             <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#2E6BB5]">You need someone doing the work.</em>
           </h2>
           <p className="text-[1.05rem] font-light text-[#5a6a82] leading-[1.7] mb-8 max-md:mb-6">
-            Tell Elena about yourself and she&apos;ll have your first appointment booked by the weekend.
+            Upload what you already know and Elena will help turn it into a clearer next-step plan instead of one more overwhelming health to-do list.
           </p>
           <button
             onClick={() => handlePrimaryCta("footer_cta")}
