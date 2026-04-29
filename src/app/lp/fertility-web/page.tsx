@@ -12,7 +12,7 @@ import "../../landing.css";
 
 const LP_VARIANT = "fertility";
 const DEFAULT_PREFILL =
-  "Build me a fertility plan — compare clinic prices near me, check my insurance coverage, and map out the timeline.";
+  "Help me compare fertility coverage, clinic costs, medications, and the timeline so I know what to do next.";
 
 const BLOB_SPEEDS = [0.04, -0.03, 0.025, -0.02];
 const BLOBS = [
@@ -58,16 +58,16 @@ const FEATURED_TESTIMONIALS: Testimonial[] = FERTILITY_TESTIMONIALS.slice(0, 3);
 type Step = { title: string; body: string };
 const STEPS: Step[] = [
   {
-    title: "Tell Elena where you are in the process",
-    body: "Trying to conceive, egg freezing, IUI, IVF, medication questions, coverage confusion, or clinic shopping.",
+    title: "Start with the fertility admin problem",
+    body: "Coverage confusion, clinic shopping, medication timing, lab logistics, or figuring out what the next step should cost.",
   },
   {
-    title: "She handles the admin work",
-    body: "Calls insurance, compares clinic and pharmacy prices, tracks meds and monitoring appointments, and keeps the timeline organized.",
+    title: "Elena handles the coordination work",
+    body: "She calls insurance, compares clinic and pharmacy prices, tracks meds and monitoring appointments, and keeps the timeline organized.",
   },
   {
-    title: "You stay focused on the cycle",
-    body: "Coverage answers, scheduling updates, refill reminders, and procedure prep all land in one place instead of scattered across portals and spreadsheets.",
+    title: "You get a clearer fertility plan",
+    body: "Coverage answers, scheduling updates, refill reminders, and procedure prep land in one place instead of across portals, PDFs, and spreadsheets.",
   },
 ];
 
@@ -403,11 +403,11 @@ export default function FertilityWebLandingPage() {
               Fertility care without the admin chaos
             </div>
             <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[2.15rem] max-sm:text-[1.82rem] font-light leading-[1.15] max-sm:leading-[1.08] tracking-tight text-white">
-              Fertility treatment is hard enough.<br />
-              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">Elena handles the admin.</em>
+              Keep track of fertility coverage, clinic costs, meds, and timing.<br />
+              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">Without doing all the admin alone.</em>
             </h1>
             <p className="text-[0.95rem] max-md:text-[0.85rem] font-light text-white/85 mt-5 max-md:mt-3 tracking-wide max-w-[640px] mx-auto leading-relaxed">
-              Elena tracks the meds, appointments, clinic costs, and coverage details so the process feels manageable.
+              Elena helps you compare fertility benefits, organize clinic and pharmacy costs, track medications, and stay on top of the timeline.
             </p>
 
             <div className="mt-8 max-md:mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -415,14 +415,14 @@ export default function FertilityWebLandingPage() {
                 onClick={() => handlePrimaryCta("hero_primary")}
                 className="cta-shimmer inline-flex items-center justify-center h-14 max-md:h-12 px-10 max-md:px-8 rounded-full bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_45%,#2E6BB5_100%)] text-white text-[1rem] font-semibold shadow-[0_10px_30px_rgba(15,27,61,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] border border-white/15 hover:shadow-[0_14px_38px_rgba(15,27,61,0.45)] hover:scale-[1.02] transition-all cursor-pointer"
               >
-                <span className="relative z-[2]">Build my fertility plan</span>
+                <span className="relative z-[2]">Check my fertility coverage</span>
               </button>
               <button
                 onClick={() => handlePrimaryCta("hero_secondary")}
                 className="inline-flex items-center justify-center h-14 max-md:h-12 px-8 rounded-full bg-white/[0.08] backdrop-blur-[40px] border border-white/[0.2] text-white/90 text-[0.95rem] font-medium hover:bg-white/15 hover:text-white transition-all"
                 style={{ WebkitBackdropFilter: "blur(40px) saturate(1.8)" }}
               >
-                Check my fertility coverage
+                Organize my fertility plan
               </button>
             </div>
             <p className="mt-5 text-[0.75rem] text-white/50">
@@ -481,8 +481,8 @@ export default function FertilityWebLandingPage() {
           <div className="max-w-[640px] mb-16 max-md:mb-12">
             <p className="text-[0.72rem] font-semibold uppercase tracking-[2px] text-[#2E6BB5] mb-4">How it works</p>
             <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-semibold tracking-tight text-[#0F1B3D] leading-tight">
-              From a messy fertility inbox{" "}
-              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#2E6BB5]">to a clear plan.</em>
+              Start with the fertility task that feels most tangled.{" "}
+              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#2E6BB5]">Elena helps untangle it.</em>
             </h2>
           </div>
           <div className="grid gap-8 md:grid-cols-3">
