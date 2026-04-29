@@ -804,6 +804,14 @@ export function WebOnboardingTour({
   const [phase, setPhase] = useState<Phase>(tourSnapshot.phase ?? "intro");
   const [profileStep, setProfileStep] = useState(tourSnapshot.profileStep ?? 0);
 
+  // Fires "Web Tour Completed" exactly once per tour, at the post-auth
+  // flush boundary (see effect below). Previously this event only fired
+  // from the post-signup Joyride onFinish, which most trial-converters
+  // never reached (OAuth redirect, mobile sidebar timing, users closing
+  // the spotlight) — producing a 100% Started→Completed dropoff in
+  // Mixpanel even for users who went on to start a trial.
+  const tourCompletedFiredRef = useRef(false);
+
   // When /onboard signals the post-signup flush, morph the current phase
   // into "flushing" so the progress bar lands inside the same shell card
   // (instead of stacking a second overlay on top). The flush cannot
@@ -812,6 +820,10 @@ export function WebOnboardingTour({
   useEffect(() => {
     if (flushingState && phase !== "flushing") {
       setPhase("flushing");
+      if (!tourCompletedFiredRef.current) {
+        tourCompletedFiredRef.current = true;
+        analytics.track("Web Tour Completed", { at: "post_auth_flush" });
+      }
     }
   }, [flushingState, phase]);
 
@@ -1574,7 +1586,7 @@ export function WebOnboardingTour({
   const finishTour = useCallback(() => {
     if (finishedRef.current) return;
     finishedRef.current = true;
-    analytics.track("Web Tour Completed");
+    analytics.track("Web Tour Joyride Completed");
     localStorage.setItem("elena_web_tour_done", "true");
     try { sessionStorage.removeItem("elena_tour_in_progress"); } catch {}
     try { localStorage.removeItem("elena_tour_state"); sessionStorage.removeItem("elena_tour_state"); } catch {}
