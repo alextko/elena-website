@@ -55,6 +55,93 @@ export function buildPricingTodoFromNeed(rawText: string): { title: string; book
   };
 }
 
+export function isHealthFreeformNeed(rawText: string): boolean {
+  const text = rawText.trim().toLowerCase();
+  if (!text) return true;
+
+  const taskPatterns = [
+    /\bbill\b/,
+    /\bclaim\b/,
+    /\bappeal\b/,
+    /\bdenial\b/,
+    /\binsurance\b/,
+    /\bcoverage\b/,
+    /\bprior auth\b/,
+    /\bdoctor\b/,
+    /\bprovider\b/,
+    /\bspecialist\b/,
+    /\bpcp\b/,
+    /\btherap(?:y|ist)\b/,
+    /\bappointment\b/,
+    /\bbook\b/,
+    /\bschedul(?:e|ing)\b/,
+    /\bfind\b/,
+    /\breferral\b/,
+    /\bprice\b/,
+    /\bcost\b/,
+    /\bquote\b/,
+    /\bscan\b/,
+    /\bmri\b/,
+    /\bct\b/,
+    /\bultrasound\b/,
+    /\bx-?ray\b/,
+    /\blabs?\b/,
+    /\bbloodwork\b/,
+    /\bprocedure\b/,
+    /\btest\b/,
+  ];
+
+  return !taskPatterns.some((pattern) => pattern.test(text));
+}
+
+export function buildFreeformHeroValues(rawText: string): string[] {
+  const normalized = rawText.trim().toLowerCase();
+  if (!normalized) return [];
+
+  if (!isHealthFreeformNeed(normalized)) {
+    const pricingAction = buildPricingActionFromNeed(normalized);
+    if (pricingAction) {
+      return [
+        pricingAction,
+        "I can check what your insurance will cover before you book it.",
+        "I can help you book the right follow-up once you know the best option.",
+      ];
+    }
+    if (/\bbill\b|\bclaim\b|\bappeal\b|\bdenial\b/.test(normalized)) {
+      return [
+        "I can review the bill or denial and spot what to push back on.",
+        "I can check what your insurance should have covered.",
+        "I can help you take the next appeal step.",
+      ];
+    }
+    if (/\binsurance\b|\bcoverage\b|\bprior auth\b/.test(normalized)) {
+      return [
+        "I can check what your insurance will cover.",
+        "I can call your insurer and get a clear answer.",
+        "I can help you figure out the next step once we know the rules.",
+      ];
+    }
+    if (/\bdoctor\b|\bprovider\b|\bspecialist\b|\bpcp\b|\btherap(?:y|ist)\b|\breferral\b|\bappointment\b|\bbook\b|\bschedul(?:e|ing)\b|\bfind\b/.test(normalized)) {
+      return [
+        "I can find the right provider for this.",
+        "I can help you book the right follow-up.",
+        "I can check coverage before you go.",
+      ];
+    }
+    return [
+      "I can help you figure out the next step for this.",
+      "I can help you book the right follow-up.",
+      "I can check coverage before you go.",
+    ];
+  }
+
+  return [
+    `I can help you build a plan for your ${normalized}.`,
+    `I can book the right follow-up for your ${normalized}.`,
+    `I can check what your insurance will cover for your ${normalized} care.`,
+  ];
+}
+
 export function variantForLine(line: string): HeroVariant {
   const l = line.toLowerCase();
   if (l.includes("you said")) return "pain";

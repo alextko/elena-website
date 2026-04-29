@@ -402,12 +402,12 @@ export default function FertilityWebLandingPage() {
               <span className="h-1.5 w-1.5 rounded-full bg-[#F4B084]" />
               Fertility care without the admin chaos
             </div>
-            <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[2.15rem] font-light leading-[1.15] tracking-tight text-white">
-              Your fertility journey,{" "}
-              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">all in one place.</em>
+            <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[2.15rem] max-sm:text-[1.82rem] font-light leading-[1.15] max-sm:leading-[1.08] tracking-tight text-white">
+              Fertility treatment is hard enough.<br />
+              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">Elena handles the admin.</em>
             </h1>
             <p className="text-[0.95rem] max-md:text-[0.85rem] font-light text-white/85 mt-5 max-md:mt-3 tracking-wide max-w-[640px] mx-auto leading-relaxed">
-              Elena tracks the meds, appointments, and coverage details so the process feels manageable.
+              Elena tracks the meds, appointments, clinic costs, and coverage details so the process feels manageable.
             </p>
 
             <div className="mt-8 max-md:mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -415,14 +415,14 @@ export default function FertilityWebLandingPage() {
                 onClick={() => handlePrimaryCta("hero_primary")}
                 className="cta-shimmer inline-flex items-center justify-center h-14 max-md:h-12 px-10 max-md:px-8 rounded-full bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_45%,#2E6BB5_100%)] text-white text-[1rem] font-semibold shadow-[0_10px_30px_rgba(15,27,61,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] border border-white/15 hover:shadow-[0_14px_38px_rgba(15,27,61,0.45)] hover:scale-[1.02] transition-all cursor-pointer"
               >
-                <span className="relative z-[2]">Start your fertility plan</span>
+                <span className="relative z-[2]">Build my fertility plan</span>
               </button>
               <button
-                onClick={() => goToQuiz("hero_secondary")}
+                onClick={() => handlePrimaryCta("hero_secondary")}
                 className="inline-flex items-center justify-center h-14 max-md:h-12 px-8 rounded-full bg-white/[0.08] backdrop-blur-[40px] border border-white/[0.2] text-white/90 text-[0.95rem] font-medium hover:bg-white/15 hover:text-white transition-all"
                 style={{ WebkitBackdropFilter: "blur(40px) saturate(1.8)" }}
               >
-                Or take the 2-minute quiz
+                Check my fertility coverage
               </button>
             </div>
             <p className="mt-5 text-[0.75rem] text-white/50">
@@ -637,7 +637,7 @@ export default function FertilityWebLandingPage() {
               onClick={() => handlePrimaryCta("final_cta")}
               className="cta-shimmer inline-flex items-center justify-center h-14 px-10 rounded-full bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_45%,#2E6BB5_100%)] text-white text-[1rem] font-semibold shadow-[0_10px_30px_rgba(15,27,61,0.28),inset_0_1px_0_rgba(255,255,255,0.2)] border border-[#244a82] hover:scale-[1.02] transition-all"
             >
-              Start your fertility plan
+              Build my fertility plan
             </button>
           </div>
           <p className="mt-5 text-[0.8rem] text-[#6b7c96]">

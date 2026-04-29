@@ -399,12 +399,12 @@ export default function CaregiverWebLandingPage() {
               <span className="h-1.5 w-1.5 rounded-full bg-[#F4B084]" />
               Built for family caregivers
             </div>
-            <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[2.15rem] font-light leading-[1.15] tracking-tight text-white">
-              Caregiving is exhausting.<br />
-              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">Elena handles it.</em>
+            <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[2.15rem] max-sm:text-[1.82rem] font-light leading-[1.15] max-sm:leading-[1.08] tracking-tight text-white">
+              Family care is a lot to carry.<br />
+              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">Elena takes the admin off your plate.</em>
             </h1>
             <p className="text-[0.95rem] max-md:text-[0.85rem] font-light text-white/85 mt-5 max-md:mt-3 tracking-wide max-w-[620px] mx-auto leading-relaxed">
-              Elena handles the calls, insurance, and medication tracking so you can focus on your loved one.
+              Elena handles the calls, insurance questions, medication tracking, and follow-ups so you can focus on your loved one.
             </p>
 
             <div className="mt-8 max-md:mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -412,14 +412,14 @@ export default function CaregiverWebLandingPage() {
                 onClick={() => handlePrimaryCta("hero_primary")}
                 className="cta-shimmer inline-flex items-center justify-center h-14 max-md:h-12 px-10 max-md:px-8 rounded-full bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_45%,#2E6BB5_100%)] text-white text-[1rem] font-semibold shadow-[0_10px_30px_rgba(15,27,61,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] border border-white/15 hover:shadow-[0_14px_38px_rgba(15,27,61,0.45)] hover:scale-[1.02] transition-all cursor-pointer"
               >
-                <span className="relative z-[2]">Start for free</span>
+                <span className="relative z-[2]">Organize my loved one&apos;s care</span>
               </button>
               <a
                 href="#how"
                 className="inline-flex items-center justify-center h-14 max-md:h-12 px-8 rounded-full bg-white/[0.08] backdrop-blur-[40px] border border-white/[0.2] text-white/90 text-[0.95rem] font-medium hover:bg-white/15 hover:text-white transition-all"
                 style={{ WebkitBackdropFilter: "blur(40px) saturate(1.8)" }}
               >
-                See how it works
+                See what Elena can handle
               </a>
             </div>
             <p className="mt-5 text-[0.75rem] text-white/50">
@@ -634,7 +634,7 @@ export default function CaregiverWebLandingPage() {
                 onClick={() => startOnboarding(DEFAULT_PREFILL, "pricing_weekly")}
                 className="w-full h-12 rounded-full border border-[#0F1B3D]/15 bg-white text-[#0F1B3D] font-semibold text-[0.95rem] hover:border-[#2E6BB5] hover:text-[#2E6BB5] transition-all"
               >
-                Start free trial
+                Start coordinating care
               </button>
             </div>
             <div className="relative bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_45%,#2E6BB5_100%)] text-white rounded-3xl p-8 shadow-[0_12px_40px_rgba(15,27,61,0.22)] overflow-hidden">
@@ -653,7 +653,7 @@ export default function CaregiverWebLandingPage() {
                   onClick={() => startOnboarding(DEFAULT_PREFILL, "pricing_annual")}
                   className="cta-shimmer w-full h-12 rounded-full bg-white text-[#0F1B3D] font-semibold text-[0.95rem] hover:scale-[1.02] transition-all shadow-[0_6px_20px_rgba(0,0,0,0.2)]"
                 >
-                  <span className="relative z-[2]">Start free trial</span>
+                  <span className="relative z-[2]">Start coordinating care</span>
                 </button>
               </div>
             </div>
@@ -740,7 +740,7 @@ export default function CaregiverWebLandingPage() {
             onClick={() => handlePrimaryCta("footer_cta")}
             className="cta-shimmer inline-flex items-center justify-center h-14 max-md:h-12 px-12 max-md:px-10 rounded-full bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_45%,#2E6BB5_100%)] text-white text-[1.05rem] max-md:text-[0.95rem] font-semibold shadow-[0_10px_30px_rgba(15,27,61,0.28)] hover:shadow-[0_14px_38px_rgba(15,27,61,0.38)] hover:scale-[1.02] transition-all cursor-pointer"
           >
-            <span className="relative z-[2]">Start for free</span>
+            <span className="relative z-[2]">Organize my loved one&apos;s care</span>
           </button>
           <p className="mt-4 text-[0.78rem] text-[#5a6a82]/70">3-day free trial. Cancel anytime.</p>
         </div>

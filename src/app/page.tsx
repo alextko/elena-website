@@ -815,7 +815,7 @@ function LandingPage() {
         {/* Content wrapper — viewport-height centered for bills, inline for others */}
         <div className="min-h-[80dvh] flex flex-col items-center justify-center w-full shrink-0 pb-8" style={{ paddingTop: "max(6rem, 12vh)" }}>
         <div className="relative z-[4] text-center max-w-[700px] md:max-w-[880px] w-full px-6 max-md:px-5">
-          <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[2.15rem] font-light leading-[1.15] tracking-tight text-white">
+          <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[2.15rem] max-sm:text-[1.82rem] font-light leading-[1.15] max-sm:leading-[1.08] tracking-tight text-white">
             {hero ? (
               <>
                 {hero.headline[0]}<br />

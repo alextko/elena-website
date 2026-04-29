@@ -401,18 +401,25 @@ function ChatPageInner() {
   useEffect(() => {
     const forceTour = searchParams.get("tour") === "1";
     let hasSavedTour = false;
+    let savedTourPhase: string | null = null;
     if (typeof window !== "undefined") {
       try {
         const raw = localStorage.getItem("elena_tour_state") || sessionStorage.getItem("elena_tour_state");
         if (raw) {
           const parsed = JSON.parse(raw) as { phase?: string };
-          hasSavedTour = !!parsed.phase && parsed.phase !== "done";
+          savedTourPhase = parsed.phase || null;
+          hasSavedTour = !!savedTourPhase && savedTourPhase !== "done";
         }
       } catch {}
     }
-    const shouldResumeSavedTour = hasSavedTour && (needsOnboarding || onboardingJustCompleted);
+    const isPostAuthResumePhase =
+      savedTourPhase === "joyride"
+      || savedTourPhase === "profile"
+      || savedTourPhase === "chat";
+    const shouldResumeSavedTour =
+      hasSavedTour && (needsOnboarding || onboardingJustCompleted || isPostAuthResumePhase);
     const shouldShow = forceTour || needsOnboarding || onboardingJustCompleted || shouldResumeSavedTour;
-    if (!forceTour && !needsOnboarding && !onboardingJustCompleted && hasSavedTour && typeof window !== "undefined") {
+    if (!forceTour && !needsOnboarding && !onboardingJustCompleted && hasSavedTour && !isPostAuthResumePhase && typeof window !== "undefined") {
       try {
         localStorage.removeItem("elena_tour_state");
         sessionStorage.removeItem("elena_tour_state");

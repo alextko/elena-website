@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/apiFetch";
 import {
   buildDisplayActionFromTodoText,
+  buildFreeformHeroValues,
   buildPricingActionFromNeed,
   buildPricingTodoFromNeed,
   buildProposedAction,
@@ -19,6 +20,7 @@ import {
   buildProfileSetupTopUpTodos,
   buildSeedMessageFromActions,
   buildTodoFromAction,
+  isHealthFreeformNeed,
   synthesizeFallbackSeed,
   variantForLine,
 } from "@/lib/onboarding-action-semantics";
@@ -1953,13 +1955,14 @@ export function WebOnboardingTour({
       return;
     }
     // Freeform non-template (user picked "Something else" and typed a
-    // condition that didn't match any alias). Condition branch skips to
-    // validation; medications / money branches still want meds so we
-    // route there so they can type their list.
+    // need that didn't match any alias). If it looks like a health
+    // issue, ask meds first so we can offer prescription/refill help.
+    // If it looks like an admin task, skip meds and go straight to
+    // concrete task-oriented Elena actions.
     if (routerChoice === "medications" || routerChoice === "money") {
       setPhase("meds");
     } else {
-      setPhase("validation");
+      setPhase(isHealthFreeformNeed(customSituation) ? "meds" : "elena-plan");
     }
   }, [customSituation, inferredSituationTemplate, routerChoice, selectedSituation]);
 
@@ -1981,6 +1984,7 @@ export function WebOnboardingTour({
   }, [customSituation, routerChoice]);
 
   const advanceFromMeds = useCallback(() => {
+    const tpl = inferredSituationTemplate;
     const pendingDraft = newMedDraft.trim();
     const mergedCustomMeds = pendingDraft
       ? normalizeMedicationList(customMeds, [pendingDraft])
@@ -2001,10 +2005,12 @@ export function WebOnboardingTour({
     // Only the condition branch does the full care-plan + validation.
     if (routerChoice === "medications" || routerChoice === "money") {
       setPhase("elena-plan");
+    } else if (!tpl) {
+      setPhase("elena-plan");
     } else {
       setPhase("care-plan");
     }
-  }, [selectedSituation, selectedMeds, customMeds, newMedDraft, routerChoice]);
+  }, [selectedSituation, selectedMeds, customMeds, newMedDraft, routerChoice, inferredSituationTemplate]);
 
   const advanceFromCarePlan = useCallback(() => {
     const tpl = inferredSituationTemplate;
@@ -3650,6 +3656,11 @@ export function WebOnboardingTour({
               let baseLines: string[];
               if (routerChoice === "condition" && tpl) {
                 baseLines = [...remainingPlanActions, ...tpl.heroValues];
+              } else if (routerChoice === "condition" && customSituation.trim()) {
+                baseLines = [
+                  ...remainingPlanActions,
+                  ...buildFreeformHeroValues(customSituation),
+                ];
               } else if (routerChoice === "medications") {
                 baseLines = [...remainingPlanActions, ...MEDS_BRANCH_HERO_VALUES];
               } else if (routerChoice === "money") {

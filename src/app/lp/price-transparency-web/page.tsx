@@ -402,7 +402,7 @@ export default function PriceTransparencyWebLandingPage() {
               <span className="h-1.5 w-1.5 rounded-full bg-[#F4B084]" />
               Real healthcare prices before you book
             </div>
-            <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[2.15rem] font-light leading-[1.15] tracking-tight text-white">
+            <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[2.15rem] max-sm:text-[1.82rem] font-light leading-[1.15] max-sm:leading-[1.08] tracking-tight text-white">
               Never get a surprise bill again.{" "}
               <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">See prices before you go.</em>
             </h1>
