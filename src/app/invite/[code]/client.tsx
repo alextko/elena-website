@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/apiFetch";
 import { AuthModal } from "@/components/auth-modal";
+import * as analytics from "@/lib/analytics";
 
 interface InvitePreview {
   invite_id: string;
@@ -19,8 +20,7 @@ interface InvitePreview {
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://elena-backend-production-production.up.railway.app";
 
 export default function InviteClient({ code, fromName }: { code: string; fromName: string | null }) {
-  const router = useRouter();
-  const { session, loading: authLoading, profileId } = useAuth();
+  const { session, loading: authLoading, profileId, profileData, completeOnboarding } = useAuth();
 
   const [invite, setInvite] = useState<InvitePreview | null>(null);
   const [loadingInvite, setLoadingInvite] = useState(true);
@@ -32,6 +32,9 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
   const [accepting, setAccepting] = useState(false);
   const [declining, setDeclining] = useState(false);
   const [actionResult, setActionResult] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [finishingSetup, setFinishingSetup] = useState(false);
 
   const autoAcceptAttempted = useRef(false);
 
@@ -98,7 +101,7 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
       setActionResult({ type: "error", message: "Network error. Please try again." });
       setAccepting(false);
     }
-  }, [code, router]);
+  }, [code, invite?.inviter_name, fromName]);
 
   function handleDecline() {
     setDeclining(true);
@@ -136,14 +139,49 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
     }
   }, [invite]);
 
-  // New signup without a profile: redirect to /chat for onboarding
-  // The pending invite in localStorage will auto-accept after profile creation
   useEffect(() => {
-    if (isLoggedIn && !hasProfile && !authLoading) {
-      localStorage.setItem("elena_pending_invite", code);
-      window.location.href = "/chat";
+    if (!isLoggedIn || hasProfile) return;
+    setFirstName((prev) => prev || profileData?.firstName || "");
+    setLastName((prev) => prev || profileData?.lastName || "");
+  }, [isLoggedIn, hasProfile, profileData?.firstName, profileData?.lastName]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!isLoggedIn || hasProfile) return;
+    localStorage.setItem("elena_pending_invite", code);
+  }, [isLoggedIn, hasProfile, code]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const accepted = localStorage.getItem("elena_invite_accepted");
+    if (!accepted) return;
+    localStorage.removeItem("elena_invite_accepted");
+    setActionResult({ type: "success", message: "You are now connected! Redirecting..." });
+    setTimeout(() => { window.location.href = "/chat"; }, 1500);
+  }, [profileId]);
+
+  const handleFinishSetup = useCallback(async () => {
+    const trimmedFirst = firstName.trim();
+    const trimmedLast = lastName.trim();
+    if (!trimmedFirst || !trimmedLast) {
+      setActionResult({ type: "error", message: "Enter your first and last name." });
+      return;
     }
-  }, [isLoggedIn, hasProfile, authLoading, code]);
+    setFinishingSetup(true);
+    setActionResult(null);
+    try {
+      localStorage.setItem("elena_pending_invite", code);
+      analytics.track("Invite Name Collection Submitted");
+      await completeOnboarding({
+        first_name: trimmedFirst,
+        last_name: trimmedLast,
+      });
+    } catch {
+      setActionResult({ type: "error", message: "We couldn’t finish setting up your account. Please try again." });
+    } finally {
+      setFinishingSetup(false);
+    }
+  }, [code, completeOnboarding, firstName, lastName]);
 
   const inviterDisplay = invite?.inviter_name || fromName || "Someone";
   const relationshipDisplay = invite?.relationship
@@ -160,7 +198,7 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
       <div className="fixed inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 85% 130%, #F4B084 0%, #E8956D 25%, rgba(46,107,181,0) 60%)" }} />
 
       <div className="relative z-10 mb-8">
-        <a href="/" className="text-white text-2xl font-extrabold tracking-tight">elena</a>
+        <Link href="/" className="text-white text-2xl font-extrabold tracking-tight">elena</Link>
       </div>
 
       <div className="relative z-10 w-full max-w-md">
@@ -187,7 +225,7 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
               </div>
               <h2 className="text-xl font-bold text-white">Invalid Invite</h2>
               <p className="text-white/50 text-sm">{fetchError}</p>
-              <a href="/" className="inline-block mt-4 rounded-full bg-white/95 px-6 py-3 text-sm font-semibold text-[#0F1B3D] hover:bg-white transition-colors">Go to Elena</a>
+              <Link href="/" className="inline-block mt-4 rounded-full bg-white/95 px-6 py-3 text-sm font-semibold text-[#0F1B3D] hover:bg-white transition-colors">Go to Elena</Link>
             </div>
           )}
 
@@ -202,7 +240,7 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
               <p className="text-white/50 text-sm">
                 {invite!.status === "accepted" ? "This invite has already been accepted." : invite!.status === "declined" ? "This invite was declined." : "This invite is no longer valid."}
               </p>
-              <a href="/" className="inline-block mt-4 rounded-full bg-white/95 px-6 py-3 text-sm font-semibold text-[#0F1B3D] hover:bg-white transition-colors">Go to Elena</a>
+              <Link href="/" className="inline-block mt-4 rounded-full bg-white/95 px-6 py-3 text-sm font-semibold text-[#0F1B3D] hover:bg-white transition-colors">Go to Elena</Link>
             </div>
           )}
 
@@ -231,12 +269,44 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
               <div>
                 <h2 className="text-xl font-bold text-white">{inviterDisplay} invited you</h2>
                 {relationshipDisplay && <p className="text-white/50 text-sm mt-1">Relationship: {relationshipDisplay}</p>}
-                <p className="text-white/40 text-sm mt-3">Accept this invite to connect on Elena and share health information.</p>
+                <p className="text-white/40 text-sm mt-3">
+                  {hasProfile
+                    ? "Accept this invite to connect on Elena and share health information."
+                    : "Finish setting up your name first, then we’ll connect your account automatically."}
+                </p>
               </div>
-              <div className="space-y-3 pt-2">
-                <button onClick={handleAccept} disabled={accepting} className="w-full rounded-full bg-white/95 py-3.5 text-sm font-semibold text-[#0F1B3D] hover:bg-white transition-colors shadow-[0_4px_16px_rgba(0,0,0,0.1)] disabled:opacity-50">{accepting ? "Accepting..." : "Accept invite"}</button>
-                <button onClick={handleDecline} disabled={declining} className="w-full rounded-full border border-white/20 bg-white/5 py-3.5 text-sm font-semibold text-white/60 hover:bg-white/10 hover:text-white transition-colors disabled:opacity-50">{declining ? "Declining..." : "Decline"}</button>
-              </div>
+              {hasProfile ? (
+                <div className="space-y-3 pt-2">
+                  <button onClick={handleAccept} disabled={accepting} className="w-full rounded-full bg-white/95 py-3.5 text-sm font-semibold text-[#0F1B3D] hover:bg-white transition-colors shadow-[0_4px_16px_rgba(0,0,0,0.1)] disabled:opacity-50">{accepting ? "Accepting..." : "Accept invite"}</button>
+                  <button onClick={handleDecline} disabled={declining} className="w-full rounded-full border border-white/20 bg-white/5 py-3.5 text-sm font-semibold text-white/60 hover:bg-white/10 hover:text-white transition-colors disabled:opacity-50">{declining ? "Declining..." : "Decline"}</button>
+                </div>
+              ) : (
+                <div className="space-y-3 pt-2 text-left">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-white/50">First name</label>
+                    <input
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="w-full rounded-2xl bg-white/10 border border-white/[0.15] px-5 py-4 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/30 focus:bg-white/15"
+                      placeholder="First name"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-white/50">Last name</label>
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className="w-full rounded-2xl bg-white/10 border border-white/[0.15] px-5 py-4 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/30 focus:bg-white/15"
+                      placeholder="Last name"
+                    />
+                  </div>
+                  <button onClick={handleFinishSetup} disabled={finishingSetup} className="w-full rounded-full bg-white/95 py-3.5 text-sm font-semibold text-[#0F1B3D] hover:bg-white transition-colors shadow-[0_4px_16px_rgba(0,0,0,0.1)] disabled:opacity-50">
+                    {finishingSetup ? "Setting up..." : "Continue"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
