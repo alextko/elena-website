@@ -169,6 +169,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const profileFetchedRef = useRef(false);
 
+  const selectBackendActiveProfile = useCallback((data: MeResponse) => {
+    const profiles = data.profiles || [];
+    const primary = profiles.find((p) => p.is_primary) || null;
+    const active =
+      profiles.find((p) => p.id === data.profile_id)
+      || primary
+      || null;
+    return { active, primary };
+  }, []);
+
   // Fetch basic profile info (name, profileId) — called once on session restore
   const fetchProfile = useCallback(async () => {
     if (profileFetchedRef.current) return;
@@ -182,14 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (data.has_profile && data.profile_id) {
           setProfileChecked(true);
           setProfiles(data.profiles || []);
-          const savedProfileId = localStorage.getItem("elena_active_profile_id");
-          const savedProfile = savedProfileId
-            ? (data.profiles || []).find((p) => p.id === savedProfileId)
-            : null;
-          const activeProfile = savedProfile
-            || (data.profiles || []).find((p) => p.is_primary)
-            || null;
-          const primaryProfile = (data.profiles || []).find((p) => p.is_primary) || activeProfile;
+          const { active: activeProfile, primary: primaryProfile } = selectBackendActiveProfile(data);
           setProfileId(activeProfile?.id || data.profile_id);
           setNeedsOnboarding(!(data.onboarding_completed || hasCompletedRequiredOnboardingFields(primaryProfile)));
           if (activeProfile) {
@@ -300,15 +303,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfileChecked(true);
       setProfiles(data.profiles || []);
 
-      // Restore the previously-selected profile from localStorage (survives refresh)
-      const savedProfileId = localStorage.getItem("elena_active_profile_id");
-      const savedProfile = savedProfileId
-        ? (data.profiles || []).find((p) => p.id === savedProfileId)
-        : null;
-      const activeProfile = savedProfile
-        || (data.profiles || []).find((p) => p.is_primary)
-        || null;
-      const primary = (data.profiles || []).find((p) => p.is_primary) || activeProfile;
+      const { active: activeProfile, primary } = selectBackendActiveProfile(data);
 
       setProfileId(activeProfile?.id || data.profile_id);
 
@@ -370,7 +365,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profileFetchedRef.current = false; // allow retry
       setProfileChecked(true); // unblock UI even on error
     }
-  }, []);
+  }, [selectBackendActiveProfile]);
 
   // Fetch detailed profile data (doctors, appointments, credits) — called eagerly on login.
   // Guard only on fetchingRef (not on profileDetailsLoaded) so a newly-signed-up
@@ -842,12 +837,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiFetch("/auth/me");
       if (!res.ok) return;
       const data: MeResponse = await res.json();
+      const { active, primary } = selectBackendActiveProfile(data);
       setProfiles(data.profiles || []);
+      setProfileId(active?.id || data.profile_id || null);
+      setNeedsOnboarding(!(data.onboarding_completed || hasCompletedRequiredOnboardingFields(primary)));
+      setProfileData((prev) => ({
+        firstName: active?.first_name || "",
+        lastName: active?.last_name || "",
+        email: data.email || prev?.email || "",
+        profilePictureUrl: active?.profile_picture_url || null,
+        dob: active?.date_of_birth || null,
+        zipCode: active?.zip_code || null,
+      }));
       // Also keep the cached /auth/me fresh so the next page load sees the
       // new profile in the dropdown immediately.
       try { sessionStorage.setItem("elena_me_cache", JSON.stringify(data)); } catch {}
     } catch {}
-  }, []);
+  }, [selectBackendActiveProfile, setProfileId]);
 
   const refreshInsurance = useCallback(async () => {
     try {
@@ -1036,47 +1042,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [profileData?.email]);
 
   const switchProfile = useCallback(async (newProfileId: string) => {
-    // Update UI immediately (optimistic) — don't wait for the network call
-    setProfileId(newProfileId);
-
-    // Resolve the profile display data from the cached list if we have
-    // it. When this is called immediately after creating a new linked
-    // profile, the `profiles` closure is stale (set before the
-    // refreshProfiles call landed), so `find` returns undefined and
-    // the UI keeps showing the old user's name. Fetch directly from
-    // the backend as a fallback so name + picture update reliably.
-    let profile = profiles.find((p) => p.id === newProfileId);
-    if (!profile) {
-      try {
-        const res = await apiFetch(`/profile/${newProfileId}`);
-        if (res?.ok) {
-          const data = await res.json();
-          profile = {
-            id: data.id || newProfileId,
-            label: data.label || "",
-            relationship: data.relationship || "",
-            first_name: data.first_name || "",
-            last_name: data.last_name || "",
-            is_primary: false,
-            is_linked: true,
-            profile_picture_url: data.profile_picture_url || null,
-            date_of_birth: data.date_of_birth || null,
-            zip_code: data.zip_code || null,
-          };
-        }
-      } catch {
-        // Non-fatal — header will show email prefix until profiles refresh.
-      }
-    }
-    if (profile) {
-      setProfileData((prev) => ({
-        firstName: profile!.first_name,
-        lastName: profile!.last_name,
-        email: prev?.email || "",
-        profilePictureUrl: profile!.profile_picture_url,
-      }));
-    }
-
     // Invalidate any in-flight fetch so stale data isn't applied
     profileFetchVersionRef.current += 1;
 
@@ -1091,11 +1056,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setHabits([]);
     setHabitCompletions({});
 
-    // Persist the switch to the backend in the background (non-blocking)
-    apiFetch(`/profiles/${newProfileId}/switch`, { method: "PUT" }).catch(() => {
-      console.error("[auth] Failed to persist profile switch");
-    });
-  }, [profiles, setProfileId]);
+    try {
+      const switchRes = await apiFetch(`/profiles/${newProfileId}/switch`, { method: "PUT" });
+      if (!switchRes.ok) {
+        console.error("[auth] Failed to persist profile switch", switchRes.status);
+        return;
+      }
+      await refreshProfiles();
+    } catch (err) {
+      console.error("[auth] Failed to persist profile switch", err);
+    }
+  }, [refreshProfiles]);
 
   const signIn = useCallback(
     async (email: string, password: string, options?: { source?: string }) => {
