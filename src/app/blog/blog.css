@@ -84,6 +84,34 @@ body {
   font-weight: 400;
 }
 
+.blog-hero-media {
+  max-width: 360px;
+  margin: 0 auto;
+  padding: 0 24px 22px;
+}
+
+.blog-hero-media-inner {
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(15, 27, 61, 0.08);
+  background: linear-gradient(180deg, #f7f9fc 0%, #eef3fb 100%);
+  box-shadow: 0 14px 32px rgba(15, 27, 61, 0.08);
+}
+
+.blog-hero-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.blog-hero-caption {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 0.82rem;
+  color: rgba(26, 26, 46, 0.55);
+  line-height: 1.5;
+}
+
 /* ========== ARTICLE BODY ========== */
 .blog-content {
   max-width: 680px;

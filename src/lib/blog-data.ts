@@ -10,6 +10,9 @@ export interface BlogPost {
   date: string;
   datePublished: string;
   readTime: string;
+  heroImageSrc?: string;
+  heroImageAlt?: string;
+  heroImageCaption?: string;
   ldJson: object;
   bottomCta: { heading: string; text: string };
   exitModal: { heading: string; text: string };
@@ -18,6 +21,141 @@ export interface BlogPost {
 }
 
 export const BLOG_POSTS: BlogPost[] = [
+  // ── Post 0: family-health-command-center ────────────────────────────
+  {
+    slug: "family-health-command-center",
+    title: "How to Organize Your Family’s Medications, Doctors, and Appointments in One Place",
+    htmlTitle: "How to Organize Your Family’s Medications, Doctors, and Appointments in One Place",
+    description:
+      "An anonymized Elena case study on how to organize family healthcare in one place, including medications, doctors, appointments, and next steps.",
+    ogTitle: "How to Organize Your Family’s Medications, Doctors, and Appointments in One Place",
+    ogDescription:
+      "A practical case study on organizing family healthcare, from medications and doctors to appointments and follow-up tasks.",
+    category: "Customer Story",
+    author: "Alex Reinhart",
+    date: "April 2026",
+    datePublished: "2026-04-30",
+    readTime: "5 min read",
+    heroImageSrc: "/assets/ads/screen-profiles.png",
+    heroImageAlt: "Elena profile view showing family healthcare information organized in one place.",
+    heroImageCaption: "One place for your people, medications, visits, and next steps.",
+    ldJson: {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: "How to Organize Your Family’s Medications, Doctors, and Appointments in One Place",
+      author: { "@type": "Person", name: "Alex Reinhart" },
+      datePublished: "2026-04-30",
+      publisher: { "@type": "Organization", name: "Elena Health" },
+      description:
+        "An anonymized Elena case study about organizing family medications, doctors, appointments, and healthcare logistics in one place.",
+    },
+    bottomCta: {
+      heading: "Need one place for your family’s medications, doctors, and appointments?",
+      text: "Elena helps you keep family members, medications, doctors, visits, and next steps together, then helps with the work that comes after setup.",
+    },
+    exitModal: {
+      heading: "Your family’s healthcare should not live in five different places.",
+      text: "Set up profiles, log medications, and keep the moving pieces organized in one place with Elena.",
+    },
+    inlineCtaHtml: `<div class="blog-cta-inline fade-in">
+  <p class="blog-cta-context">This is the kind of family-care complexity Elena is built for.</p>
+  <h3>Put the whole picture in one place.</h3>
+  <p class="blog-cta-context">Profiles, medications, doctors, visits, and next steps. Elena helps turn a pile of healthcare logistics into something manageable.</p>
+  <a href="/" class="blog-cta-link">Try Elena Free &rarr;</a>
+</div>`,
+    content: `<p class="blog-lede">A recent Elena case captured the problem we keep seeing again and again: one person quietly carrying the operational burden of healthcare for an entire family. In one sitting, they added profiles for multiple family members, logged a medication list that had grown to nearly <strong>20 medications</strong>, and started turning a scattered care situation into a system they could actually use.</p>
+
+<p>If you are trying to organize your family’s healthcare, that is what the job usually looks like. It is rarely one appointment or one prescription. It is usually a stack of moving parts: different people, different medications, different doctors, different refill timelines, and different follow-ups, with one person trying to keep it all straight.</p>
+
+<h2>The problem is not just information. It is operational overload.</h2>
+
+<p>When people talk about “getting organized,” it can sound small. In practice, it means trying to answer basic questions that should not be hard:</p>
+
+<ul>
+  <li>Which medications does each person take, and what is running low next?</li>
+  <li>Which doctor is managing what?</li>
+  <li>What visit is coming up, and what happened at the last one?</li>
+  <li>What loose ends still need a call, a refill, or a follow-up?</li>
+</ul>
+
+<p>The problem is that most families do not have one system for this. They have pharmacy texts, patient portals, paper discharge instructions, notes-app lists, and memory. That works right up until it doesn’t.</p>
+
+<h2>How to organize family healthcare in one place</h2>
+
+<p>This case is useful because it shows what the first real step usually is. Before you can save money, schedule calls, or manage refills, you need one reliable place for the core information. The value was not that someone “used an AI app.” The value was that the family’s healthcare started to become legible. Instead of living across ten places, it started to live inside one operating picture.</p>
+
+<p>In this case, Elena helped organize:</p>
+
+<ul>
+  <li>multiple family profiles in one place</li>
+  <li>a long medication list that would otherwise be difficult to track manually</li>
+  <li>the start of a cleaner care record for each person involved</li>
+  <li>the next actions Elena could take once the information was in the system</li>
+</ul>
+
+<blockquote>
+  <p>For families, the first real win is not “I asked a question in chat.” It is “the chaos is finally in one place.”</p>
+</blockquote>
+
+<h2>What a family healthcare system should include</h2>
+
+<p>If you are building a real system for family care, the minimum useful structure usually includes:</p>
+
+<ul>
+  <li>one profile for each person whose care you manage</li>
+  <li>a current medication list</li>
+  <li>saved doctors and specialists</li>
+  <li>upcoming appointments, tests, and follow-ups</li>
+  <li>a visible list of what still needs to happen next</li>
+</ul>
+
+<p>That is what makes the rest of healthcare management easier. Once the structure exists, you can actually stay ahead of refills, know which doctor to call, and stop relying on memory for everything.</p>
+
+<h2>Why this matters for product adoption</h2>
+
+<p>We talk a lot about saving money, calling providers, handling refill logistics, and helping with insurance. All of that matters. But this case was a reminder that people also want a clear place to put the real stuff.</p>
+
+<p>When someone trusts Elena with their family profiles and a 20-medication list, they are telling us something important. They are not looking for entertainment. They are not looking for generic wellness content. They are looking for a healthcare command center.</p>
+
+<p>That is the standard we should hold the product to.</p>
+
+<h2>What a good family-care product should do next</h2>
+
+<p>Once the information is there, the product should not just sit on it. It should help people act on it. For a family setup like this, Elena should be moving quickly toward things like:</p>
+
+<ul>
+  <li>tracking refill timing across medications</li>
+  <li>saving the relevant doctors and specialists for each person</li>
+  <li>logging upcoming appointments and tests</li>
+  <li>surfacing which tasks belong in the Game Plan next</li>
+  <li>helping the user decide what Elena should handle first</li>
+</ul>
+
+<p>That is the difference between a profile database and a real healthcare operator.</p>
+
+${`<div class="blog-cta-inline fade-in">
+  <p class="blog-cta-context">This is where Elena starts to become genuinely useful for families.</p>
+  <h3>Set up the people you care for and let Elena help carry the load.</h3>
+  <p class="blog-cta-context">Add family members, medications, doctors, and next steps. Then let Elena help organize what needs to happen next.</p>
+  <a href="/" class="blog-cta-link">Try Elena Free &rarr;</a>
+</div>`}
+
+<h2>What we’re building toward</h2>
+
+<p>The long-term product vision is not just better healthcare chat. It is a system that helps one person manage care across a household.</p>
+
+<p>That means Elena should help families:</p>
+
+<ul>
+  <li>keep people and records organized</li>
+  <li>stay ahead of medications and refills</li>
+  <li>remember the right visits, questions, and follow-ups</li>
+  <li>reduce the mental load of being the person who holds it all together</li>
+</ul>
+
+<p>If your family’s healthcare currently lives in your notes app, your texts, your calendar, and your brain, Elena is exactly what we’re building for.</p>`,
+  },
+
   // ── Post 0: breast-mri-saved-1200 ───────────────────────────────────
   {
     slug: "breast-mri-saved-1200",
@@ -1527,6 +1665,12 @@ ${`<div class="blog-cta-inline fade-in">
 
 // ── Blog index for the listing page ───────────────────────────────────
 export const BLOG_INDEX = [
+  {
+    slug: "family-health-command-center",
+    title: "How to Organize Your Family’s Medications, Doctors, and Appointments in One Place",
+    description:
+      "An anonymized Elena case study about setting up multiple family profiles, logging a long medication list, and turning scattered care logistics into one usable system.",
+  },
   {
     slug: "breast-mri-saved-1200",
     title: "How Elena Helped One User Save $1,200 on a Breast MRI",

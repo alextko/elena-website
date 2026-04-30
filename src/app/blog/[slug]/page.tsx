@@ -69,6 +69,21 @@ export default async function BlogPostPage({
         </div>
       </header>
 
+      {post.heroImageSrc && (
+        <section className="blog-hero-media">
+          <div className="blog-hero-media-inner">
+            <img
+              src={post.heroImageSrc}
+              alt={post.heroImageAlt || post.title}
+              className="blog-hero-image"
+            />
+          </div>
+          {post.heroImageCaption && (
+            <p className="blog-hero-caption">{post.heroImageCaption}</p>
+          )}
+        </section>
+      )}
+
       <article
         className="blog-content"
         dangerouslySetInnerHTML={{ __html: post.content }}
