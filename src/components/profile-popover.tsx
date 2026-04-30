@@ -330,7 +330,8 @@ export function ProfilePopover({
       const link = data.links?.find((l: { profile_id: string }) => l.profile_id === profile.id);
       if (!link) { setUnlinking(false); return; }
 
-      await apiFetch(`/family/links/${link.link_id}`, { method: "DELETE" });
+      const deleteRes = await apiFetch(`/family/links/${link.link_id}`, { method: "DELETE" });
+      if (!deleteRes.ok) { setUnlinking(false); return; }
 
       // If we were viewing the unlinked profile, switch back to primary
       if (profileId === profile.id) {

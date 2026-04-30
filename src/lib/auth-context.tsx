@@ -1049,11 +1049,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Accept pending invite (invite-link signup flow) — fire-and-forget.
         const pendingInvite = localStorage.getItem("elena_pending_invite");
         if (pendingInvite) {
-          localStorage.removeItem("elena_pending_invite");
           void (async () => {
             try {
               const acceptRes = await apiFetch(`/family/invite/${pendingInvite}/accept`, { method: "POST" });
               if (acceptRes.ok) {
+                localStorage.removeItem("elena_pending_invite");
                 profileFetchedRef.current = false;
                 await fetchProfile();
                 localStorage.setItem("elena_invite_accepted", "1");

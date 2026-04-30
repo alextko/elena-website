@@ -73,7 +73,6 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
     const pendingCode = localStorage.getItem("elena_pending_invite");
     if (pendingCode === code) {
       autoAcceptAttempted.current = true;
-      localStorage.removeItem("elena_pending_invite");
       handleAccept();
     }
   }, [authLoading, session, profileId, invite, code]);
@@ -89,6 +88,7 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
         setAccepting(false);
         return;
       }
+      localStorage.removeItem("elena_pending_invite");
       setActionResult({ type: "success", message: "You are now connected! Redirecting..." });
       // Clear any stale pending query and set an invite-related first message
       localStorage.removeItem("elena_pending_query");
@@ -128,6 +128,13 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
   const isExpiredOrUsed = invite && (invite.status !== "pending" || invite.expired);
   const isLoggedIn = !!session;
   const hasProfile = !!profileId;
+
+  useEffect(() => {
+    if (!invite) return;
+    if (invite.status !== "pending" || invite.expired) {
+      localStorage.removeItem("elena_pending_invite");
+    }
+  }, [invite]);
 
   // New signup without a profile: redirect to /chat for onboarding
   // The pending invite in localStorage will auto-accept after profile creation
