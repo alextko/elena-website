@@ -832,11 +832,6 @@ export function ChatArea({
             }
             setSessionReady(true);
             welcomeInFlightRef.current = false;
-            // Notify sidebar of the session so it appears in the list.
-            if (!hasCreatedSessionRef.current) {
-              hasCreatedSessionRef.current = true;
-              onSessionCreated(prewarm.session_id, silent ? "New conversation" : undefined);
-            }
             try { sessionStorage.removeItem("elena_prewarmed_welcome"); } catch {}
             queueMicrotask(() => flushPendingSeedRef.current("prewarm"));
             return;
@@ -901,11 +896,6 @@ export function ChatArea({
       // fetches (profile switch, new chat) get to run. The session-exists
       // guard at the top of fetchWelcome prevents unnecessary duplicates.
       welcomeInFlightRef.current = false;
-      // Notify sidebar immediately so the session appears
-      if (!hasCreatedSessionRef.current && data.session_id) {
-        hasCreatedSessionRef.current = true;
-        onSessionCreated(data.session_id, silent ? "New conversation" : undefined);
-      }
       // Eager seed flush — don't wait on React effect scheduling.
       // sessionIdRef is set synchronously above; handleSendRef should be
       // assigned by this point (set during the first render). If the

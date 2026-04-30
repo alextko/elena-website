@@ -7,6 +7,10 @@ import { apiFetch } from "@/lib/apiFetch";
 import { claimPendingMessages } from "@/lib/pendingMessage";
 import { clearAnonId } from "@/lib/anonId";
 import {
+  getRestorableSessionId,
+  reconcileRestoredSessionId,
+} from "@/lib/chatSessionRestore";
+import {
   clearStoredTourState,
   getStoredTourPhase,
   hasPendingSignup,
@@ -88,14 +92,21 @@ function ChatPageInner() {
     const stored = localStorage.getItem(DESKTOP_SIDEBAR_PREF_KEY);
     return stored === null ? true : stored !== "0";
   });
+  const [restoredActiveSessionId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    if (localStorage.getItem("elena_pending_query")) return null;
+    if (postIntakeSubmitKind) return null;
+    return sessionStorage.getItem("elena_active_session_id");
+  });
   const [activeSessionId, setActiveSessionId] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
-      // Don't restore if there's a pending query (e.g. quiz → chat redirect)
-      if (localStorage.getItem("elena_pending_query")) return null;
-      // Don't restore if the user just finished a post-auth intake funnel —
-      // we want a fresh intake-aware welcome session rather than an existing chat.
-      if (postIntakeSubmitKind) return null;
-      return sessionStorage.getItem("elena_active_session_id");
+      const storedSessionId = sessionStorage.getItem("elena_active_session_id");
+      let cachedSessions: ChatSessionItem[] = [];
+      try {
+        const cached = sessionStorage.getItem("elena_sessions");
+        if (cached) cachedSessions = JSON.parse(cached) as ChatSessionItem[];
+      } catch {}
+      return getRestorableSessionId(storedSessionId, cachedSessions);
     }
     return null;
   });
@@ -368,6 +379,31 @@ function ChatPageInner() {
       }
     }
   }, [loadingSessions, sessions, activeSessionId, pendingQuery, isNewChat, needsOnboarding, profileChecked, claimSettled]);
+
+  useEffect(() => {
+    if (loadingSessions || !profileChecked || !claimSettled || pendingQuery || isNewChat || needsOnboarding) {
+      return;
+    }
+
+    const nextSessionId = reconcileRestoredSessionId({
+      activeSessionId,
+      restoredSessionId: restoredActiveSessionId,
+      sessions,
+    });
+    if (nextSessionId === undefined) return;
+
+    setActiveSessionId(nextSessionId);
+  }, [
+    loadingSessions,
+    profileChecked,
+    claimSettled,
+    pendingQuery,
+    isNewChat,
+    needsOnboarding,
+    activeSessionId,
+    restoredActiveSessionId,
+    sessions,
+  ]);
 
   // After onboarding completes, start a new chat only if there isn't one already
   useEffect(() => {
