@@ -12,6 +12,8 @@ import {
   trackWebFunnelAuthEntry,
   trackWebFunnelAuthSubmitted,
   trackWebFunnelOnboardingCompleted,
+  trackWebFunnelProfileFormSubmitted,
+  trackWebFunnelProfileFormViewed,
 } from "@/lib/web-funnel";
 import {
   PENDING_SIGNUP_KEY,
@@ -1911,6 +1913,17 @@ export function WebOnboardingTour({
     if (!canSubmitProfile) return;
     setSavingProfile(true);
     const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+    const setupFor = isDependentSetup ? "dependent" : "self";
+    const filledFields = [
+      firstName.trim() && "first_name",
+      lastName.trim() && "last_name",
+    ].filter(Boolean) as string[];
+    trackWebFunnelProfileFormSubmitted({
+      source: "tour",
+      setup_for: setupFor,
+      is_anonymous_tour: isAnonymousTour,
+      fields_filled: filledFields,
+    });
     if (isDependentSetup) {
       // Dependent setup — the form captured DEPENDENT's data. The
       // primary user's profile still needs to exist and have
@@ -1931,16 +1944,15 @@ export function WebOnboardingTour({
           first_name: profileData?.firstName || firstName.trim() || "",
           last_name: profileData?.lastName || lastName.trim() || "",
         });
-        const filledFields = ["first_name", "last_name"];
         analytics.track("Onboarding Completed", {
-          fields_filled: filledFields,
+          fields_filled: ["first_name", "last_name"],
           source: "tour",
           setup_for: "dependent",
         });
         trackWebFunnelOnboardingCompleted({
           source: "tour",
           setup_for: "dependent",
-          fields_filled: filledFields,
+          fields_filled: ["first_name", "last_name"],
         });
       }
       await createDependentAndSwitch();
@@ -1956,10 +1968,6 @@ export function WebOnboardingTour({
           first_name: cap(firstName.trim()),
           last_name: cap(lastName.trim()),
         });
-        const filledFields = [
-          firstName.trim() && "first_name",
-          lastName.trim() && "last_name",
-        ].filter(Boolean) as string[];
         analytics.track("Onboarding Completed", {
           fields_filled: filledFields,
           source: "tour",
@@ -1980,8 +1988,14 @@ export function WebOnboardingTour({
   // preserving data continuity with the prior OnboardingModal. (Event name kept
   // the same on purpose — so dashboards keep working.)
   useEffect(() => {
-    if (phase === "profile-form") analytics.track("Onboarding Modal Shown", { source: "tour" });
-  }, [phase]);
+    if (phase !== "profile-form") return;
+    analytics.track("Onboarding Modal Shown", { source: "tour" });
+    trackWebFunnelProfileFormViewed({
+      source: "tour",
+      setup_for: isDependentSetup ? "dependent" : "self",
+      is_anonymous_tour: isAnonymousTour,
+    });
+  }, [phase, isDependentSetup, isAnonymousTour]);
 
   // Router → pain. The router's 5 buckets also drive the pain variant:
   // money-centric picks (money, medications) show the dollars-over-decade

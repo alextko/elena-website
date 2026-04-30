@@ -37,6 +37,23 @@ export function trackWebFunnelAuthSucceeded(props: {
   analytics.track("Web Funnel Auth Succeeded", withVersion(props));
 }
 
+export function trackWebFunnelProfileFormViewed(props: {
+  source: string;
+  setup_for: "self" | "dependent";
+  is_anonymous_tour: boolean;
+}) {
+  analytics.track("Web Funnel Profile Form Viewed", withVersion(props));
+}
+
+export function trackWebFunnelProfileFormSubmitted(props: {
+  source: string;
+  setup_for: "self" | "dependent";
+  is_anonymous_tour: boolean;
+  fields_filled: string[];
+}) {
+  analytics.track("Web Funnel Profile Form Submitted", withVersion(props));
+}
+
 export function trackWebFunnelOnboardingCompleted(props: {
   source: string;
   setup_for: "self" | "dependent";
