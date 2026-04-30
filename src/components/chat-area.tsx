@@ -834,6 +834,19 @@ export function ChatArea({
 
   const [sessionReady, setSessionReady] = useState(false);
 
+  const getPendingSeed = useCallback((): string | null => {
+    const seed = initialQueryRef.current as string | null | undefined;
+    if (seed) return seed;
+    if (typeof window === "undefined") return null;
+    try {
+      const stashed = localStorage.getItem("elena_pending_query");
+      const tourGateFlag = sessionStorage.getItem("elena_tour_post_seed_gate") === "1";
+      return stashed && tourGateFlag ? stashed : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
   const hasPendingSeedStash = useMemo(() => {
     if (typeof window === "undefined") return false;
     try {
@@ -920,11 +933,17 @@ export function ChatArea({
       console.log("[chat-area] fetchWelcome response:", res.status);
       if (!res.ok) {
         console.warn("[chat-area] fetchWelcome failed:", res.status);
-        // Fallback — still usable, just no personalized welcome
-        setWelcomeHeading(STARTER_WELCOME_HEADING);
-        setWelcomeMessage(null);
-        setWelcomeSurfaceKind("starter");
-        setSuggestions([]);
+        const pendingSeed = getPendingSeed();
+        if (silent && pendingSeed) {
+          setLoadError("Couldn’t start your chat. Tap to retry.");
+          setLoadingMessages(false);
+        } else {
+          // Fallback — still usable, just no personalized welcome
+          setWelcomeHeading(STARTER_WELCOME_HEADING);
+          setWelcomeMessage(null);
+          setWelcomeSurfaceKind("starter");
+          setSuggestions([]);
+        }
         // Release the in-flight guard so a retry (eager re-fetch from
         // the auto-send effect when a seed is waiting, or a profile
         // switch) can actually hit the endpoint again. Without this,
@@ -968,8 +987,12 @@ export function ChatArea({
       // the microtask point (first render of the chat layout).
       setTimeout(() => flushPendingSeedRef.current("fetchWelcome-delayed"), 50);
     } catch {
-      // Fallback -- show generic welcome so the page is never blank
-      if (!silent) {
+      const pendingSeed = getPendingSeed();
+      if (silent && pendingSeed) {
+        setLoadError("Couldn’t start your chat. Tap to retry.");
+        setLoadingMessages(false);
+      } else {
+        // Fallback -- show generic welcome so the page is never blank
         setWelcomeHeading(STARTER_WELCOME_HEADING);
         setWelcomeMessage(null);
         setWelcomeSurfaceKind("starter");
@@ -1017,14 +1040,6 @@ export function ChatArea({
       console.log(`[chat-area] flushPendingSeed BLOCKED (already sent/sending)`, state);
       return;
     }
-    if (!sessionIdRef.current) {
-      console.log(`[chat-area] flushPendingSeed BLOCKED (no sessionId)`, state);
-      return;
-    }
-    if (!handleSendRef.current) {
-      console.log(`[chat-area] flushPendingSeed BLOCKED (no handleSend)`, state);
-      return;
-    }
 
     let seed = initialQueryRef.current as string | null | undefined;
     let seedSource: "prop" | "stash" | "none" = seed ? "prop" : "none";
@@ -1038,6 +1053,18 @@ export function ChatArea({
     }
     if (!seed) {
       console.log(`[chat-area] flushPendingSeed BLOCKED (no seed)`, state);
+      return;
+    }
+    if (!sessionIdRef.current) {
+      console.log(`[chat-area] flushPendingSeed BLOCKED (no sessionId)`, { ...state, seedPreview: seed.slice(0, 40) });
+      if (!welcomeInFlightRef.current) {
+        console.log("[chat-area] flushPendingSeed recovering missing session via fetchWelcome");
+        void fetchWelcome(true);
+      }
+      return;
+    }
+    if (!handleSendRef.current) {
+      console.log(`[chat-area] flushPendingSeed BLOCKED (no handleSend)`, { ...state, seedPreview: seed.slice(0, 40) });
       return;
     }
     if (seed === lastAutoSentQuery.current) {
@@ -1916,6 +1943,8 @@ export function ChatArea({
                   if (activeSessionId) {
                     const requestId = ++loadRequestRef.current;
                     loadMessages(activeSessionId, requestId);
+                  } else if (getPendingSeed()) {
+                    fetchWelcome(true);
                   }
                 }}
                 className="rounded-full border border-[#0F1B3D]/10 bg-[#f5f7fb] px-5 py-2.5 text-sm font-semibold text-[#0F1B3D]/70 transition-all hover:bg-[#0F1B3D]/[0.08]"
