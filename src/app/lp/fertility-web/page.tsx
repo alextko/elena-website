@@ -285,7 +285,11 @@ export default function FertilityWebLandingPage() {
 
   const startOnboarding = useCallback(
     (query: string, source: string) => {
-      analytics.track("Hero Input Submitted", { query_length: query.length });
+      analytics.track("Hero Input Submitted", {
+        query_length: query.length,
+        canonical_step: "start_onboarding_clicked",
+        step_label: "Start Onboarding Clicked",
+      });
       analytics.track("Message Sent", {
         is_first_message: true,
         has_attachment: false,
@@ -331,6 +335,8 @@ export default function FertilityWebLandingPage() {
       analytics.track("Onboard Route Entered", {
         source,
         landing_variant: "fertility_web",
+        canonical_step: "onboarding_started",
+        step_label: "Onboarding Started",
       });
       router.push("/onboard");
     },

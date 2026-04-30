@@ -28,6 +28,7 @@ interface AuthContextValue {
   switchProfile: (profileId: string) => Promise<void>;
   isSwitchingProfile: boolean;
   profileData: { firstName: string; lastName: string; email: string; profilePictureUrl?: string | null; dob?: string | null; zipCode?: string | null } | null;
+  hasMobileApp: boolean;
   updateProfilePicture: (url: string | null) => void;
   // Cached profile popover data
   doctors: DoctorItem[];
@@ -146,6 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     dob?: string | null;
     zipCode?: string | null;
   } | null>(null);
+  const [hasMobileApp, setHasMobileApp] = useState(false);
 
   // Cached profile popover data — persists across sidebar toggles
   const [doctors, setDoctors] = useState<DoctorItem[]>([]);
@@ -197,6 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (data.has_profile && data.profile_id) {
           setProfileChecked(true);
           setProfiles(data.profiles || []);
+          setHasMobileApp(!!data.has_mobile_app);
           const { active: activeProfile, primary: primaryProfile } = selectBackendActiveProfile(data);
           setProfileId(activeProfile?.id || data.profile_id);
           setNeedsOnboarding(!(data.onboarding_completed || hasCompletedRequiredOnboardingFields(primaryProfile)));
@@ -223,6 +226,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data: MeResponse = await res.json();
       // Cache for instant restore on next page load
       try { sessionStorage.setItem("elena_me_cache", JSON.stringify(data)); } catch {}
+      setHasMobileApp(!!data.has_mobile_app);
 
       console.log("[auth] /auth/me response:", { has_profile: data.has_profile, profile_id: data.profile_id, email: data.email });
 
@@ -790,6 +794,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         frequency: created.frequency,
         has_due_time: !!created.due_time,
         has_start_date: !!created.due_date,
+        canonical_step: "task_added",
+        step_label: "Task Added",
       });
       return created;
     } catch {
@@ -814,6 +820,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         category: updated.category,
         frequency: updated.frequency,
         update_type: data.status ? "status_change" : "content_edit",
+        canonical_step: "task_updated",
+        step_label: "Task Updated",
       });
     } catch {
       // silent
@@ -829,6 +837,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       created_from: "web",
       todo_kind: existing?.frequency === "daily" ? "daily" : "care",
       category: existing?.category,
+      canonical_step: "task_removed",
+      step_label: "Task Removed",
     });
     try {
       await apiFetch(`/todos/${id}`, { method: "DELETE" });
@@ -874,6 +884,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data: MeResponse = await res.json();
       const { active, primary } = selectBackendActiveProfile(data);
       setProfiles(data.profiles || []);
+      setHasMobileApp(!!data.has_mobile_app);
       setProfileId(active?.id || data.profile_id || null);
       setNeedsOnboarding(!(data.onboarding_completed || hasCompletedRequiredOnboardingFields(primary)));
       setProfileData((prev) => ({
@@ -1203,6 +1214,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setProfileId(null);
     setProfiles([]);
+    setHasMobileApp(false);
     setProfileData(null);
     setNeedsOnboarding(false);
     setProfileChecked(false);
@@ -1232,6 +1244,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         switchProfile,
         isSwitchingProfile,
         profileData,
+        hasMobileApp,
         doctors,
         careVisits,
         subscription,

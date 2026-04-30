@@ -34,6 +34,31 @@ const exclusionTerms = (getArg("--exclude", "test,alextko,abhi") || "")
   .map((value) => value.trim().toLowerCase())
   .filter(Boolean);
 
+const canonicalEventFallbacks = {
+  "Hero Input Submitted": "start_onboarding_clicked",
+  "Onboard Route Entered": "onboarding_started",
+  "Web Funnel Profile Form Viewed": "name_step_viewed",
+  "Web Funnel Profile Form Submitted": "name_step_submitted",
+  "Web Funnel Auth Entry Viewed": "auth_step_viewed",
+  "Web Funnel Auth Submitted": "auth_submitted",
+  "Web Funnel Auth Succeeded": "auth_succeeded",
+  "Web Funnel Onboarding Completed": "profile_saved",
+  "Web Funnel Seed Flushed": "onboarding_handoff_completed",
+  "Web Funnel Activated": "first_chat_sent",
+  provider_created: "provider_added",
+  provider_updated: "provider_updated",
+  provider_deleted: "provider_removed",
+  visit_created: "appointment_added",
+  visit_updated: "appointment_updated",
+  visit_deleted: "appointment_removed",
+  todo_created: "task_added",
+  todo_updated: "task_updated",
+  todo_deleted: "task_removed",
+  insurance_card_added: "insurance_added",
+  insurance_card_updated: "insurance_updated",
+  insurance_card_deleted: "insurance_removed",
+};
+
 const interestingEvents = [
   "Landing Page Viewed",
   "Quiz Get Started Clicked",
@@ -307,6 +332,8 @@ function buildSummary(rows, meta) {
     if (!distinctId) continue;
     const user = users.get(distinctId) || createUser();
     user.events.add(event);
+    const canonicalStep = String(properties.canonical_step || canonicalEventFallbacks[event] || "");
+    if (canonicalStep) user.canonicalSteps.add(canonicalStep);
     if (properties.landing_variant) user.landingVariants.add(String(properties.landing_variant));
     if (time && (!user.firstSeen || time < user.firstSeen)) user.firstSeen = time;
     if (time && (!user.lastSeen || time > user.lastSeen)) user.lastSeen = time;
@@ -332,9 +359,9 @@ function buildSummary(rows, meta) {
 
   const homepageChatFunnel = [
     ["Landing Page Viewed", countUsers(userList, "Landing Page Viewed")],
-    ["Hero Input Submitted", countUsers(userList, "Hero Input Submitted")],
+    ["Start Onboarding Clicked", countUsersByCanonical(userList, "start_onboarding_clicked")],
     ["Message Sent", countUsers(userList, "Message Sent")],
-    ["Onboard Route Entered", countUsers(userList, "Onboard Route Entered")],
+    ["Onboarding Started", countUsersByCanonical(userList, "onboarding_started")],
     ["Auth Modal Opened", countUsers(userList, "Auth Modal Opened")],
     ["Onboard Auth Step Viewed", countUsers(userList, "Onboard Auth Step Viewed")],
     ["Signup Completed", countUsers(userList, "Signup Completed")],
@@ -352,16 +379,16 @@ function buildSummary(rows, meta) {
 
   const cleanWebFunnel = [
     ["Landing Page Viewed", countUsers(userList, "Landing Page Viewed")],
-    ["Hero Input Submitted", countUsers(userList, "Hero Input Submitted")],
-    ["Onboard Route Entered", countUsers(userList, "Onboard Route Entered")],
-    ["Web Funnel Profile Form Viewed", countUsers(userList, "Web Funnel Profile Form Viewed")],
-    ["Web Funnel Profile Form Submitted", countUsers(userList, "Web Funnel Profile Form Submitted")],
-    ["Web Funnel Auth Entry Viewed", countUsers(userList, "Web Funnel Auth Entry Viewed")],
-    ["Web Funnel Auth Submitted", countUsers(userList, "Web Funnel Auth Submitted")],
-    ["Web Funnel Auth Succeeded", countUsers(userList, "Web Funnel Auth Succeeded")],
-    ["Web Funnel Onboarding Completed", countUsers(userList, "Web Funnel Onboarding Completed")],
-    ["Web Funnel Seed Flushed", countUsers(userList, "Web Funnel Seed Flushed")],
-    ["Web Funnel Activated", countUsers(userList, "Web Funnel Activated")],
+    ["Start Onboarding Clicked", countUsersByCanonical(userList, "start_onboarding_clicked")],
+    ["Onboarding Started", countUsersByCanonical(userList, "onboarding_started")],
+    ["Name Step Viewed", countUsersByCanonical(userList, "name_step_viewed")],
+    ["Name Step Submitted", countUsersByCanonical(userList, "name_step_submitted")],
+    ["Auth Step Viewed", countUsersByCanonical(userList, "auth_step_viewed")],
+    ["Auth Submitted", countUsersByCanonical(userList, "auth_submitted")],
+    ["Auth Succeeded", countUsersByCanonical(userList, "auth_succeeded")],
+    ["Profile Saved", countUsersByCanonical(userList, "profile_saved")],
+    ["Onboarding Handoff Completed", countUsersByCanonical(userList, "onboarding_handoff_completed")],
+    ["First Chat Sent", countUsersByCanonical(userList, "first_chat_sent")],
   ].map(([step, usersAtStep], index, steps) => ({
     step,
     users: usersAtStep,
@@ -371,17 +398,17 @@ function buildSummary(rows, meta) {
   }));
 
   const postActivationMilestones = [
-    ["Web Funnel Activated", countUsers(userList, "Web Funnel Activated")],
+    ["First Chat Sent", countUsersByCanonical(userList, "first_chat_sent")],
     ["Any core data added", countUsersAny(userList, [
-      "provider_created",
-      "visit_created",
-      "todo_created",
-      "insurance_card_added",
+      "provider_added",
+      "appointment_added",
+      "task_added",
+      "insurance_added",
     ])],
-    ["Provider added", countUsers(userList, "provider_created")],
-    ["Visit added", countUsers(userList, "visit_created")],
-    ["Todo added", countUsers(userList, "todo_created")],
-    ["Insurance card added", countUsers(userList, "insurance_card_added")],
+    ["Provider Added", countUsersByCanonical(userList, "provider_added")],
+    ["Appointment Added", countUsersByCanonical(userList, "appointment_added")],
+    ["Task Added", countUsersByCanonical(userList, "task_added")],
+    ["Insurance Added", countUsersByCanonical(userList, "insurance_added")],
     ["Paywall Trial Started", countUsers(userList, "Paywall Trial Started")],
     ["Checkout Completed", countUsers(userList, "Checkout Completed")],
   ].map(([step, usersAtStep], index, steps) => ({
@@ -409,6 +436,7 @@ function buildSummary(rows, meta) {
 function createUser() {
   return {
     events: new Set(),
+    canonicalSteps: new Set(),
     landingVariants: new Set(),
     firstSeen: 0,
     lastSeen: 0,
@@ -419,8 +447,12 @@ function countUsers(users, event) {
   return users.filter((user) => user.events.has(event)).length;
 }
 
+function countUsersByCanonical(users, step) {
+  return users.filter((user) => user.canonicalSteps.has(step)).length;
+}
+
 function countUsersAny(users, events) {
-  return users.filter((user) => events.some((event) => user.events.has(event))).length;
+  return users.filter((user) => events.some((event) => user.canonicalSteps.has(event))).length;
 }
 
 function ratio(numerator, denominator) {
@@ -510,14 +542,14 @@ function printSummary(summary) {
     );
   }
   console.log("");
-  console.log("Clean web funnel v2");
+  console.log("Canonical web funnel");
   for (const step of summary.cleanWebFunnel) {
     console.log(
       `- ${step.step}: ${step.users} users | prev=${formatPct(step.conversionFromPrevious)} | landing=${formatPct(step.conversionFromLanding)}`,
     );
   }
   console.log("");
-  console.log("Post-activation milestones");
+  console.log("Product milestones");
   for (const step of summary.postActivationMilestones) {
     console.log(
       `- ${step.step}: ${step.users} users | activated=${formatPct(step.conversionFromActivated)}`,

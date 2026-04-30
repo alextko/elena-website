@@ -78,6 +78,7 @@ const EMPTY_HEALTH_DATA: HealthData = {
 };
 
 const APP_STORE_URL = "https://apps.apple.com/us/app/elena-ai-health-navigator/id6760362771";
+const APP_DOWNLOAD_CLICKED_KEY = "elena_app_download_clicked";
 
 /**
  * Tracks which item IDs are "just added" relative to the previous render.
@@ -216,6 +217,7 @@ export function ProfilePopover({
 }) {
   const {
     user, profileId, profiles, switchProfile, profileData, doctors, careVisits,
+    hasMobileApp,
     subscription, insuranceCards, todos, todayTodos, habits, habitCompletions,
     toggleHabit, toggleTodo, createTodo, updateTodo, deleteTodo,
     refreshTodos, refreshDoctors, refreshVisits, refreshInsurance, refreshHabits, refreshProfiles,
@@ -260,12 +262,19 @@ export function ProfilePopover({
   const [calendarExpanded, setCalendarExpanded] = useState(false);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [hasClickedAppDownload, setHasClickedAppDownload] = useState(false);
   // When a photo is picked, we open a crop modal instead of uploading directly.
   // cropImageSrc holds an object URL to the selected file until the user saves
   // (upload cropped blob) or cancels (discard). Always revoke the URL when done.
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
   // Keep a ref in sync so setOpen (declared above) can read the latest value.
   useEffect(() => { cropOpenRef.current = !!cropImageSrc; }, [cropImageSrc]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      setHasClickedAppDownload(localStorage.getItem(APP_DOWNLOAD_CLICKED_KEY) === "1");
+    } catch {}
+  }, []);
   const [selectedProvider, setSelectedProvider] = useState<typeof doctors[number] | null>(null);
   const [selectedVisit, setSelectedVisit] = useState<typeof careVisits[number] | null>(null);
   const [editingTodo, setEditingTodo] = useState<{ mode: "create" } | { mode: "edit"; todo: typeof todos[number] } | null>(null);
@@ -1489,26 +1498,34 @@ export function ProfilePopover({
                 </div>
 
                 {/* Plan summary / Upgrade */}
-                <a
-                  href={APP_STORE_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => analytics.track("App CTA: Download Clicked", { trigger: "profile_popover" })}
-                  className="block w-full rounded-2xl border border-[#D9DEEA] bg-white px-5 py-4 text-left shadow-[0_8px_20px_rgba(15,27,61,0.08)] transition-all hover:border-[#C7D1E6] hover:shadow-[0_10px_24px_rgba(15,27,61,0.12)]"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#EEF4FF]">
-                      <Download className="h-5 w-5 text-[#1A3A6E]" />
+                {!hasMobileApp && !hasClickedAppDownload && (
+                  <a
+                    href={APP_STORE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => {
+                      try { localStorage.setItem(APP_DOWNLOAD_CLICKED_KEY, "1"); } catch {}
+                      setHasClickedAppDownload(true);
+                      analytics.track("App CTA: Download Clicked", { trigger: "profile_popover" });
+                    }}
+                    className="block w-full rounded-2xl border border-[#D9DEEA] bg-white px-5 py-4 text-left shadow-[0_8px_20px_rgba(15,27,61,0.08)] transition-all hover:border-[#C7D1E6] hover:shadow-[0_10px_24px_rgba(15,27,61,0.12)]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src="/assets/elena-app-icon.png"
+                        alt="Elena app icon"
+                        className="h-12 w-12 shrink-0 rounded-[14px] object-cover shadow-[0_6px_18px_rgba(15,27,61,0.14)]"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[17px] font-bold text-[#0F1B3D] tracking-tight">Download the app</p>
+                        <p className="mt-1 text-[14px] leading-5 text-[#0F1B3D]/62">
+                          Keep your Game Plan, visits, and providers with you on the go.
+                        </p>
+                      </div>
+                      <ChevronRight className="h-[18px] w-[18px] shrink-0 self-center text-[#1A3A6E]" />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[17px] font-bold text-[#0F1B3D] tracking-tight">Download the app</p>
-                      <p className="mt-1 text-[14px] leading-5 text-[#0F1B3D]/62">
-                        Keep your Game Plan, visits, and providers with you on the go.
-                      </p>
-                    </div>
-                    <ChevronRight className="mt-1 h-[18px] w-[18px] shrink-0 text-[#1A3A6E]" />
-                  </div>
-                </a>
+                  </a>
+                )}
 
                 {(subscription?.tier || "free") === "free" ? (
                   <button
@@ -2098,6 +2115,8 @@ function VisitDetailPanel({
         visit_type: editType.trim() || visit.visit_type || "unknown",
         source: "manual",
         created_from: "profile_popover",
+        canonical_step: "appointment_updated",
+        step_label: "Appointment Updated",
       });
       onUpdated();
     } catch {}
@@ -2111,6 +2130,8 @@ function VisitDetailPanel({
         source: "manual",
         created_from: "profile_popover",
         deletion_type: "care_visit",
+        canonical_step: "appointment_removed",
+        step_label: "Appointment Removed",
       });
       onUpdated();
     } catch {}
@@ -2551,6 +2572,8 @@ function ProviderDetailPanel({
         specialty: specialty || "Other",
         has_phone: !!phone.trim(),
         has_address: !!address.trim(),
+        canonical_step: "provider_updated",
+        step_label: "Provider Updated",
       });
       onUpdated();
     } catch {}
@@ -2564,6 +2587,8 @@ function ProviderDetailPanel({
       analytics.track("provider_deleted", {
         source: "manual",
         created_from: "profile_popover",
+        canonical_step: "provider_removed",
+        step_label: "Provider Removed",
       });
       onUpdated();
     } catch {}
@@ -2782,6 +2807,8 @@ function AddProviderPanel({
           has_phone: !!phone.trim(),
           has_address: !!address.trim(),
           is_first_provider: doctorCount === 0,
+          canonical_step: "provider_added",
+          step_label: "Provider Added",
         });
         onSaved(data.doctor || { name: name.trim(), specialty });
       }
@@ -3268,6 +3295,8 @@ function InsuranceDetailRow({
         created_from: "profile_popover",
         card_type: cardType,
         field_count: Object.keys(updates).length,
+        canonical_step: "insurance_updated",
+        step_label: "Insurance Updated",
       });
       setEditing(false);
       onRefresh();
@@ -3283,6 +3312,8 @@ function InsuranceDetailRow({
         source: "manual",
         created_from: "profile_popover",
         card_type: cardType,
+        canonical_step: "insurance_removed",
+        step_label: "Insurance Removed",
       });
       setConfirmDelete(false);
       onRefresh();
@@ -3309,6 +3340,8 @@ function InsuranceDetailRow({
         card_type: cardType,
         side,
         is_first_card: !hasData,
+        canonical_step: "insurance_added",
+        step_label: "Insurance Added",
       });
       onRefresh();
     } catch {}

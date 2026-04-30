@@ -6,60 +6,85 @@ Use this as the source of truth for experiment analysis. Do not build new
 dashboards from legacy event names unless they are explicitly marked as
 diagnostic-only below.
 
+## Naming strategy
+
+We keep the raw Mixpanel event names for continuity, and attach two
+properties to the important funnel/adoption events:
+
+- `canonical_step`
+- `step_label`
+
+Dashboards and scripts should group by `canonical_step` and display
+`step_label` in plain English. This preserves historical continuity while
+keeping reporting readable.
+
 ## Canonical onboarding funnel
 
 These events are intended to be read in order:
 
 1. `Landing Page Viewed`
-2. `Hero Input Submitted`
-3. `Onboard Route Entered`
-4. `Web Funnel Profile Form Viewed`
-5. `Web Funnel Profile Form Submitted`
-6. `Web Funnel Auth Entry Viewed`
-7. `Web Funnel Auth Submitted`
-8. `Web Funnel Auth Succeeded`
-9. `Web Funnel Onboarding Completed`
-10. `Web Funnel Seed Flushed`
-11. `Web Funnel Activated`
+2. `Start Onboarding Clicked`
+3. `Onboarding Started`
+4. `Name Step Viewed`
+5. `Name Step Submitted`
+6. `Auth Step Viewed`
+7. `Auth Submitted`
+8. `Auth Succeeded`
+9. `Profile Saved`
+10. `Onboarding Handoff Completed`
+11. `First Chat Sent`
+
+Underlying raw events:
+
+- `Hero Input Submitted` -> `Start Onboarding Clicked`
+- `Onboard Route Entered` -> `Onboarding Started`
+- `Web Funnel Profile Form Viewed` -> `Name Step Viewed`
+- `Web Funnel Profile Form Submitted` -> `Name Step Submitted`
+- `Web Funnel Auth Entry Viewed` -> `Auth Step Viewed`
+- `Web Funnel Auth Submitted` -> `Auth Submitted`
+- `Web Funnel Auth Succeeded` -> `Auth Succeeded`
+- `Web Funnel Onboarding Completed` -> `Profile Saved`
+- `Web Funnel Seed Flushed` -> `Onboarding Handoff Completed`
+- `Web Funnel Activated` -> `First Chat Sent`
 
 ### Event meanings
 
 - `Landing Page Viewed`
   The user viewed a landing page variant.
 
-- `Hero Input Submitted`
+- `Start Onboarding Clicked`
   A landing CTA started the seeded onboarding/chat flow.
   This is not limited to literal text input; button-driven seeded CTAs count too.
 
-- `Onboard Route Entered`
+- `Onboarding Started`
   The user entered `/onboard`.
   This means route entry, not that they necessarily saw the profile form yet.
 
-- `Web Funnel Profile Form Viewed`
+- `Name Step Viewed`
   The user reached the pre-auth profile-form step in the tour.
   This is the step where we ask for name before auth.
 
-- `Web Funnel Profile Form Submitted`
+- `Name Step Submitted`
   The user submitted the pre-auth profile-form step.
 
-- `Web Funnel Auth Entry Viewed`
+- `Auth Step Viewed`
   Auth UI became visible, regardless of whether the surface was inline tour auth
   or the legacy modal.
 
-- `Web Funnel Auth Submitted`
+- `Auth Submitted`
   The user attempted auth.
 
-- `Web Funnel Auth Succeeded`
+- `Auth Succeeded`
   Auth resolved successfully in app state.
   This is tracked from resolved session/profile state, not just a button click.
 
-- `Web Funnel Onboarding Completed`
-  Onboarding/profile data was actually saved.
+- `Profile Saved`
+  The onboarding/profile data was actually saved.
 
-- `Web Funnel Seed Flushed`
+- `Onboarding Handoff Completed`
   Buffered onboarding state was successfully replayed into the authed flow.
 
-- `Web Funnel Activated`
+- `First Chat Sent`
   The user sent the first real post-auth message.
 
 ## Post-activation milestones
@@ -67,18 +92,25 @@ These events are intended to be read in order:
 These are not a strict sequential funnel. They are milestone counts after
 activation and should be read as parallel adoption behaviors.
 
-- `provider_created`
-- `visit_created`
-- `todo_created`
-- `insurance_card_added`
+- `Provider Added`
+- `Appointment Added`
+- `Task Added`
+- `Insurance Added`
 - `Paywall Trial Started`
 - `Checkout Completed`
+
+Underlying raw events:
+
+- `provider_created` -> `Provider Added`
+- `visit_created` -> `Appointment Added`
+- `todo_created` -> `Task Added`
+- `insurance_card_added` -> `Insurance Added`
 
 The analysis script also reports:
 
 - `Any core data added`
   A user triggered at least one of:
-  `provider_created`, `visit_created`, `todo_created`, or `insurance_card_added`.
+  `Provider Added`, `Appointment Added`, `Task Added`, or `Insurance Added`.
 
 ## Diagnostic-only legacy events
 
@@ -109,8 +141,8 @@ It prints:
 
 - `Legacy funnel`
 - `Homepage chat funnel`
-- `Clean web funnel v2`
-- `Post-activation milestones`
+- `Canonical web funnel`
+- `Product milestones`
 
-For current experiments, prefer `Clean web funnel v2` plus
-`Post-activation milestones`.
+For current experiments, prefer `Canonical web funnel` plus
+`Product milestones`.

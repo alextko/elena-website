@@ -151,12 +151,16 @@ export default function OnboardPage() {
         analytics.track("Onboard Route Entered", {
           source: "direct_onboard",
           landing_variant: localStorage.getItem("elena_lp_variant") || "homepage",
+          canonical_step: "onboarding_started",
+          step_label: "Onboarding Started",
         });
       }
     } catch {
       analytics.track("Onboard Route Entered", {
         source: "direct_onboard",
         landing_variant: "homepage",
+        canonical_step: "onboarding_started",
+        step_label: "Onboarding Started",
       });
     }
   }, []);

@@ -673,7 +673,11 @@ function LandingPage() {
       return sessionStorage.getItem("elena_late_signup") !== "0";
     })();
     if (query) {
-      analytics.track("Hero Input Submitted", { query_length: query.length });
+      analytics.track("Hero Input Submitted", {
+        query_length: query.length,
+        canonical_step: "start_onboarding_clicked",
+        step_label: "Start Onboarding Clicked",
+      });
       analytics.track("Message Sent", {
         is_first_message: true,
         has_attachment: false,
@@ -738,7 +742,12 @@ function LandingPage() {
       // the tour's line-1566 setter becomes a no-op reinforcement.
       try { sessionStorage.setItem("elena_tour_post_seed_gate", "1"); } catch {}
       try { sessionStorage.setItem("elena_onboard_route_tracked", "1"); } catch {}
-      analytics.track("Onboard Route Entered", { source: "landing_hero", landing_variant: ref || "homepage" });
+      analytics.track("Onboard Route Entered", {
+        source: "landing_hero",
+        landing_variant: ref || "homepage",
+        canonical_step: "onboarding_started",
+        step_label: "Onboarding Started",
+      });
       router.push("/onboard");
       return;
     }
