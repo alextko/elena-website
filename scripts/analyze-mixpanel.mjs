@@ -68,6 +68,10 @@ const interestingEvents = [
   "Web Funnel Onboarding Completed",
   "Web Funnel Seed Flushed",
   "Web Funnel Activated",
+  "provider_created",
+  "visit_created",
+  "todo_created",
+  "insurance_card_added",
 ];
 
 async function main() {
@@ -366,6 +370,26 @@ function buildSummary(rows, meta) {
     conversionFromLanding: ratio(usersAtStep, Number(steps[0][1] || 0)),
   }));
 
+  const postActivationMilestones = [
+    ["Web Funnel Activated", countUsers(userList, "Web Funnel Activated")],
+    ["Any core data added", countUsersAny(userList, [
+      "provider_created",
+      "visit_created",
+      "todo_created",
+      "insurance_card_added",
+    ])],
+    ["Provider added", countUsers(userList, "provider_created")],
+    ["Visit added", countUsers(userList, "visit_created")],
+    ["Todo added", countUsers(userList, "todo_created")],
+    ["Insurance card added", countUsers(userList, "insurance_card_added")],
+    ["Paywall Trial Started", countUsers(userList, "Paywall Trial Started")],
+    ["Checkout Completed", countUsers(userList, "Checkout Completed")],
+  ].map(([step, usersAtStep], index, steps) => ({
+    step,
+    users: usersAtStep,
+    conversionFromActivated: ratio(usersAtStep, Number(steps[0][1] || 0)),
+  }));
+
   return {
     meta: {
       ...meta,
@@ -376,6 +400,7 @@ function buildSummary(rows, meta) {
     legacyFunnel,
     homepageChatFunnel,
     cleanWebFunnel,
+    postActivationMilestones,
     landingVariants: summarizeLandingVariants(userList),
     sources: summarizeSources(landingTouches),
   };
@@ -392,6 +417,10 @@ function createUser() {
 
 function countUsers(users, event) {
   return users.filter((user) => user.events.has(event)).length;
+}
+
+function countUsersAny(users, events) {
+  return users.filter((user) => events.some((event) => user.events.has(event))).length;
 }
 
 function ratio(numerator, denominator) {
@@ -485,6 +514,13 @@ function printSummary(summary) {
   for (const step of summary.cleanWebFunnel) {
     console.log(
       `- ${step.step}: ${step.users} users | prev=${formatPct(step.conversionFromPrevious)} | landing=${formatPct(step.conversionFromLanding)}`,
+    );
+  }
+  console.log("");
+  console.log("Post-activation milestones");
+  for (const step of summary.postActivationMilestones) {
+    console.log(
+      `- ${step.step}: ${step.users} users | activated=${formatPct(step.conversionFromActivated)}`,
     );
   }
   console.log("");

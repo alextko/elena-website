@@ -77,6 +77,8 @@ const EMPTY_HEALTH_DATA: HealthData = {
   socialHistory: [],
 };
 
+const APP_STORE_URL = "https://apps.apple.com/us/app/elena-ai-health-navigator/id6760362771";
+
 /**
  * Tracks which item IDs are "just added" relative to the previous render.
  * First render establishes a baseline (nothing is new); subsequent renders
@@ -1487,6 +1489,27 @@ export function ProfilePopover({
                 </div>
 
                 {/* Plan summary / Upgrade */}
+                <a
+                  href={APP_STORE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => analytics.track("App CTA: Download Clicked", { trigger: "profile_popover" })}
+                  className="block w-full rounded-2xl border border-[#D9DEEA] bg-white px-5 py-4 text-left shadow-[0_8px_20px_rgba(15,27,61,0.08)] transition-all hover:border-[#C7D1E6] hover:shadow-[0_10px_24px_rgba(15,27,61,0.12)]"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#EEF4FF]">
+                      <Download className="h-5 w-5 text-[#1A3A6E]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[17px] font-bold text-[#0F1B3D] tracking-tight">Download the app</p>
+                      <p className="mt-1 text-[14px] leading-5 text-[#0F1B3D]/62">
+                        Keep your Game Plan, visits, and providers with you on the go.
+                      </p>
+                    </div>
+                    <ChevronRight className="mt-1 h-[18px] w-[18px] shrink-0 text-[#1A3A6E]" />
+                  </div>
+                </a>
+
                 {(subscription?.tier || "free") === "free" ? (
                   <button
                     className="w-full rounded-2xl overflow-hidden shadow-[0_8px_20px_rgba(26,58,110,0.3)] cursor-pointer transition-opacity hover:opacity-95"
@@ -3240,6 +3263,12 @@ function InsuranceDetailRow({
         method: "PATCH",
         body: JSON.stringify({ updates }),
       });
+      analytics.track("insurance_card_updated", {
+        source: "manual",
+        created_from: "profile_popover",
+        card_type: cardType,
+        field_count: Object.keys(updates).length,
+      });
       setEditing(false);
       onRefresh();
     } catch {}
@@ -3250,6 +3279,11 @@ function InsuranceDetailRow({
     if (!card?.id) return;
     try {
       await apiFetch(`/insurance/cards/${cardType}/${card.id}`, { method: "DELETE" });
+      analytics.track("insurance_card_deleted", {
+        source: "manual",
+        created_from: "profile_popover",
+        card_type: cardType,
+      });
       setConfirmDelete(false);
       onRefresh();
     } catch {}
@@ -3268,6 +3302,13 @@ function InsuranceDetailRow({
       await apiFetch("/insurance/ocr", {
         method: "POST",
         body: form,
+      });
+      analytics.track("insurance_card_added", {
+        source: "manual",
+        created_from: "profile_popover",
+        card_type: cardType,
+        side,
+        is_first_card: !hasData,
       });
       onRefresh();
     } catch {}
