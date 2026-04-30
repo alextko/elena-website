@@ -786,6 +786,16 @@ export function ChatArea({
 
   const [sessionReady, setSessionReady] = useState(false);
 
+  const hasPendingSeedStash = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return !!localStorage.getItem("elena_pending_query")
+        && sessionStorage.getItem("elena_tour_post_seed_gate") === "1";
+    } catch {
+      return false;
+    }
+  }, [initialQuery, welcomeMessage, sessionReady, isLoading, activeSessionId, profileId]);
+
   async function fetchWelcome(silent = false) {
     console.log("[chat-area] fetchWelcome called, silent:", silent);
     // If we already have a live session for this profile, don't create
@@ -1841,7 +1851,7 @@ export function ChatArea({
           )}
 
           {/* Welcome state -- hidden when there's a pending query */}
-          {messages.length === 0 && !loadingMessages && !loadError && welcomeHeading && !initialQuery && !localStorage.getItem("elena_pending_query") && (
+          {messages.length === 0 && !loadingMessages && !loadError && welcomeHeading && !initialQuery && !hasPendingSeedStash && (
             <div className="flex-1 flex flex-col items-start justify-center gap-5 md:gap-7 py-8">
               <div>
                 <h2 className="text-2xl md:text-[2rem] font-bold text-[#0F1B3D] mb-3 md:mb-4 leading-tight">{welcomeHeading}</h2>
