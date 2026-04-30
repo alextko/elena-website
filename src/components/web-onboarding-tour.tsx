@@ -814,21 +814,6 @@ export function WebOnboardingTour({
   // Mixpanel even for users who went on to start a trial.
   const tourCompletedFiredRef = useRef(false);
 
-  // When /onboard signals the post-signup flush, morph the current phase
-  // into "flushing" so the progress bar lands inside the same shell card
-  // (instead of stacking a second overlay on top). The flush cannot
-  // start until the user has already passed auth, so whatever phase we
-  // exit is fine to leave behind.
-  useEffect(() => {
-    if (flushingState && phase !== "flushing") {
-      setPhase("flushing");
-      if (!tourCompletedFiredRef.current) {
-        tourCompletedFiredRef.current = true;
-        analytics.track("Web Tour Completed", { at: "post_auth_flush" });
-      }
-    }
-  }, [flushingState, phase]);
-
   // Inline data-entry state for the profile-phase cards. One field set per
   // `addKind`; reset as the user advances so each card starts clean.
   const [providerName, setProviderName] = useState("");
@@ -946,6 +931,40 @@ export function WebOnboardingTour({
   // instead of the primary user's.
   const [dependentProfileId, setDependentProfileId] = useState<string | null>(tourSnapshot.dependentProfileId ?? null);
   const [creatingDependent, setCreatingDependent] = useState(false);
+
+  // When /onboard signals the post-signup flush, morph the current phase
+  // into "flushing" so the progress bar lands inside the same shell card
+  // (instead of stacking a second overlay on top). The flush cannot
+  // start until the user has already passed auth, so whatever phase we
+  // exit is fine to leave behind.
+  useEffect(() => {
+    if (flushingState && phase !== "flushing") {
+      // The user has already completed auth by the time /onboard starts
+      // flushing buffered writes. If we leave the persisted tour snapshot
+      // on "auth", the /chat remount restores the signup step instead of
+      // resuming the post-auth walkthrough. Promote the saved resume
+      // phase now so the /onboard -> /chat handoff always lands in the
+      // joyride/profile path.
+      if (surface === "onboard" && typeof window !== "undefined") {
+        try {
+          const raw =
+            localStorage.getItem("elena_tour_state")
+            || sessionStorage.getItem("elena_tour_state");
+          if (raw) {
+            const snapshot = JSON.parse(raw);
+            snapshot.phase = "joyride";
+            localStorage.setItem("elena_tour_state", JSON.stringify(snapshot));
+            sessionStorage.setItem("elena_tour_state", JSON.stringify(snapshot));
+          }
+        } catch {}
+      }
+      setPhase("flushing");
+      if (!tourCompletedFiredRef.current) {
+        tourCompletedFiredRef.current = true;
+        analytics.track("Web Tour Completed", { at: "post_auth_flush" });
+      }
+    }
+  }, [flushingState, phase, surface]);
 
   // Whether the current tour session is setting Elena up for a
   // dependent instead of the primary user. Drives per-phase copy
