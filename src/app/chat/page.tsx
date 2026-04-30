@@ -6,6 +6,13 @@ import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/apiFetch";
 import { claimPendingMessages } from "@/lib/pendingMessage";
 import { clearAnonId } from "@/lib/anonId";
+import {
+  clearStoredTourState,
+  getStoredTourPhase,
+  hasPendingSignup,
+  isAuthHandoffPhase,
+  promoteStoredTourStateToPostAuthResume,
+} from "@/lib/authHandoff";
 import * as analytics from "@/lib/analytics";
 import { Sidebar } from "@/components/sidebar";
 import { ChatArea } from "@/components/chat-area";
@@ -404,12 +411,21 @@ function ChatPageInner() {
     let savedTourPhase: string | null = null;
     if (typeof window !== "undefined") {
       try {
-        const raw = localStorage.getItem("elena_tour_state") || sessionStorage.getItem("elena_tour_state");
-        if (raw) {
-          const parsed = JSON.parse(raw) as { phase?: string };
-          savedTourPhase = parsed.phase || null;
-          hasSavedTour = !!savedTourPhase && savedTourPhase !== "done";
+        const storages = {
+          localStorage: window.localStorage,
+          sessionStorage: window.sessionStorage,
+        };
+        savedTourPhase = getStoredTourPhase(storages) || null;
+        if (session && isAuthHandoffPhase(savedTourPhase)) {
+          if (hasPendingSignup(window.sessionStorage)) {
+            promoteStoredTourStateToPostAuthResume(storages);
+            savedTourPhase = "joyride";
+          } else {
+            clearStoredTourState(storages);
+            savedTourPhase = null;
+          }
         }
+        hasSavedTour = !!savedTourPhase && savedTourPhase !== "done";
       } catch {}
     }
     const isPostAuthResumePhase =
@@ -420,10 +436,10 @@ function ChatPageInner() {
       hasSavedTour && (needsOnboarding || onboardingJustCompleted || isPostAuthResumePhase);
     const shouldShow = forceTour || needsOnboarding || onboardingJustCompleted || shouldResumeSavedTour;
     if (!forceTour && !needsOnboarding && !onboardingJustCompleted && hasSavedTour && !isPostAuthResumePhase && typeof window !== "undefined") {
-      try {
-        localStorage.removeItem("elena_tour_state");
-        sessionStorage.removeItem("elena_tour_state");
-      } catch {}
+      clearStoredTourState({
+        localStorage: window.localStorage,
+        sessionStorage: window.sessionStorage,
+      });
     }
     if (!shouldShow) return;
     // Reset the "tour done" flag so a fresh signup always sees the tour.
@@ -433,7 +449,7 @@ function ChatPageInner() {
     // fades in. StreamingText's own startDelay covers the rest.
     const timer = setTimeout(() => setShowTour(true), 220);
     return () => clearTimeout(timer);
-  }, [onboardingJustCompleted, searchParams, needsOnboarding]);
+  }, [needsOnboarding, onboardingJustCompleted, searchParams, session]);
 
   // Persist active session so refresh/navigation restores it
   useEffect(() => {

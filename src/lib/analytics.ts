@@ -106,6 +106,8 @@ export type AnalyticsEvent =
   | "Tour Buffer Flush Failed"
   | "Onboard Flush Continue Clicked"
   | "Onboard Auth Gate Hit"
+  | "Auth Handoff Recovery Triggered"
+  | "Authenticated Auth Step Detected"
   | "Onboard Route Entered"
   | "Form Missing From DOM"
   | "Form Invisible In DOM"

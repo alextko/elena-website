@@ -17,6 +17,13 @@ import { useAuth } from "@/lib/auth-context";
 import { WebOnboardingTour } from "@/components/web-onboarding-tour";
 import { OnboardChatBackdrop } from "@/components/onboard-chat-backdrop";
 import type { PainAffirmation } from "@/components/onboarding-flushing-screen";
+import {
+  PENDING_SIGNUP_KEY,
+  getStoredTourPhase,
+  hasPendingSignup,
+  promoteStoredTourStateToPostAuthResume,
+  shouldRecoverAuthenticatedAuthHandoff,
+} from "@/lib/authHandoff";
 import { flushTourBuffer, type FlushStage } from "@/lib/tourBuffer";
 import * as analytics from "@/lib/analytics";
 
@@ -90,7 +97,6 @@ export default function OnboardPage() {
   // sessionStorage does. On remount we rehydrate the ref from storage
   // so the flush effect still fires when the user comes back with a
   // fresh session from Google / Apple.
-  const PENDING_SIGNUP_KEY = "elena_onboard_signup_pending";
   const pendingSignupRef = useRef(
     typeof window !== "undefined" && sessionStorage.getItem(PENDING_SIGNUP_KEY) === "1",
   );
@@ -105,6 +111,7 @@ export default function OnboardPage() {
   const [continuePending, setContinuePending] = useState(false);
   const [flushStage, setFlushStage] = useState<FlushStage>("saving_profile");
   const [flushPercent, setFlushPercent] = useState(8);
+  const [flushKick, setFlushKick] = useState(0);
   // Pain affirmation is snapshotted the moment the flush starts so it
   // survives any downstream clears of elena_tour_state (finishTour,
   // skipTour). Defaulted to generic copy; replaced with pain-targeted
@@ -118,6 +125,7 @@ export default function OnboardPage() {
   const refreshProfilesRef = useRef(refreshProfiles);
   const switchProfileRef = useRef(switchProfile);
   const completeOnboardingRef = useRef(completeOnboarding);
+  const authHandoffRecoveryTrackedRef = useRef(false);
   refreshProfilesRef.current = refreshProfiles;
   switchProfileRef.current = switchProfile;
   completeOnboardingRef.current = completeOnboarding;
@@ -172,6 +180,40 @@ export default function OnboardPage() {
       router.replace("/chat");
     }
   }, [continuePending, loading, session, router, needsOnboarding, profileChecked]);
+
+  useEffect(() => {
+    if (loading || !session || flushingRef.current || continuePending || typeof window === "undefined") return;
+    const storages = {
+      localStorage: window.localStorage,
+      sessionStorage: window.sessionStorage,
+    };
+    const phase = getStoredTourPhase(storages);
+    const pendingSignup = pendingSignupRef.current || hasPendingSignup(window.sessionStorage);
+    if (!shouldRecoverAuthenticatedAuthHandoff({
+      hasSession: true,
+      phase,
+      pendingSignup,
+    })) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      if (flushingRef.current) return;
+      pendingSignupRef.current = true;
+      try { window.sessionStorage.setItem(PENDING_SIGNUP_KEY, "1"); } catch {}
+      promoteStoredTourStateToPostAuthResume(storages);
+      if (!authHandoffRecoveryTrackedRef.current) {
+        authHandoffRecoveryTrackedRef.current = true;
+        analytics.track("Auth Handoff Recovery Triggered", {
+          source: "onboard_watchdog",
+          phase: phase || "unknown",
+        });
+      }
+      setFlushKick((value) => value + 1);
+    }, 1500);
+
+    return () => window.clearTimeout(timer);
+  }, [continuePending, loading, session, flushKick]);
 
   // Session appeared while the signup gate is pending → run the flush,
   // then navigate to /chat. Depends only on `session` so re-renders
@@ -275,7 +317,7 @@ export default function OnboardPage() {
       // transitions to its "ready" state once stage=done + percent=100;
       // the user presses Continue, which fires handleFlushContinue below.
     })();
-  }, [session]);
+  }, [flushKick, session]);
 
   if (
     loading

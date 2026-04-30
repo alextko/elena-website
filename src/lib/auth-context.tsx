@@ -14,6 +14,7 @@ import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/apiFetch";
 import { claimPendingMessages } from "@/lib/pendingMessage";
 import { getStoredAttribution } from "@/lib/attribution";
+import { PENDING_SIGNUP_KEY, hasPendingSignup, promoteStoredTourStateToPostAuthResume } from "@/lib/authHandoff";
 import * as analytics from "@/lib/analytics";
 import type { MeResponse, DoctorItem, CareVisit, CareTodo, CareTodoCreate, Habit, SubscriptionResponse, InsuranceCard, ProfileSummary } from "@/lib/types";
 
@@ -67,7 +68,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 const ONBOARDING_REQUIRED_PROFILE_FIELDS = ["first_name", "last_name", "date_of_birth", "zip_code"] as const;
 const AUTH_INTENT_KEY = "elena_auth_intent";
-const ONBOARD_PENDING_SIGNUP_KEY = "elena_onboard_signup_pending";
+const ONBOARD_PENDING_SIGNUP_KEY = PENDING_SIGNUP_KEY;
 
 type AuthIntent = {
   intent: "signup" | "signin";
@@ -618,6 +619,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Mixpanel alias/identify is handled inside fetchProfile() to ensure
         // alias runs before identify (otherwise the anonymous ID never gets linked)
         (async () => {
+          let recoveredAuthHandoff = false;
+          if (typeof window !== "undefined") {
+            recoveredAuthHandoff = promoteStoredTourStateToPostAuthResume({
+              localStorage: window.localStorage,
+              sessionStorage: window.sessionStorage,
+            });
+            if (recoveredAuthHandoff && hasPendingSignup(window.sessionStorage)) {
+              analytics.track("Auth Handoff Recovery Triggered", {
+                source: "signed_in_event",
+                recovered_phase: "joyride",
+              });
+            }
+          }
           try {
             await claimPendingMessages();
           } catch (e) {

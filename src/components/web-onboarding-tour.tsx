@@ -9,6 +9,13 @@ import * as analytics from "@/lib/analytics";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/apiFetch";
 import {
+  PENDING_SIGNUP_KEY,
+  hasPendingSignup,
+  normalizeRestoredTourPhase,
+  promoteStoredTourStateToPostAuthResume,
+  type TourPhase,
+} from "@/lib/authHandoff";
+import {
   buildDisplayActionFromTodoText,
   buildFreeformHeroValues,
   buildPricingActionFromNeed,
@@ -286,27 +293,7 @@ const PROFILE_STEPS: {
   { id: "family", title: "Add your family", body: "If you manage someone's care, add them here. If they're on their own, send them an invite.", tab: "health", addKind: "family", showSwitcher: true },
 ];
 
-type Phase = "intro" | "care" | "care-ack" | "setup-for" | "router" | "pain" | "value" | "profile-form" | "situation" | "meds" | "care-plan" | "validation" | "elena-plan" | "social-proof" | "auth" | "flushing" | "joyride" | "profile" | "chat" | "done";
-
-const PENDING_SIGNUP_KEY = "elena_onboard_signup_pending";
-
-function normalizeRestoredPhase(
-  phase: Phase | undefined,
-  hasSession: boolean,
-  surface: "onboard" | "chat",
-): Phase | undefined {
-  if (!phase || phase === "done") return undefined;
-  if (surface === "onboard" && (phase === "joyride" || phase === "profile" || phase === "chat")) {
-    return "auth";
-  }
-  if (phase !== "flushing") return phase;
-  if (typeof window === "undefined") return "auth";
-  // "flushing" needs live progress props from /onboard. If a stale snapshot
-  // restores it on a mount that doesn't supply those props, the shell opens
-  // with no card content. Resume from the nearest stable phase instead.
-  if (sessionStorage.getItem(PENDING_SIGNUP_KEY) === "1") return "auth";
-  return hasSession ? "joyride" : "auth";
-}
+type Phase = TourPhase;
 
 // Map CARE_OPTIONS ids to the backend relationship values used by
 // /profiles. The care phase's "partner" maps to the profile-level
@@ -809,7 +796,13 @@ export function WebOnboardingTour({
       const raw = (localStorage.getItem("elena_tour_state") || sessionStorage.getItem("elena_tour_state"));
       if (!raw) return {};
       const s = JSON.parse(raw);
-      const normalizedPhase = normalizeRestoredPhase(s.phase, !!session, surface);
+      const normalizedPhase = normalizeRestoredTourPhase({
+        phase: s.phase,
+        hasSession: !!session,
+        surface,
+        pendingSignup: hasPendingSignup(sessionStorage),
+        needsOnboarding,
+      });
       if (normalizedPhase) s.phase = normalizedPhase;
       else delete s.phase;
       // Previously we fell back joyride→profile here on the theory that
@@ -824,10 +817,25 @@ export function WebOnboardingTour({
     } catch {
       return {};
     }
-  }, [session, surface]);
+  }, [needsOnboarding, session, surface]);
 
   const [phase, setPhase] = useState<Phase>(tourSnapshot.phase ?? "intro");
   const [profileStep, setProfileStep] = useState(tourSnapshot.profileStep ?? 0);
+  const impossibleAuthPhaseTrackedRef = useRef(false);
+
+  useEffect(() => {
+    if (!session || phase !== "auth") return;
+    if (!impossibleAuthPhaseTrackedRef.current) {
+      impossibleAuthPhaseTrackedRef.current = true;
+      analytics.track("Authenticated Auth Step Detected", {
+        surface,
+        pending_signup: typeof window !== "undefined" && hasPendingSignup(window.sessionStorage),
+      });
+    }
+    if (surface === "chat") {
+      setPhase(needsOnboarding ? "profile-form" : "joyride");
+    }
+  }, [needsOnboarding, phase, session, surface]);
 
   // Fires "Web Tour Completed" exactly once per tour, at the post-auth
   // flush boundary (see effect below). Previously this event only fired
@@ -969,17 +977,10 @@ export function WebOnboardingTour({
       // phase now so the /onboard -> /chat handoff always lands in the
       // joyride/profile path.
       if (surface === "onboard" && typeof window !== "undefined") {
-        try {
-          const raw =
-            localStorage.getItem("elena_tour_state")
-            || sessionStorage.getItem("elena_tour_state");
-          if (raw) {
-            const snapshot = JSON.parse(raw);
-            snapshot.phase = "joyride";
-            localStorage.setItem("elena_tour_state", JSON.stringify(snapshot));
-            sessionStorage.setItem("elena_tour_state", JSON.stringify(snapshot));
-          }
-        } catch {}
+        promoteStoredTourStateToPostAuthResume({
+          localStorage: window.localStorage,
+          sessionStorage: window.sessionStorage,
+        });
       }
       setPhase("flushing");
       if (!tourCompletedFiredRef.current) {
@@ -1514,8 +1515,13 @@ export function WebOnboardingTour({
           // Refresh the profiles list so the new member appears in the
           // sidebar dropdown, then restore the active profile so the
           // tour continues populating data on the original chart.
+          //
+          // Do NOT compare against `profileId` from this closure. It's the
+          // pre-POST value, so the check can incorrectly no-op even after the
+          // backend has switched active_profile to the newly created family
+          // member. That leaves the tour stuck on an empty just-created chart.
           await refreshProfiles();
-          if (previousActiveProfileId && previousActiveProfileId !== profileId) {
+          if (previousActiveProfileId) {
             try { await switchProfile(previousActiveProfileId); } catch {}
           }
           setSuccessOverlay({
