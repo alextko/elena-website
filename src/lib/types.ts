@@ -107,6 +107,7 @@ export interface MeResponse {
   email: string | null;
   has_profile: boolean;
   onboarding_completed: boolean;
+  has_mobile_app?: boolean;
   profiles: ProfileSummary[];
 }
 

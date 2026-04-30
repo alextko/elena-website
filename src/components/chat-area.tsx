@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Markdown, stripTrailingIncomplete } from "@/components/markdown";
 import { Button } from "@/components/ui/button";
-import { PanelLeft, Plus, ArrowUp, Square, Paperclip, X } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { PanelLeft, Plus, ArrowUp, Square, Paperclip, X, Wallet, CalendarDays, Pill, ShieldCheck } from "lucide-react";
 import { apiFetch } from "@/lib/apiFetch";
 import { useAuth } from "@/lib/auth-context";
 import * as analytics from "@/lib/analytics";
@@ -265,6 +266,49 @@ const THINKING_MESSAGES = [
   "Reviewing your info...",
 ];
 
+type WelcomeSurfaceKind = "starter" | "message";
+
+type StarterAction = {
+  id: string;
+  title: string;
+  description: string;
+  prompt: string;
+  icon: LucideIcon;
+};
+
+const STARTER_WELCOME_HEADING = "How can Elena help today?";
+
+const STARTER_ACTIONS: StarterAction[] = [
+  {
+    id: "price_shop",
+    title: "Price shop care",
+    description: "Compare procedure or medication costs.",
+    prompt: "Help me find the best price for a procedure or medication.",
+    icon: Wallet,
+  },
+  {
+    id: "schedule",
+    title: "Schedule an appointment",
+    description: "Find a doctor and book the visit.",
+    prompt: "Help me schedule an appointment.",
+    icon: CalendarDays,
+  },
+  {
+    id: "meds",
+    title: "Manage my meds",
+    description: "Refill, compare prices, and stay on track.",
+    prompt: "Help me manage my medications and handle refill tasks.",
+    icon: Pill,
+  },
+  {
+    id: "coverage",
+    title: "Check coverage or bills",
+    description: "Understand what's covered and what you owe.",
+    prompt: "Help me understand my insurance coverage, bills, or what I might owe.",
+    icon: ShieldCheck,
+  },
+];
+
 function ThinkingIndicator({ toolLabel }: { toolLabel: string | null }) {
   const [idx, setIdx] = useState(() => Math.floor(Math.random() * THINKING_MESSAGES.length));
 
@@ -330,6 +374,7 @@ export function ChatArea({
   const [toolLabel, setToolLabel] = useState<string | null>(null);
   const [welcomeHeading, setWelcomeHeading] = useState<string | null>(null);
   const [welcomeMessage, setWelcomeMessage] = useState<string | null>(null);
+  const [welcomeSurfaceKind, setWelcomeSurfaceKind] = useState<WelcomeSurfaceKind | null>(null);
   const [streamingId, setStreamingId] = useState<string | null>(null);
   useEffect(() => { streamingIdRef.current = streamingId; }, [streamingId]);
   const [chatTitle, setChatTitle] = useState<string | null>(null);
@@ -569,6 +614,7 @@ export function ChatArea({
     setToolLabel(null);
     setWelcomeHeading(null);
     setWelcomeMessage(null);
+    setWelcomeSurfaceKind(null);
     setStreamingId(null);
     setChatTitle(null);
     setLoadError(null);
@@ -718,8 +764,10 @@ export function ChatArea({
       // Mark ready so the auto-send effect can fire when there's a claimed
       // pre-auth message waiting (claim flow passes us an empty pre-created session).
       if (mapped.length === 0) {
-        setWelcomeHeading("What can I help you with?");
-        setSuggestions(["What can you help me with?", "Find a cheaper pharmacy", "Help with my insurance"]);
+        setWelcomeHeading(STARTER_WELCOME_HEADING);
+        setWelcomeMessage(null);
+        setWelcomeSurfaceKind("starter");
+        setSuggestions([]);
         setLoadingMessages(false);
         setSessionReady(true);
         return;
@@ -829,6 +877,7 @@ export function ChatArea({
               setWelcomeHeading(prewarm.heading || null);
               setWelcomeMessage(prewarm.message || null);
               setSuggestions(prewarm.suggestions || []);
+              setWelcomeSurfaceKind("message");
             }
             setSessionReady(true);
             welcomeInFlightRef.current = false;
@@ -872,8 +921,10 @@ export function ChatArea({
       if (!res.ok) {
         console.warn("[chat-area] fetchWelcome failed:", res.status);
         // Fallback — still usable, just no personalized welcome
-        setWelcomeHeading("What can I help you with?");
-        setSuggestions(["What can you help me with?", "Find a cheaper pharmacy", "Help with my insurance"]);
+        setWelcomeHeading(STARTER_WELCOME_HEADING);
+        setWelcomeMessage(null);
+        setWelcomeSurfaceKind("starter");
+        setSuggestions([]);
         // Release the in-flight guard so a retry (eager re-fetch from
         // the auto-send effect when a seed is waiting, or a profile
         // switch) can actually hit the endpoint again. Without this,
@@ -885,9 +936,17 @@ export function ChatArea({
       const data: WelcomeResponse = await res.json();
       console.log("[chat-area] fetchWelcome OK, session_id:", data.session_id);
       if (!silent) {
-        setWelcomeHeading(data.heading);
-        setWelcomeMessage(data.message);
-        setSuggestions(data.suggestions);
+        if (justOnboarded) {
+          setWelcomeHeading(data.heading);
+          setWelcomeMessage(data.message);
+          setSuggestions(data.suggestions);
+          setWelcomeSurfaceKind("message");
+        } else {
+          setWelcomeHeading(STARTER_WELCOME_HEADING);
+          setWelcomeMessage(null);
+          setSuggestions([]);
+          setWelcomeSurfaceKind("starter");
+        }
         analytics.track("Welcome Screen Shown");
       }
       sessionIdRef.current = data.session_id;
@@ -911,8 +970,10 @@ export function ChatArea({
     } catch {
       // Fallback -- show generic welcome so the page is never blank
       if (!silent) {
-        setWelcomeHeading("What can I help you with?");
-        setSuggestions(["What can you help me with?", "Find a cheaper pharmacy", "Help with my insurance"]);
+        setWelcomeHeading(STARTER_WELCOME_HEADING);
+        setWelcomeMessage(null);
+        setWelcomeSurfaceKind("starter");
+        setSuggestions([]);
       }
       // See comment on the !res.ok branch above — release the guard on
       // network/parse errors too, so a retry can actually run.
@@ -1065,6 +1126,8 @@ export function ChatArea({
           created_from: "chat_booking",
           session_id: sessionIdRef.current,
           visit_type: booking.status?.reason_for_visit || booking.status?.provider_specialty || "unknown",
+          canonical_step: booking.status?.is_reschedule ? "appointment_updated" : "appointment_added",
+          step_label: booking.status?.is_reschedule ? "Appointment Updated" : "Appointment Added",
         });
       }
 
@@ -1186,6 +1249,8 @@ export function ChatArea({
               category: msg.scheduledActionCreated?.category,
               session_id: sessionIdRef.current,
               message_id: msg.id,
+              canonical_step: "task_added",
+              step_label: "Task Added",
             });
           }
           if (msg.scheduledActionCreated?.kind === "visit") {
@@ -1195,6 +1260,8 @@ export function ChatArea({
               session_id: sessionIdRef.current,
               message_id: msg.id,
               visit_type: msg.scheduledActionCreated?.category || msg.scheduledActionCreated?.title || "unknown",
+              canonical_step: "appointment_added",
+              step_label: "Appointment Added",
             });
           }
         });
@@ -1422,7 +1489,7 @@ export function ChatArea({
 
       // Promote welcome into the message list so it persists as first message
       const welcomeMsg: typeof messages[number] | null =
-        welcomeHeading || welcomeMessage
+        welcomeSurfaceKind === "message" && (welcomeHeading || welcomeMessage)
           ? {
               id: nextId(),
               role: "assistant" as const,
@@ -1475,7 +1542,7 @@ export function ChatArea({
         {
           message,
           session_id: sessionIdRef.current,
-          prior_assistant_message: welcomeMessage || undefined,
+          prior_assistant_message: welcomeSurfaceKind === "message" ? (welcomeMessage || undefined) : undefined,
           ...(docKeys.length > 0 && { document_keys: docKeys }),
         },
         // onToolProgress
@@ -1664,6 +1731,7 @@ export function ChatArea({
           // Clear welcome after first message
           setWelcomeHeading(null);
           setWelcomeMessage(null);
+          setWelcomeSurfaceKind(null);
 
           // Start booking poll if a call was initiated
           if (chatResult.booking_id) {
@@ -1713,6 +1781,23 @@ export function ChatArea({
   handleSendRef.current = handleSend;
 
   console.log("[chat-area] RENDER:", { msgCount: messages.length, isLoading, loadingMessages, welcomeHeading: !!welcomeHeading, initialQuery: !!initialQuery, sessionId: sessionIdRef.current, activeSessionId });
+
+  const showStarterWelcome =
+    messages.length === 0
+    && !loadingMessages
+    && !loadError
+    && !initialQuery
+    && !hasPendingSeedStash
+    && welcomeSurfaceKind === "starter";
+
+  const showMessageWelcome =
+    messages.length === 0
+    && !loadingMessages
+    && !loadError
+    && !initialQuery
+    && !hasPendingSeedStash
+    && welcomeSurfaceKind === "message"
+    && !!welcomeHeading;
 
   return (
     <div
@@ -1841,7 +1926,48 @@ export function ChatArea({
           )}
 
           {/* Welcome state -- hidden when there's a pending query */}
-          {messages.length === 0 && !loadingMessages && !loadError && welcomeHeading && !initialQuery && !hasPendingSeedStash && (
+          {showStarterWelcome && (
+            <div className="flex-1 flex flex-col items-start justify-center py-6 md:py-8">
+              <div className="w-full max-w-2xl">
+                <h2 className="mb-5 max-w-[10ch] text-[2rem] font-semibold leading-[0.98] tracking-[-0.045em] text-[#0F1B3D] md:mb-6 md:max-w-none md:text-[2.4rem]">
+                  {STARTER_WELCOME_HEADING}
+                </h2>
+                <div className="space-y-2.5 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
+                  {STARTER_ACTIONS.map((action) => {
+                    const Icon = action.icon;
+                    return (
+                      <button
+                        key={action.id}
+                        onClick={() => {
+                          analytics.track("Welcome Suggestion Clicked", {
+                            suggestion_text: action.prompt,
+                            starter_action: action.id,
+                            source: "starter_card",
+                          });
+                          handleSend(action.prompt);
+                        }}
+                        className="group flex w-full items-center gap-3.5 rounded-[24px] bg-white px-4 py-3.5 text-left ring-1 ring-[#0F1B3D]/[0.08] transition-[transform,background-color,border-color] duration-150 hover:-translate-y-px hover:bg-[#FBFCFE] hover:ring-[#0F1B3D]/[0.12] md:min-h-[124px] md:flex-col md:items-start md:gap-0 md:px-5 md:py-4"
+                      >
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F3F6FB] text-[#1A2854] transition-colors group-hover:bg-[#EAF0FA] md:mb-3">
+                          <Icon className="h-[18px] w-[18px]" strokeWidth={2.1} />
+                        </div>
+                        <div className="min-w-0 flex-1 md:w-full">
+                          <div className="text-[1.02rem] font-semibold leading-[1.14] tracking-[-0.02em] text-[#14224D] md:text-[1rem]">
+                            {action.title}
+                          </div>
+                          <p className="mt-1 text-[0.92rem] leading-[1.24] text-[#6A7693] md:text-[0.92rem] md:leading-[1.3]">
+                            {action.description}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showMessageWelcome && (
             <div className="flex-1 flex flex-col items-start justify-center gap-5 md:gap-7 py-8">
               <div>
                 <h2 className="text-2xl md:text-[2rem] font-bold text-[#0F1B3D] mb-3 md:mb-4 leading-tight">{welcomeHeading}</h2>
