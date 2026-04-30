@@ -192,7 +192,7 @@ export function ProfilePopover({
     user, profileId, profiles, switchProfile, profileData, doctors, careVisits,
     subscription, insuranceCards, todos, todayTodos, habits, habitCompletions,
     toggleHabit, toggleTodo, createTodo, updateTodo, deleteTodo,
-    refreshTodos, refreshDoctors, refreshVisits, refreshInsurance, refreshHabits,
+    refreshTodos, refreshDoctors, refreshVisits, refreshInsurance, refreshHabits, refreshProfiles,
     profileDetailsLoaded, fetchProfileDetails, updateProfilePicture, signOut,
   } = useAuth();
   const router = useRouter();
@@ -303,8 +303,7 @@ export function ProfilePopover({
         if (primary) await switchProfile(primary.id);
       }
 
-      // Reload to refresh the profiles list
-      window.location.reload();
+      await refreshProfiles();
     } catch {
       // silent
     }
@@ -1933,8 +1932,8 @@ export function ProfilePopover({
       open={addFamilyOpen}
       onOpenChange={setAddFamilyOpen}
       onProfileCreated={async (newId) => {
+        await refreshProfiles();
         await switchProfile(newId);
-        window.location.reload();
       }}
     />
     </>
