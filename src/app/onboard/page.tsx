@@ -26,6 +26,10 @@ import {
 } from "@/lib/authHandoff";
 import { flushTourBuffer, type FlushStage } from "@/lib/tourBuffer";
 import * as analytics from "@/lib/analytics";
+import {
+  trackWebFunnelOnboardingCompleted,
+  trackWebFunnelSeedFlushed,
+} from "@/lib/web-funnel";
 
 // Pain-bucket labels mirrored from web-onboarding-tour. Duplicated (not
 // imported) so this page stays cheap — the tour file is ~4k lines. Only
@@ -290,8 +294,21 @@ export default function OnboardPage() {
           duration_total_ms: result.duration_total_ms,
           stage_timings_ms: result.stage_timings_ms,
         });
+        trackWebFunnelSeedFlushed({
+          source: "tour_flush",
+          prewarmed_session: !!result.prewarmed_session_id,
+          error_count: result.errors.length,
+          dependents_created: result.dependents_created,
+          primary_dependent_created: !!result.primary_dependent_id,
+        });
         if (result.profile_saved) {
           analytics.track("Onboarding Completed", {
+            source: "tour_flush",
+            setup_for: result.primary_dependent_id ? "dependent" : "self",
+            prewarmed_session: !!result.prewarmed_session_id,
+            error_count: result.errors.length,
+          });
+          trackWebFunnelOnboardingCompleted({
             source: "tour_flush",
             setup_for: result.primary_dependent_id ? "dependent" : "self",
             prewarmed_session: !!result.prewarmed_session_id,

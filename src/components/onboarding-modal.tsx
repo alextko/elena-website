@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth-context";
 import * as analytics from "@/lib/analytics";
+import { trackWebFunnelOnboardingCompleted } from "@/lib/web-funnel";
 import { StreamingText } from "@/components/streaming-text";
 
 function capitalizeName(s: string): string {
@@ -63,6 +64,16 @@ export function OnboardingModal() {
         dob && "dob",
         zipCode.trim() && "zip_code",
       ].filter(Boolean),
+    });
+    trackWebFunnelOnboardingCompleted({
+      source: "onboarding_modal",
+      setup_for: "self",
+      fields_filled: [
+        firstName.trim() && "first_name",
+        lastName.trim() && "last_name",
+        dob && "dob",
+        zipCode.trim() && "zip_code",
+      ].filter(Boolean) as string[],
     });
     const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
     await completeOnboarding({

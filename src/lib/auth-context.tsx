@@ -16,6 +16,7 @@ import { claimPendingMessages } from "@/lib/pendingMessage";
 import { getStoredAttribution } from "@/lib/attribution";
 import { PENDING_SIGNUP_KEY, hasPendingSignup, promoteStoredTourStateToPostAuthResume } from "@/lib/authHandoff";
 import * as analytics from "@/lib/analytics";
+import { trackWebFunnelAuthSucceeded } from "@/lib/web-funnel";
 import type { MeResponse, DoctorItem, CareVisit, CareTodo, CareTodoCreate, Habit, SubscriptionResponse, InsuranceCard, ProfileSummary } from "@/lib/types";
 
 interface AuthContextValue {
@@ -248,6 +249,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           onboarding_collected_pre_auth: onboardingCollectedPreAuth,
           first_auth_session: firstAuthSession,
         });
+        trackWebFunnelAuthSucceeded({
+          source: authIntent?.source || "unknown",
+          intent: authIntent?.intent || "unknown",
+          method: provider,
+          has_profile: false,
+          first_auth_session: firstAuthSession,
+          onboarding_collected_pre_auth: onboardingCollectedPreAuth,
+        });
         // Ad pixel CompleteRegistration fires after onboarding completes (in completeOnboarding),
         // not here — firing here would count users who sign up but never finish onboarding.
         console.log("[auth] No profile found, showing onboarding");
@@ -331,6 +340,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 : "existing_profile_or_signin",
           },
         );
+        trackWebFunnelAuthSucceeded({
+          source: authIntent?.source || "unknown",
+          intent: authIntent?.intent || "unknown",
+          method: provider,
+          has_profile: true,
+          first_auth_session: firstAuthSession,
+          onboarding_collected_pre_auth: onboardingCollectedPreAuth,
+        });
       }
 
       if (activeProfile) {

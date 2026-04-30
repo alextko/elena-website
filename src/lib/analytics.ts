@@ -12,6 +12,12 @@ export type AnalyticsEvent =
   | "Signup Completed"
   | "Login Completed"
   | "Auth Error"
+  | "Web Funnel Auth Entry Viewed"
+  | "Web Funnel Auth Submitted"
+  | "Web Funnel Auth Succeeded"
+  | "Web Funnel Onboarding Completed"
+  | "Web Funnel Seed Flushed"
+  | "Web Funnel Activated"
   // Onboarding
   | "Onboarding Modal Shown"
   | "Onboarding Completed"

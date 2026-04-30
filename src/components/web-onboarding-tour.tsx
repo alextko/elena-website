@@ -9,6 +9,11 @@ import * as analytics from "@/lib/analytics";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/apiFetch";
 import {
+  trackWebFunnelAuthEntry,
+  trackWebFunnelAuthSubmitted,
+  trackWebFunnelOnboardingCompleted,
+} from "@/lib/web-funnel";
+import {
   PENDING_SIGNUP_KEY,
   hasPendingSignup,
   normalizeRestoredTourPhase,
@@ -1926,10 +1931,16 @@ export function WebOnboardingTour({
           first_name: profileData?.firstName || firstName.trim() || "",
           last_name: profileData?.lastName || lastName.trim() || "",
         });
+        const filledFields = ["first_name", "last_name"];
         analytics.track("Onboarding Completed", {
-          fields_filled: ["first_name", "last_name"],
+          fields_filled: filledFields,
           source: "tour",
           setup_for: "dependent",
+        });
+        trackWebFunnelOnboardingCompleted({
+          source: "tour",
+          setup_for: "dependent",
+          fields_filled: filledFields,
         });
       }
       await createDependentAndSwitch();
@@ -1945,13 +1956,19 @@ export function WebOnboardingTour({
           first_name: cap(firstName.trim()),
           last_name: cap(lastName.trim()),
         });
+        const filledFields = [
+          firstName.trim() && "first_name",
+          lastName.trim() && "last_name",
+        ].filter(Boolean) as string[];
         analytics.track("Onboarding Completed", {
-          fields_filled: [
-            firstName.trim() && "first_name",
-            lastName.trim() && "last_name",
-          ].filter(Boolean),
+          fields_filled: filledFields,
           source: "tour",
           setup_for: "self",
+        });
+        trackWebFunnelOnboardingCompleted({
+          source: "tour",
+          setup_for: "self",
+          fields_filled: filledFields,
         });
       }
     }
@@ -2422,6 +2439,10 @@ export function WebOnboardingTour({
     analytics.track("Onboard Auth Step Viewed", {
       surface,
       mode: authMode,
+    });
+    trackWebFunnelAuthEntry({
+      surface: "tour_inline",
+      intent: authMode,
     });
   }, [phase, surface, authMode]);
 
@@ -4158,6 +4179,11 @@ export function WebOnboardingTour({
                         setAuthError(null);
                         setAuthSubmitting(true);
                         analytics.track("Auth Method Selected", { method: "google", surface: "tour_inline" });
+                        trackWebFunnelAuthSubmitted({
+                          surface: "tour_inline",
+                          intent: authMode,
+                          method: "google",
+                        });
                         const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/onboard` : undefined;
                         const result = await signInWithGoogle(redirectTo, {
                           intent: authMode,
@@ -4214,6 +4240,11 @@ export function WebOnboardingTour({
                         }
                         setAuthSubmitting(true);
                         analytics.track("Auth Method Selected", { method: "email", mode: authMode, surface: "tour_inline" });
+                        trackWebFunnelAuthSubmitted({
+                          surface: "tour_inline",
+                          intent: authMode,
+                          method: "email",
+                        });
                         const result = authMode === "signup"
                           ? await signUp(authEmail, authPassword, { source: "tour_inline" })
                           : await signIn(authEmail, authPassword, { source: "tour_inline" });

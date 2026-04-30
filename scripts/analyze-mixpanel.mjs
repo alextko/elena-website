@@ -37,18 +37,35 @@ const exclusionTerms = (getArg("--exclude", "test,alextko,abhi") || "")
 const interestingEvents = [
   "Landing Page Viewed",
   "Quiz Get Started Clicked",
+  "Hero Input Submitted",
+  "Message Sent",
+  "Onboard Route Entered",
   "Auth Modal Opened",
+  "Onboard Auth Step Viewed",
   "Signup Completed",
   "Login Completed",
   "Onboarding Modal Shown",
   "Onboarding Completed",
+  "Welcome Screen Shown",
+  "Response Received",
+  "Activated",
   "Web Tour Started",
   "Web Tour Completed",
+  "Web Tour Value Step Shown",
+  "Web Tour Value Step Continued",
+  "Web Tour Seed Query Written",
+  "Tour Buffer Flushed",
   "Paywall Screen Viewed",
   "Paywall Trial Started",
   "Checkout Completed",
   "Upgrade Modal Shown",
   "Upgrade Plan Selected",
+  "Web Funnel Auth Entry Viewed",
+  "Web Funnel Auth Submitted",
+  "Web Funnel Auth Succeeded",
+  "Web Funnel Onboarding Completed",
+  "Web Funnel Seed Flushed",
+  "Web Funnel Activated",
 ];
 
 async function main() {
@@ -291,7 +308,7 @@ function buildSummary(rows, meta) {
   }
 
   const userList = [...users.values()];
-  const funnel = [
+  const legacyFunnel = [
     ["Landing Page Viewed", countUsers(userList, "Landing Page Viewed")],
     ["Auth Modal Opened", countUsers(userList, "Auth Modal Opened")],
     ["Signup Completed", countUsers(userList, "Signup Completed")],
@@ -307,6 +324,44 @@ function buildSummary(rows, meta) {
     conversionFromLanding: ratio(usersAtStep, Number(steps[0][1] || 0)),
   }));
 
+  const homepageChatFunnel = [
+    ["Landing Page Viewed", countUsers(userList, "Landing Page Viewed")],
+    ["Hero Input Submitted", countUsers(userList, "Hero Input Submitted")],
+    ["Message Sent", countUsers(userList, "Message Sent")],
+    ["Onboard Route Entered", countUsers(userList, "Onboard Route Entered")],
+    ["Auth Modal Opened", countUsers(userList, "Auth Modal Opened")],
+    ["Onboard Auth Step Viewed", countUsers(userList, "Onboard Auth Step Viewed")],
+    ["Signup Completed", countUsers(userList, "Signup Completed")],
+    ["Onboarding Completed", countUsers(userList, "Onboarding Completed")],
+    ["Welcome Screen Shown", countUsers(userList, "Welcome Screen Shown")],
+    ["Response Received", countUsers(userList, "Response Received")],
+    ["Activated", countUsers(userList, "Activated")],
+  ].map(([step, usersAtStep], index, steps) => ({
+    step,
+    users: usersAtStep,
+    conversionFromPrevious:
+      index === 0 ? 1 : ratio(usersAtStep, Number(steps[index - 1][1] || 0)),
+    conversionFromLanding: ratio(usersAtStep, Number(steps[0][1] || 0)),
+  }));
+
+  const cleanWebFunnel = [
+    ["Landing Page Viewed", countUsers(userList, "Landing Page Viewed")],
+    ["Hero Input Submitted", countUsers(userList, "Hero Input Submitted")],
+    ["Onboard Route Entered", countUsers(userList, "Onboard Route Entered")],
+    ["Web Funnel Auth Entry Viewed", countUsers(userList, "Web Funnel Auth Entry Viewed")],
+    ["Web Funnel Auth Submitted", countUsers(userList, "Web Funnel Auth Submitted")],
+    ["Web Funnel Auth Succeeded", countUsers(userList, "Web Funnel Auth Succeeded")],
+    ["Web Funnel Onboarding Completed", countUsers(userList, "Web Funnel Onboarding Completed")],
+    ["Web Funnel Seed Flushed", countUsers(userList, "Web Funnel Seed Flushed")],
+    ["Web Funnel Activated", countUsers(userList, "Web Funnel Activated")],
+  ].map(([step, usersAtStep], index, steps) => ({
+    step,
+    users: usersAtStep,
+    conversionFromPrevious:
+      index === 0 ? 1 : ratio(usersAtStep, Number(steps[index - 1][1] || 0)),
+    conversionFromLanding: ratio(usersAtStep, Number(steps[0][1] || 0)),
+  }));
+
   return {
     meta: {
       ...meta,
@@ -314,7 +369,9 @@ function buildSummary(rows, meta) {
       distinctUsers: userList.length,
     },
     events: Object.fromEntries([...perEvent.entries()].sort((a, b) => b[1] - a[1])),
-    funnel,
+    legacyFunnel,
+    homepageChatFunnel,
+    cleanWebFunnel,
     landingVariants: summarizeLandingVariants(userList),
     sources: summarizeSources(landingTouches),
   };
@@ -406,8 +463,22 @@ function printSummary(summary) {
   console.log(`Distinct users: ${summary.meta.distinctUsers}`);
   console.log(`Excluded users: ${summary.exclusions.excludedDistinctUsers}`);
   console.log("");
-  console.log("Funnel");
-  for (const step of summary.funnel) {
+  console.log("Legacy funnel");
+  for (const step of summary.legacyFunnel) {
+    console.log(
+      `- ${step.step}: ${step.users} users | prev=${formatPct(step.conversionFromPrevious)} | landing=${formatPct(step.conversionFromLanding)}`,
+    );
+  }
+  console.log("");
+  console.log("Homepage chat funnel");
+  for (const step of summary.homepageChatFunnel) {
+    console.log(
+      `- ${step.step}: ${step.users} users | prev=${formatPct(step.conversionFromPrevious)} | landing=${formatPct(step.conversionFromLanding)}`,
+    );
+  }
+  console.log("");
+  console.log("Clean web funnel v2");
+  for (const step of summary.cleanWebFunnel) {
     console.log(
       `- ${step.step}: ${step.users} users | prev=${formatPct(step.conversionFromPrevious)} | landing=${formatPct(step.conversionFromLanding)}`,
     );

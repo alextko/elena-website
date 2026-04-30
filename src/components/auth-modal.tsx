@@ -5,6 +5,10 @@ import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import * as analytics from "@/lib/analytics";
 import {
+  trackWebFunnelAuthEntry,
+  trackWebFunnelAuthSubmitted,
+} from "@/lib/web-funnel";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -58,8 +62,10 @@ export function AuthModal({
   }, [open]);
 
   useEffect(() => {
-    if (open) analytics.track("Auth Modal Opened");
-  }, [open]);
+    if (!open) return;
+    analytics.track("Auth Modal Opened");
+    trackWebFunnelAuthEntry({ surface: "auth_modal", intent: mode });
+  }, [open, mode]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -72,6 +78,11 @@ export function AuthModal({
 
     setSubmitting(true);
     analytics.track("Auth Method Selected", { method: "email", mode });
+    trackWebFunnelAuthSubmitted({
+      surface: "auth_modal",
+      intent: mode,
+      method: "email",
+    });
 
     const result =
       mode === "signin"
@@ -107,6 +118,11 @@ export function AuthModal({
   async function handleGoogleSignIn() {
     setError(null);
     analytics.track("Auth Method Selected", { method: "google" });
+    trackWebFunnelAuthSubmitted({
+      surface: "auth_modal",
+      intent: mode,
+      method: "google",
+    });
     const result = await signInWithGoogle(oauthRedirectTo, { intent: mode, source: "auth_modal" });
     if (result.error) {
       analytics.track("Auth Error", { method: "google", error_type: result.error });

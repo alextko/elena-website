@@ -1,5 +1,6 @@
 import mixpanel from 'mixpanel-browser';
 import { getStoredAttribution } from './attribution';
+import { trackWebFunnelActivated } from './web-funnel';
 
 /** Ensure Mixpanel is initialized before using it.
  * analytics.ts owns init, but tracking-events.ts may run first.
@@ -85,6 +86,13 @@ export function trackActivation(userId?: string): string | undefined {
         ...(attribution || {}),
       });
     }
+  } catch { /* safe to ignore */ }
+
+  try {
+    trackWebFunnelActivated({
+      source: "first_message",
+      ...(userId ? { user_id: userId } : {}),
+    });
   } catch { /* safe to ignore */ }
 
   try {
