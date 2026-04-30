@@ -15,7 +15,7 @@ import { useAuth } from "@/lib/auth-context";
 interface AddFamilyModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onProfileCreated?: (profileId: string) => void;
+  onProfileCreated?: (profileId: string) => void | Promise<void>;
 }
 
 type Tab = "manage" | "invite";
@@ -97,7 +97,7 @@ export function AddFamilyModal({
           first_name: firstName,
           last_name: lastName,
           date_of_birth: dateOfBirth || undefined,
-          home_address: zipCode || undefined,
+          zip_code: zipCode || undefined,
         }),
       });
 
@@ -107,7 +107,11 @@ export function AddFamilyModal({
       }
 
       const data = await res.json();
-      onProfileCreated?.(data.id || data.profile_id);
+      const newProfileId = data.id || data.profile_id;
+      if (!newProfileId) {
+        throw new Error("Profile created but no profile ID was returned");
+      }
+      await onProfileCreated?.(newProfileId);
       handleOpenChange(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
