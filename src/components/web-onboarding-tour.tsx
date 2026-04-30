@@ -2494,15 +2494,6 @@ export function WebOnboardingTour({
           className="relative z-10 w-[calc(100%-3rem)] max-h-[95vh] overflow-y-auto overflow-x-hidden rounded-2xl bg-white shadow-[0_8px_30px_rgba(15,27,61,0.15)]"
           style={{ maxWidth: cardMaxWidth }}
         >
-          {surface === "chat" && phase !== "intro" && phase !== "auth" && phase !== "flushing" && (
-            <button
-              type="button"
-              onClick={skipTour}
-              className="absolute right-4 top-4 z-20 rounded-full bg-[#F5F7FB] px-3.5 py-2 text-[12px] font-semibold text-[#5a6a82] transition-colors hover:bg-[#ECEEF5] hover:text-[#0F1B3D]"
-            >
-              Skip for now
-            </button>
-          )}
           {/* No `initial={false}` — that would suppress the first slide's
               StreamingText "hidden" variant on mount, making the care
               headline render fully visible instead of streaming in. */}
@@ -4433,7 +4424,7 @@ export function WebOnboardingTour({
         <button
           type="button"
           onClick={skipTour}
-          className="fixed top-4 right-4 z-[100000] rounded-full bg-white/90 px-4 py-2 text-[13px] font-semibold text-[#0F1B3D] shadow-[0_8px_24px_rgba(15,27,61,0.16)] backdrop-blur hover:bg-white"
+          className="fixed top-4 right-4 z-[100000] text-[12px] font-medium text-[#8E8E93] transition-colors hover:text-[#0F1B3D]"
         >
           Skip for now
         </button>
@@ -4519,7 +4510,7 @@ export function WebOnboardingTour({
         <button
           type="button"
           onClick={skipTour}
-          className="fixed top-4 right-4 z-[100000] rounded-full bg-white/90 px-4 py-2 text-[13px] font-semibold text-[#0F1B3D] shadow-[0_8px_24px_rgba(15,27,61,0.16)] backdrop-blur hover:bg-white"
+          className="fixed top-4 right-4 z-[100000] text-[12px] font-medium text-[#8E8E93] transition-colors hover:text-[#0F1B3D]"
         >
           Skip for now
         </button>
@@ -5513,7 +5504,7 @@ function ChatStepJoyride({ onFinish, onMount, onSkip }: { onFinish: () => void; 
       <button
         type="button"
         onClick={() => onSkip?.()}
-        className="fixed top-4 right-4 z-[100000] rounded-full bg-white/90 px-4 py-2 text-[13px] font-semibold text-[#0F1B3D] shadow-[0_8px_24px_rgba(15,27,61,0.16)] backdrop-blur hover:bg-white"
+        className="fixed top-4 right-4 z-[100000] text-[12px] font-medium text-[#8E8E93] transition-colors hover:text-[#0F1B3D]"
       >
         Skip for now
       </button>

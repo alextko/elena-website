@@ -508,6 +508,8 @@ function ChatPageInner() {
     const forceTour = searchParams.get("tour") === "1";
     let hasSavedTour = false;
     let savedTourPhase: string | null = null;
+    const tourAlreadyDone = typeof window !== "undefined"
+      && window.localStorage.getItem("elena_web_tour_done") === "true";
     if (typeof window !== "undefined") {
       try {
         const storages = {
@@ -532,8 +534,8 @@ function ChatPageInner() {
       || savedTourPhase === "profile"
       || savedTourPhase === "chat";
     const shouldResumeSavedTour =
-      hasSavedTour && (needsOnboarding || onboardingJustCompleted || isPostAuthResumePhase);
-    const shouldShow = forceTour || needsOnboarding || onboardingJustCompleted || shouldResumeSavedTour;
+      !tourAlreadyDone && hasSavedTour && (needsOnboarding || onboardingJustCompleted || isPostAuthResumePhase);
+    const shouldShow = forceTour || (!tourAlreadyDone && (needsOnboarding || onboardingJustCompleted || shouldResumeSavedTour));
     if (!forceTour && !needsOnboarding && !onboardingJustCompleted && hasSavedTour && !isPostAuthResumePhase && typeof window !== "undefined") {
       clearStoredTourState({
         localStorage: window.localStorage,
@@ -541,8 +543,10 @@ function ChatPageInner() {
       });
     }
     if (!shouldShow) return;
-    // Reset the "tour done" flag so a fresh signup always sees the tour.
-    if (onboardingJustCompleted || needsOnboarding) localStorage.removeItem("elena_web_tour_done");
+    // Reset the "tour done" flag only when the user truly still needs the
+    // tour. If they just skipped or finished it, leave the marker intact so
+    // /chat doesn't immediately remount the tour again.
+    if ((onboardingJustCompleted || needsOnboarding) && !tourAlreadyDone) localStorage.removeItem("elena_web_tour_done");
     if (forceTour) localStorage.removeItem("elena_web_tour_done");
     // Small delay so the /chat page's initial paint settles before the tour
     // fades in. StreamingText's own startDelay covers the rest.
