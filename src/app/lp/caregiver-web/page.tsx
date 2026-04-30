@@ -400,36 +400,36 @@ export default function CaregiverWebLandingPage() {
           ))}
         </div>
 
-        <div className="min-h-[80dvh] flex flex-col items-center justify-center w-full shrink-0 pb-8" style={{ paddingTop: "max(6rem, 12vh)" }}>
-          <div className="relative z-[4] text-center max-w-[700px] md:max-w-[880px] w-full px-6 max-md:px-5">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.08] backdrop-blur px-4 py-1.5 text-[0.75rem] font-medium text-white/80 mb-7">
+        <div className="min-h-[80dvh] max-md:min-h-[72dvh] flex flex-col items-center justify-center w-full shrink-0 pb-8 max-md:pb-2" style={{ paddingTop: "max(6rem, 12vh)" }}>
+          <div className="relative z-[4] text-center max-w-[700px] md:max-w-[880px] w-full px-6 max-md:px-5 max-md:max-w-[26rem]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.08] backdrop-blur px-4 py-1.5 max-md:px-3.5 max-md:py-1.5 text-[0.75rem] max-md:text-[0.73rem] font-medium text-white/80 mb-7 max-md:mb-5">
               <span className="h-1.5 w-1.5 rounded-full bg-[#F4B084]" />
               Built for family caregivers
             </div>
-            <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[2.15rem] max-sm:text-[1.82rem] font-light leading-[1.15] max-sm:leading-[1.08] tracking-tight text-white">
+            <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[2rem] max-sm:text-[1.72rem] font-light leading-[1.15] max-md:leading-[1.1] max-sm:leading-[1.06] tracking-tight text-white max-md:max-w-[14ch] max-md:mx-auto">
               Keep track of a parent&apos;s meds, visits, records, and next steps.<br />
               <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">Without carrying it all yourself.</em>
             </h1>
-            <p className="text-[0.95rem] max-md:text-[0.85rem] font-light text-white/85 mt-5 max-md:mt-3 tracking-wide max-w-[620px] mx-auto leading-relaxed">
+            <p className="text-[0.95rem] max-md:text-[0.84rem] font-light text-white/85 mt-5 max-md:mt-3 tracking-wide max-w-[620px] max-md:max-w-[24rem] mx-auto leading-relaxed max-md:leading-[1.65]">
               Elena helps you organize medications, appointments, insurance questions, records, and follow-up so family care feels less scattered.
             </p>
 
-            <div className="mt-8 max-md:mt-6 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-8 max-md:mt-5 flex flex-wrap items-center justify-center gap-3 max-md:flex-col max-md:gap-2.5 max-md:w-full max-md:max-w-[22rem] max-md:mx-auto">
               <button
                 onClick={() => handlePrimaryCta("hero_primary")}
-                className="cta-shimmer inline-flex items-center justify-center h-14 max-md:h-12 px-10 max-md:px-8 rounded-full bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_45%,#2E6BB5_100%)] text-white text-[1rem] font-semibold shadow-[0_10px_30px_rgba(15,27,61,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] border border-white/15 hover:shadow-[0_14px_38px_rgba(15,27,61,0.45)] hover:scale-[1.02] transition-all cursor-pointer"
+                className="cta-shimmer inline-flex items-center justify-center h-14 max-md:h-12 px-10 max-md:px-6 rounded-full bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_45%,#2E6BB5_100%)] text-white text-[1rem] max-md:text-[0.96rem] font-semibold shadow-[0_10px_30px_rgba(15,27,61,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] border border-white/15 hover:shadow-[0_14px_38px_rgba(15,27,61,0.45)] hover:scale-[1.02] transition-all cursor-pointer max-md:w-full"
               >
                 <span className="relative z-[2]">Organize medications and appointments</span>
               </button>
               <a
                 href="#how"
-                className="inline-flex items-center justify-center h-14 max-md:h-12 px-8 rounded-full bg-white/[0.08] backdrop-blur-[40px] border border-white/[0.2] text-white/90 text-[0.95rem] font-medium hover:bg-white/15 hover:text-white transition-all"
+                className="inline-flex items-center justify-center h-14 max-md:h-11 px-8 max-md:px-5 rounded-full bg-white/[0.08] backdrop-blur-[40px] border border-white/[0.2] text-white/90 text-[0.95rem] max-md:text-[0.9rem] font-medium hover:bg-white/15 hover:text-white transition-all max-md:w-full"
                 style={{ WebkitBackdropFilter: "blur(40px) saturate(1.8)" }}
               >
                 Track records and follow-ups
               </a>
             </div>
-            <p className="mt-5 text-[0.75rem] text-white/50">
+            <p className="mt-5 max-md:mt-4 text-[0.75rem] max-md:text-[0.72rem] text-white/50 max-md:max-w-[18rem] max-md:mx-auto max-md:leading-relaxed">
               3-day free trial. No credit card for chat. Private and encrypted.
             </p>
           </div>
@@ -437,7 +437,7 @@ export default function CaregiverWebLandingPage() {
 
         {/* Testimonial reel + insurer carousel */}
         <div
-          className="relative z-[3] w-full mt-4 pb-20"
+          className="relative z-[3] w-full mt-4 pb-20 max-md:hidden"
           style={{
             maskImage: "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
             WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
