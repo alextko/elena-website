@@ -363,9 +363,20 @@ function ChatPageInner() {
   useEffect(() => {
     if (profileId && profileId !== prevProfileId.current) {
       if (prevProfileId.current) {
-        // Explicit switch — reset active session and re-fetch
+        // Explicit switch — clear the previous profile's chat context before
+        // fetching the new one so the UI never shows stale sessions/messages
+        // while the next profile loads.
         setActiveSessionId(null);
+        setSessions([]);
         setIsNewChat(true);
+        setPendingQuery(null);
+        setPendingDocName(null);
+        setBookMessage(null);
+        setLoadingSessions(true);
+        try {
+          sessionStorage.removeItem("elena_sessions");
+          sessionStorage.removeItem("elena_active_session_id");
+        } catch {}
         fetchSessions();
       }
       // Initial null → value: skip — the session fetch above already handles it
@@ -437,6 +448,11 @@ function ChatPageInner() {
   // the legacy upgrade-modal route for the post-onboarding entry point.
   const [tourTrialStep, setTourTrialStep] = useState<1 | 2 | 3 | null>(null);
   const [tourPopoverTab, setTourPopoverTab] = useState<"health" | "visits" | "insurance">("health");
+
+  const setSidebarFromSystem = useCallback((open: boolean) => {
+    if (typeof window !== "undefined" && window.innerWidth >= 768 && !open) return;
+    setSidebarOpen(open);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined" || window.innerWidth < 768) return;
@@ -578,7 +594,7 @@ function ChatPageInner() {
           }}
           onShowPaywall={() => setTourTrialStep(1)}
           onProfilePopover={(open, tab, showSwitcher) => { setTourPopoverOpen(open); if (tab) setTourPopoverTab(tab); setTourPopoverShowSwitcher(!!showSwitcher); }}
-          onSidebar={(open) => setSidebarOpen(open)}
+          onSidebar={setSidebarFromSystem}
           onSeedQuery={(msg) => {
             // Tour finished with user-picked actions. Seed the chat
             // directly — localStorage wouldn't work here because the
@@ -656,6 +672,7 @@ function ChatPageInner() {
       </div>
       <ChatErrorBoundary>
         <ChatArea
+          key={profileId || "no-profile"}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           sidebarOpen={sidebarOpen}
           activeSessionId={activeSessionId}
