@@ -563,17 +563,21 @@ function ChatPageInner() {
     (sessionId: string, firstMessage?: string) => {
       setActiveSessionId(sessionId);
       setIsNewChat(false);
+      setLoadingSessions(false);
       // Add optimistic session immediately so sidebar isn't empty
       setSessions((prev) => {
         if (prev.some((s) => s.id === sessionId)) return prev;
-        return [{
+        const next = [{
           id: sessionId,
           title: null,
           preview: firstMessage || "New conversation",
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         }, ...prev];
+        try { sessionStorage.setItem("elena_sessions", JSON.stringify(next)); } catch {}
+        return next;
       });
+      try { sessionStorage.setItem("elena_active_session_id", sessionId); } catch {}
     },
     [],
   );
@@ -691,7 +695,7 @@ function ChatPageInner() {
             }}
             onBookMessage={(msg) => setBookMessage(msg)}
             sessions={sessions}
-            loadingSessions={loadingSessions || showProfileSwitchSkeleton}
+            loadingSessions={(loadingSessions && sessions.length === 0) || showProfileSwitchSkeleton}
             showProfileTooltip={showProfileTooltip}
             onDismissProfileTooltip={() => setShowProfileTooltip(false)}
             profilePopoverOpen={tourPopoverOpen || undefined}

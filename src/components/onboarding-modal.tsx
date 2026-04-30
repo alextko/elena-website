@@ -7,6 +7,10 @@ import { useAuth } from "@/lib/auth-context";
 import * as analytics from "@/lib/analytics";
 import { StreamingText } from "@/components/streaming-text";
 
+function capitalizeName(s: string): string {
+  return s.replace(/(^|\s)([a-z])/g, (_m, sep, ch) => sep + ch.toUpperCase());
+}
+
 export function OnboardingModal() {
   const { needsOnboarding, completeOnboarding, profileData } = useAuth();
   const [firstName, setFirstName] = useState("");
@@ -154,7 +158,7 @@ export function OnboardingModal() {
                         type="text"
                         required
                         value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
+                        onChange={(e) => setFirstName(capitalizeName(e.target.value))}
                         placeholder="Alex"
                         autoCapitalize="words"
                         className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors capitalize"
@@ -168,7 +172,7 @@ export function OnboardingModal() {
                         type="text"
                         required
                         value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
+                        onChange={(e) => setLastName(capitalizeName(e.target.value))}
                         placeholder="Smith"
                         autoCapitalize="words"
                         className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none placeholder:text-[#AEAEB2] focus:border-[#0F1B3D]/30 transition-colors capitalize"

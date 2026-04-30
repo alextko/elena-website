@@ -2937,8 +2937,8 @@ export function WebOnboardingTour({
                 ? `Let's get ${managedFirstName || "them"} set up.`
                 : "Let's get you set up.";
               const formSubtitle = isDependentSetup
-                ? `Just confirm ${managedFirstName || "their"} name and we'll keep going.`
-                : "Just your name so I can personalize this.";
+                ? `Confirm ${managedFirstName || "their"} name and I'll take it from there.`
+                : "Tell me your name so I can personalize everything from here.";
               return (
               <motion.div
                 key="profile-form"

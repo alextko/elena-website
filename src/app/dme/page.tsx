@@ -79,6 +79,10 @@ const isValidDob = (v: string) => {
 };
 const errorCls = "text-[12px] text-red-500 mt-1";
 
+function capitalizeName(s: string): string {
+  return s.replace(/(^|\s)([a-z])/g, (_m, sep, ch) => sep + ch.toUpperCase());
+}
+
 // --- Shared input style ---
 
 const inputCls =
@@ -490,11 +494,11 @@ function DmeContent() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className={labelCls}>First name</label>
-                    <input type="text" value={answers.firstName} onChange={(e) => setAnswer({ firstName: e.target.value })} placeholder="First name" className={inputCls} autoFocus />
+                    <input type="text" value={answers.firstName} onChange={(e) => setAnswer({ firstName: capitalizeName(e.target.value) })} placeholder="First name" className={inputCls} autoCapitalize="words" autoFocus />
                   </div>
                   <div>
                     <label className={labelCls}>Last name</label>
-                    <input type="text" value={answers.lastName} onChange={(e) => setAnswer({ lastName: e.target.value })} placeholder="Last name" className={inputCls} />
+                    <input type="text" value={answers.lastName} onChange={(e) => setAnswer({ lastName: capitalizeName(e.target.value) })} placeholder="Last name" className={inputCls} autoCapitalize="words" />
                   </div>
                 </div>
                 <div>

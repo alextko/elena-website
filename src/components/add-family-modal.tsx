@@ -38,6 +38,10 @@ const selectClassName =
 const gradientButtonClassName =
   "w-full bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)] text-white rounded-full py-2.5 px-4 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed";
 
+function capitalizeName(s: string): string {
+  return s.replace(/(^|\s)([a-z])/g, (_m, sep, ch) => sep + ch.toUpperCase());
+}
+
 export function AddFamilyModal({
   open,
   onOpenChange,
@@ -219,8 +223,9 @@ export function AddFamilyModal({
                   type="text"
                   required
                   value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  onChange={(e) => setFirstName(capitalizeName(e.target.value))}
                   placeholder="First name"
+                  autoCapitalize="words"
                   className={inputClassName}
                 />
               </div>
@@ -232,8 +237,9 @@ export function AddFamilyModal({
                   type="text"
                   required
                   value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
+                  onChange={(e) => setLastName(capitalizeName(e.target.value))}
                   placeholder="Last name"
+                  autoCapitalize="words"
                   className={inputClassName}
                 />
               </div>
