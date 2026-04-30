@@ -154,13 +154,36 @@ interface WebOnboardingTourProps {
 
 function TourTooltip({ step, primaryProps }: { step: any; primaryProps: any }) {
   const isChatComposerStep = step?.target === "[data-tour='chat-input']";
+  const [chatComposerWidth, setChatComposerWidth] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!isChatComposerStep || typeof window === "undefined") return;
+
+    const updateWidth = () => {
+      const target = document.querySelector(step?.target);
+      if (!(target instanceof HTMLElement)) return;
+      const rect = target.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const nextWidth = Math.max(
+        320,
+        Math.min(rect.width, viewportWidth - 32, 760),
+      );
+      setChatComposerWidth(nextWidth);
+    };
+
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, [isChatComposerStep, step?.target]);
+
   return (
     <div
-      className={`font-[family-name:var(--font-inter)] ${
+      className={`font-[family-name:var(--font-inter)] ${isChatComposerStep ? "" : "w-[min(calc(100vw-2rem),22.5rem)]"}`}
+      style={
         isChatComposerStep
-          ? "w-[min(calc(100vw-2.5rem),42rem)]"
-          : "w-[min(calc(100vw-2rem),22.5rem)]"
-      }`}
+          ? { width: chatComposerWidth ? `${chatComposerWidth}px` : "min(calc(100vw - 2rem), 42rem)" }
+          : undefined
+      }
     >
       <div className="rounded-2xl bg-white p-6 shadow-[0_8px_30px_rgba(15,27,61,0.15)]">
         <div className="text-center">
@@ -4957,13 +4980,15 @@ export function WebOnboardingTour({
     return (
       <ChatStepJoyride
         onMount={() => {
-          // Close the sidebar on all widths (web + mobile web) before
-          // the chat-input spotlight fires. On desktop the sidebar is
-          // persistent by default, but at the chat-joyride moment we
-          // want the input fully unobstructed so the "Let's do this
-          // together" tooltip's arrow points at a clean target. User
-          // can re-open the sidebar after the joyride completes.
-          onSidebar(false);
+          // Keep the desktop/tablet shell stable for the final chat step.
+          // The chat composer should be spotlighted in the layout the user
+          // is about to actually use, which includes the persistent sidebar.
+          // On mobile, still close the drawer so the composer remains visible.
+          if (typeof window !== "undefined" && window.innerWidth < 768) {
+            onSidebar(false);
+          } else {
+            onSidebar(true);
+          }
           onProfilePopover(false, undefined, false);
         }}
         onFinish={() => { setShellFading(false); finishTour(); }}
