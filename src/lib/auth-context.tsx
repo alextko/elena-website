@@ -66,7 +66,7 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-const ONBOARDING_REQUIRED_PROFILE_FIELDS = ["first_name", "last_name", "date_of_birth", "zip_code"] as const;
+const ONBOARDING_REQUIRED_PROFILE_FIELDS = ["first_name", "last_name"] as const;
 const AUTH_INTENT_KEY = "elena_auth_intent";
 const ONBOARD_PENDING_SIGNUP_KEY = PENDING_SIGNUP_KEY;
 
@@ -612,7 +612,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Fresh sign-in — run the pending/claim sweep BEFORE fetchProfile so
         // /auth/me returns the final state (profile bootstrapped from DME or
         // quiz funnel, structured fields backfilled, onboarding_completed_at
-        // flipped when all four modal fields are populated). Without this
+        // flipped when the currently required onboarding fields are populated).
+        // Without this
         // await, /me races the sweep and the onboarding modal pops with
         // empty fields asking for data the funnel just collected.
         //
