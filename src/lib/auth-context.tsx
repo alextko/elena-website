@@ -25,6 +25,7 @@ interface AuthContextValue {
   profileId: string | null;
   profiles: ProfileSummary[];
   switchProfile: (profileId: string) => Promise<void>;
+  isSwitchingProfile: boolean;
   profileData: { firstName: string; lastName: string; email: string; profilePictureUrl?: string | null; dob?: string | null; zipCode?: string | null } | null;
   updateProfilePicture: (url: string | null) => void;
   // Cached profile popover data
@@ -135,6 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [profileId, setProfileIdState] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<ProfileSummary[]>([]);
+  const [isSwitchingProfile, setIsSwitchingProfile] = useState(false);
   const [profileData, setProfileData] = useState<{
     firstName: string;
     lastName: string;
@@ -1058,8 +1060,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [profileData?.email]);
 
   const switchProfile = useCallback(async (newProfileId: string) => {
+    if (!newProfileId || newProfileId === profileId) return;
+
+    const targetProfile = profiles.find((p) => p.id === newProfileId) || null;
+
     // Invalidate any in-flight fetch so stale data isn't applied
     profileFetchVersionRef.current += 1;
+    setIsSwitchingProfile(true);
 
     // Clear all cached data and allow re-fetch
     setProfileDetailsLoaded(false);
@@ -1078,6 +1085,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error("[auth] Failed to persist profile switch", switchRes.status);
         return;
       }
+      if (targetProfile) {
+        setProfileData((prev) => ({
+          firstName: targetProfile.first_name || "",
+          lastName: targetProfile.last_name || "",
+          email: prev?.email || user?.email || "",
+          profilePictureUrl: targetProfile.profile_picture_url || null,
+          dob: targetProfile.date_of_birth || null,
+          zipCode: targetProfile.zip_code || null,
+        }));
+      }
       // Update the client-side active profile immediately before any follow-up
       // fetches. apiFetch injects X-Profile-Id from localStorage, so without
       // this refreshProfiles() can ask /auth/me using the stale previous
@@ -1086,8 +1103,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await refreshProfiles();
     } catch (err) {
       console.error("[auth] Failed to persist profile switch", err);
+    } finally {
+      setIsSwitchingProfile(false);
     }
-  }, [refreshProfiles, setProfileId]);
+  }, [profileId, profiles, refreshProfiles, setProfileId, user?.email]);
 
   const signIn = useCallback(
     async (email: string, password: string, options?: { source?: string }) => {
@@ -1190,6 +1209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profileId,
         profiles,
         switchProfile,
+        isSwitchingProfile,
         profileData,
         doctors,
         careVisits,

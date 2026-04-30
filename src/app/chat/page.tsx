@@ -85,6 +85,7 @@ function ChatPageInner() {
     clearOnboardingJustCompleted,
     needsOnboarding,
     profileChecked,
+    isSwitchingProfile,
   } = useAuth();
   const { showAppCta } = useAppCta();
   const router = useRouter();
@@ -163,6 +164,13 @@ function ChatPageInner() {
     typeof window !== "undefined" && sessionStorage.getItem("elena_demo_mode") === "true"
   );
   const sessionsFetchedRef = useRef(false);
+  const sessionFetchVersionRef = useRef(0);
+  const latestProfileIdRef = useRef<string | null>(profileId);
+  const [profileShellLoading, setProfileShellLoading] = useState(false);
+
+  useEffect(() => {
+    latestProfileIdRef.current = profileId;
+  }, [profileId]);
 
   // Check if an invite was just accepted
   useEffect(() => {
@@ -324,9 +332,14 @@ function ChatPageInner() {
   }, [loading, session, router]);
 
   const fetchSessions = useCallback(async () => {
+    const requestedProfileId = latestProfileIdRef.current;
+    const fetchVersion = ++sessionFetchVersionRef.current;
     setLoadingSessions(true);
     try {
       const res = await apiFetch("/chat/sessions");
+      if (fetchVersion !== sessionFetchVersionRef.current || requestedProfileId !== latestProfileIdRef.current) {
+        return;
+      }
       if (!res.ok) {
         setLoadingSessions(false);
         // Sessions failed but page is still usable — allow new chat
@@ -341,13 +354,21 @@ function ChatPageInner() {
         seen.add(s.id);
         return true;
       });
+      if (fetchVersion !== sessionFetchVersionRef.current || requestedProfileId !== latestProfileIdRef.current) {
+        return;
+      }
       setSessions(deduped);
       try { sessionStorage.setItem("elena_sessions", JSON.stringify(deduped)); } catch {}
     } catch {
+      if (fetchVersion !== sessionFetchVersionRef.current || requestedProfileId !== latestProfileIdRef.current) {
+        return;
+      }
       // Network error — still allow the user to start a new chat
       setIsNewChat(true);
     }
-    setLoadingSessions(false);
+    if (fetchVersion === sessionFetchVersionRef.current && requestedProfileId === latestProfileIdRef.current) {
+      setLoadingSessions(false);
+    }
   }, []);
 
   // Fetch sessions once when authenticated — not on every token refresh
@@ -366,9 +387,11 @@ function ChatPageInner() {
         // Explicit switch — clear the previous profile's chat context before
         // fetching the new one so the UI never shows stale sessions/messages
         // while the next profile loads.
+        setProfileShellLoading(true);
+        sessionFetchVersionRef.current += 1;
         setActiveSessionId(null);
         setSessions([]);
-        setIsNewChat(true);
+        setIsNewChat(false);
         setPendingQuery(null);
         setPendingDocName(null);
         setBookMessage(null);
@@ -383,6 +406,12 @@ function ChatPageInner() {
     }
     prevProfileId.current = profileId;
   }, [profileId, fetchSessions]);
+
+  useEffect(() => {
+    if (!profileShellLoading) return;
+    if (loadingSessions) return;
+    setProfileShellLoading(false);
+  }, [profileShellLoading, loadingSessions]);
 
   // Auto-open most recent session, or start a new chat if none exist.
   // Wait for profileChecked to avoid racing with onboarding detection,
@@ -580,6 +609,8 @@ function ChatPageInner() {
 
   if (!session) return null;
 
+  const showProfileSwitchSkeleton = isSwitchingProfile || profileShellLoading;
+
   return (
     <div className="flex h-dvh overflow-hidden relative">
       <UpgradeModal open={upgradeModalOpen} onOpenChange={setUpgradeModalOpen} reason="soft" />
@@ -660,7 +691,7 @@ function ChatPageInner() {
             }}
             onBookMessage={(msg) => setBookMessage(msg)}
             sessions={sessions}
-            loadingSessions={loadingSessions}
+            loadingSessions={loadingSessions || showProfileSwitchSkeleton}
             showProfileTooltip={showProfileTooltip}
             onDismissProfileTooltip={() => setShowProfileTooltip(false)}
             profilePopoverOpen={tourPopoverOpen || undefined}
@@ -670,23 +701,37 @@ function ChatPageInner() {
           />
         </div>
       </div>
-      <ChatErrorBoundary>
-        <ChatArea
-          key={profileId || "no-profile"}
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          sidebarOpen={sidebarOpen}
-          activeSessionId={activeSessionId}
-          onSessionCreated={handleSessionCreated}
-          initialQuery={pendingQuery}
-          initialDocName={pendingDocName}
-          bookMessage={bookMessage}
-          onBookMessageConsumed={() => setBookMessage(null)}
-          isNewChat={isNewChat}
-          postIntakeSubmitKind={postIntakeSubmitKind}
-          demoMode={demoMode}
-          autoShowHipaa={searchParams.get("hipaa") === "1"}
-        />
-      </ChatErrorBoundary>
+      {showProfileSwitchSkeleton ? (
+        <div className="flex-1 flex flex-col animate-pulse">
+          <div className="h-14 border-b border-[#0F1B3D]/[0.04]" />
+          <div className="flex-1 flex flex-col gap-3 px-5 py-6 max-w-2xl mx-auto w-full">
+            <div className="h-10 w-3/4 rounded-2xl bg-[#0F1B3D]/[0.04]" />
+            <div className="h-10 w-1/2 rounded-2xl bg-[#0F1B3D]/[0.04]" />
+            <div className="h-10 w-2/3 rounded-2xl bg-[#0F1B3D]/[0.04]" />
+          </div>
+          <div className="px-5 pb-6">
+            <div className="mx-auto h-14 max-w-2xl rounded-full border border-[#0F1B3D]/10 bg-[#0F1B3D]/[0.03]" />
+          </div>
+        </div>
+      ) : (
+        <ChatErrorBoundary>
+          <ChatArea
+            key={profileId || "no-profile"}
+            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+            sidebarOpen={sidebarOpen}
+            activeSessionId={activeSessionId}
+            onSessionCreated={handleSessionCreated}
+            initialQuery={pendingQuery}
+            initialDocName={pendingDocName}
+            bookMessage={bookMessage}
+            onBookMessageConsumed={() => setBookMessage(null)}
+            isNewChat={isNewChat}
+            postIntakeSubmitKind={postIntakeSubmitKind}
+            demoMode={demoMode}
+            autoShowHipaa={searchParams.get("hipaa") === "1"}
+          />
+        </ChatErrorBoundary>
+      )}
     </div>
   );
 }
