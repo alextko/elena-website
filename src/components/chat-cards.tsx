@@ -2164,31 +2164,6 @@ export function HealthProfileIntakeCard({ form, onSubmitted, initialSubmitted = 
     setSubmitting(false);
   }
 
-  if (submitted) {
-    return (
-      <div className="mt-3 rounded-2xl bg-gradient-to-br from-emerald-50 to-white border border-emerald-100 p-4 shadow-[0_2px_8px_rgba(16,185,129,0.08)]">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 shadow-[0_2px_6px_rgba(16,185,129,0.3)]">
-            <Check className="h-4 w-4 text-white" strokeWidth={3} />
-          </div>
-          <div>
-            <p className="text-[14px] font-semibold text-[#0F1B3D]">Health profile updated</p>
-            <p className="text-[12px] text-[#0F1B3D]/40 mt-0.5">Your health information has been saved</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const items = getItems();
-  const addLabel =
-    currentSection === "conditions" ? "a condition"
-    : currentSection === "medications" ? "a medication"
-    : currentSection === "allergies" ? "an allergy"
-    : currentSection === "doctors" ? "a doctor"
-    : currentSection === "visits" ? "a past visit"
-    : "an item";
-
   const rootRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     console.log("[form-debug] 4/5 HealthProfileIntakeCard mounted", {
@@ -2220,6 +2195,31 @@ export function HealthProfileIntakeCard({ form, onSubmitted, initialSubmitted = 
     });
     return () => cancelAnimationFrame(raf);
   }, [form.form_id, form.save_to, form.title, sections]);
+
+  if (submitted) {
+    return (
+      <div className="mt-3 rounded-2xl bg-gradient-to-br from-emerald-50 to-white border border-emerald-100 p-4 shadow-[0_2px_8px_rgba(16,185,129,0.08)]">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 shadow-[0_2px_6px_rgba(16,185,129,0.3)]">
+            <Check className="h-4 w-4 text-white" strokeWidth={3} />
+          </div>
+          <div>
+            <p className="text-[14px] font-semibold text-[#0F1B3D]">Health profile updated</p>
+            <p className="text-[12px] text-[#0F1B3D]/40 mt-0.5">Your health information has been saved</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const items = getItems();
+  const addLabel =
+    currentSection === "conditions" ? "a condition"
+    : currentSection === "medications" ? "a medication"
+    : currentSection === "allergies" ? "an allergy"
+    : currentSection === "doctors" ? "a doctor"
+    : currentSection === "visits" ? "a past visit"
+    : "an item";
 
   return (
     <div
