@@ -53,6 +53,7 @@ interface AuthContextValue {
   needsOnboarding: boolean;
   profileChecked: boolean;
   onboardingJustCompleted: boolean;
+  clearOnboardingJustCompleted: () => void;
   completeOnboarding: (data: { first_name?: string; last_name?: string; date_of_birth?: string; home_address?: string }) => Promise<void>;
   profileDetailsLoaded: boolean;
   fetchProfileDetails: () => Promise<void>;
@@ -1077,11 +1078,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error("[auth] Failed to persist profile switch", switchRes.status);
         return;
       }
+      // Update the client-side active profile immediately before any follow-up
+      // fetches. apiFetch injects X-Profile-Id from localStorage, so without
+      // this refreshProfiles() can ask /auth/me using the stale previous
+      // profile header and appear to "switch back" in the UI.
+      setProfileId(newProfileId);
       await refreshProfiles();
     } catch (err) {
       console.error("[auth] Failed to persist profile switch", err);
     }
-  }, [refreshProfiles]);
+  }, [refreshProfiles, setProfileId]);
 
   const signIn = useCallback(
     async (email: string, password: string, options?: { source?: string }) => {
@@ -1171,6 +1177,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     profileFetchedRef.current = false;
   }, [setProfileId]);
 
+  const clearOnboardingJustCompleted = useCallback(() => {
+    setOnboardingJustCompleted(false);
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -1203,6 +1213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         needsOnboarding,
         profileChecked,
         onboardingJustCompleted,
+        clearOnboardingJustCompleted,
         completeOnboarding,
         profileDetailsLoaded,
         fetchProfileDetails,

@@ -1964,6 +1964,8 @@ export function ProfilePopover({
       onProfileCreated={async (newId) => {
         await refreshProfiles();
         await switchProfile(newId);
+        setActiveTab("health");
+        setOpen(true);
       }}
     />
     </>

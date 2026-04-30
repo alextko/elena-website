@@ -76,7 +76,16 @@ function ChatPageInner() {
   }, []);
 
 
-  const { session, loading, profileId, refreshSubscription, onboardingJustCompleted, needsOnboarding, profileChecked } = useAuth();
+  const {
+    session,
+    loading,
+    profileId,
+    refreshSubscription,
+    onboardingJustCompleted,
+    clearOnboardingJustCompleted,
+    needsOnboarding,
+    profileChecked,
+  } = useAuth();
   const { showAppCta } = useAppCta();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -412,6 +421,15 @@ function ChatPageInner() {
     }
   }, [onboardingJustCompleted, isNewChat, activeSessionId]);
 
+  // onboardingJustCompleted is only needed for the immediate handoff into the
+  // first post-onboarding chat. If it lingers after a session is active, the
+  // chat page can incorrectly remount the onboarding tour on later renders.
+  useEffect(() => {
+    if (onboardingJustCompleted && !needsOnboarding && !!activeSessionId) {
+      clearOnboardingJustCompleted();
+    }
+  }, [onboardingJustCompleted, needsOnboarding, activeSessionId, clearOnboardingJustCompleted]);
+
   const [tourPopoverOpen, setTourPopoverOpen] = useState(false);
   const [tourPopoverShowSwitcher, setTourPopoverShowSwitcher] = useState(false);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
@@ -553,7 +571,11 @@ function ChatPageInner() {
       {showTour && (
         <WebOnboardingTour
           surface="chat"
-          onComplete={() => { setShowTour(false); setTourPopoverOpen(false); }}
+          onComplete={() => {
+            setShowTour(false);
+            setTourPopoverOpen(false);
+            clearOnboardingJustCompleted();
+          }}
           onShowPaywall={() => setTourTrialStep(1)}
           onProfilePopover={(open, tab, showSwitcher) => { setTourPopoverOpen(open); if (tab) setTourPopoverTab(tab); setTourPopoverShowSwitcher(!!showSwitcher); }}
           onSidebar={(open) => setSidebarOpen(open)}
