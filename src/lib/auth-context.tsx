@@ -1063,10 +1063,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!newProfileId || newProfileId === profileId) return;
 
     const targetProfile = profiles.find((p) => p.id === newProfileId) || null;
+    const previousProfileData = profileData;
 
     // Invalidate any in-flight fetch so stale data isn't applied
     profileFetchVersionRef.current += 1;
     setIsSwitchingProfile(true);
+
+    if (targetProfile) {
+      setProfileData((prev) => ({
+        firstName: targetProfile.first_name || "",
+        lastName: targetProfile.last_name || "",
+        email: prev?.email || user?.email || "",
+        profilePictureUrl: targetProfile.profile_picture_url || null,
+        dob: targetProfile.date_of_birth || null,
+        zipCode: targetProfile.zip_code || null,
+      }));
+    }
 
     // Clear all cached data and allow re-fetch
     setProfileDetailsLoaded(false);
@@ -1083,17 +1095,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const switchRes = await apiFetch(`/profiles/${newProfileId}/switch`, { method: "PUT" });
       if (!switchRes.ok) {
         console.error("[auth] Failed to persist profile switch", switchRes.status);
+        setProfileData(previousProfileData);
         return;
-      }
-      if (targetProfile) {
-        setProfileData((prev) => ({
-          firstName: targetProfile.first_name || "",
-          lastName: targetProfile.last_name || "",
-          email: prev?.email || user?.email || "",
-          profilePictureUrl: targetProfile.profile_picture_url || null,
-          dob: targetProfile.date_of_birth || null,
-          zipCode: targetProfile.zip_code || null,
-        }));
       }
       // Update the client-side active profile immediately before any follow-up
       // fetches. apiFetch injects X-Profile-Id from localStorage, so without
@@ -1103,10 +1106,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await refreshProfiles();
     } catch (err) {
       console.error("[auth] Failed to persist profile switch", err);
+      setProfileData(previousProfileData);
     } finally {
       setIsSwitchingProfile(false);
     }
-  }, [profileId, profiles, refreshProfiles, setProfileId, user?.email]);
+  }, [profileData, profileId, profiles, refreshProfiles, setProfileId, user?.email]);
 
   const signIn = useCallback(
     async (email: string, password: string, options?: { source?: string }) => {
