@@ -53,6 +53,30 @@ import { todoOccursOn, todoVisibleOnDate, isUntilDone } from "@/lib/todo-recurre
 
 type Tab = "health" | "visits" | "insurance";
 
+const EMPTY_PERSONAL_INFO: PersonalInfo = {
+  first_name: "",
+  last_name: "",
+  preferred_name: "",
+  email: "",
+  date_of_birth: "",
+  gender: "",
+  phone_number: "",
+  home_address: "",
+  city: "",
+  state: "",
+  zip_code: "",
+  hipaa_consent_signed_at: null,
+};
+
+const EMPTY_HEALTH_DATA: HealthData = {
+  conditions: [],
+  medications: [],
+  surgeries: [],
+  allergies: [],
+  familyHistory: [],
+  socialHistory: [],
+};
+
 /**
  * Tracks which item IDs are "just added" relative to the previous render.
  * First render establishes a baseline (nothing is new); subsequent renders
@@ -345,8 +369,10 @@ export function ProfilePopover({
           city: p.city || "", state: p.state || "", zip_code: p.zip_code || "",
           hipaa_consent_signed_at: p.hipaa_consent_signed_at || null,
         });
+      } else {
+        setPersonalInfo(EMPTY_PERSONAL_INFO);
       }
-      const hd: HealthData = { conditions: [], medications: [], surgeries: [], allergies: [], familyHistory: [], socialHistory: [] };
+      const hd: HealthData = { ...EMPTY_HEALTH_DATA };
       if (condRes.ok) { const d = await condRes.json(); hd.conditions = d.conditions || d || []; }
       if (medRes.ok) { const d = await medRes.json(); hd.medications = d.medications || d || []; }
       if (surgRes.ok) { const d = await surgRes.json(); hd.surgeries = d.surgeries || d || []; }
@@ -355,7 +381,11 @@ export function ProfilePopover({
       if (socRes.ok) { const d = await socRes.json(); hd.socialHistory = d.social_history || d || []; }
       setHealthData(hd);
       if (docRes.ok) setPersonalDocuments(await docRes.json());
+      else setPersonalDocuments([]);
     } catch {
+      setPersonalInfo(EMPTY_PERSONAL_INFO);
+      setHealthData({ ...EMPTY_HEALTH_DATA });
+      setPersonalDocuments([]);
       personalDataLoadedRef.current = false;
     }
   }
@@ -3385,16 +3415,11 @@ function PersonalDetailsPanel({
   onOpenHipaa: () => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState<PersonalInfo>(personalInfo || {
-    first_name: "", last_name: "", preferred_name: "", email: "",
-    date_of_birth: "", gender: "", phone_number: "",
-    home_address: "", city: "", state: "", zip_code: "",
-    hipaa_consent_signed_at: null,
-  });
+  const [form, setForm] = useState<PersonalInfo>(personalInfo || EMPTY_PERSONAL_INFO);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (personalInfo) setForm(personalInfo);
+    setForm(personalInfo || EMPTY_PERSONAL_INFO);
   }, [personalInfo]);
 
   const set = (k: keyof PersonalInfo, v: string) => setForm((prev) => ({ ...prev, [k]: v }));
