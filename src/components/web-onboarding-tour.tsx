@@ -1715,6 +1715,15 @@ export function WebOnboardingTour({
     onComplete();
   }, [onComplete, onProfilePopover, onSidebar, onSeedQuery]);
 
+  const skipTour = useCallback(() => {
+    analytics.track("Web Tour Skipped", {
+      phase,
+      surface,
+    });
+    setShellFading(false);
+    finishTour();
+  }, [finishTour, phase, surface]);
+
   // `shellFading` is set when we're leaving the care/value shell entirely
   // (e.g. into the joyride spotlight). Framer-motion's AnimatePresence
   // handles the in-shell care↔value crossfade without any manual timers.
@@ -2485,6 +2494,15 @@ export function WebOnboardingTour({
           className="relative z-10 w-[calc(100%-3rem)] max-h-[95vh] overflow-y-auto overflow-x-hidden rounded-2xl bg-white shadow-[0_8px_30px_rgba(15,27,61,0.15)]"
           style={{ maxWidth: cardMaxWidth }}
         >
+          {surface === "chat" && phase !== "intro" && phase !== "auth" && phase !== "flushing" && (
+            <button
+              type="button"
+              onClick={skipTour}
+              className="absolute right-4 top-4 z-20 rounded-full bg-[#F5F7FB] px-3.5 py-2 text-[12px] font-semibold text-[#5a6a82] transition-colors hover:bg-[#ECEEF5] hover:text-[#0F1B3D]"
+            >
+              Skip for now
+            </button>
+          )}
           {/* No `initial={false}` — that would suppress the first slide's
               StreamingText "hidden" variant on mount, making the care
               headline render fully visible instead of streaming in. */}
@@ -4410,7 +4428,18 @@ export function WebOnboardingTour({
 
   // ── Phase: Joyride (profile button spotlight) ──
   if (phase === "joyride") {
-    return Tour;
+    return (
+      <>
+        <button
+          type="button"
+          onClick={skipTour}
+          className="fixed top-4 right-4 z-[100000] rounded-full bg-white/90 px-4 py-2 text-[13px] font-semibold text-[#0F1B3D] shadow-[0_8px_24px_rgba(15,27,61,0.16)] backdrop-blur hover:bg-white"
+        >
+          Skip for now
+        </button>
+        {Tour}
+      </>
+    );
   }
 
   // ── Phase: Profile walkthrough (custom cards over popover) ──
@@ -4486,6 +4515,14 @@ export function WebOnboardingTour({
     })();
 
     return createPortal(
+      <>
+        <button
+          type="button"
+          onClick={skipTour}
+          className="fixed top-4 right-4 z-[100000] rounded-full bg-white/90 px-4 py-2 text-[13px] font-semibold text-[#0F1B3D] shadow-[0_8px_24px_rgba(15,27,61,0.16)] backdrop-blur hover:bg-white"
+        >
+          Skip for now
+        </button>
       <motion.div
         className="fixed z-[99999] font-[family-name:var(--font-inter)] bottom-0 left-0 right-0"
         style={{ pointerEvents: "auto" }}
@@ -5018,7 +5055,8 @@ export function WebOnboardingTour({
             </AnimatePresence>
           </motion.div>
         </div>
-      </motion.div>,
+      </motion.div>
+      </>,
       document.body
     );
   }
@@ -5043,6 +5081,7 @@ export function WebOnboardingTour({
           onProfilePopover(false, undefined, false);
         }}
         onFinish={() => { setShellFading(false); finishTour(); }}
+        onSkip={skipTour}
       />
     );
   }
@@ -5409,7 +5448,7 @@ function InsuranceMiniCard() {
   );
 }
 
-function ChatStepJoyride({ onFinish, onMount }: { onFinish: () => void; onMount?: () => void }) {
+function ChatStepJoyride({ onFinish, onMount, onSkip }: { onFinish: () => void; onMount?: () => void; onSkip?: () => void }) {
   const finishRef = useRef(false);
   // Stash onFinish in a ref so the advance effect below doesn't re-run
   // (and reset its 20s safety timer) every time the parent passes a
@@ -5469,5 +5508,16 @@ function ChatStepJoyride({ onFinish, onMount }: { onFinish: () => void; onMount?
     return () => { unsub(); };
   }, [on]);
 
-  return Tour;
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => onSkip?.()}
+        className="fixed top-4 right-4 z-[100000] rounded-full bg-white/90 px-4 py-2 text-[13px] font-semibold text-[#0F1B3D] shadow-[0_8px_24px_rgba(15,27,61,0.16)] backdrop-blur hover:bg-white"
+      >
+        Skip for now
+      </button>
+      {Tour}
+    </>
+  );
 }

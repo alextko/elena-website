@@ -28,6 +28,7 @@ export type AnalyticsEvent =
   | "Web Tour Step Viewed"
   | "Web Tour Completed"
   | "Web Tour Joyride Completed"
+  | "Web Tour Skipped"
   | "Web Tour Seed Query Written"
   | "Web Tour Care Context"
   | "Web Tour Care Ack Continued"
