@@ -6,7 +6,6 @@ import { useAuth } from "@/lib/auth-context";
 import * as analytics from "@/lib/analytics";
 import { trackViewContent } from "@/lib/tracking-events";
 import { AuthModal } from "@/components/auth-modal";
-import { postPendingMessage } from "@/lib/pendingMessage";
 import "../../landing.css";
 
 const LP_VARIANT = "preventative";
@@ -301,30 +300,7 @@ export default function PreventativeWebLandingPage() {
         localStorage.setItem("elena_lp_variant", LP_VARIANT);
       } catch {}
 
-      const lateSignupFlag = (() => {
-        if (typeof window === "undefined") return true;
-        const sp = new URLSearchParams(window.location.search);
-        if (sp.get("signup") === "first") {
-          try { sessionStorage.setItem("elena_late_signup", "0"); } catch {}
-          return false;
-        }
-        if (sp.get("signup") === "late") {
-          try { sessionStorage.setItem("elena_late_signup", "1"); } catch {}
-          return true;
-        }
-        return sessionStorage.getItem("elena_late_signup") !== "0";
-      })();
-
-      if (!lateSignupFlag) {
-        void postPendingMessage({
-          content: query,
-          source: "landing_hero",
-          landing_variant: "preventative_web",
-          pending_doc_name: null,
-        });
-        setAuthModalOpen(true);
-        return;
-      }
+      try { localStorage.removeItem("elena_pending_query"); } catch {}
 
       try { sessionStorage.setItem("elena_tour_post_seed_gate", "1"); } catch {}
       try { sessionStorage.setItem("elena_onboard_route_tracked", "1"); } catch {}

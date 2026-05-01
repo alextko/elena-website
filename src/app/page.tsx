@@ -7,7 +7,6 @@ import { useAuth } from "@/lib/auth-context";
 import { trackViewContent, trackActivation } from "@/lib/tracking-events";
 import * as analytics from "@/lib/analytics";
 import { AuthModal } from "@/components/auth-modal";
-import { postPendingMessage } from "@/lib/pendingMessage";
 import "./landing.css";
 
 const STATS = [
@@ -643,35 +642,8 @@ function LandingPage() {
     // Ref-specific LPs use their own prefill; the homepage gets
     // HOMEPAGE_DEFAULT_QUERY so the agent doesn't land with "I don't have your data".
     const query = typed || hero?.prefill || HOMEPAGE_DEFAULT_QUERY;
-    // Late-signup is the default funnel. The user goes through the onboarding
-    // tour first and is only prompted to sign up at the elena-plan Continue
-    // step (Phase 3). Early-signup (immediate AuthModal on landing CTA) is
-    // preserved for A/B testing via `?signup=first` and as a fallback if
-    // anything breaks in the tour pipeline.
-    //
-    // Flag resolution (in order of precedence):
-    //   1. `?signup=first` → force early-signup this session
-    //   2. `?signup=late`  → force late-signup this session (historical opt-in;
-    //      still honored so legacy share links keep working)
-    //   3. sessionStorage persists the last explicit choice
-    //   4. Default: late-signup
-    //
-    // Posting to pending_messages only happens in the early-signup path;
-    // in late-signup the tour's action selection is the seed that reaches
-    // /chat. Posting both produces two competing seeds.
-    const lateSignupFlag = (() => {
-      if (typeof window === "undefined") return true;
-      const sp = new URLSearchParams(window.location.search);
-      if (sp.get("signup") === "first") {
-        try { sessionStorage.setItem("elena_late_signup", "0"); } catch {}
-        return false;
-      }
-      if (sp.get("signup") === "late") {
-        try { sessionStorage.setItem("elena_late_signup", "1"); } catch {}
-        return true;
-      }
-      return sessionStorage.getItem("elena_late_signup") !== "0";
-    })();
+    // Website funnel is now always onboarding-first for unauthenticated users
+    // so the CTA behavior is consistent.
     if (query) {
       analytics.track("Hero Input Submitted", {
         query_length: query.length,
@@ -690,22 +662,10 @@ function LandingPage() {
       if (session?.user?.id) {
         trackActivation(session.user.id);
       }
-      // Only preserve the landing query for paths that go straight to
-      // chat. In the late-signup onboarding flow, the onboarding tour
-      // owns the first real seed message; keeping the homepage fallback
-      // here can leak a generic opener into /chat before the tour writes
-      // its more specific post-onboarding seed.
-        if (!lateSignupFlag) {
-          localStorage.setItem("elena_pending_query", query);
-          void postPendingMessage({
-            content: query,
-            source: typed ? "landing_hero" : "landing_default",
-            landing_variant: ref || "homepage",
-            pending_doc_name: null,
-          });
-        } else {
-          try { localStorage.removeItem("elena_pending_query"); } catch {}
-        }
+      // The anonymous onboarding flow owns the first real seed message.
+      // Clear any stale homepage pending query so it cannot leak into /chat
+      // ahead of the onboarding-derived seed.
+      try { localStorage.removeItem("elena_pending_query"); } catch {}
     }
     // Existing signed-in users should never be routed back through the
     // anonymous onboarding funnel. Preserve their drafted query and send them
@@ -723,39 +683,18 @@ function LandingPage() {
     // (e.g. skip it for bill_fighting / prices where the hero already is the pitch).
     localStorage.setItem("elena_lp_variant", ref || "homepage");
 
-    // Plan A rollout: when the late-signup flag is on, route to the
-    // anonymous /onboard surface instead of immediately gating with
-    // AuthModal. The tour captures the rest of the funnel (care, router,
-    // pain, profile, meds, care plan) and only triggers signup at
-    // elena-plan Continue (Phase 3). Flag resolution happened earlier
-    // (before postPendingMessage) so both code paths see the same value.
-    if (lateSignupFlag) {
-      // Arm the post-seed paywall gate the moment the user enters the
-      // late-signup funnel. Previously this flag was only set inside the
-      // tour's elena-plan "Continue" branch (web-onboarding-tour.tsx:1566),
-      // which required the user to pick an action AND for
-      // buildSeedMessageFromActions() to return a non-empty seed. Users
-      // who skipped action selection bypassed the gate entirely — their
-      // 2-message paywall trigger never fired on /chat, they could send
-      // unlimited messages without hitting the paywall. Arming it here
-      // guarantees every late-signup user is subject to the gate, and
-      // the tour's line-1566 setter becomes a no-op reinforcement.
-      try { sessionStorage.setItem("elena_tour_post_seed_gate", "1"); } catch {}
-      try { sessionStorage.setItem("elena_onboard_route_tracked", "1"); } catch {}
-      analytics.track("Onboard Route Entered", {
-        source: "landing_hero",
-        landing_variant: ref || "homepage",
-        canonical_step: "onboarding_started",
-        step_label: "Onboarding Started",
-      });
-      router.push("/onboard");
-      return;
-    }
-
-    setAuthDefaultMode("signup");
-    setChatPreviewQuery(query || "");
-    setChatPreviewVisible(true);
-    setAuthModalOpen(true);
+    // All unauthenticated website starts now use the anonymous /onboard
+    // flow before auth.
+    try { sessionStorage.setItem("elena_tour_post_seed_gate", "1"); } catch {}
+    try { sessionStorage.setItem("elena_onboard_route_tracked", "1"); } catch {}
+    analytics.track("Onboard Route Entered", {
+      source: "landing_hero",
+      landing_variant: ref || "homepage",
+      canonical_step: "onboarding_started",
+      step_label: "Onboarding Started",
+    });
+    router.push("/onboard");
+    return;
   }, [ref, hero, demoMode, session, router, needsOnboarding, profileChecked]);
 
   const handleUseCaseClick = useCallback((title: string, prompt: string) => {
