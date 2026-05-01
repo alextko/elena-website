@@ -1168,9 +1168,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = useCallback(async (redirectTo?: string, options?: { intent?: "signup" | "signin"; source?: string }) => {
     storeAuthIntent(options?.intent || "signin", options?.source);
+    const resolvedRedirectTo =
+      redirectTo
+      || `${window.location.origin}/${options?.intent === "signup" ? "onboard" : "chat"}`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: redirectTo || `${window.location.origin}/chat` },
+      options: { redirectTo: resolvedRedirectTo },
     });
     return { error: error?.message ?? null };
   }, []);
@@ -1196,9 +1199,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithApple = useCallback(async (redirectTo?: string, options?: { intent?: "signup" | "signin"; source?: string }) => {
     storeAuthIntent(options?.intent || "signin", options?.source);
+    const resolvedRedirectTo =
+      redirectTo
+      || `${window.location.origin}/${options?.intent === "signup" ? "onboard" : "chat"}`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "apple",
-      options: { redirectTo: redirectTo || `${window.location.origin}/chat` },
+      options: { redirectTo: resolvedRedirectTo },
     });
     return { error: error?.message ?? null };
   }, []);

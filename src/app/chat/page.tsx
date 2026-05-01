@@ -518,7 +518,11 @@ function ChatPageInner() {
         };
         savedTourPhase = getStoredTourPhase(storages) || null;
         if (session && isAuthHandoffPhase(savedTourPhase)) {
-          if (hasPendingSignup(window.sessionStorage)) {
+          if (
+            hasPendingSignup(window.sessionStorage)
+            || needsOnboarding
+            || onboardingJustCompleted
+          ) {
             promoteStoredTourStateToPostAuthResume(storages);
             savedTourPhase = "joyride";
           } else {

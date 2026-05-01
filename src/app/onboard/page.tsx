@@ -175,6 +175,17 @@ export default function OnboardPage() {
   // a signed-in user.
   useEffect(() => {
     if (loading) return;
+    const hasRecoverableAuthHandoff =
+      typeof window !== "undefined"
+      && shouldRecoverAuthenticatedAuthHandoff({
+        hasSession: !!session,
+        phase: getStoredTourPhase({
+          localStorage: window.localStorage,
+          sessionStorage: window.sessionStorage,
+        }),
+        pendingSignup:
+          pendingSignupRef.current || hasPendingSignup(window.sessionStorage),
+      });
     if (session && profileChecked && !needsOnboarding) {
       pendingSignupRef.current = false;
       try { sessionStorage.removeItem(PENDING_SIGNUP_KEY); } catch {}
@@ -184,7 +195,7 @@ export default function OnboardPage() {
     // Only bounce if this is a STANDING session (not a session that just
     // appeared because AuthModal completed). The pendingSignupRef flag
     // distinguishes the two.
-    if (session && !pendingSignupRef.current && !continuePending) {
+    if (session && !pendingSignupRef.current && !continuePending && !hasRecoverableAuthHandoff) {
       router.replace("/chat");
     }
   }, [continuePending, loading, session, router, needsOnboarding, profileChecked]);
