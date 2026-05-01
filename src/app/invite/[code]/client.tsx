@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/apiFetch";
 import { AuthModal } from "@/components/auth-modal";
-import * as analytics from "@/lib/analytics";
 
 interface InvitePreview {
   invite_id: string;
@@ -171,7 +170,6 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
     setActionResult(null);
     try {
       localStorage.setItem("elena_pending_invite", code);
-      analytics.track("Invite Name Collection Submitted");
       await completeOnboarding({
         first_name: trimmedFirst,
         last_name: trimmedLast,
