@@ -138,7 +138,7 @@ function StatsBar({ persona }: { persona?: string | null }) {
             return (
               <div
                 key={stat.label}
-                className="text-center transition-all duration-700 ease-out min-w-0"
+                className={`text-center transition-all duration-700 ease-out min-w-0 ${i > 1 ? "max-md:hidden" : ""}`}
                 style={{
                   opacity: visible ? 1 : 0,
                   transform: visible ? "translateY(0)" : "translateY(20px)",
@@ -290,42 +290,6 @@ const HOMEPAGE_BEFORE_AFTER = [
   },
 ];
 
-const HOMEPAGE_STEPS = [
-  {
-    step: "01",
-    title: "Tell Elena what is going on",
-    body: "Describe the bill, appointment, medication, or insurance problem in plain English.",
-  },
-  {
-    step: "02",
-    title: "She does the legwork",
-    body: "Elena compares prices, calls insurance, tracks details, and organizes the next moves.",
-  },
-  {
-    step: "03",
-    title: "You get a clear next step",
-    body: "Instead of a mess of tabs and hold music, you get an answer and a plan.",
-  },
-];
-
-const HOMEPAGE_BENEFITS = [
-  {
-    title: "Calls and insurance",
-    body: "Coverage checks, claim questions, prior authorizations, and the hold music most people never get through.",
-  },
-  {
-    title: "Prices before you book",
-    body: "Compare facilities, cash rates, and in-network options before a surprise bill shows up.",
-  },
-  {
-    title: "Appointments and follow-through",
-    body: "Find the next step, keep track of it, and make sure the paperwork and scheduling actually happen.",
-  },
-  {
-    title: "Family healthcare admin",
-    body: "Stay on top of medications, appointments, and loose ends for the people you care for.",
-  },
-];
 
 const APP_STORE_URL = "https://apps.apple.com/us/app/elena-ai-health-navigator/id6760362771";
 
@@ -340,10 +304,31 @@ const TESTIMONIALS = [
   { name: "Andy", text: <><span className="font-bold">Andy</span> figured out the best insurance plan for him and his family.</>, logo: "/images/insurers/medicare.svg", logoAlt: "Medicare" },
 ];
 
-const HOMEPAGE_FEATURED_STORIES = [
-  TESTIMONIALS[0],
-  TESTIMONIALS[2],
-  TESTIMONIALS[4],
+const HOMEPAGE_EXAMPLES = [
+  {
+    title: "Medication management",
+    headline: "Refills, price checks, and pharmacy calls handled.",
+    body: "Elena tracks when you'll run out, checks savings options, and calls ahead so your refill is ready before you need it.",
+    relief: "You do not have to remember dates, compare pharmacies, or sit on hold.",
+    cta: "Track my medications",
+    prompt: "Help me stay on top of my medications by organizing refills, comparing savings options, and handling pharmacy calls before I run out.",
+  },
+  {
+    title: "Procedure price shopping",
+    headline: "Know what care costs before you book it.",
+    body: "Elena compares facilities, checks what insurance changes, and shows you the cheapest sensible option before the bill shows up.",
+    relief: "You do not have to call around or guess what the final price will be.",
+    cta: "Compare procedure prices",
+    prompt: "I need a procedure done. Help me compare prices at nearby providers, check insurance versus cash, and show me the best option before I book.",
+  },
+  {
+    title: "Family care",
+    headline: "Keep a parent's care organized in one place.",
+    body: "Elena keeps medications, doctors, appointments, and follow-up tasks together so family care stops living in your head.",
+    relief: "You do not have to juggle it across texts, notes, and memory.",
+    cta: "Organize family care",
+    prompt: "Help me organize care for my family member so medications, appointments, providers, and follow-ups all stay in one place.",
+  },
 ];
 
 const PERSONA_TESTIMONIALS: Record<string, typeof TESTIMONIALS> = {
@@ -491,7 +476,7 @@ const HERO_COPY: Record<string, { headline: [string, string]; accent?: string; s
 
 const DEFAULT_HERO = {
   headline: "What can I help you with <em>today?</em>",
-  subtitle: "Elena is a personal health assistant. She can make calls, use a computer, and write emails, and she's an expert in navigating the healthcare system.",
+  subtitle: "Tell Elena what you need done for your healthcare. She can make phone calls, use the computer, send emails, and handle the admin work you do not want to do yourself.",
 };
 
 const BLOB_SPEEDS = [0.04, -0.03, 0.025, -0.02];
@@ -559,6 +544,8 @@ function LandingPage() {
   const [chatPreviewVisible, setChatPreviewVisible] = useState(false);
   const [chatPreviewQuery, setChatPreviewQuery] = useState<string>("");
   const [authDefaultMode, setAuthDefaultMode] = useState<"signin" | "signup">("signup");
+  const [activeExampleIndex, setActiveExampleIndex] = useState(0);
+  const [activeShiftIndex, setActiveShiftIndex] = useState<0 | 1>(1);
   const heroRef = useRef<HTMLElement>(null);
   const blobRefs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -702,6 +689,15 @@ function LandingPage() {
     handleSend({ overrideQuery: prompt });
   }, [handleSend]);
 
+  const activeExample = HOMEPAGE_EXAMPLES[activeExampleIndex]!;
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActiveExampleIndex((prev) => (prev + 1) % HOMEPAGE_EXAMPLES.length);
+    }, 4200);
+    return () => window.clearInterval(timer);
+  }, []);
+
   if (loading || (session && !demoMode)) {
     return (
       <div className="flex h-dvh items-center justify-center">
@@ -761,9 +757,9 @@ function LandingPage() {
         </div>
 
         {/* Content wrapper — viewport-height centered for bills, inline for others */}
-        <div className="min-h-[80dvh] flex flex-col items-center justify-center w-full shrink-0 pb-8" style={{ paddingTop: "max(6rem, 12vh)" }}>
-        <div className="relative z-[4] text-center max-w-[700px] md:max-w-[880px] w-full px-6 max-md:px-5">
-          <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[2.15rem] max-sm:text-[1.82rem] font-light leading-[1.15] max-sm:leading-[1.08] tracking-tight text-white">
+        <div className="min-h-[80dvh] flex flex-col items-center justify-center w-full shrink-0 pb-8 max-md:min-h-[72dvh] max-md:pb-4" style={{ paddingTop: "max(5.5rem, 10vh)" }}>
+        <div className="relative z-[4] text-center max-w-[700px] md:max-w-[880px] w-full px-6 max-md:px-4">
+          <h1 className="text-[clamp(2.5rem,5vw,3.8rem)] max-md:text-[1.9rem] max-sm:text-[1.68rem] font-light leading-[1.15] max-md:leading-[1.1] max-sm:leading-[1.06] tracking-tight text-white">
             {hero ? (
               <>
                 {hero.headline[0]}<br />
@@ -784,18 +780,18 @@ function LandingPage() {
               </>
             )}
           </h1>
-          <p className="text-[0.95rem] max-md:text-[0.75rem] font-light text-white/85 mt-4 max-md:mt-2.5 tracking-wide">
+          <p className="mx-auto mt-4 max-w-[36rem] text-[0.95rem] font-light tracking-wide text-white/85 max-md:mt-3 max-md:max-w-[27rem] max-md:text-[0.72rem] max-md:leading-[1.6]">
             {hero ? hero.subtitle : (
               <>Elena makes the calls, fights the bills, and finds in-network care. So you don&apos;t have to.</>
             )}
           </p>
 
-          <div className="mt-8 flex flex-col items-center gap-4">
+          <div className="mt-7 flex flex-col items-center gap-3 max-md:mt-6">
             <motion.div
               initial="hidden"
               animate="visible"
               variants={HERO_ACTION_MOTION.label}
-              className="text-[11px] font-semibold uppercase tracking-[1.5px] text-white/45 text-center"
+              className="text-center text-[11px] font-semibold uppercase tracking-[1.5px] text-white/45 max-md:text-[10px]"
             >
               Start with one of these
             </motion.div>
@@ -812,7 +808,7 @@ function LandingPage() {
                     y: [0, -3, 0],
                     transition: { duration: 0.38, ease: "easeOut" },
                   }}
-                  className="relative overflow-hidden rounded-full border border-white/35 bg-white px-5 py-3 text-[0.92rem] font-semibold text-[#0F1B3D] shadow-[0_12px_30px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.35)] transition-[background-color,border-color,box-shadow] duration-300 hover:bg-[#F7F6F2] hover:border-white/50 hover:shadow-[0_18px_36px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.35)]"
+                  className="relative overflow-hidden rounded-full border border-white/35 bg-white px-5 py-3 text-[0.92rem] font-semibold text-[#0F1B3D] shadow-[0_12px_30px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.35)] transition-[background-color,border-color,box-shadow] duration-300 hover:bg-[#F7F6F2] hover:border-white/50 hover:shadow-[0_18px_36px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.35)] max-md:w-full max-md:max-w-[340px] max-md:px-5 max-md:py-2.5 max-md:text-[0.86rem]"
                 >
                   <motion.span
                     aria-hidden="true"
@@ -833,7 +829,7 @@ function LandingPage() {
                 y: [0, -2, 0],
                 transition: { duration: 0.34, ease: "easeOut" },
               }}
-              className="mt-1 inline-flex h-11 items-center justify-center rounded-full border border-white/18 bg-white/[0.08] px-8 text-[0.88rem] font-medium text-white/88 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-all hover:bg-white/[0.14] hover:text-white"
+              className="mt-1 inline-flex h-11 items-center justify-center rounded-full border border-white/18 bg-white/[0.08] px-8 text-[0.88rem] font-medium text-white/88 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-all hover:bg-white/[0.14] hover:text-white max-md:h-10 max-md:w-full max-md:max-w-[320px] max-md:px-6 max-md:text-[0.84rem]"
               style={{ WebkitBackdropFilter: "blur(40px) saturate(1.8)" }}
             >
               Or just get started
@@ -891,15 +887,15 @@ function LandingPage() {
           <div className="max-w-[640px] mb-16 max-md:mb-12">
             <p className="text-[0.72rem] font-semibold uppercase tracking-[2px] text-[#2E6BB5] mb-4">The shift</p>
             <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-semibold tracking-tight text-[#0F1B3D] leading-tight">
-              Stop doing healthcare the hard way.
+              Stop doing it yourself.
               {" "}
-              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#2E6BB5]">Hand it off.</em>
+              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#2E6BB5]">Give Elena the job.</em>
             </h2>
             <p className="mt-5 text-[1rem] text-[#5a6a82] leading-[1.75]">
-              The difference is not subtle. Without help, healthcare turns into admin sprawl. With Elena, the work collapses into a clear next step.
+              The point is not better reminders. The point is that Elena can actually do the healthcare admin work for you: calls, emails, scheduling, price checks, and follow-up.
             </p>
           </div>
-          <div className="grid gap-5 md:grid-cols-[0.92fr_1.08fr]">
+          <div className="grid gap-5 max-md:hidden md:grid-cols-[0.92fr_1.08fr]">
             <div className="rounded-[32px] border border-[#cfdcec] bg-[linear-gradient(180deg,#ffffff_0%,#f5f9ff_100%)] p-8 shadow-[0_18px_48px_rgba(15,27,61,0.08)]">
               <div className="inline-flex items-center rounded-full border border-[#b8cbdf] bg-[linear-gradient(180deg,#eff5fd_0%,#e3edf9_100%)] px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[1.8px] text-[#355178] mb-6 shadow-[0_8px_20px_rgba(79,111,158,0.12)]">
                 Without Elena
@@ -939,99 +935,232 @@ function LandingPage() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      <section id="how-it-works" className="relative py-[120px] px-8 bg-[#FBFAF7] max-md:py-20 max-md:px-5">
-        <div className="mx-auto max-w-[1040px]">
-          <div className="max-w-[640px] mb-16 max-md:mb-12">
-            <p className="text-[0.72rem] font-semibold uppercase tracking-[2px] text-[#2E6BB5] mb-4">How it works</p>
-            <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-semibold tracking-tight text-[#0F1B3D] leading-tight">
-              Three steps.
-              {" "}
-              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#2E6BB5]">No hold music.</em>
-            </h2>
-          </div>
-          <div className="grid gap-8 md:grid-cols-3">
-            {HOMEPAGE_STEPS.map((item) => (
-              <div key={item.step} className="relative">
-                <div className="text-[3rem] font-light leading-none text-[#2E6BB5]/20 font-[family-name:var(--font-dm-serif)] mb-3">
-                  {item.step}
+          <div className="md:hidden">
+            <div className="relative inline-flex rounded-full border border-[#d8e3f2] bg-white p-1 shadow-[0_10px_24px_rgba(15,27,61,0.06)]">
+              <motion.div
+                className="absolute top-1 bottom-1 rounded-full shadow-[0_8px_18px_rgba(15,27,61,0.12)]"
+                initial={false}
+                animate={{
+                  left: activeShiftIndex === 0 ? 4 : "50%",
+                  right: activeShiftIndex === 0 ? "50%" : 4,
+                  backgroundColor: "#ECF3FC",
+                }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              />
+              <button
+                onClick={() => setActiveShiftIndex(0)}
+                className={`relative z-[1] rounded-full px-4 py-2 text-[0.78rem] font-semibold transition-colors ${activeShiftIndex === 0 ? "text-[#244C85]" : "text-[#6a7f99]"}`}
+              >
+                Without Elena
+              </button>
+              <button
+                onClick={() => setActiveShiftIndex(1)}
+                className={`relative z-[1] rounded-full px-4 py-2 text-[0.78rem] font-semibold transition-colors ${activeShiftIndex === 1 ? "text-[#244C85]" : "text-[#6a7f99]"}`}
+              >
+                With Elena
+              </button>
+            </div>
+            <div className="mt-5">
+              {activeShiftIndex === 0 ? (
+                <div className="rounded-[28px] border border-[#cfdcec] bg-[linear-gradient(180deg,#ffffff_0%,#f5f9ff_100%)] p-6 shadow-[0_18px_48px_rgba(15,27,61,0.08)]">
+                  <div className="space-y-4">
+                    {HOMEPAGE_BEFORE_AFTER.map((item) => (
+                      <div key={item.before} className="rounded-[22px] border border-[#cad8ea] bg-[linear-gradient(180deg,#f1f6fd_0%,#e6eef9_100%)] px-4 py-4 shadow-[0_10px_24px_rgba(64,92,138,0.1),inset_0_1px_0_rgba(255,255,255,0.9)]">
+                        <p className="text-[0.95rem] leading-[1.65] text-[#2d4770]">{item.before}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <h3 className="text-[1.25rem] font-semibold text-[#0F1B3D] mb-3 tracking-tight">{item.title}</h3>
-                <p className="text-[0.98rem] text-[#5a6a82] leading-[1.7]">{item.body}</p>
-              </div>
-            ))}
+              ) : (
+                <div className="relative overflow-hidden rounded-[28px] border border-[#2a4f88] bg-[linear-gradient(135deg,#0D1A3A_0%,#16315F_48%,#2A5EAB_100%)] p-6 text-white shadow-[0_24px_70px_rgba(15,27,61,0.26)]">
+                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_110%,rgba(244,176,132,0.22)_0%,transparent_52%)]" />
+                  <div className="relative">
+                    <div className="space-y-4">
+                      {HOMEPAGE_BEFORE_AFTER.map((item) => (
+                        <div key={item.after} className="rounded-[22px] border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.11)_0%,rgba(255,255,255,0.07)_100%)] px-4 py-4 backdrop-blur-[12px] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
+                          <p className="text-[0.98rem] leading-[1.65] text-white">{item.after}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-6 flex flex-wrap gap-2.5">
+                      {HOMEPAGE_USE_CASE_ACTIONS.map((item) => (
+                        <button
+                          key={item.title}
+                          onClick={() => handleUseCaseClick(item.title, item.prompt)}
+                          className="inline-flex items-center justify-center h-10 rounded-full border border-white/18 bg-white/[0.12] px-4 text-[0.82rem] font-semibold text-white transition-all hover:bg-white/[0.22] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                        >
+                          {item.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </section>
 
-      <section id="features" className="relative py-[120px] px-8 overflow-hidden max-md:py-20 max-md:px-5">
+      <section className="relative py-[120px] px-8 overflow-hidden max-md:py-20 max-md:px-5">
         <div className="absolute inset-0 z-0 bg-[linear-gradient(180deg,#0F1B3D_0%,#1A3A6E_60%,#0F1B3D_100%)]">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_0%,rgba(244,176,132,0.18)_0%,transparent_55%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_90%_100%,rgba(46,107,181,0.35)_0%,transparent_55%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_0%,rgba(244,176,132,0.14)_0%,transparent_55%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_90%_100%,rgba(46,107,181,0.28)_0%,transparent_55%)]" />
         </div>
-        <div className="relative z-[2] mx-auto max-w-[1040px]">
-          <div className="max-w-[640px] mb-16 max-md:mb-12">
-            <p className="text-[0.72rem] font-semibold uppercase tracking-[2px] text-[#F4B084] mb-4">What she handles</p>
-            <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-light tracking-tight text-white leading-tight">
-              The messy parts of healthcare,
+        <div className="relative z-[2] mx-auto max-w-[1100px]">
+          <div className="max-w-[680px] mb-14 max-md:mb-10">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[2px] text-[#F4B084] mb-4">What Elena actually does</p>
+            <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-semibold tracking-tight text-white leading-tight">
+              Concrete help,
               {" "}
-              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">handled.</em>
+              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#F4B084]">not generic promises.</em>
             </h2>
-            <p className="mt-5 text-[1rem] text-white/70 leading-relaxed">
-              Billing, insurance, scheduling, prices, medication logistics, and the follow-through most people do not have time to manage well.
+            <p className="mt-5 text-[1rem] text-white/70 leading-[1.75]">
+              Pick the kind of work you want off your plate. Elena should make it obvious what gets handled and what disappears from your to-do list.
             </p>
           </div>
-          <div className="grid gap-5 md:grid-cols-2">
-            {HOMEPAGE_BENEFITS.map((item) => (
-              <div
+          <div className="overflow-hidden rounded-[36px] border border-white/12 bg-white shadow-[0_18px_44px_rgba(0,0,0,0.16)]">
+            <motion.div
+              key={activeExampleIndex}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+              className="grid lg:grid-cols-[1.05fr_0.95fr]"
+            >
+              <div className="order-2 relative min-h-[260px] overflow-hidden border-t border-[#0F1B3D]/[0.06] bg-[linear-gradient(135deg,#F2F6FC_0%,#E8EEF8_45%,#F6E5DE_100%)] p-3 lg:order-1 lg:min-h-[420px] lg:border-t-0 lg:border-r lg:border-b-0 lg:p-5">
+                {activeExampleIndex === 0 && (
+                  <div className="absolute inset-3 overflow-hidden rounded-[24px] border border-[#244C85]/12 bg-[linear-gradient(180deg,#11244B_0%,#214A86_100%)] p-3.5 text-white shadow-[0_18px_40px_rgba(15,27,61,0.22)] lg:inset-5 lg:rounded-[28px] lg:p-4">
+                    <div className="flex items-center justify-between text-[0.62rem] font-semibold uppercase tracking-[1.4px] text-white/70 lg:text-[0.7rem] lg:tracking-[1.6px]">
+                      <span className="min-w-0 truncate">Medication plan</span>
+                      <span className="rounded-full bg-white/10 px-2 py-1 text-[0.56rem] text-white/85 lg:px-2.5 lg:text-[0.62rem]">Active</span>
+                    </div>
+                    <div className="mt-3 rounded-[20px] border border-white/10 bg-white/[0.08] p-3 lg:mt-4 lg:rounded-[22px] lg:p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[0.92rem] font-semibold tracking-tight break-words lg:text-[1.05rem]">Ozempic 1 mg</p>
+                          <p className="mt-1 text-[0.72rem] text-white/70 lg:text-[0.8rem]">H-E-B Pharmacy • 1 refill left</p>
+                        </div>
+                        <div className="shrink-0 rounded-full bg-[#F4B084] px-2.5 py-1 text-[0.58rem] font-semibold text-[#0F1B3D] lg:px-3 lg:text-[0.68rem]">$25 card</div>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-2 lg:mt-4 lg:gap-3">
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.08] px-2.5 py-2 lg:px-3">
+                          <p className="text-[0.56rem] uppercase tracking-[1.2px] text-white/55 lg:text-[0.65rem] lg:tracking-[1.4px]">Runs out</p>
+                          <p className="mt-1 text-[0.82rem] font-semibold lg:text-[0.95rem]">May 24</p>
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.08] px-2.5 py-2 lg:px-3">
+                          <p className="text-[0.56rem] uppercase tracking-[1.2px] text-white/55 lg:text-[0.65rem] lg:tracking-[1.4px]">Call queued</p>
+                          <p className="mt-1 text-[0.78rem] font-semibold leading-tight lg:text-[0.95rem]">May 19 • 9:30 AM</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3 rounded-[18px] border border-white/10 bg-white/[0.08] px-3 py-2.5 lg:mt-4 lg:rounded-[20px] lg:px-4 lg:py-3">
+                      <p className="text-[0.64rem] uppercase tracking-[1.3px] text-white/60 lg:text-[0.72rem] lg:tracking-[1.5px]">Elena handles</p>
+                      <p className="mt-1 text-[0.78rem] leading-[1.5] text-white/88 lg:text-[0.88rem]">Refill timing, savings checks, and the pharmacy call before you run out.</p>
+                    </div>
+                  </div>
+                )}
+                {activeExampleIndex === 1 && (
+                  <div className="absolute inset-3 overflow-hidden rounded-[24px] border border-[#c7d5ea] bg-white p-3.5 shadow-[0_18px_40px_rgba(36,76,133,0.12)] lg:inset-5 lg:rounded-[28px] lg:p-4">
+                    <div className="flex items-center justify-between text-[0.62rem] font-semibold uppercase tracking-[1.4px] text-[#486791] lg:text-[0.7rem] lg:tracking-[1.6px]">
+                      <span className="min-w-0 truncate">Price comparison</span>
+                      <span className="rounded-full bg-[#EFF4FB] px-2 py-1 text-[0.56rem] text-[#244C85] lg:px-2.5 lg:text-[0.62rem]">MRI pelvis</span>
+                    </div>
+                    <div className="mt-3 space-y-2.5 lg:mt-4 lg:space-y-3">
+                      {[
+                        { name: "Northside Imaging", price: "$420", note: "In network", selected: true },
+                        { name: "City Hospital", price: "$1,180", note: "Facility fee", selected: false },
+                        { name: "RapidScan Center", price: "$560", note: "Cash beats plan", selected: false },
+                      ].map(({ name, price, note, selected }, index) => (
+                        <div key={name} className={`rounded-[18px] border px-3 py-2.5 lg:rounded-[20px] lg:px-4 lg:py-3 ${selected ? "border-[#2E6BB5] bg-[#F4F8FF] shadow-[0_8px_20px_rgba(46,107,181,0.12)]" : "border-[#d9e4f3] bg-[#FBFCFE]"} ${index === 2 ? "max-md:hidden" : ""}`}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[0.85rem] font-semibold text-[#0F1B3D] lg:text-[0.95rem] leading-tight break-words">{name}</p>
+                              <p className="mt-1 text-[0.72rem] text-[#60748f] lg:text-[0.78rem]">{note}</p>
+                            </div>
+                            <div className="shrink-0 text-right">
+                              <p className="text-[0.9rem] font-semibold text-[#0F1B3D] lg:text-[1rem]">{price}</p>
+                              {selected && <p className="mt-1 text-[0.6rem] font-semibold uppercase tracking-[1.2px] text-[#2E6BB5] lg:text-[0.68rem] lg:tracking-[1.3px]">Best option</p>}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-3 rounded-[18px] border border-[#d9e4f3] bg-[#F8FBFF] px-3 py-2.5 lg:mt-4 lg:rounded-[20px] lg:px-4 lg:py-3">
+                      <p className="text-[0.64rem] uppercase tracking-[1.3px] text-[#60748f] lg:text-[0.72rem] lg:tracking-[1.5px]">Elena handles</p>
+                      <p className="mt-1 text-[0.78rem] leading-[1.5] text-[#244C85] lg:text-[0.88rem]">Comparing prices, checking insurance versus cash, and narrowing it to the cheapest sensible option.</p>
+                    </div>
+                  </div>
+                )}
+                {activeExampleIndex === 2 && (
+                  <div className="absolute inset-3 overflow-hidden rounded-[24px] border border-[#cad8ea] bg-white p-3.5 shadow-[0_18px_40px_rgba(36,76,133,0.12)] lg:inset-5 lg:rounded-[28px] lg:p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[0.9rem] font-semibold text-[#0F1B3D] lg:text-[1rem] truncate">Doriam Reinhart</p>
+                        <p className="mt-1 text-[0.7rem] text-[#60748f] lg:text-[0.76rem]">Family profile overview</p>
+                      </div>
+                      <div className="ml-3 shrink-0 rounded-full bg-[#F3F7FC] px-2.5 py-1 text-[0.6rem] font-semibold text-[#244C85] lg:px-3 lg:text-[0.68rem]">Family care</div>
+                    </div>
+                    <div className="mt-3 grid gap-2.5 lg:mt-4 lg:gap-3">
+                      <div className="rounded-[16px] border border-[#d8e3f2] bg-[#F7FAFE] px-3 py-2.5 lg:rounded-[18px] lg:py-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[0.62rem] uppercase tracking-[1.2px] text-[#60748f] lg:text-[0.68rem] lg:tracking-[1.4px]">Medications</p>
+                            <p className="mt-1 text-[0.82rem] font-semibold text-[#0F1B3D] lg:text-[0.95rem] break-words">12 tracked • 2 refills due</p>
+                          </div>
+                          <div className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[0.58rem] font-semibold text-[#2E6BB5] shadow-[0_4px_12px_rgba(36,76,133,0.08)] lg:px-3 lg:text-[0.68rem]">Up to date</div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 lg:gap-3">
+                        <div className="rounded-[16px] border border-[#d8e3f2] bg-[#F7FAFE] px-3 py-2.5 lg:rounded-[18px] lg:py-3">
+                          <p className="text-[0.62rem] uppercase tracking-[1.2px] text-[#60748f] lg:text-[0.68rem] lg:tracking-[1.4px]">Next visits</p>
+                          <p className="mt-1 text-[0.82rem] font-semibold text-[#0F1B3D] lg:text-[0.95rem]">Cardiology Tue</p>
+                          <p className="mt-1 text-[0.7rem] leading-[1.35] text-[#60748f] lg:text-[0.8rem]">Labs Thu • 9:00 AM</p>
+                        </div>
+                        <div className="rounded-[16px] border border-[#244C85]/12 bg-[linear-gradient(135deg,#0D1A3A_0%,#20477F_48%,#2E6BB5_100%)] px-3 py-2.5 text-white lg:rounded-[18px] lg:py-3">
+                          <p className="text-[0.62rem] uppercase tracking-[1.2px] text-white/60 lg:text-[0.68rem] lg:tracking-[1.4px]">Game plan</p>
+                          <p className="mt-1 text-[0.82rem] font-semibold lg:text-[0.95rem]">Call insurance</p>
+                          <p className="mt-1 text-[0.7rem] leading-[1.35] text-white/78 lg:text-[0.8rem]">Upload EOB and follow up</p>
+                        </div>
+                      </div>
+                      <div className="rounded-[16px] border border-[#d8e3f2] bg-[#F7FAFE] px-3 py-2.5 lg:rounded-[18px] lg:py-3">
+                        <p className="text-[0.62rem] uppercase tracking-[1.2px] text-[#60748f] lg:text-[0.68rem] lg:tracking-[1.4px]">Elena handles</p>
+                        <p className="mt-1 text-[0.78rem] leading-[1.5] text-[#244C85] lg:text-[0.88rem]">Appointments, meds, providers, and follow-ups in one organized place.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="order-1 flex flex-col justify-between p-6 lg:order-2 lg:p-9">
+                <div>
+                  <div className="text-[0.72rem] font-semibold uppercase tracking-[1.8px] text-[#2E6BB5] mb-3">{activeExample.title}</div>
+                  <h3 className="max-w-[20ch] text-[1.35rem] font-semibold tracking-tight text-[#0F1B3D] leading-[1.18] lg:text-[1.55rem] lg:leading-[1.25]">{activeExample.headline}</h3>
+                  <p className="mt-4 max-w-[50ch] text-[0.98rem] leading-[1.72] text-[#5a6a82] lg:text-[1rem] lg:leading-[1.8]">{activeExample.body}</p>
+                  <p className="mt-4 max-w-[46ch] text-[0.95rem] leading-[1.68] text-[#244C85] lg:text-[0.98rem] lg:leading-[1.75]">{activeExample.relief}</p>
+                </div>
+                <div className="mt-7">
+                  <button
+                    onClick={() => handleUseCaseClick(activeExample.cta, activeExample.prompt)}
+                    className="inline-flex h-11 items-center justify-center rounded-full border border-[#0F1B3D]/12 bg-[#F7FAFE] px-5 text-[0.9rem] font-semibold text-[#0F1B3D] transition-all hover:border-[#2E6BB5] hover:text-[#2E6BB5] hover:bg-white"
+                  >
+                    {activeExample.cta}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+          <div className="mt-5 flex items-center justify-center gap-2">
+            {HOMEPAGE_EXAMPLES.map((item, index) => (
+              <button
                 key={item.title}
-                className="bg-white/[0.06] backdrop-blur-xl border border-white/[0.14] rounded-3xl p-7 shadow-[0_4px_24px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.12)]"
-              >
-                <h3 className="text-[1.1rem] font-semibold text-white tracking-tight mb-3">{item.title}</h3>
-                <p className="text-[0.95rem] text-white/70 leading-relaxed">{item.body}</p>
-              </div>
+                onClick={() => setActiveExampleIndex(index)}
+                aria-label={`Show ${item.title}`}
+                className={`h-2.5 rounded-full transition-all ${index === activeExampleIndex ? "w-8 bg-white" : "w-2.5 bg-white/35 hover:bg-white/55"}`}
+              />
             ))}
           </div>
         </div>
       </section>
 
-      <section className="relative py-[120px] px-8 bg-[#F7F6F2] max-md:py-20 max-md:px-5">
-        <div className="mx-auto max-w-[1040px]">
-          <div className="max-w-[640px] mb-14 max-md:mb-10">
-            <p className="text-[0.72rem] font-semibold uppercase tracking-[2px] text-[#2E6BB5] mb-4">Real wins</p>
-            <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-semibold tracking-tight text-[#0F1B3D] leading-tight">
-              What it looks like when
-              {" "}
-              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#2E6BB5]">someone does the work for you.</em>
-            </h2>
-          </div>
-          <div className="grid gap-5 md:grid-cols-3">
-            {HOMEPAGE_FEATURED_STORIES.map((t) => (
-              <div
-                key={t.name}
-                className="bg-white border border-[#0F1B3D]/10 rounded-3xl p-7 shadow-[0_4px_24px_rgba(15,27,61,0.06)]"
-              >
-                <div className="flex gap-1 mb-4 text-[#F4B084]">
-                  {[0, 1, 2, 3, 4].map((i) => (
-                    <svg key={i} viewBox="0 0 20 20" className="h-4 w-4 fill-current" aria-hidden="true">
-                      <path d="M10 1.8l2.5 5.05 5.58.81-4.04 3.94.95 5.56L10 14.5 5.01 17.16l.95-5.56L1.92 7.66l5.58-.81L10 1.8z" />
-                    </svg>
-                  ))}
-                </div>
-                <p className="text-[1rem] text-[#0F1B3D] leading-relaxed">{t.text}</p>
-                <div className="mt-5 pt-4 border-t border-[#0F1B3D]/[0.08] flex items-center justify-between">
-                  <span className="text-[0.75rem] uppercase tracking-[1.5px] text-[#5a6a82]/70 font-semibold">Insured with</span>
-                  <img src={t.logo} alt={t.logoAlt} className="h-6 opacity-80" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="relative py-[110px] px-8 bg-[#FBFAF7] max-md:py-20 max-md:px-5">
+      <section className="relative py-[110px] px-8 bg-white max-md:py-20 max-md:px-5">
         <div className="mx-auto max-w-[960px] flex items-center gap-16 max-md:flex-col max-md:text-center">
           <div className="flex-1">
             <p className="text-[0.72rem] font-semibold uppercase tracking-[2px] text-[#2E6BB5] mb-4">Also on your phone</p>
@@ -1065,8 +1194,65 @@ function LandingPage() {
         </div>
       </section>
 
+      <section className="relative py-[110px] px-8 bg-[#F7F6F2] max-md:py-20 max-md:px-5">
+        <div className="mx-auto max-w-[1040px]">
+          <div className="max-w-[640px] mb-14 max-md:mb-10">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[2px] text-[#2E6BB5] mb-4">Real wins</p>
+            <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-semibold tracking-tight text-[#0F1B3D] leading-tight">
+              What it looks like when
+              {" "}
+              <em className="italic font-normal font-[family-name:var(--font-dm-serif)] text-[#2E6BB5]">someone does the work for you.</em>
+            </h2>
+          </div>
+          <div className="hidden gap-5 md:grid-cols-3 md:grid">
+            {TESTIMONIALS.slice(0, 3).map((t) => (
+              <div
+                key={t.name}
+                className="bg-white border border-[#0F1B3D]/10 rounded-3xl p-7 shadow-[0_4px_24px_rgba(15,27,61,0.06)]"
+              >
+                <div className="flex gap-1 mb-4 text-[#F4B084]">
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <svg key={i} viewBox="0 0 20 20" className="h-4 w-4 fill-current" aria-hidden="true">
+                      <path d="M10 1.8l2.5 5.05 5.58.81-4.04 3.94.95 5.56L10 14.5 5.01 17.16l.95-5.56L1.92 7.66l5.58-.81L10 1.8z" />
+                    </svg>
+                  ))}
+                </div>
+                <p className="text-[1rem] text-[#0F1B3D] leading-relaxed">{t.text}</p>
+                <div className="mt-5 pt-4 border-t border-[#0F1B3D]/[0.08] flex items-center justify-between">
+                  <span className="text-[0.75rem] uppercase tracking-[1.5px] text-[#5a6a82]/70 font-semibold">Insured with</span>
+                  <img src={t.logo} alt={t.logoAlt} className="h-6 opacity-80" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="-mx-5 overflow-x-auto px-5 pb-2 md:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex w-max gap-4 snap-x snap-mandatory">
+              {TESTIMONIALS.slice(0, 3).map((t) => (
+                <div
+                  key={t.name}
+                  className="w-[84vw] max-w-[340px] shrink-0 snap-center rounded-3xl border border-[#0F1B3D]/10 bg-white p-6 shadow-[0_4px_24px_rgba(15,27,61,0.06)]"
+                >
+                  <div className="mb-4 flex gap-1 text-[#F4B084]">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <svg key={i} viewBox="0 0 20 20" className="h-4 w-4 fill-current" aria-hidden="true">
+                        <path d="M10 1.8l2.5 5.05 5.58.81-4.04 3.94.95 5.56L10 14.5 5.01 17.16l.95-5.56L1.92 7.66l5.58-.81L10 1.8z" />
+                      </svg>
+                    ))}
+                  </div>
+                  <p className="text-[0.98rem] leading-relaxed text-[#0F1B3D]">{t.text}</p>
+                  <div className="mt-5 flex items-center justify-between border-t border-[#0F1B3D]/[0.08] pt-4">
+                    <span className="text-[0.72rem] font-semibold uppercase tracking-[1.5px] text-[#5a6a82]/70">Insured with</span>
+                    <img src={t.logo} alt={t.logoAlt} className="h-6 opacity-80" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* BOTTOM CTA */}
-      <section className="relative z-10 py-24 px-8 bg-[#F7F6F2] max-md:py-16 max-md:px-5">
+      <section className="relative z-10 py-24 px-8 bg-white max-md:py-16 max-md:px-5">
         <div className="mx-auto max-w-[720px] text-center">
           <h2 className="text-[clamp(1.8rem,3.5vw,2.5rem)] font-semibold tracking-tight text-[#0F1B3D] leading-tight mb-4">
             Ready when you are.
