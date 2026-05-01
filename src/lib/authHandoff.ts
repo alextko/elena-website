@@ -124,6 +124,20 @@ export function normalizeRestoredTourPhase({
 }): TourPhase | undefined {
   if (!phase || phase === "done") return undefined;
 
+  // Fresh pre-auth visits to /onboard should never resume inside the
+  // auth handoff. If a stale snapshot says auth/social-proof/flushing
+  // but there is no live session and no pending signup flag, reset
+  // back to the first real onboarding step instead of dropping the
+  // user into "Create your account" immediately.
+  if (
+    surface === "onboard" &&
+    !hasSession &&
+    !pendingSignup &&
+    (phase === "intro" || phase === "social-proof" || phase === "auth" || phase === "flushing")
+  ) {
+    return "care";
+  }
+
   if (surface === "onboard" && (phase === "joyride" || phase === "profile" || phase === "chat")) {
     return "auth";
   }
