@@ -472,25 +472,18 @@ type CallContext = "hold" | "schedule" | "refill";
 function ElenaPlanRow({
   line,
   title,
-  subtitle,
   startDelayMs,
   selected,
   onToggle,
 }: {
   line: string;
   title?: string;
-  subtitle?: string;
   startDelayMs: number;
   selected: boolean;
   onToggle: () => void;
 }) {
   const [shown, setShown] = useState(false);
-  const mergedTitle =
-    title && subtitle
-      ? subtitle.toLowerCase().startsWith("for ")
-        ? `${title} ${subtitle.toLowerCase()}`
-        : `${title} ${subtitle.charAt(0).toLowerCase()}${subtitle.slice(1)}`
-      : title || line;
+  const mergedTitle = title || line;
 
   useEffect(() => {
     const t = setTimeout(() => setShown(true), startDelayMs);
@@ -3954,7 +3947,6 @@ export function WebOnboardingTour({
                             key={`hero-${action.raw}-${i}`}
                             line={action.display}
                             title={action.title}
-                            subtitle={action.subtitle}
                             startDelayMs={200 + i * 320}
                             selected={confirmedActions.includes(action.raw)}
                             onToggle={() => {
