@@ -485,6 +485,12 @@ function ElenaPlanRow({
   onToggle: () => void;
 }) {
   const [shown, setShown] = useState(false);
+  const mergedTitle =
+    title && subtitle
+      ? subtitle.toLowerCase().startsWith("for ")
+        ? `${title} ${subtitle.toLowerCase()}`
+        : `${title} ${subtitle.charAt(0).toLowerCase()}${subtitle.slice(1)}`
+      : title || line;
 
   useEffect(() => {
     const t = setTimeout(() => setShown(true), startDelayMs);
@@ -521,13 +527,8 @@ function ElenaPlanRow({
       </span>
       <div className="flex-1 min-w-0">
         <div className="text-[15px] max-md:text-[14px] leading-snug font-semibold text-[#0F1B3D] text-balance">
-          {subtitle ? title : line}
+          {mergedTitle}
         </div>
-        {subtitle ? (
-          <div className="text-[12.5px] max-md:text-[12px] leading-snug text-[#6E7687] mt-1 text-balance">
-            {subtitle}
-          </div>
-        ) : null}
       </div>
     </motion.button>
   );
@@ -3895,6 +3896,23 @@ export function WebOnboardingTour({
                   managedFirstName: depName || undefined,
                 }))
                 .filter((option): option is ProposedAction => !!option);
+              if (
+                primaryRxMed &&
+                !semanticActionOptions.some((option) => option.category === "medication_management")
+              ) {
+                const refillFallback = buildProposedAction(
+                  `I can track when your ${primaryRxMed} runs out and call your provider to renew it.`,
+                  {
+                    routerChoice,
+                    conditionName: tpl?.conditionName || customSituation.trim() || undefined,
+                    isDependentSetup: isDepSetup,
+                    managedFirstName: depName || undefined,
+                  },
+                );
+                if (refillFallback) {
+                  semanticActionOptions.unshift(refillFallback);
+                }
+              }
               const actionOptions = prioritizeProposedActions(semanticActionOptions)
                 .slice(0, 3)
                 .map((option) => ({
