@@ -182,10 +182,6 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
   }, [code, completeOnboarding, firstName, lastName]);
 
   const inviterDisplay = invite?.inviter_name || fromName || "Someone";
-  const relationshipDisplay = invite?.relationship
-    ? invite.relationship.charAt(0).toUpperCase() + invite.relationship.slice(1)
-    : null;
-
   return (
     <div
       className="min-h-dvh flex flex-col items-center justify-center px-5 py-12 font-[family-name:var(--font-inter)]"
@@ -194,10 +190,6 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
       }}
     >
       <div className="fixed inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 85% 130%, #F4B084 0%, #E8956D 25%, rgba(46,107,181,0) 60%)" }} />
-
-      <div className="relative z-10 mb-8">
-        <Link href="/" className="text-white text-2xl font-extrabold tracking-tight">elena</Link>
-      </div>
 
       <div className="relative z-10 w-full max-w-md">
         <div
@@ -249,8 +241,7 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">{inviterDisplay} invited you</h2>
-                {relationshipDisplay && <p className="text-white/50 text-sm mt-1">Relationship: {relationshipDisplay}</p>}
-                <p className="text-white/40 text-sm mt-3">Connect on Elena to share health information and support each other.</p>
+                <p className="text-white/40 text-sm mt-3">Create your account to connect.</p>
               </div>
               <div className="space-y-3 pt-2">
                 <button onClick={() => openAuthModal("signup")} className="w-full rounded-full bg-white/95 py-3.5 text-sm font-semibold text-[#0F1B3D] hover:bg-white transition-colors shadow-[0_4px_16px_rgba(0,0,0,0.1)]">Sign up to connect</button>
@@ -266,11 +257,10 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">{inviterDisplay} invited you</h2>
-                {relationshipDisplay && <p className="text-white/50 text-sm mt-1">Relationship: {relationshipDisplay}</p>}
                 <p className="text-white/40 text-sm mt-3">
                   {hasProfile
-                    ? "Accept this invite to connect on Elena and share health information."
-                    : "Finish setting up your name first, then we’ll connect your account automatically."}
+                    ? "Accept this invite to connect your accounts."
+                    : "Add your name to create your account. Then we'll connect you automatically."}
                 </p>
               </div>
               {hasProfile ? (
@@ -301,7 +291,7 @@ export default function InviteClient({ code, fromName }: { code: string; fromNam
                     />
                   </div>
                   <button onClick={handleFinishSetup} disabled={finishingSetup} className="w-full rounded-full bg-white/95 py-3.5 text-sm font-semibold text-[#0F1B3D] hover:bg-white transition-colors shadow-[0_4px_16px_rgba(0,0,0,0.1)] disabled:opacity-50">
-                    {finishingSetup ? "Setting up..." : "Continue"}
+                    {finishingSetup ? "Creating account..." : "Create account and connect"}
                   </button>
                 </div>
               )}
