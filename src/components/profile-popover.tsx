@@ -1542,12 +1542,17 @@ export function ProfilePopover({
                         return a.sortOrder - b.sortOrder;
                       });
 
-                      const medicationItems = items.filter((item) =>
-                        item.type === "medication_action" || (item.type === "todo" && isMedicationRelatedTodo(item.todo)),
-                      );
-                      const primaryItems = items.filter((item) =>
-                        item.type !== "medication_action" && !(item.type === "todo" && isMedicationRelatedTodo(item.todo)),
-                      );
+                      const isMedicationBucketItem = (
+                        item: GamePlanItem,
+                      ): item is Extract<GamePlanItem, { type: "medication_action" }> | Extract<GamePlanItem, { type: "todo" }> =>
+                        item.type === "medication_action" || (item.type === "todo" && isMedicationRelatedTodo(item.todo));
+                      const isPrimaryGamePlanItem = (
+                        item: GamePlanItem,
+                      ): item is Exclude<GamePlanItem, { type: "medication_action" }> =>
+                        item.type !== "medication_action" && !(item.type === "todo" && isMedicationRelatedTodo(item.todo));
+
+                      const medicationItems = items.filter(isMedicationBucketItem);
+                      const primaryItems = items.filter(isPrimaryGamePlanItem);
                       const visibleMedicationItems = gamePlanMedsExpanded ? medicationItems : medicationItems.slice(0, 3);
                       const visiblePrimaryItems = gamePlanPrimaryExpanded ? primaryItems : primaryItems.slice(0, 3);
                       const hasMedicationSetup = (healthData?.medications || []).some(
