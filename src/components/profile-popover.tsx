@@ -4780,22 +4780,6 @@ function MedicationPanel({
           {MEDICATION_FIELDS.map((field) => {
             if (field.key === "reminder_time" && !medicationUsesDaily(editForm.tracking_mode)) return null;
             const value = editForm[field.key] || "";
-            if (field.type === "select") {
-              return (
-                <label key={field.key} className="block">
-                  <span className="text-[12px] font-semibold uppercase tracking-wider text-[#8E8E93]">{field.label}</span>
-                  <select
-                    value={value}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
-                    className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
-                  >
-                    {field.options?.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
-                  </select>
-                </label>
-              );
-            }
             return (
               <label key={field.key} className="block">
                 <span className="text-[12px] font-semibold uppercase tracking-wider text-[#8E8E93]">{field.label}</span>
