@@ -15,8 +15,17 @@ export type ProposedAction = {
   display: string;
   variant: HeroVariant;
   title: string;
+  subtitle?: string;
   book_message: string;
+  category: ActionCategory;
 };
+
+export type ActionCategory =
+  | "medication_management"
+  | "price_comparison"
+  | "bills_coverage"
+  | "booking"
+  | "other";
 
 function extractPricedThing(raw: string): string | null {
   const lower = raw.toLowerCase();
@@ -176,6 +185,100 @@ function toHelpMeMessage(s: string): string {
   return lowered.startsWith("help me ") ? cleaned : `Help me ${lowered}`;
 }
 
+function isFertilityConditionName(conditionName?: string): boolean {
+  const normalized = conditionName?.trim().toLowerCase() || "";
+  if (!normalized) return false;
+  return /\bfertility\b|\bivf\b|\biui\b|\breproductive\b|\bttc\b|\bembryo\b|\bretrieval\b|\btransfer\b|\bfet\b/.test(
+    normalized,
+  );
+}
+
+function extractMedicationTarget(raw: string): string | null {
+  const patterns = [
+    /\byour (.+?) refills every month\b/i,
+    /\byour (.+?) refills\b/i,
+    /\byour (.+?) runs out\b/i,
+    /\bfor (.+?) refills\b/i,
+  ];
+  for (const pattern of patterns) {
+    const match = raw.match(pattern);
+    const value = match?.[1]?.trim();
+    if (value) return value;
+  }
+  return null;
+}
+
+function actionCategoryPriority(category: ActionCategory): number {
+  switch (category) {
+    case "medication_management":
+      return 0;
+    case "price_comparison":
+      return 1;
+    case "bills_coverage":
+      return 2;
+    case "booking":
+      return 3;
+    default:
+      return 4;
+  }
+}
+
+function classifyActionCategory(
+  raw: string,
+  variant: HeroVariant,
+  routerChoice: RouterChoice | null,
+): ActionCategory {
+  const lower = raw.toLowerCase();
+  if (
+    variant === "call-refill" ||
+    /\brefill\b|\brenew\b|\bpharmacy\b|\bruns out\b|\bdelivery\b|\bpickup\b/.test(lower)
+  ) {
+    return "medication_management";
+  }
+  if (
+    variant === "pricing" ||
+    /\bprice-shop\b|\bbest price\b|\boverpaying\b|\bcoupon\b|\bcompare plans\b/.test(lower)
+  ) {
+    return "price_comparison";
+  }
+  if (
+    variant === "bill" ||
+    variant === "call-hold" ||
+    /\bbill\b|\bcoverage\b|\binsurance\b|\bprior auth\b|\bclaim\b|\bcharge\b|\bdispute\b/.test(lower)
+  ) {
+    return "bills_coverage";
+  }
+  if (
+    variant === "booking" ||
+    routerChoice === "staying_healthy" ||
+    /\bbook\b|\bschedule\b|\bappointment\b|\bvisit\b|\bphysical\b|\bscreening\b/.test(lower)
+  ) {
+    return "booking";
+  }
+  return "other";
+}
+
+export function prioritizeProposedActions(actions: ProposedAction[]): ProposedAction[] {
+  const firstPerCategory = new Set<ActionCategory>();
+  const bucketed = [...actions].sort((a, b) => {
+    const priorityDelta = actionCategoryPriority(a.category) - actionCategoryPriority(b.category);
+    if (priorityDelta !== 0) return priorityDelta;
+    return 0;
+  });
+
+  const prioritized: ProposedAction[] = [];
+  const leftovers: ProposedAction[] = [];
+  for (const action of bucketed) {
+    if (action.category !== "other" && !firstPerCategory.has(action.category)) {
+      firstPerCategory.add(action.category);
+      prioritized.push(action);
+      continue;
+    }
+    leftovers.push(action);
+  }
+  return [...prioritized, ...leftovers];
+}
+
 export function buildTodoFromAction(
   raw: string,
   args: {
@@ -241,6 +344,12 @@ export function buildTodoFromAction(
         };
       }
       if (/pharmacies|coupon|refill/i.test(raw)) {
+        if (refillTarget) {
+          return {
+            title: `See if I can pay less for my ${refillTarget}`,
+            book_message: `Help me check whether I can pay less for my ${refillTarget}`,
+          };
+        }
         return {
           title: "Price-shop my prescriptions",
           book_message: "Help me price-shop my prescriptions",
@@ -313,16 +422,111 @@ export function buildProposedAction(
   args: {
     routerChoice: RouterChoice | null;
     conditionName?: string;
+    isDependentSetup?: boolean;
+    managedFirstName?: string;
   },
 ): ProposedAction | null {
   const todo = buildTodoFromAction(raw, args);
   if (!todo) return null;
+  const fertility = isFertilityConditionName(args.conditionName);
+  const variant = variantForLine(raw);
+  const category = classifyActionCategory(raw, variant, args.routerChoice);
+  const medTarget = extractMedicationTarget(raw);
+  const dependentName = args.managedFirstName?.trim() || "";
+  const dependent = !!args.isDependentSetup;
+  let title = todo.title;
+  let subtitle: string | undefined;
+
+  if (fertility) {
+    if (variant === "call-refill") {
+      title = "Stay ahead of my refills";
+      subtitle = medTarget ? `For ${medTarget}` : "Avoid cycle delays";
+    } else if (variant === "pricing" && medTarget) {
+      title = "See if I can pay less";
+      subtitle = `For ${medTarget}`;
+    } else if (variant === "call-hold") {
+      title = "Check what insurance should cover";
+      subtitle = medTarget ? `For ${medTarget}` : "Before my next step";
+    } else if (
+      variant === "booking" &&
+      /\bfertility\b|\bivf\b|\biui\b|\bmonitoring\b|\bretrieval\b|\btransfer\b/.test(raw.toLowerCase())
+    ) {
+      title = "Book my next appointment";
+      subtitle = "Keep treatment on track";
+    }
+  } else if (dependent) {
+    if (variant === "call-refill") {
+      title = "Stay on top of their medications";
+      subtitle = dependentName ? `For ${dependentName}` : "Refills, renewals, and timing";
+    } else if (variant === "pricing") {
+      title = /refill|pharmacies|coupon/i.test(raw) ? "See if they can pay less" : "Find the best price";
+      subtitle = medTarget
+        ? `For ${medTarget}`
+        : dependentName
+          ? `For ${dependentName}'s care`
+          : "Avoid unnecessary costs";
+    } else if (variant === "booking") {
+      title = "Book their next appointment";
+      subtitle = "Keep care moving";
+    } else if (variant === "bill" || variant === "call-hold") {
+      title = "Check coverage or bills";
+      subtitle = "Avoid surprises";
+    } else if (variant === "family") {
+      title = "Coordinate their care";
+      subtitle = "Appointments, meds, and follow-ups";
+    }
+  } else if (args.routerChoice === "medications") {
+    if (variant === "call-refill") {
+      title = "Stay ahead of my refills";
+      subtitle = medTarget ? `For ${medTarget}` : "Renewals and timing";
+    } else if (variant === "pricing") {
+      title = /refill|pharmacies|coupon/i.test(raw) ? "See if I can pay less" : "Find the best price";
+      subtitle = medTarget ? `For ${medTarget}` : "Check for savings";
+    } else if (variant === "call-schedule" && /delivery/i.test(raw.toLowerCase())) {
+      title = "Make refills easier";
+      subtitle = "Set up delivery or pickup";
+    } else if (variant === "call-hold") {
+      title = "Check what insurance should cover";
+      subtitle = "Before my next refill";
+    }
+  } else if (args.routerChoice === "money") {
+    if (variant === "pricing") {
+      title = medTarget ? "See if I can pay less" : "Find the best price";
+      subtitle = medTarget ? `For ${medTarget}` : "For my care or medications";
+    } else if (variant === "pain") {
+      title = "Check if I’m overpaying";
+      subtitle = "For my care and medications";
+    } else if (variant === "bill") {
+      title = "Review bills or charges";
+      subtitle = "Spot mistakes and savings";
+    } else if (variant === "call-hold") {
+      title = "Check what insurance should cover";
+      subtitle = "Before I book";
+    }
+  } else if (args.routerChoice === "staying_healthy") {
+    if (variant === "booking" && /annual physical/i.test(raw)) {
+      title = "Book my annual physical";
+      subtitle = "Start with the basics";
+    } else if (variant === "booking" && /screenings/i.test(raw)) {
+      title = "Schedule recommended screenings";
+      subtitle = "Stay up to date";
+    } else if (variant === "pricing") {
+      title = "Price-shop tests or imaging";
+      subtitle = "Before I book";
+    } else if (variant === "call-hold") {
+      title = "Check coverage before I go";
+      subtitle = "Avoid surprises";
+    }
+  }
+
   return {
     raw,
     display: raw,
-    variant: variantForLine(raw),
-    title: todo.title,
+    variant,
+    title,
+    subtitle,
     book_message: todo.book_message,
+    category,
   };
 }
 
@@ -331,6 +535,8 @@ export function buildSeedMessageFromActions(
   args: {
     routerChoice: RouterChoice | null;
     conditionName?: string;
+    isDependentSetup?: boolean;
+    managedFirstName?: string;
   },
 ): string {
   const mapped = actions

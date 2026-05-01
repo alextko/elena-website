@@ -472,6 +472,10 @@ export interface SavedMedication {
   dosage_strength: string;
   frequency: string;
   indication: string;
+  tracking_mode?: "none" | "refill" | "daily" | "both";
+  refill_mode?: "off" | "reminder" | "automation";
+  reminder_time?: string | null;
+  last_taken_at?: string | null;
   // Optional — populated progressively via chat-driven pill-bottle OCR
   // (/medications/ocr) or manual edit. The refill-tracking block is what
   // the auto-refill agent needs to call the pharmacy on the user's behalf.

@@ -737,7 +737,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           : t,
       ) as CareTodo[],
     );
+    setTodayTodos((prev) =>
+      prev.map((t) =>
+        t.id === id
+          ? { ...t, status: t.status === "completed" ? "pending" : "completed" }
+          : t,
+      ) as CareTodo[],
+    );
     const todo = todos.find((t) => t.id === id);
+    const todayTodo = todayTodos.find((t) => t.id === id);
+    const previousStatus = todo?.status || todayTodo?.status || "pending";
     const newStatus = todo?.status === "completed" ? "pending" : "completed";
     try {
       await apiFetch(`/todos/${id}`, {
@@ -748,11 +757,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Revert on failure
       setTodos((prev) =>
         prev.map((t) =>
-          t.id === id ? { ...t, status: todo?.status || "pending" } : t,
+          t.id === id ? { ...t, status: previousStatus } : t,
+        ) as CareTodo[],
+      );
+      setTodayTodos((prev) =>
+        prev.map((t) =>
+          t.id === id ? { ...t, status: previousStatus } : t,
         ) as CareTodo[],
       );
     }
-  }, [todos]);
+  }, [todos, todayTodos]);
 
   const toggleHabit = useCallback(async (id: string) => {
     const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD local time

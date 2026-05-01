@@ -28,6 +28,7 @@ import {
   buildPricingActionFromNeed,
   buildPricingTodoFromNeed,
   buildProposedAction,
+  prioritizeProposedActions,
   type HeroVariant,
   type ProposedAction,
   type RouterChoice,
@@ -470,11 +471,15 @@ type CallContext = "hold" | "schedule" | "refill";
 // springs in → mockup fades in → text fades in) mirrors BenefitTiles.
 function ElenaPlanRow({
   line,
+  title,
+  subtitle,
   startDelayMs,
   selected,
   onToggle,
 }: {
   line: string;
+  title?: string;
+  subtitle?: string;
   startDelayMs: number;
   selected: boolean;
   onToggle: () => void;
@@ -514,9 +519,16 @@ function ElenaPlanRow({
       >
         {selected && <Check className="w-3.5 h-3.5 max-md:w-3 max-md:h-3 text-white" strokeWidth={3} />}
       </span>
-      <span className="text-[15px] max-md:text-[14px] leading-snug font-semibold text-[#0F1B3D] text-balance flex-1">
-        {line}
-      </span>
+      <div className="flex-1 min-w-0">
+        <div className="text-[15px] max-md:text-[14px] leading-snug font-semibold text-[#0F1B3D] text-balance">
+          {subtitle ? title : line}
+        </div>
+        {subtitle ? (
+          <div className="text-[12.5px] max-md:text-[12px] leading-snug text-[#6E7687] mt-1 text-balance">
+            {subtitle}
+          </div>
+        ) : null}
+      </div>
     </motion.button>
   );
 }
@@ -772,7 +784,8 @@ export function WebOnboardingTour({
   // Resume-on-refresh: tour state is persisted to sessionStorage on every
   // change and restored here on mount. Snapshot is computed once (useMemo
   // with []) so state initializers see a stable value. Cleared in
-  // finishTour / skipTour so a fresh tour starts at phase "intro".
+  // finishTour / skipTour so a fresh tour starts at the first real
+  // decision step ("care"), not the old Elena intro card.
   // Joyride phase requires live joyride controls that don't survive a
   // refresh, so if the snapshot was mid-joyride we skip past it to the
   // profile walkthrough (which reopens the popover via its own effect).
@@ -810,7 +823,8 @@ export function WebOnboardingTour({
         pendingSignup: hasPendingSignup(sessionStorage),
         needsOnboarding,
       });
-      if (normalizedPhase) s.phase = normalizedPhase;
+      if (normalizedPhase === "intro") s.phase = "care";
+      else if (normalizedPhase) s.phase = normalizedPhase;
       else delete s.phase;
       // Previously we fell back joyride→profile here on the theory that
       // joyride controls don't survive a refresh. Under Plan A the tour
@@ -826,7 +840,7 @@ export function WebOnboardingTour({
     }
   }, [needsOnboarding, session, surface]);
 
-  const [phase, setPhase] = useState<Phase>(tourSnapshot.phase ?? "intro");
+  const [phase, setPhase] = useState<Phase>(tourSnapshot.phase ?? "care");
   const [profileStep, setProfileStep] = useState(tourSnapshot.profileStep ?? 0);
   const impossibleAuthPhaseTrackedRef = useRef(false);
 
@@ -3774,6 +3788,11 @@ export function WebOnboardingTour({
               if (scanOrProcedurePricing) {
                 derived.push(scanOrProcedurePricing);
               }
+              const fertilityContext =
+                tpl?.key === "fertility_ivf" ||
+                /\bfertility\b|\bivf\b|\biui\b|\breproductive\b|\bembryo\b|\bretrieval\b|\btransfer\b|\bfet\b/.test(
+                  `${tpl?.conditionName || ""} ${customSituation || ""}`.toLowerCase(),
+                );
               // Rank 1 — prescription refill/renewal. This is our
               // strongest "aha" moment: Elena autonomously calling the
               // pharmacy before your Rx runs out and the prescriber
@@ -3785,7 +3804,11 @@ export function WebOnboardingTour({
               // medications, money); staying_healthy typically didn't
               // name a specific Rx, and when it did it still benefits
               // from this being option 1.
-              if (primaryRxMed && (routerChoice === "condition" || routerChoice === "medications" || routerChoice === "staying_healthy")) {
+              if (primaryRxMed && fertilityContext) {
+                derived.push(`I can track when your ${primaryRxMed} runs out and call your provider to renew it.`);
+                derived.push(`I can price-shop your ${primaryRxMed} refills every month.`);
+                derived.push("I can book your next fertility visit.");
+              } else if (primaryRxMed && (routerChoice === "condition" || routerChoice === "medications" || routerChoice === "staying_healthy")) {
                 derived.push(`I can track when your ${primaryRxMed} runs out and call your provider to renew it.`);
               } else if (primaryRxMed && routerChoice === "money") {
                 // Money branch: lead with the price-shop pitch on
@@ -3868,9 +3891,11 @@ export function WebOnboardingTour({
                 .map((raw) => buildProposedAction(raw, {
                   routerChoice,
                   conditionName: tpl?.conditionName || customSituation.trim() || undefined,
+                  isDependentSetup: isDepSetup,
+                  managedFirstName: depName || undefined,
                 }))
                 .filter((option): option is ProposedAction => !!option);
-              const actionOptions = semanticActionOptions
+              const actionOptions = prioritizeProposedActions(semanticActionOptions)
                 .slice(0, 3)
                 .map((option) => ({
                   ...option,
@@ -3910,6 +3935,8 @@ export function WebOnboardingTour({
                           <ElenaPlanRow
                             key={`hero-${action.raw}-${i}`}
                             line={action.display}
+                            title={action.title}
+                            subtitle={action.subtitle}
                             startDelayMs={200 + i * 320}
                             selected={confirmedActions.includes(action.raw)}
                             onToggle={() => {

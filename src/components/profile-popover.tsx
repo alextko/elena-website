@@ -52,6 +52,120 @@ import type { InsuranceCard } from "@/lib/types";
 import { todoOccursOn, todoVisibleOnDate, isUntilDone } from "@/lib/todo-recurrence";
 
 type Tab = "health" | "visits" | "insurance";
+type MedicationActionItem = {
+  type: "dose_due" | "dose_taken" | "dose_skipped" | "refill_due" | "renewal_due";
+  title: string;
+  subtitle?: string;
+  color?: string;
+  medication_id?: string;
+  tracking_mode?: string;
+  sort_order?: number;
+  due_date?: string;
+};
+
+function normalizeMedicationAction(raw: any): MedicationActionItem | null {
+  const type = typeof raw?.type === "string" ? raw.type : typeof raw?.action_type === "string" ? raw.action_type : null;
+  if (!type) return null;
+  return {
+    type,
+    title: typeof raw?.title === "string" ? raw.title : "Medication",
+    subtitle: typeof raw?.subtitle === "string" ? raw.subtitle : undefined,
+    color: typeof raw?.color === "string" ? raw.color : undefined,
+    medication_id: typeof raw?.medication_id === "string" ? raw.medication_id : undefined,
+    tracking_mode: typeof raw?.tracking_mode === "string" ? raw.tracking_mode : undefined,
+    sort_order: typeof raw?.sort_order === "number" ? raw.sort_order : undefined,
+    due_date: typeof raw?.due_date === "string" ? raw.due_date : undefined,
+  };
+}
+
+function parseMedicationDate(raw?: string | null): Date | null {
+  if (!raw) return null;
+  const parsed = new Date(`${raw.slice(0, 10)}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function parseMedicationInt(raw?: string | number | null): number | null {
+  if (raw == null) return null;
+  if (typeof raw === "number" && Number.isFinite(raw)) return Math.trunc(raw);
+  const match = String(raw).match(/-?\d+/);
+  return match ? Number(match[0]) : null;
+}
+
+const REFILL_REMINDER_LEAD_DAYS = 5;
+const RENEWAL_REMINDER_LEAD_DAYS = 10;
+
+function deriveScheduledMedicationActions(
+  medications: SavedMedication[],
+  existingActions: MedicationActionItem[],
+): MedicationActionItem[] {
+  const medicationIds = new Set(medications.map((medication) => medication.id).filter(Boolean));
+  const retainedExistingActions = existingActions.filter((action) => {
+    if (action.medication_id && !medicationIds.has(action.medication_id)) return false;
+    return action.type !== "refill_due" && action.type !== "renewal_due";
+  });
+  const seen = new Set(
+    retainedExistingActions.map((action) => `${action.medication_id || ""}:${action.type}:${action.due_date || ""}`),
+  );
+  const derived: MedicationActionItem[] = [];
+
+  for (const medication of medications) {
+    const medId = medication.id || "";
+    if (!medId) continue;
+    if (getRefillMode(medication) !== "reminder") continue;
+
+    const lastFilled = parseMedicationDate(medication.last_filled_date || null);
+    const daysSupply = parseMedicationInt(medication.days_supply || null);
+    if (!lastFilled || !daysSupply || daysSupply <= 0) continue;
+
+    const refillsRemaining = parseMedicationInt(medication.refills_remaining || null);
+    if (refillsRemaining == null) continue;
+    const refillCount = Math.max(0, refillsRemaining || 0);
+    let runOut = new Date(lastFilled);
+    runOut.setDate(runOut.getDate() + daysSupply);
+
+    for (let refillIndex = 0; refillIndex < refillCount; refillIndex += 1) {
+      const reminderDate = new Date(runOut);
+      reminderDate.setDate(reminderDate.getDate() - REFILL_REMINDER_LEAD_DAYS);
+      const dueDate = reminderDate.toLocaleDateString("en-CA");
+      const key = `${medId}:refill_due:${dueDate}`;
+      if (!seen.has(key)) {
+        derived.push({
+          type: "refill_due",
+          medication_id: medId,
+          title: `Refill ${medication.name || "Medication"}`,
+          subtitle: "This medication may run out soon.",
+          due_date: dueDate,
+          sort_order: 400 + refillIndex,
+        });
+        seen.add(key);
+      }
+      runOut = new Date(runOut);
+      runOut.setDate(runOut.getDate() + daysSupply);
+    }
+
+    const renewalDate = new Date(runOut);
+    renewalDate.setDate(renewalDate.getDate() - RENEWAL_REMINDER_LEAD_DAYS);
+    const renewalKey = `${medId}:renewal_due:${renewalDate.toLocaleDateString("en-CA")}`;
+    if (!seen.has(renewalKey)) {
+      derived.push({
+        type: "renewal_due",
+        medication_id: medId,
+        title: `Renew ${medication.name || "Medication"}`,
+        subtitle: "No refills left. Elena can help request a new prescription.",
+        due_date: renewalDate.toLocaleDateString("en-CA"),
+        sort_order: 500 + refillCount,
+      });
+      seen.add(renewalKey);
+    }
+  }
+
+  return [...retainedExistingActions, ...derived];
+}
+
+function isMedicationRelatedTodo(todo: CareTodo): boolean {
+  const haystack = `${todo.title || ""} ${todo.subtitle || ""} ${todo.book_message || ""}`.toLowerCase();
+  return /\b(refill|refills|prescription|prescriptions|medication|medications)\b/.test(haystack);
+}
 
 const EMPTY_PERSONAL_INFO: PersonalInfo = {
   first_name: "",
@@ -292,14 +406,20 @@ export function ProfilePopover({
   const [addFamilyOpen, setAddFamilyOpen] = useState(false);
   const [confirmUnlink, setConfirmUnlink] = useState<ProfileSummary | null>(null);
   const [unlinking, setUnlinking] = useState(false);
-  const [personalPanel, setPersonalPanel] = useState<"details" | "health" | "documents" | null>(null);
+  const [personalPanel, setPersonalPanel] = useState<"details" | "health" | "medications" | "documents" | null>(null);
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
   const [managingSubscription, setManagingSubscription] = useState(false);
   const [subscriptionPortalError, setSubscriptionPortalError] = useState<string | null>(null);
   const [healthData, setHealthData] = useState<HealthData | null>(null);
   const [personalDocuments, setPersonalDocuments] = useState<ProfileDocument[]>([]);
+  const [medicationActions, setMedicationActions] = useState<MedicationActionItem[]>([]);
+  const [medicationActionsLoading, setMedicationActionsLoading] = useState(false);
+  const [gamePlanMedsExpanded, setGamePlanMedsExpanded] = useState(false);
+  const [gamePlanPrimaryExpanded, setGamePlanPrimaryExpanded] = useState(false);
+  const [gamePlanAddMenuOpen, setGamePlanAddMenuOpen] = useState(false);
   const personalDataLoadedRef = useRef(false);
   const switcherRef = useRef<HTMLDivElement>(null);
+  const gamePlanAddMenuRef = useRef<HTMLDivElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const todayRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -319,6 +439,17 @@ export function ProfilePopover({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [switcherOpen, showSwitcher]);
+
+  useEffect(() => {
+    if (!gamePlanAddMenuOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (gamePlanAddMenuRef.current && !gamePlanAddMenuRef.current.contains(e.target as Node)) {
+        setGamePlanAddMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [gamePlanAddMenuOpen]);
 
   async function handleUnlink(profile: ProfileSummary) {
     setUnlinking(true);
@@ -355,13 +486,41 @@ export function ProfilePopover({
     setPersonalInfo(null);
     setHealthData(null);
     setPersonalDocuments([]);
+    setMedicationActions([]);
+    setMedicationActionsLoading(false);
+  }
+
+  async function refreshMedicationActions() {
+    if (!profileId) {
+      setMedicationActions([]);
+      setMedicationActionsLoading(false);
+      return;
+    }
+    setMedicationActionsLoading(true);
+    try {
+      const res = await apiFetch(`/profile/${profileId}/medications/actions`);
+      if (!res.ok) {
+        setMedicationActions([]);
+        setMedicationActionsLoading(false);
+        return;
+      }
+      const data = await res.json();
+      setMedicationActions(
+        Array.isArray(data?.actions) ? data.actions.map(normalizeMedicationAction).filter(Boolean) as MedicationActionItem[] : [],
+      );
+    } catch {
+      setMedicationActions([]);
+    } finally {
+      setMedicationActionsLoading(false);
+    }
   }
 
   async function fetchPersonalData() {
     if (personalDataLoadedRef.current || !profileId) return;
     personalDataLoadedRef.current = true;
+    setMedicationActionsLoading(true);
     try {
-      const [profileRes, condRes, medRes, surgRes, allergyRes, famRes, socRes, docRes] = await Promise.all([
+      const [profileRes, condRes, medRes, surgRes, allergyRes, famRes, socRes, docRes, medActionsRes] = await Promise.all([
         apiFetch(`/profile/${profileId}`),
         apiFetch(`/profile/${profileId}/conditions`),
         apiFetch(`/profile/${profileId}/medications`),
@@ -370,6 +529,7 @@ export function ProfilePopover({
         apiFetch(`/profile/${profileId}/family-history`),
         apiFetch(`/profile/${profileId}/social-history`),
         apiFetch("/structured-documents"),
+        apiFetch(`/profile/${profileId}/medications/actions`),
       ]);
       if (profileRes.ok) {
         const p = await profileRes.json();
@@ -394,12 +554,65 @@ export function ProfilePopover({
       setHealthData(hd);
       if (docRes.ok) setPersonalDocuments(await docRes.json());
       else setPersonalDocuments([]);
+      if (medActionsRes.ok) {
+        const data = await medActionsRes.json();
+        setMedicationActions(
+          Array.isArray(data?.actions) ? data.actions.map(normalizeMedicationAction).filter(Boolean) as MedicationActionItem[] : [],
+        );
+      } else {
+        setMedicationActions([]);
+      }
     } catch {
       setPersonalInfo(EMPTY_PERSONAL_INFO);
       setHealthData({ ...EMPTY_HEALTH_DATA });
       setPersonalDocuments([]);
+      setMedicationActions([]);
       personalDataLoadedRef.current = false;
+    } finally {
+      setMedicationActionsLoading(false);
     }
+  }
+
+  useEffect(() => {
+    if (!open || activeTab !== "health" || !profileId) return;
+    void refreshMedicationActions();
+  }, [open, activeTab, profileId, healthData?.medications]);
+
+  const displayMedicationActions = useMemo(
+    () => deriveScheduledMedicationActions(healthData?.medications || [], medicationActions),
+    [healthData?.medications, medicationActions],
+  );
+
+  async function logMedicationDoseFromGamePlan(medicationId: string, status: "taken" | "skipped" | "pending") {
+    if (!profileId) return;
+    try {
+      const res = await apiFetch(`/profile/${profileId}/medications/${medicationId}/log-dose`, {
+        method: "POST",
+        body: JSON.stringify({
+          scheduled_date: todayStr(),
+          status,
+        }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (healthData?.medications?.length) {
+        const updatedMedications = healthData.medications.map((entry) =>
+          entry.id === medicationId
+            ? {
+                ...entry,
+                last_taken_at:
+                  typeof data?.medication?.last_taken_at === "string"
+                    ? data.medication.last_taken_at
+                    : status === "taken"
+                      ? new Date().toISOString()
+                      : "",
+              }
+            : entry,
+        );
+        setHealthData({ ...healthData, medications: updatedMedications });
+      }
+      await refreshMedicationActions();
+    } catch {}
   }
 
   // Photo picked → open the crop modal with an object URL. Actual upload
@@ -495,6 +708,11 @@ export function ProfilePopover({
       refreshHabits();
     }
   }, [open, profileDetailsLoaded, fetchProfileDetails, refreshTodos, refreshVisits, refreshDoctors, refreshInsurance, refreshHabits]);
+
+  useEffect(() => {
+    if (!open || activeTab !== "health" || !profileId) return;
+    void fetchPersonalData();
+  }, [open, activeTab, profileId]);
 
   const visitsScrollRef = useRef<HTMLDivElement>(null);
   const [showTodayBtn, setShowTodayBtn] = useState(false);
@@ -652,6 +870,22 @@ export function ProfilePopover({
               healthData={healthData}
               onClose={() => setPersonalPanel(null)}
               onUpdated={(updated) => setHealthData(updated)}
+            />
+          )}
+          {personalPanel === "medications" && !selectedProvider && !selectedVisit && !addingProvider && !editingTodo && (
+            <MedicationPanel
+              profileId={profileId}
+              healthData={healthData}
+              onClose={() => setPersonalPanel(null)}
+              onUpdated={(updated) => setHealthData(updated)}
+              onHandOffToChat={
+                onBookMessage
+                  ? (medication) => {
+                      onBookMessage(`Help me set up refill automation for ${medication.name}.`);
+                      setOpen(false);
+                    }
+                  : undefined
+              }
             />
           )}
           {personalPanel === "documents" && !selectedProvider && !selectedVisit && !addingProvider && !editingTodo && (
@@ -909,6 +1143,9 @@ export function ProfilePopover({
                         t.status !== "dismissed" && t.frequency !== "daily" &&
                         (!t.due_date || t.due_date === dateKey)
                       );
+                      const medicationDots = displayMedicationActions.some((action) => (action.due_date || todayKey) === dateKey)
+                        ? ["#7A3040"]
+                        : [];
                       const todosAllDone = dayTodosForCheck.length === 0 ||
                         dayTodosForCheck.every((t) => t.status === "completed");
                       const hasAnything = habits.length > 0 || dayTodosForCheck.length > 0;
@@ -919,7 +1156,7 @@ export function ProfilePopover({
                       const todoDots = todos
                         .filter((t) => t.status !== "dismissed" && todoOccursOn(t, dateKey))
                         .map((t) => t.color || "#5C1A2A");
-                      const dots = [...visitDots, ...todoDots].slice(0, 3);
+                      const dots = [...visitDots, ...todoDots, ...medicationDots].slice(0, 3);
                       return {
                         label: d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2),
                         num: d.getDate(),
@@ -1162,12 +1399,45 @@ export function ProfilePopover({
                                 Back to today
                               </button>
                             )}
-                            <button
-                              onClick={() => setEditingTodo({ mode: "create" })}
-                              className="transition-opacity hover:opacity-70"
-                            >
-                              <Plus className="h-[22px] w-[22px]" style={{ color: "#5C1A2A" }} />
-                            </button>
+                            <div className="relative" ref={gamePlanAddMenuRef}>
+                              <button
+                                onClick={() => setGamePlanAddMenuOpen((prev) => !prev)}
+                                className="transition-opacity hover:opacity-70"
+                              >
+                                <Plus className="h-[22px] w-[22px]" style={{ color: "#5C1A2A" }} />
+                              </button>
+                              {gamePlanAddMenuOpen && (
+                                <div
+                                  className="absolute right-0 top-[calc(100%+8px)] z-20 min-w-[150px] overflow-hidden rounded-2xl border shadow-[0_10px_30px_rgba(0,0,0,0.08)]"
+                                  style={{ background: "#FFFFFF", borderColor: "rgba(92,26,42,0.12)" }}
+                                >
+                                  <button
+                                    onClick={() => {
+                                      setGamePlanAddMenuOpen(false);
+                                      setEditingTodo({ mode: "create" });
+                                    }}
+                                    className="flex w-full items-center gap-2 px-3.5 py-3 text-left text-[13px] font-semibold transition-colors hover:bg-[#F7F6F2]"
+                                    style={{ color: "#5C1A2A" }}
+                                  >
+                                    <Plus className="h-[15px] w-[15px]" />
+                                    To-do
+                                  </button>
+                                  <div className="h-px" style={{ background: "rgba(92,26,42,0.12)" }} />
+                                  <button
+                                    onClick={() => {
+                                      setGamePlanAddMenuOpen(false);
+                                      setPersonalPanel("medications");
+                                      void fetchPersonalData();
+                                    }}
+                                    className="flex w-full items-center gap-2 px-3.5 py-3 text-left text-[13px] font-semibold transition-colors hover:bg-[#F7F6F2]"
+                                    style={{ color: "#5C1A2A" }}
+                                  >
+                                    <Pill className="h-[15px] w-[15px]" />
+                                    Medications
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
@@ -1181,7 +1451,8 @@ export function ProfilePopover({
                       type GamePlanItem =
                         | { type: "visit"; visit: CareVisit; sortOrder: number }
                         | { type: "habit"; id: string; title: string; subtitle: string; color: string; completed: boolean; sortOrder: number }
-                        | { type: "todo"; todo: CareTodo; sortOrder: number };
+                        | { type: "todo"; todo: CareTodo; sortOrder: number }
+                        | { type: "medication_action"; action: MedicationActionItem; sortOrder: number };
 
                       // Visits for the selected day
                       const dayVisits: GamePlanItem[] = careVisits
@@ -1240,7 +1511,15 @@ export function ProfilePopover({
                           sortOrder: t.sort_order + 1000, // after habits
                         }));
 
-                      const items: GamePlanItem[] = [...dayVisits, ...dayHabits, ...dayTodos];
+                      const dayMedicationActions: GamePlanItem[] = displayMedicationActions
+                        .filter((action) => (action.due_date || todayKey) === selectedDay)
+                        .map((action, index) => ({
+                          type: "medication_action" as const,
+                          action,
+                          sortOrder: (action.sort_order ?? 400) + index,
+                        }));
+
+                      const items: GamePlanItem[] = [...dayVisits, ...dayMedicationActions, ...dayHabits, ...dayTodos];
 
                       // Sort: visits first, then care-plan todos (from
                       // onboarding — condition-specific labs, exams,
@@ -1248,7 +1527,10 @@ export function ProfilePopover({
                       // todos ("Add your insurance", "Add a doctor") at
                       // the bottom. Within each group, respect sort_order.
                       const todoTier = (item: GamePlanItem): number => {
-                        if (item.type !== "todo") return item.type === "habit" ? 1 : 0;
+                        if (item.type === "visit") return 0;
+                        if (item.type === "medication_action") return 1;
+                        if (item.type === "habit") return 2;
+                        if (item.type !== "todo") return 3;
                         return item.todo.category === "care_plan" ? 0 : 2;
                       };
                       items.sort((a, b) => {
@@ -1260,7 +1542,19 @@ export function ProfilePopover({
                         return a.sortOrder - b.sortOrder;
                       });
 
-                      if (items.length === 0 && profileDetailsLoaded) {
+                      const medicationItems = items.filter((item) =>
+                        item.type === "medication_action" || (item.type === "todo" && isMedicationRelatedTodo(item.todo)),
+                      );
+                      const primaryItems = items.filter((item) =>
+                        item.type !== "medication_action" && !(item.type === "todo" && isMedicationRelatedTodo(item.todo)),
+                      );
+                      const visibleMedicationItems = gamePlanMedsExpanded ? medicationItems : medicationItems.slice(0, 3);
+                      const visiblePrimaryItems = gamePlanPrimaryExpanded ? primaryItems : primaryItems.slice(0, 3);
+                      const hasMedicationSetup = (healthData?.medications || []).some(
+                        (med) => medicationUsesDaily(med.tracking_mode) || getRefillMode(med) !== "off",
+                      );
+
+                      if (items.length === 0 && profileDetailsLoaded && !(medicationActionsLoading && hasMedicationSetup)) {
                         return (
                           <button
                             className="w-full rounded-[14px] border border-dashed px-[14px] py-[12px] text-center transition-opacity hover:opacity-70"
@@ -1272,111 +1566,240 @@ export function ProfilePopover({
                         );
                       }
 
-                      if (items.length === 0) return null;
+                      if (items.length === 0 && !(medicationActionsLoading && hasMedicationSetup)) return null;
 
-                      return (
-                        <div className="rounded-[14px] px-[14px] py-[10px]" style={{ background: "rgba(255,255,255,0.3)" }}>
-                          {items.map((item, i) => {
-                            if (item.type === "visit") {
-                              const v = item.visit;
-                              const visitTime = v.visit_date; // TODO: parse time if available
-                              return (
-                                <React.Fragment key={`visit-${v.id}`}>
-                                  {i > 0 && (
-                                    <div className="h-px mx-[14px]" style={{ background: "rgba(92,26,42,0.2)" }} />
+                      const renderMedicationAction = (item: Extract<GamePlanItem, { type: "medication_action" }>, i: number) => {
+                        const actionType = typeof item.action.type === "string" ? item.action.type : "medication";
+                        const isDoseAction = actionType.startsWith("dose_");
+                        const isTakenAction = actionType === "dose_taken";
+                        const openMedicationPanel = () => {
+                          setPersonalPanel("medications");
+                          void fetchPersonalData();
+                        };
+                        return (
+                          <React.Fragment key={`med-action-${actionType}-${item.action.medication_id || i}`}>
+                            {i > 0 && (
+                              <div className="h-px mx-[14px]" style={{ background: "rgba(92,26,42,0.2)" }} />
+                            )}
+                            <div className="flex items-center gap-3 py-[10px]">
+                              {isDoseAction ? (
+                                <button
+                                  onClick={() => void logMedicationDoseFromGamePlan(item.action.medication_id!, isTakenAction ? "pending" : "taken")}
+                                  className="w-8 h-8 max-md:w-[22px] max-md:h-[22px] rounded-full border-2 max-md:border flex-shrink-0 flex items-center justify-center transition-colors duration-200"
+                                  style={{
+                                    borderColor: isTakenAction ? "#5C1A2A" : "#7A3040",
+                                    background: isTakenAction ? "#5C1A2A" : "transparent",
+                                  }}
+                                  aria-label={isTakenAction ? "Medication taken" : "Mark medication taken"}
+                                >
+                                  {isTakenAction && (
+                                    <svg className="w-4 h-4 max-md:w-3 max-md:h-3" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="20 6 9 17 4 12" />
+                                    </svg>
                                   )}
-                                  <button
-                                    className="flex items-center gap-3 py-[10px] w-full text-left"
-                                    onClick={() => setSelectedVisit(v)}
+                                </button>
+                              ) : (
+                                <button
+                                  className="flex flex-1 items-center gap-3 text-left"
+                                  onClick={openMedicationPanel}
+                                >
+                                  <div
+                                    className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center"
+                                    style={{ background: "rgba(92,26,42,0.15)" }}
                                   >
-                                    <div
-                                      className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center"
-                                      style={{ background: "rgba(92,26,42,0.15)" }}
-                                    >
-                                      <Calendar className="h-4 w-4" style={{ color: "#5C1A2A" }} />
+                                    <Pill className="h-4 w-4" style={{ color: "#5C1A2A" }} />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-[15px] max-md:text-[14px] font-semibold truncate" style={{ color: "#5C1A2A" }}>
+                                      {item.action.title}
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="text-[17px] font-semibold truncate" style={{ color: "#5C1A2A" }}>
-                                        {v.visit_type}{v.doctor_name ? ` \u2014 ${v.doctor_name}` : ""}
+                                    {item.action.subtitle && (
+                                      <div className="text-[13px] max-md:text-[12px] mt-[1px] truncate" style={{ color: "#7A3040" }}>
+                                        {item.action.subtitle}
                                       </div>
-                                      {v.location && (
-                                        <div className="text-[13px] mt-[1px] truncate" style={{ color: "#7A3040" }}>
-                                          {v.location}
-                                        </div>
-                                      )}
-                                    </div>
-                                    <ChevronRight className="h-4 w-4 flex-shrink-0" style={{ color: "#7A3040" }} />
-                                  </button>
-                                </React.Fragment>
-                              );
-                            }
-
-                            const isHabit = item.type === "habit";
-                            const completed = isHabit ? item.completed : item.todo.status === "completed";
-                            const title = isHabit ? item.title : item.todo.title;
-                            const subtitle = isHabit ? item.subtitle : item.todo.subtitle;
-                            const dueTime = isHabit ? null : item.todo.due_time;
-                            const bookMsg = isHabit ? null : item.todo.book_message;
-                            const itemId = isHabit ? item.id : item.todo.id;
-
-                            return (
-                              <React.Fragment key={itemId}>
-                                {i > 0 && (
-                                  <div className="h-px mx-[14px]" style={{ background: "rgba(92,26,42,0.2)" }} />
-                                )}
-                                <div className="flex items-center gap-3 max-md:gap-2 py-[10px]">
-                                  {/* Checkbox — smaller on mobile to leave more room for the title */}
-                                  <button
-                                    onClick={() => isHabit ? toggleHabit(item.id) : toggleTodo(item.todo.id)}
-                                    className="w-8 h-8 max-md:w-[22px] max-md:h-[22px] rounded-full border-2 max-md:border flex-shrink-0 flex items-center justify-center transition-colors duration-200"
+                                    )}
+                                  </div>
+                                  <ChevronRight className="h-4 w-4 flex-shrink-0" style={{ color: "#7A3040" }} />
+                                </button>
+                              )}
+                              {isDoseAction && (
+                                <div className="flex-1 min-w-0">
+                                  <div
+                                    className="text-[15px] max-md:text-[14px] font-semibold truncate"
                                     style={{
-                                      borderColor: completed ? "#5C1A2A" : "#7A3040",
-                                      background: completed ? "#5C1A2A" : "transparent",
+                                      color: isTakenAction ? "#7A3040" : "#5C1A2A",
+                                      textDecoration: isTakenAction ? "line-through" : "none",
                                     }}
                                   >
-                                    {completed && (
-                                      <svg className="w-4 h-4 max-md:w-3 max-md:h-3" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="20 6 9 17 4 12" />
-                                      </svg>
-                                    )}
-                                  </button>
-
-                                  {/* Title + subtitle */}
-                                  <button
-                                    className="flex-1 min-w-0 text-left"
-                                    onClick={!isHabit ? () => setEditingTodo({ mode: "edit", todo: item.todo }) : undefined}
-                                  >
-                                    <div
-                                      className="text-[15px] max-md:text-[14px] font-semibold transition-all duration-200 truncate"
-                                      style={{
-                                        color: completed ? "#7A3040" : "#5C1A2A",
-                                        textDecoration: completed ? "line-through" : "none",
-                                      }}
-                                    >
-                                      {title}
+                                    {item.action.title}
+                                  </div>
+                                  {item.action.subtitle && (
+                                    <div className="text-[13px] max-md:text-[12px] mt-[1px] truncate" style={{ color: "#7A3040" }}>
+                                      {item.action.subtitle}
                                     </div>
-                                    {(subtitle || dueTime) && (
-                                      <div className="text-[13px] max-md:text-[12px] mt-[1px] truncate" style={{ color: "#7A3040" }}>
-                                        {dueTime && <span>{dueTime.replace(/^0/, "")} · </span>}
-                                        {subtitle}
-                                      </div>
-                                    )}
-                                  </button>
-
-                                  {/* Start button — shrink on mobile so the title gets more horizontal real estate */}
-                                  {!completed && bookMsg && onBookMessage && (
-                                    <button
-                                      onClick={() => { onBookMessage(bookMsg); setOpen(false); }}
-                                      className="shrink-0 rounded-full px-4 py-[7px] text-[13px] max-md:px-2.5 max-md:py-1 max-md:text-[12px] font-semibold text-white transition-colors"
-                                      style={{ background: "#5C1A2A" }}
-                                    >
-                                      Start
-                                    </button>
                                   )}
                                 </div>
-                              </React.Fragment>
-                            );
-                          })}
+                              )}
+                            </div>
+                          </React.Fragment>
+                        );
+                      };
+
+                      const renderPrimaryItem = (item: Exclude<GamePlanItem, { type: "medication_action" }>, i: number) => {
+                        if (item.type === "visit") {
+                          const v = item.visit;
+                          return (
+                            <React.Fragment key={`visit-${v.id}`}>
+                              {i > 0 && (
+                                <div className="h-px mx-[14px]" style={{ background: "rgba(92,26,42,0.2)" }} />
+                              )}
+                              <button
+                                className="flex items-center gap-3 py-[10px] w-full text-left"
+                                onClick={() => setSelectedVisit(v)}
+                              >
+                                <div
+                                  className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center"
+                                  style={{ background: "rgba(92,26,42,0.15)" }}
+                                >
+                                  <Calendar className="h-4 w-4" style={{ color: "#5C1A2A" }} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-[17px] font-semibold truncate" style={{ color: "#5C1A2A" }}>
+                                    {v.visit_type}{v.doctor_name ? ` \u2014 ${v.doctor_name}` : ""}
+                                  </div>
+                                  {v.location && (
+                                    <div className="text-[13px] mt-[1px] truncate" style={{ color: "#7A3040" }}>
+                                      {v.location}
+                                    </div>
+                                  )}
+                                </div>
+                                <ChevronRight className="h-4 w-4 flex-shrink-0" style={{ color: "#7A3040" }} />
+                              </button>
+                            </React.Fragment>
+                          );
+                        }
+
+                        const isHabit = item.type === "habit";
+                        const completed = isHabit ? item.completed : item.todo.status === "completed";
+                        const title = isHabit ? item.title : item.todo.title;
+                        const subtitle = isHabit ? item.subtitle : item.todo.subtitle;
+                        const dueTime = isHabit ? null : item.todo.due_time;
+                        const bookMsg = isHabit ? null : item.todo.book_message;
+                        const itemId = isHabit ? item.id : item.todo.id;
+
+                        return (
+                          <React.Fragment key={itemId}>
+                            {i > 0 && (
+                              <div className="h-px mx-[14px]" style={{ background: "rgba(92,26,42,0.2)" }} />
+                            )}
+                            <div className="flex items-center gap-3 max-md:gap-2 py-[10px]">
+                              <button
+                                onClick={() => isHabit ? toggleHabit(item.id) : toggleTodo(item.todo.id)}
+                                className="w-8 h-8 max-md:w-[22px] max-md:h-[22px] rounded-full border-2 max-md:border flex-shrink-0 flex items-center justify-center transition-colors duration-200"
+                                style={{
+                                  borderColor: completed ? "#5C1A2A" : "#7A3040",
+                                  background: completed ? "#5C1A2A" : "transparent",
+                                }}
+                              >
+                                {completed && (
+                                  <svg className="w-4 h-4 max-md:w-3 max-md:h-3" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="20 6 9 17 4 12" />
+                                  </svg>
+                                )}
+                              </button>
+
+                              <button
+                                className="flex-1 min-w-0 text-left"
+                                onClick={!isHabit ? () => setEditingTodo({ mode: "edit", todo: item.todo }) : undefined}
+                              >
+                                <div
+                                  className="text-[15px] max-md:text-[14px] font-semibold transition-all duration-200 truncate"
+                                  style={{
+                                    color: completed ? "#7A3040" : "#5C1A2A",
+                                    textDecoration: completed ? "line-through" : "none",
+                                  }}
+                                >
+                                  {title}
+                                </div>
+                                {(subtitle || dueTime) && (
+                                  <div className="text-[13px] max-md:text-[12px] mt-[1px] truncate" style={{ color: "#7A3040" }}>
+                                    {dueTime && <span>{dueTime.replace(/^0/, "")} · </span>}
+                                    {subtitle}
+                                  </div>
+                                )}
+                              </button>
+
+                              {!completed && bookMsg && onBookMessage && (
+                                <button
+                                  onClick={() => { onBookMessage(bookMsg); setOpen(false); }}
+                                  className="shrink-0 rounded-full px-4 py-[7px] text-[13px] max-md:px-2.5 max-md:py-1 max-md:text-[12px] font-semibold text-white transition-colors"
+                                  style={{ background: "#5C1A2A" }}
+                                >
+                                  Start
+                                </button>
+                              )}
+                            </div>
+                          </React.Fragment>
+                        );
+                      };
+
+                      return (
+                        <div className="space-y-3">
+                          {(medicationItems.length > 0 || (medicationActionsLoading && hasMedicationSetup)) && (
+                            <div className="rounded-[14px] px-[14px] py-[10px]" style={{ background: "rgba(255,255,255,0.3)" }}>
+                              <div className="px-[2px] pb-[6px] text-[12px] font-semibold uppercase tracking-[0.12em]" style={{ color: "#7A3040" }}>
+                                Medications
+                              </div>
+                              {medicationActionsLoading ? (
+                                <div className="space-y-3 py-[4px] animate-pulse">
+                                  {[0, 1].map((idx) => (
+                                    <div key={idx} className="flex items-center gap-3 py-[10px]">
+                                      <div className="w-8 h-8 rounded-full" style={{ background: "rgba(92,26,42,0.12)" }} />
+                                      <div className="flex-1 min-w-0 space-y-2">
+                                        <div className="h-4 rounded w-[55%]" style={{ background: "rgba(92,26,42,0.14)" }} />
+                                        <div className="h-3 rounded w-[38%]" style={{ background: "rgba(92,26,42,0.10)" }} />
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <>
+                                  {visibleMedicationItems.map((item, i) =>
+                                    item.type === "medication_action"
+                                      ? renderMedicationAction(item, i)
+                                      : renderPrimaryItem(item, i),
+                                  )}
+                                </>
+                              )}
+                              {!medicationActionsLoading && medicationItems.length > 3 && (
+                                <div className="pt-2">
+                                  <button
+                                    onClick={() => setGamePlanMedsExpanded((prev) => !prev)}
+                                    className="text-[13px] font-semibold transition-opacity hover:opacity-70"
+                                    style={{ color: "#5C1A2A" }}
+                                  >
+                                    {gamePlanMedsExpanded ? "Show less" : `Show more (${medicationItems.length - 3})`}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {primaryItems.length > 0 && (
+                            <div className="rounded-[14px] px-[14px] py-[10px]" style={{ background: "rgba(255,255,255,0.3)" }}>
+                              {visiblePrimaryItems.map((item, i) => renderPrimaryItem(item, i))}
+                              {primaryItems.length > 3 && (
+                                <div className="pt-2">
+                                  <button
+                                    onClick={() => setGamePlanPrimaryExpanded((prev) => !prev)}
+                                    className="text-[13px] font-semibold transition-opacity hover:opacity-70"
+                                    style={{ color: "#5C1A2A" }}
+                                  >
+                                    {gamePlanPrimaryExpanded ? "Show less" : `Show more (${primaryItems.length - 3})`}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })()}
@@ -1459,7 +1882,7 @@ export function ProfilePopover({
                   <div className="rounded-2xl bg-white shadow-[0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden">
                     <button
                       className="flex w-full items-center gap-3 px-3.5 py-3.5 text-left hover:bg-[#0F1B3D]/[0.02] transition-colors"
-                      onClick={async () => { await fetchPersonalData(); setPersonalPanel("details"); }}
+                      onClick={() => { setPersonalPanel("details"); void fetchPersonalData(); }}
                     >
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7F6F2]">
                         <User className="h-[18px] w-[18px] text-[#0F1B3D]" />
@@ -1472,7 +1895,7 @@ export function ProfilePopover({
                     <div className="h-px bg-[#E5E5EA] ml-[62px] mr-3.5" />
                     <button
                       className="flex w-full items-center gap-3 px-3.5 py-3.5 text-left hover:bg-[#0F1B3D]/[0.02] transition-colors"
-                      onClick={async () => { await fetchPersonalData(); setPersonalPanel("health"); }}
+                      onClick={() => { setPersonalPanel("health"); void fetchPersonalData(); }}
                     >
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7F6F2]">
                         <Heart className="h-[18px] w-[18px] text-[#0F1B3D]" />
@@ -1485,7 +1908,20 @@ export function ProfilePopover({
                     <div className="h-px bg-[#E5E5EA] ml-[62px] mr-3.5" />
                     <button
                       className="flex w-full items-center gap-3 px-3.5 py-3.5 text-left hover:bg-[#0F1B3D]/[0.02] transition-colors"
-                      onClick={async () => { await fetchPersonalData(); setPersonalPanel("documents"); }}
+                      onClick={() => { setPersonalPanel("medications"); void fetchPersonalData(); }}
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7F6F2]">
+                        <Pill className="h-[18px] w-[18px] text-[#0F1B3D]" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[16px] font-semibold text-[#1C1C1E]">Medications</p>
+                      </div>
+                      <ChevronRight className="h-[18px] w-[18px] text-[#0F1B3D] shrink-0" />
+                    </button>
+                    <div className="h-px bg-[#E5E5EA] ml-[62px] mr-3.5" />
+                    <button
+                      className="flex w-full items-center gap-3 px-3.5 py-3.5 text-left hover:bg-[#0F1B3D]/[0.02] transition-colors"
+                      onClick={() => { setPersonalPanel("documents"); void fetchPersonalData(); }}
                     >
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7F6F2]">
                         <FileText className="h-[18px] w-[18px] text-[#0F1B3D]" />
@@ -3689,6 +4125,79 @@ function PersonalDetailsPanel({
 //  Health Data Panel
 // ═══════════════════════════════════════════════════
 
+type MedicationTrackingMode = "none" | "refill" | "daily" | "both";
+type DailyTrackingChoice = "off" | "on";
+type RefillMode = "off" | "reminder" | "automation";
+
+type MedicationAdherenceSummary = {
+  today_status: "taken" | "skipped" | "missed" | "pending";
+  adherence_percent: number;
+  current_streak: number;
+  last_7_days: { date: string; status: "taken" | "skipped" | "missed" | "pending" }[];
+};
+
+const MEDICATION_FIELDS: { key: keyof SavedMedication; label: string; placeholder?: string; type?: "text" | "date" | "time"; }[] = [
+  { key: "name", label: "Medication" },
+  { key: "dosage_strength", label: "Dosage" },
+  { key: "indication", label: "Reason", placeholder: "What is this for?" },
+];
+
+const REFILL_DETAIL_FIELDS: { key: keyof SavedMedication; label: string; placeholder?: string; type?: "text" | "date"; }[] = [
+  { key: "last_filled_date", label: "Last filled", type: "date" },
+  { key: "days_supply", label: "Days supply", placeholder: "30" },
+  { key: "refills_remaining", label: "Refills remaining", placeholder: "2" },
+  { key: "pharmacy_name", label: "Pharmacy", placeholder: "CVS, Walgreens, Costco" },
+  { key: "pharmacy_phone", label: "Pharmacy phone", placeholder: "(555) 555-5555" },
+  { key: "prescriber_name", label: "Prescriber", placeholder: "Dr. Smith" },
+];
+
+const REFILL_MODE_LABELS: Record<RefillMode, string> = {
+  off: "Refills off",
+  reminder: "Refill reminder",
+  automation: "Set up in chat",
+};
+
+function getRefillStatusLabel(refillMode: RefillMode): string {
+  if (refillMode === "reminder") return REFILL_MODE_LABELS.reminder;
+  if (refillMode === "automation") {
+    return REFILL_MODE_LABELS.automation;
+  }
+  return REFILL_MODE_LABELS.off;
+}
+
+const COMMON_MEDICATION_SUGGESTIONS = [
+  "Metformin",
+  "Levothyroxine",
+  "Lisinopril",
+  "Losartan",
+  "Atorvastatin",
+  "Rosuvastatin",
+  "Amlodipine",
+  "Omeprazole",
+  "Sertraline",
+  "Escitalopram",
+  "Fluoxetine",
+  "Bupropion",
+  "Adderall",
+  "Vyvanse",
+  "Ozempic",
+  "Wegovy",
+  "Mounjaro",
+  "Insulin glargine",
+  "Albuterol",
+  "Gabapentin",
+];
+
+const MEDICATION_FREQUENCY_PRESETS = [
+  "Once daily",
+  "Twice daily",
+  "Every morning",
+  "Every night",
+  "With breakfast",
+  "With dinner",
+  "As needed",
+];
+
 // Health section configs: key, label, icon, dataKey, API path key, editable fields
 const HEALTH_SECTIONS: {
   key: string; label: string; icon: typeof Activity; dataKey: keyof HealthData;
@@ -3698,8 +4207,6 @@ const HEALTH_SECTIONS: {
 }[] = [
   { key: "conditions", label: "Active Conditions", icon: Activity, dataKey: "conditions", apiKey: "conditions", apiPath: "conditions",
     fields: [{ key: "name", label: "Condition" }, { key: "status", label: "Status", placeholder: "Active, Managed, In remission" }, { key: "notes", label: "Notes" }] },
-  { key: "medications", label: "Medications", icon: Pill, dataKey: "medications", apiKey: "medications", apiPath: "medications",
-    fields: [{ key: "name", label: "Medication" }, { key: "dosage_strength", label: "Dosage" }, { key: "frequency", label: "Frequency" }, { key: "indication", label: "Reason" }] },
   { key: "surgeries", label: "Surgeries & Procedures", icon: Stethoscope, dataKey: "surgeries", apiKey: "surgeries", apiPath: "surgeries",
     fields: [{ key: "name", label: "Procedure" }, { key: "year", label: "Year" }, { key: "notes", label: "Notes" }] },
   { key: "allergies", label: "Allergies", icon: SmilePlus, dataKey: "allergies", apiKey: "allergies", apiPath: "allergies",
@@ -3713,13 +4220,681 @@ const HEALTH_SECTIONS: {
 function describeItem(section: string, item: Record<string, unknown>): { title: string; detail: string } {
   switch (section) {
     case "conditions": return { title: (item.name as string) || "", detail: (item.status as string) || "" };
-    case "medications": return { title: (item.name as string) || "", detail: [(item.dosage_strength as string), (item.frequency as string)].filter(Boolean).join(" - ") };
     case "surgeries": return { title: (item.name as string) || "", detail: (item.year as string) || "" };
     case "allergies": return { title: (item.name as string) || "", detail: [(item.severity as string), (item.reaction as string)].filter(Boolean).join(" - ") };
     case "family": return { title: (item.condition as string) || "", detail: (item.relationship as string) || "" };
     case "social": return { title: (item.category as string) || "", detail: (item.status as string) || "" };
     default: return { title: "", detail: "" };
   }
+}
+
+function medicationUsesDaily(mode?: string | null): boolean {
+  return mode === "daily" || mode === "both";
+}
+
+function medicationUsesRefill(mode?: string | null): boolean {
+  return mode === "refill" || mode === "both";
+}
+
+function getRefillMode(med: Pick<SavedMedication, "refill_mode" | "tracking_mode">): RefillMode {
+  const explicit = String(med.refill_mode || "").trim().toLowerCase();
+  if (explicit === "reminder" || explicit === "automation") return explicit;
+  return medicationUsesRefill(med.tracking_mode) ? "reminder" : "off";
+}
+
+function dailyTrackingChoice(mode?: string | null): DailyTrackingChoice {
+  return medicationUsesDaily(mode) ? "on" : "off";
+}
+
+function formatReminderTime(value?: string | null): string {
+  if (!value) return "";
+  const [hourRaw, minuteRaw] = value.split(":");
+  const hour = Number(hourRaw);
+  const minute = minuteRaw || "00";
+  if (!Number.isFinite(hour)) return value;
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const normalizedHour = hour % 12 || 12;
+  return `${normalizedHour}:${minute} ${suffix}`;
+}
+
+function isPresetFrequency(value?: string | null): boolean {
+  return Boolean(value && MEDICATION_FREQUENCY_PRESETS.includes(value));
+}
+
+function MedicationPanel({
+  profileId,
+  healthData,
+  onClose,
+  onUpdated,
+  onHandOffToChat,
+}: {
+  profileId: string | null;
+  healthData: HealthData | null;
+  onClose: () => void;
+  onUpdated: (data: HealthData) => void;
+  onHandOffToChat?: (medication: SavedMedication) => void;
+}) {
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [loadingMedId, setLoadingMedId] = useState<string | null>(null);
+  const [adherenceByMedication, setAdherenceByMedication] = useState<Record<string, MedicationAdherenceSummary>>({});
+  const medicationsLoading = healthData === null;
+  const medications = healthData?.medications || [];
+  const adherenceLoadKey = useMemo(
+    () =>
+      medications
+        .filter((med) => med.id && medicationUsesDaily(med.tracking_mode))
+        .map((med) => `${med.id}:${med.tracking_mode || "none"}:${med.last_taken_at || ""}`)
+        .sort()
+        .join("|"),
+    [medications],
+  );
+
+  React.useEffect(() => {
+    let cancelled = false;
+    async function loadAdherence() {
+      if (!profileId) return;
+      const dailyMeds = medications.filter((med) => med.id && medicationUsesDaily(med.tracking_mode));
+      if (dailyMeds.length === 0) {
+        if (!cancelled) setAdherenceByMedication({});
+        return;
+      }
+      const next: Record<string, MedicationAdherenceSummary> = {};
+      await Promise.all(
+        dailyMeds.map(async (med) => {
+          try {
+            const res = await apiFetch(`/profile/${profileId}/medications/${med.id}/adherence?days=30`);
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data?.summary) next[med.id] = data.summary as MedicationAdherenceSummary;
+          } catch {}
+        }),
+      );
+      if (!cancelled) setAdherenceByMedication(next);
+    }
+    void loadAdherence();
+    return () => {
+      cancelled = true;
+    };
+  }, [profileId, adherenceLoadKey]);
+
+  function startAdd() {
+    setEditingIndex(-1);
+    setEditForm({
+      name: "",
+      dosage_strength: "",
+      frequency: "",
+      indication: "",
+      tracking_mode: "none",
+      refill_mode: "off",
+      daily_tracking: "off",
+      reminder_time: "",
+      last_filled_date: "",
+      days_supply: "",
+      refills_remaining: "",
+      pharmacy_name: "",
+      pharmacy_phone: "",
+      prescriber_name: "",
+    });
+  }
+
+  function startEdit(index: number, medication: SavedMedication) {
+    const refillMode = getRefillMode(medication);
+    setEditingIndex(index);
+    setEditForm({
+      name: medication.name || "",
+      dosage_strength: medication.dosage_strength || "",
+      frequency: medication.frequency || "",
+      indication: medication.indication || "",
+      tracking_mode: medication.tracking_mode || "none",
+      refill_mode: refillMode === "automation" ? "reminder" : refillMode,
+      daily_tracking: dailyTrackingChoice(medication.tracking_mode),
+      reminder_time: medication.reminder_time || "",
+      last_filled_date: medication.last_filled_date || "",
+      days_supply: medication.days_supply || "",
+      refills_remaining: medication.refills_remaining || "",
+      pharmacy_name: medication.pharmacy_name || "",
+      pharmacy_phone: medication.pharmacy_phone || "",
+      prescriber_name: medication.prescriber_name || "",
+    });
+  }
+
+  function cancelEdit() {
+    setEditingIndex(null);
+    setEditForm({});
+  }
+
+  function applyFrequencyPreset(value: string) {
+    setEditForm((prev) => ({ ...prev, frequency: value }));
+  }
+
+  async function saveMedication() {
+    if (!profileId || !healthData || editingIndex === null) return;
+    setSaving(true);
+    const medications = [...(healthData.medications || [])];
+    const refillMode = (editForm.refill_mode || "off") as RefillMode;
+    const trackingMode = editForm.daily_tracking === "on" ? "daily" : "none";
+    const medicationPayload: SavedMedication = {
+      ...(editingIndex >= 0 ? medications[editingIndex] : { id: crypto.randomUUID() }),
+      name: editForm.name || "",
+      dosage_strength: editForm.dosage_strength || "",
+      frequency: editForm.frequency || "",
+      indication: editForm.indication || "",
+      tracking_mode: trackingMode,
+      refill_mode: refillMode,
+      reminder_time: medicationUsesDaily(trackingMode) ? (editForm.reminder_time || null) : null,
+      last_filled_date: refillMode !== "off" ? (editForm.last_filled_date || "") : "",
+      days_supply: refillMode !== "off" ? (editForm.days_supply || "") : "",
+      refills_remaining: refillMode !== "off" ? (editForm.refills_remaining || "") : "",
+      pharmacy_name: refillMode !== "off" ? (editForm.pharmacy_name || "") : "",
+      pharmacy_phone: refillMode !== "off" ? (editForm.pharmacy_phone || "") : "",
+      prescriber_name: refillMode !== "off" ? (editForm.prescriber_name || "") : "",
+    };
+    if (editingIndex === -1) medications.push(medicationPayload);
+    else medications[editingIndex] = medicationPayload;
+
+    try {
+      await apiFetch(`/profile/${profileId}/medications`, {
+        method: "PUT",
+        body: JSON.stringify({ medications }),
+      });
+      onUpdated({ ...healthData, medications });
+      cancelEdit();
+    } catch {}
+    setSaving(false);
+  }
+
+  async function deleteMedication(index: number) {
+    if (!profileId || !healthData) return;
+    const medications = [...(healthData.medications || [])];
+    medications.splice(index, 1);
+    try {
+      await apiFetch(`/profile/${profileId}/medications`, {
+        method: "PUT",
+        body: JSON.stringify({ medications }),
+      });
+      onUpdated({ ...healthData, medications });
+    } catch {}
+  }
+
+  async function logDose(medication: SavedMedication, status: "taken" | "skipped") {
+    if (!profileId || !healthData || !medication.id) return;
+    setLoadingMedId(medication.id);
+    try {
+      const res = await apiFetch(`/profile/${profileId}/medications/${medication.id}/log-dose`, {
+        method: "POST",
+        body: JSON.stringify({
+          scheduled_date: todayStr(),
+          status,
+        }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const updatedMedications = (healthData.medications || []).map((entry) =>
+        entry.id === medication.id
+          ? { ...entry, last_taken_at: data?.medication?.last_taken_at || (status === "taken" ? new Date().toISOString() : entry.last_taken_at) }
+          : entry,
+      );
+      onUpdated({ ...healthData, medications: updatedMedications });
+      const adherenceRes = await apiFetch(`/profile/${profileId}/medications/${medication.id}/adherence?days=30`);
+      if (adherenceRes.ok) {
+        const adherenceData = await adherenceRes.json();
+        if (adherenceData?.summary) {
+          setAdherenceByMedication((prev) => ({
+            ...prev,
+            [medication.id!]: adherenceData.summary as MedicationAdherenceSummary,
+          }));
+        }
+      }
+    } catch {}
+    setLoadingMedId(null);
+  }
+
+  return (
+    <div className="p-6 pb-8 animate-in fade-in duration-200">
+      <button onClick={onClose} className="flex items-center gap-1.5 text-sm font-medium text-[#0F1B3D]/50 hover:text-[#0F1B3D] transition-colors mb-4">
+        <ArrowLeft className="h-4 w-4" /> Back
+      </button>
+      <div className="flex items-center gap-3 mb-2">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0F1B3D]/[0.06]">
+          <Pill className="h-5 w-5 text-[#0F1B3D]" />
+        </div>
+        <div>
+          <p className="text-[18px] font-extrabold text-[#0F1B3D]">Medications</p>
+          <p className="text-[13px] text-[#8E8E93] mt-0.5">Save medications, then turn on daily reminders or refill reminders. If you want Elena to handle refills, set that up in chat.</p>
+        </div>
+      </div>
+
+      {medicationsLoading && (
+        <div className="mt-5 space-y-3 animate-pulse">
+          {[1, 2].map((i) => (
+            <div key={i} className="rounded-2xl bg-white px-4 py-4 shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
+              <div className="space-y-3">
+                <div className="h-5 w-32 rounded bg-[#0F1B3D]/[0.08]" />
+                <div className="h-3.5 w-40 rounded bg-[#0F1B3D]/[0.05]" />
+                <div className="flex gap-2">
+                  <div className="h-7 w-24 rounded-full bg-[#0F1B3D]/[0.05]" />
+                  <div className="h-7 w-20 rounded-full bg-[#0F1B3D]/[0.05]" />
+                  <div className="h-7 w-24 rounded-full bg-[#0F1B3D]/[0.05]" />
+                </div>
+                <div className="rounded-xl border border-[#E5E5EA] bg-[#FAFAFB] p-3">
+                  <div className="h-4 w-14 rounded bg-[#0F1B3D]/[0.06] mb-2" />
+                  <div className="h-3 w-32 rounded bg-[#0F1B3D]/[0.05] mb-3" />
+                  <div className="flex gap-2 mb-3">
+                    <div className="h-9 w-24 rounded-full bg-[#0F1B3D]/[0.06]" />
+                    <div className="h-9 w-24 rounded-full bg-[#0F1B3D]/[0.04]" />
+                  </div>
+                  <div className="flex gap-1.5">
+                    {Array.from({ length: 7 }).map((_, index) => (
+                      <div key={index} className="h-2.5 flex-1 rounded-full bg-[#0F1B3D]/[0.05]" />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+          <div className="rounded-2xl border border-dashed border-[#D9DEEA] bg-white px-4 py-3 shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
+            <div className="h-5 w-36 mx-auto rounded bg-[#0F1B3D]/[0.05]" />
+          </div>
+        </div>
+      )}
+
+      {!medicationsLoading && medications.length === 0 && editingIndex === null && (
+        <div className="mt-5 rounded-2xl bg-white px-5 py-8 text-center shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
+          <p className="text-[17px] font-bold text-[#1C1C1E]">No medications yet</p>
+          <p className="mt-1.5 text-sm leading-5 text-[#8E8E93]">
+            Add medications here, then turn on daily reminders or refill reminders. You can set up automation with Elena later in chat.
+          </p>
+        </div>
+      )}
+
+      {!medicationsLoading && (
+      <>
+      <div className="mt-5 space-y-3">
+        <datalist id="medication-name-suggestions">
+          {COMMON_MEDICATION_SUGGESTIONS.map((name) => (
+            <option key={name} value={name} />
+          ))}
+        </datalist>
+        {medications.map((medication, index) => {
+          const summary = medication.id ? adherenceByMedication[medication.id] : undefined;
+          const trackingMode = (medication.tracking_mode || "none") as MedicationTrackingMode;
+          const refillMode = getRefillMode(medication);
+          const showDaily = medicationUsesDaily(trackingMode);
+          const showRefill = refillMode !== "off";
+          const todayStatus = summary?.today_status || "pending";
+          if (editingIndex === index) {
+            return (
+              <div key={medication.id || index} className="rounded-2xl bg-white p-4 shadow-[0_1px_6px_rgba(0,0,0,0.04)] space-y-3">
+                {MEDICATION_FIELDS.map((field) => {
+                  const value = editForm[field.key] || "";
+                  return (
+                    <label key={field.key} className="block">
+                      <span className="text-[12px] font-semibold uppercase tracking-wider text-[#8E8E93]">{field.label}</span>
+                      <input
+                        type={field.type || "text"}
+                        placeholder={field.placeholder || field.label}
+                        list={field.key === "name" ? "medication-name-suggestions" : undefined}
+                        value={value}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                        className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30 placeholder:text-[#AEAEB2]"
+                      />
+                    </label>
+                  );
+                })}
+                <div className="block">
+                  <span className="text-[12px] font-semibold uppercase tracking-wider text-[#8E8E93]">Frequency</span>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {MEDICATION_FREQUENCY_PRESETS.map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => applyFrequencyPreset(preset)}
+                        className={`rounded-full px-3.5 py-2 text-[14px] font-semibold transition-colors ${
+                          editForm.frequency === preset
+                            ? "bg-[#0F1B3D] text-white"
+                            : "bg-[#F7F6F2] text-[#0F1B3D]/70 hover:text-[#0F1B3D]"
+                        }`}
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Or type a custom frequency"
+                    value={isPresetFrequency(editForm.frequency) ? "" : (editForm.frequency || "")}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, frequency: e.target.value }))}
+                    className="mt-2 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30 placeholder:text-[#AEAEB2]"
+                  />
+                </div>
+                <label className="block">
+                  <span className="text-[12px] font-semibold uppercase tracking-wider text-[#8E8E93]">Daily reminders</span>
+                  <select
+                    value={editForm.daily_tracking || "off"}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, daily_tracking: e.target.value }))}
+                    className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+                  >
+                    <option value="off">Off</option>
+                    <option value="on">On</option>
+                  </select>
+                </label>
+                {editForm.daily_tracking === "on" && (
+                  <label className="block">
+                    <span className="text-[12px] font-semibold uppercase tracking-wider text-[#8E8E93]">Reminder time</span>
+                    <input
+                      type="time"
+                      value={editForm.reminder_time || ""}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, reminder_time: e.target.value }))}
+                      className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+                    />
+                  </label>
+                )}
+                <label className="block">
+                  <span className="text-[12px] font-semibold uppercase tracking-wider text-[#8E8E93]">Refills</span>
+                  <select
+                    value={editForm.refill_mode || "off"}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, refill_mode: e.target.value }))}
+                    className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+                  >
+                    <option value="off">Off</option>
+                    <option value="reminder">Remind me</option>
+                  </select>
+                </label>
+                {(editForm.refill_mode || "off") !== "off" && REFILL_DETAIL_FIELDS.map((field) => {
+                  const value = editForm[field.key] || "";
+                  return (
+                    <label key={field.key} className="block">
+                      <span className="text-[12px] font-semibold uppercase tracking-wider text-[#8E8E93]">{field.label}</span>
+                      <input
+                        type={field.type || "text"}
+                        placeholder={field.placeholder || field.label}
+                        value={value}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                        className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30 placeholder:text-[#AEAEB2]"
+                      />
+                    </label>
+                  );
+                })}
+                <div className="flex gap-2 pt-1">
+                  <button onClick={saveMedication} disabled={saving || !editForm.name?.trim()}
+                    className="flex-1 rounded-full bg-[#0F1B3D] py-3 text-[14px] font-semibold text-white shadow-[0_10px_24px_rgba(15,27,61,0.18)] transition-all hover:bg-[#0F1B3D]/95 disabled:opacity-40 disabled:shadow-none">
+                    {saving ? "Saving..." : editingIndex === -1 ? "Add Medication" : "Save Changes"}
+                  </button>
+                  <button onClick={cancelEdit}
+                    className="flex-1 rounded-full border border-[#E5E5EA] bg-white py-3 text-[14px] font-semibold text-[#0F1B3D]/70 shadow-[0_8px_18px_rgba(15,27,61,0.06)] transition-all hover:text-[#0F1B3D]">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            );
+          }
+          return (
+            <div key={medication.id || index} className="rounded-2xl bg-white px-4 py-3.5 shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
+              <div className="min-w-0">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[18px] font-extrabold text-[#0F1B3D]">{medication.name || "Untitled medication"}</p>
+                      <p className="mt-0.5 text-[13px] text-[#8E8E93]">
+                        {[medication.dosage_strength, medication.frequency].filter(Boolean).join(" · ") || "No dosage details yet"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => startEdit(index, medication)} className="p-1.5 text-[#0F1B3D]/35 hover:text-[#0F1B3D]">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={() => deleteMedication(index)} className="p-1.5 text-[#0F1B3D]/35 hover:text-red-500">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center rounded-full bg-white px-3.5 py-2 text-[13px] font-extrabold text-[#0F1B3D]/80 shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+                      {showDaily ? "Daily reminder" : "Saved"}
+                    </span>
+                    {showDaily && medication.reminder_time && (
+                      <span className="inline-flex items-center rounded-full bg-white px-3.5 py-2 text-[13px] font-extrabold text-[#2E6BB5] shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+                        {formatReminderTime(medication.reminder_time)}
+                      </span>
+                    )}
+                    {showRefill && (
+                      <span
+                        className="inline-flex items-center rounded-full px-3.5 py-2 text-[13px] font-extrabold shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
+                        style={{ background: "#F0EFED", color: "#0F1B3D" }}
+                      >
+                        {getRefillStatusLabel(refillMode)}
+                      </span>
+                    )}
+                    {showRefill && medication.refills_remaining && (
+                      <span
+                        className="inline-flex items-center rounded-full px-3.5 py-2 text-[13px] font-extrabold shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
+                        style={{ background: "#F0F4FF", color: "#0F1B3D" }}
+                      >
+                        {`${medication.refills_remaining} ${medication.refills_remaining === "1" ? "refill" : "refills"} left`}
+                      </span>
+                    )}
+                  </div>
+                  {medication.indication && (
+                    <div className="mt-2 flex items-baseline gap-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8E8E93]">For</span>
+                      <p className="text-[13px] leading-5 text-[#0F1B3D]/70">{medication.indication}</p>
+                    </div>
+                  )}
+                  {showDaily && (
+                    <div className="mt-4 rounded-xl border border-[#E5E5EA] bg-[#FAFAFB] p-3">
+                      <div>
+                        <p className="text-[13px] font-semibold text-[#0F1B3D]">Today</p>
+                        <p className="text-[12px] text-[#8E8E93]">
+                          {summary ? `${summary.adherence_percent}% adherence over the last 30 days` : "Daily reminders are on"}
+                        </p>
+                      </div>
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          onClick={() => logDose(medication, "taken")}
+                          disabled={loadingMedId === medication.id}
+                          className={`rounded-full px-4 py-2.5 text-[14px] font-semibold shadow-[0_8px_18px_rgba(15,27,61,0.08)] transition-all ${
+                            todayStatus === "taken" ? "bg-[#0F1B3D] text-white shadow-[0_12px_24px_rgba(15,27,61,0.16)]" : "bg-white text-[#0F1B3D] border border-[#D9DEEA]"
+                          }`}
+                        >
+                          Taken
+                        </button>
+                        <button
+                          onClick={() => logDose(medication, "skipped")}
+                          disabled={loadingMedId === medication.id}
+                          className={`rounded-full px-4 py-2.5 text-[14px] font-semibold shadow-[0_8px_18px_rgba(15,27,61,0.08)] transition-all ${
+                            todayStatus === "skipped" ? "bg-[#E7EEF9] text-[#0F1B3D] shadow-[0_10px_20px_rgba(15,27,61,0.10)]" : "bg-white text-[#0F1B3D]/70 border border-[#E5E5EA]"
+                          }`}
+                        >
+                          Skipped
+                        </button>
+                      </div>
+                      {summary?.last_7_days?.length ? (
+                        <div className="mt-3 flex gap-1.5">
+                          {summary.last_7_days.map((day) => (
+                            <div
+                              key={day.date}
+                              className={`h-2.5 flex-1 rounded-full ${
+                                day.status === "taken"
+                                  ? "bg-[#0F1B3D]"
+                                  : day.status === "skipped"
+                                    ? "bg-[#D9DEEA]"
+                                    : "bg-[#ECECEC]"
+                              }`}
+                              title={`${day.date}: ${day.status}`}
+                            />
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+                  {showRefill && (
+                    <div className="mt-4 rounded-xl border border-[#E5E5EA] bg-[#FAFAFB] px-3 py-2.5">
+                      <p className="text-[13px] font-semibold text-[#0F1B3D]">Refill reminders</p>
+                      <p className="mt-1 text-[12px] leading-5 text-[#8E8E93]">
+                        {[
+                          medication.last_filled_date ? `Last filled ${new Date(`${medication.last_filled_date}T00:00:00`).toLocaleDateString()}` : null,
+                          medication.days_supply ? `${medication.days_supply} day supply` : null,
+                          medication.pharmacy_name || null,
+                        ].filter(Boolean).join(" · ") || "Add refill details and Elena will remind you when it is time."}
+                      </p>
+                      {onHandOffToChat && (
+                        <div className="mt-2 flex items-center justify-between gap-3">
+                          <p className="min-w-0 flex-1 text-[12px] leading-5 text-[#8E8E93]">
+                            Want Elena to automate refills? Finish setup in chat.
+                          </p>
+                          <button
+                            onClick={() => onHandOffToChat(medication)}
+                            className="shrink-0 rounded-full bg-[#0F1B3D] px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_10px_20px_rgba(15,27,61,0.14)] transition-all hover:bg-[#0F1B3D]/95"
+                          >
+                            Set up in chat
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {editingIndex === -1 ? null : (
+        <button
+          onClick={startAdd}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[#D9DEEA] bg-white px-4 py-3 text-[14px] font-semibold text-[#0F1B3D]/70 hover:text-[#0F1B3D] hover:border-[#C9D3E8] transition-colors"
+        >
+          <Plus className="h-4 w-4" /> Add medication
+        </button>
+      )}
+
+      {editingIndex === -1 && (
+        <div className="mt-4 rounded-2xl bg-white p-4 shadow-[0_1px_6px_rgba(0,0,0,0.04)] space-y-3">
+          {MEDICATION_FIELDS.map((field) => {
+            if (field.key === "reminder_time" && !medicationUsesDaily(editForm.tracking_mode)) return null;
+            const value = editForm[field.key] || "";
+            if (field.type === "select") {
+              return (
+                <label key={field.key} className="block">
+                  <span className="text-[12px] font-semibold uppercase tracking-wider text-[#8E8E93]">{field.label}</span>
+                  <select
+                    value={value}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                    className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+                  >
+                    {field.options?.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+              );
+            }
+            return (
+              <label key={field.key} className="block">
+                <span className="text-[12px] font-semibold uppercase tracking-wider text-[#8E8E93]">{field.label}</span>
+                <input
+                  type={field.type || "text"}
+                  placeholder={field.placeholder || field.label}
+                  list={field.key === "name" ? "medication-name-suggestions" : undefined}
+                  value={value}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                  className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30 placeholder:text-[#AEAEB2]"
+                />
+              </label>
+            );
+          })}
+          <div className="block">
+            <span className="text-[12px] font-semibold uppercase tracking-wider text-[#8E8E93]">Frequency</span>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {MEDICATION_FREQUENCY_PRESETS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => applyFrequencyPreset(preset)}
+                  className={`rounded-full px-3.5 py-2 text-[14px] font-semibold transition-colors ${
+                    editForm.frequency === preset
+                      ? "bg-[#0F1B3D] text-white"
+                      : "bg-[#F7F6F2] text-[#0F1B3D]/70 hover:text-[#0F1B3D]"
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+            <input
+              type="text"
+              placeholder="Or type a custom frequency"
+              value={isPresetFrequency(editForm.frequency) ? "" : (editForm.frequency || "")}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, frequency: e.target.value }))}
+              className="mt-2 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30 placeholder:text-[#AEAEB2]"
+            />
+          </div>
+          <label className="block">
+            <span className="text-[12px] font-semibold uppercase tracking-wider text-[#8E8E93]">Daily reminders</span>
+            <select
+              value={editForm.daily_tracking || "off"}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, daily_tracking: e.target.value }))}
+              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+            >
+              <option value="off">Off</option>
+              <option value="on">On</option>
+            </select>
+          </label>
+          {editForm.daily_tracking === "on" && (
+            <label className="block">
+              <span className="text-[12px] font-semibold uppercase tracking-wider text-[#8E8E93]">Reminder time</span>
+              <input
+                type="time"
+                value={editForm.reminder_time || ""}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, reminder_time: e.target.value }))}
+                className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+              />
+            </label>
+          )}
+          <label className="block">
+            <span className="text-[12px] font-semibold uppercase tracking-wider text-[#8E8E93]">Refills</span>
+            <select
+              value={editForm.refill_mode || "off"}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, refill_mode: e.target.value }))}
+              className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30"
+            >
+              <option value="off">Off</option>
+              <option value="reminder">Remind me</option>
+            </select>
+          </label>
+          {(editForm.refill_mode || "off") !== "off" && REFILL_DETAIL_FIELDS.map((field) => {
+            const value = editForm[field.key] || "";
+            return (
+              <label key={field.key} className="block">
+                <span className="text-[12px] font-semibold uppercase tracking-wider text-[#8E8E93]">{field.label}</span>
+                <input
+                  type={field.type || "text"}
+                  placeholder={field.placeholder || field.label}
+                  value={value}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                  className="mt-1 w-full rounded-xl border border-[#E5E5EA] bg-white px-3.5 py-2.5 text-[15px] text-[#0F1B3D] outline-none focus:border-[#0F1B3D]/30 placeholder:text-[#AEAEB2]"
+                />
+              </label>
+            );
+          })}
+          <div className="flex gap-2 pt-1">
+            <button onClick={saveMedication} disabled={saving || !editForm.name?.trim()}
+              className="flex-1 rounded-full bg-[#0F1B3D] py-3 text-[14px] font-semibold text-white shadow-[0_10px_24px_rgba(15,27,61,0.18)] transition-all hover:bg-[#0F1B3D]/95 disabled:opacity-40 disabled:shadow-none">
+              {saving ? "Saving..." : "Add Medication"}
+            </button>
+            <button onClick={cancelEdit}
+              className="flex-1 rounded-full border border-[#E5E5EA] bg-white py-3 text-[14px] font-semibold text-[#0F1B3D]/70 shadow-[0_8px_18px_rgba(15,27,61,0.06)] transition-all hover:text-[#0F1B3D]">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+      </>
+      )}
+    </div>
+  );
 }
 
 function HealthDataPanel({
