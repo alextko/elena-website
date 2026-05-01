@@ -3805,10 +3805,7 @@ export function WebOnboardingTour({
               } else if (primaryRxMed && (routerChoice === "condition" || routerChoice === "medications" || routerChoice === "staying_healthy")) {
                 derived.push(`I can track when your ${primaryRxMed} runs out and call your provider to renew it.`);
               } else if (primaryRxMed && routerChoice === "money") {
-                // Money branch: lead with the price-shop pitch on
-                // their med since "save money" is the framing they
-                // picked, but still put it FIRST — the refill mechanic
-                // is the value proof either way.
+                derived.push(`I can track when your ${primaryRxMed} runs out and call your provider to renew it.`);
                 derived.push(`I can price-shop your ${primaryRxMed} refills every month.`);
               }
               // Rank 2 — pain callout (money branch). Quotes their own
