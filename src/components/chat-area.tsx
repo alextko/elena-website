@@ -114,6 +114,21 @@ function markRestoredFormSubmitted(restored: Message[], submittedFormId: string 
   return false;
 }
 
+function isDuplicateAssistantTurn(
+  candidate: Pick<Message, "role" | "content" | "formRequest" | "billAnalysis" | "appealScript" | "appealStatus" | "assistanceResult" | "insurancePlanComparison" | "refillPlanCreated" | "carePlanShown" | "scheduledActionCreated">,
+  existing: Message | undefined,
+) {
+  if (!existing || existing.role !== "assistant" || candidate.role !== "assistant") return false;
+  const candidateFormId = candidate.formRequest?.form_id?.trim() || null;
+  const existingFormId = existing.formRequest?.form_id?.trim() || null;
+  return (
+    existing.content === candidate.content
+    && existingFormId === candidateFormId
+    && !!candidateFormId
+    && !!candidate.formRequest
+  );
+}
+
 function summarizeHealthProfileSubmission(data: Record<string, string>): string {
   const parts: string[] = [];
 
@@ -277,6 +292,7 @@ type StarterAction = {
 };
 
 const STARTER_WELCOME_HEADING = "How can Elena help today?";
+const POST_ONBOARDING_STARTER_HEADING = "Here are a few things Elena can help with";
 
 const STARTER_ACTIONS: StarterAction[] = [
   {
@@ -308,6 +324,90 @@ const STARTER_ACTIONS: StarterAction[] = [
     icon: ShieldCheck,
   },
 ];
+
+function StarterActions({
+  heading,
+  actions,
+  onAction,
+  variant = "blank",
+  disabled = false,
+}: {
+  heading: string;
+  actions: StarterAction[];
+  onAction: (action: StarterAction) => void;
+  variant?: "blank" | "strip";
+  disabled?: boolean;
+}) {
+  if (variant === "strip") {
+    return (
+      <div className="mb-4 rounded-[28px] border border-[#0F1B3D]/[0.08] bg-[#FBFCFE] px-4 py-4 md:mb-5 md:px-5 md:py-5">
+        <h3 className="mb-3 text-[0.98rem] font-semibold tracking-[-0.02em] text-[#14224D] md:text-[1rem]">
+          {heading}
+        </h3>
+        <div className="space-y-2.5 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
+          {actions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <button
+                key={action.id}
+                type="button"
+                disabled={disabled}
+                onClick={() => onAction(action)}
+                className="group flex w-full items-center gap-3 rounded-[22px] bg-white px-3.5 py-3 text-left ring-1 ring-[#0F1B3D]/[0.07] transition-[transform,background-color,border-color,opacity] duration-150 hover:-translate-y-px hover:bg-[#FBFCFE] hover:ring-[#0F1B3D]/[0.12] disabled:cursor-not-allowed disabled:opacity-55"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F3F6FB] text-[#1A2854] transition-colors group-hover:bg-[#EAF0FA]">
+                  <Icon className="h-[17px] w-[17px]" strokeWidth={2.1} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[0.98rem] font-semibold leading-[1.14] tracking-[-0.02em] text-[#14224D]">
+                    {action.title}
+                  </div>
+                  <p className="mt-0.5 text-[0.88rem] leading-[1.24] text-[#6A7693]">
+                    {action.description}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-2xl">
+      <h2 className="mb-5 max-w-[10ch] text-[2rem] font-semibold leading-[0.98] tracking-[-0.045em] text-[#0F1B3D] md:mb-6 md:max-w-none md:text-[2.4rem]">
+        {heading}
+      </h2>
+      <div className="space-y-2.5 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
+        {actions.map((action) => {
+          const Icon = action.icon;
+          return (
+            <button
+              key={action.id}
+              type="button"
+              disabled={disabled}
+              onClick={() => onAction(action)}
+              className="group flex w-full items-center gap-3.5 rounded-[24px] bg-white px-4 py-3.5 text-left ring-1 ring-[#0F1B3D]/[0.08] transition-[transform,background-color,border-color,opacity] duration-150 hover:-translate-y-px hover:bg-[#FBFCFE] hover:ring-[#0F1B3D]/[0.12] disabled:cursor-not-allowed disabled:opacity-55 md:min-h-[124px] md:flex-col md:items-start md:gap-0 md:px-5 md:py-4"
+            >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F3F6FB] text-[#1A2854] transition-colors group-hover:bg-[#EAF0FA] md:mb-3">
+                <Icon className="h-[18px] w-[18px]" strokeWidth={2.1} />
+              </div>
+              <div className="min-w-0 flex-1 md:w-full">
+                <div className="text-[1.02rem] font-semibold leading-[1.14] tracking-[-0.02em] text-[#14224D] md:text-[1rem]">
+                  {action.title}
+                </div>
+                <p className="mt-1 text-[0.92rem] leading-[1.24] text-[#6A7693] md:text-[0.92rem] md:leading-[1.3]">
+                  {action.description}
+                </p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function ThinkingIndicator({ toolLabel }: { toolLabel: string | null }) {
   const [idx, setIdx] = useState(() => Math.floor(Math.random() * THINKING_MESSAGES.length));
@@ -347,6 +447,7 @@ export function ChatArea({
   onBookMessageConsumed,
   isNewChat,
   postIntakeSubmitKind,
+  showPostOnboardingStarter = false,
   demoMode = false,
   autoShowHipaa = false,
 }: {
@@ -360,6 +461,7 @@ export function ChatArea({
   onBookMessageConsumed?: () => void;
   isNewChat?: boolean;
   postIntakeSubmitKind?: string | null;
+  showPostOnboardingStarter?: boolean;
   demoMode?: boolean;
   autoShowHipaa?: boolean;
 }) {
@@ -375,6 +477,7 @@ export function ChatArea({
   const [welcomeHeading, setWelcomeHeading] = useState<string | null>(null);
   const [welcomeMessage, setWelcomeMessage] = useState<string | null>(null);
   const [welcomeSurfaceKind, setWelcomeSurfaceKind] = useState<WelcomeSurfaceKind | null>(null);
+  const [postOnboardingStarterDismissed, setPostOnboardingStarterDismissed] = useState(false);
   const [streamingId, setStreamingId] = useState<string | null>(null);
   useEffect(() => { streamingIdRef.current = streamingId; }, [streamingId]);
   const [chatTitle, setChatTitle] = useState<string | null>(null);
@@ -516,10 +619,27 @@ export function ChatArea({
   // and correlate to the agent's next turn. 2s is generous enough to
   // cover the streaming-text animation (~1s for typical replies) and
   // the raf scheduling inside the card's mount effect.
-  const scheduleFormPresenceCheck = (formId?: string, saveTo?: string, msgId?: string) => {
+  const scheduleFormPresenceCheck = (
+    formId?: string,
+    saveTo?: string,
+    msgId?: string,
+    attempt = 0,
+  ) => {
     if (!formId || typeof window === "undefined") return;
-    const deadline = 2500;
+    const deadline = attempt === 0 ? 2500 : 800;
     const timer = window.setTimeout(() => {
+      const targetMessage = msgId
+        ? messagesRef.current.find((m) => m.id === msgId)
+        : null;
+      const stillStreaming =
+        !!targetMessage
+        && (streamingIdRef.current === msgId || targetMessage.isStreaming === true);
+      if (stillStreaming) {
+        if (attempt < 12) {
+          scheduleFormPresenceCheck(formId, saveTo, msgId, attempt + 1);
+        }
+        return;
+      }
       const el = document.querySelector(`[data-form-id="${formId}"]`);
       if (!el) {
         const diag = {
@@ -527,6 +647,7 @@ export function ChatArea({
           messages_count: messagesRef.current.length,
           msg_has_form: messagesRef.current.some((m) => m.formRequest?.form_id === formId),
           streaming_id: streamingIdRef.current,
+          attempt,
           timestamp: Date.now(),
         };
         console.error("[form-debug] 5/5 FORM MISSING FROM DOM after 2.5s — render bug", diag);
@@ -543,12 +664,13 @@ export function ChatArea({
           form_id: formId, save_to: saveTo, msg_id: msgId,
           width: rect.width, height: rect.height, display: style.display,
           visibility: style.visibility, opacity: style.opacity,
+          attempt,
         };
         console.error("[form-debug] 5/5 FORM IN DOM BUT INVISIBLE after 2.5s", diag);
         analytics.track("Form Invisible In DOM", diag);
       } else {
         console.log("[form-debug] 5/5 form sentinel OK — form is in DOM and visible", {
-          form_id: formId, save_to: saveTo, width: rect.width, height: rect.height,
+          form_id: formId, save_to: saveTo, width: rect.width, height: rect.height, attempt,
         });
       }
     }, deadline);
@@ -615,6 +737,7 @@ export function ChatArea({
     setWelcomeHeading(null);
     setWelcomeMessage(null);
     setWelcomeSurfaceKind(null);
+    setPostOnboardingStarterDismissed(false);
     setStreamingId(null);
     setChatTitle(null);
     setLoadError(null);
@@ -791,22 +914,27 @@ export function ChatArea({
           makeToolProgressHandler(),
           (chatResult: ChatResponse) => {
             const assistantId = nextId();
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: assistantId,
-                role: "assistant",
-                content: chatResult.reply,
-                isStreaming: true,
-                doctorResults: chatResult.doctor_results,
-                locationResults: chatResult.location_results,
-                reviewResults: chatResult.review_results,
-                webSources: chatResult.web_sources,
-                formRequest: chatResult.form_request,
-                needsHipaaConsent: !!chatResult.needs_hipaa_consent,
-              },
-            ]);
-            setStreamingId(assistantId);
+            const nextAssistantMessage: Message = {
+              id: assistantId,
+              role: "assistant",
+              content: chatResult.reply,
+              isStreaming: true,
+              doctorResults: chatResult.doctor_results,
+              locationResults: chatResult.location_results,
+              reviewResults: chatResult.review_results,
+              webSources: chatResult.web_sources,
+              formRequest: chatResult.form_request,
+              needsHipaaConsent: !!chatResult.needs_hipaa_consent,
+            };
+            let appended = false;
+            setMessages((prev) => {
+              if (isDuplicateAssistantTurn(nextAssistantMessage, prev[prev.length - 1])) {
+                return prev;
+              }
+              appended = true;
+              return [...prev, nextAssistantMessage];
+            });
+            setStreamingId(appended ? assistantId : null);
             setSuggestions(chatResult.suggestions || []);
             setToolLabel(null);
             setIsLoading(false);
@@ -1479,6 +1607,9 @@ export function ChatArea({
       // the gate), we show the reviews modal → upgrade modal and
       // block the send. Flag is consumed so it only fires once.
       const isAutoSeedSend = !!lastAutoSentQuery.current && message === lastAutoSentQuery.current;
+      if (!isAutoSeedSend) {
+        setPostOnboardingStarterDismissed(true);
+      }
       if (!isAutoSeedSend && message.length > 0) {
         userTypedCountRef.current++;
         const isFreeTier = !(subscription && subscription.tier && subscription.tier !== "free");
@@ -1577,32 +1708,37 @@ export function ChatArea({
         // onDone
         (chatResult: ChatResponse) => {
           const assistantId = nextId();
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: assistantId,
-              role: "assistant",
-              content: chatResult.reply,
-              isStreaming: true,
-              doctorResults: chatResult.doctor_results,
-              locationResults: chatResult.location_results,
-              reviewResults: chatResult.review_results,
-              webSources: chatResult.web_sources,
-              negotiationResult: undefined,
-              formRequest: chatResult.form_request,
-              billAnalysis: chatResult.bill_analysis,
-              appealScript: chatResult.appeal_script,
-              appealStatus: chatResult.appeal_status,
-              assistanceResult: chatResult.assistance_result,
-              priceComparisonLabel: chatResult.price_comparison_label,
-              insurancePlanComparison: chatResult.insurance_plan_comparison,
-              refillPlanCreated: chatResult.refill_plan_created,
-              carePlanShown: chatResult.care_plan_shown,
-              scheduledActionCreated: chatResult.scheduled_action_created,
-              needsHipaaConsent: !!chatResult.needs_hipaa_consent,
-            },
-          ]);
-          setStreamingId(assistantId);
+          const nextAssistantMessage: Message = {
+            id: assistantId,
+            role: "assistant",
+            content: chatResult.reply,
+            isStreaming: true,
+            doctorResults: chatResult.doctor_results,
+            locationResults: chatResult.location_results,
+            reviewResults: chatResult.review_results,
+            webSources: chatResult.web_sources,
+            negotiationResult: undefined,
+            formRequest: chatResult.form_request,
+            billAnalysis: chatResult.bill_analysis,
+            appealScript: chatResult.appeal_script,
+            appealStatus: chatResult.appeal_status,
+            assistanceResult: chatResult.assistance_result,
+            priceComparisonLabel: chatResult.price_comparison_label,
+            insurancePlanComparison: chatResult.insurance_plan_comparison,
+            refillPlanCreated: chatResult.refill_plan_created,
+            carePlanShown: chatResult.care_plan_shown,
+            scheduledActionCreated: chatResult.scheduled_action_created,
+            needsHipaaConsent: !!chatResult.needs_hipaa_consent,
+          };
+          let appended = false;
+          setMessages((prev) => {
+            if (isDuplicateAssistantTurn(nextAssistantMessage, prev[prev.length - 1])) {
+              return prev;
+            }
+            appended = true;
+            return [...prev, nextAssistantMessage];
+          });
+          setStreamingId(appended ? assistantId : null);
           setSuggestions(chatResult.suggestions || []);
           setToolLabel(null);
           setIsLoading(false);
@@ -1826,6 +1962,34 @@ export function ChatArea({
     && welcomeSurfaceKind === "message"
     && !!welcomeHeading;
 
+  const hasPostOnboardingSeedContext = useMemo(() => {
+    if (showPostOnboardingStarter) return true;
+    if (typeof window === "undefined") return false;
+    return !!initialQuery && sessionStorage.getItem("elena_tour_post_seed_gate") === "1";
+  }, [showPostOnboardingStarter, initialQuery]);
+
+  useEffect(() => {
+    if (!hasPostOnboardingSeedContext) {
+      setPostOnboardingStarterDismissed(false);
+      return;
+    }
+    setPostOnboardingStarterDismissed(false);
+  }, [hasPostOnboardingSeedContext]);
+
+  const showPostOnboardingStarterStrip =
+    hasPostOnboardingSeedContext
+    && !postOnboardingStarterDismissed
+    && messages.length > 0;
+
+  const handleStarterAction = useCallback((action: StarterAction, source: "starter_card" | "post_onboarding_strip") => {
+    analytics.track("Welcome Suggestion Clicked", {
+      suggestion_text: action.prompt,
+      starter_action: action.id,
+      source,
+    });
+    handleSend(action.prompt);
+  }, [handleSend]);
+
   return (
     <div
       className="relative flex flex-1 flex-col min-w-0 h-dvh overflow-hidden bg-white"
@@ -1957,42 +2121,11 @@ export function ChatArea({
           {/* Welcome state -- hidden when there's a pending query */}
           {showStarterWelcome && (
             <div className="flex-1 flex flex-col items-start justify-center py-6 md:py-8">
-              <div className="w-full max-w-2xl">
-                <h2 className="mb-5 max-w-[10ch] text-[2rem] font-semibold leading-[0.98] tracking-[-0.045em] text-[#0F1B3D] md:mb-6 md:max-w-none md:text-[2.4rem]">
-                  {STARTER_WELCOME_HEADING}
-                </h2>
-                <div className="space-y-2.5 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
-                  {STARTER_ACTIONS.map((action) => {
-                    const Icon = action.icon;
-                    return (
-                      <button
-                        key={action.id}
-                        onClick={() => {
-                          analytics.track("Welcome Suggestion Clicked", {
-                            suggestion_text: action.prompt,
-                            starter_action: action.id,
-                            source: "starter_card",
-                          });
-                          handleSend(action.prompt);
-                        }}
-                        className="group flex w-full items-center gap-3.5 rounded-[24px] bg-white px-4 py-3.5 text-left ring-1 ring-[#0F1B3D]/[0.08] transition-[transform,background-color,border-color] duration-150 hover:-translate-y-px hover:bg-[#FBFCFE] hover:ring-[#0F1B3D]/[0.12] md:min-h-[124px] md:flex-col md:items-start md:gap-0 md:px-5 md:py-4"
-                      >
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F3F6FB] text-[#1A2854] transition-colors group-hover:bg-[#EAF0FA] md:mb-3">
-                          <Icon className="h-[18px] w-[18px]" strokeWidth={2.1} />
-                        </div>
-                        <div className="min-w-0 flex-1 md:w-full">
-                          <div className="text-[1.02rem] font-semibold leading-[1.14] tracking-[-0.02em] text-[#14224D] md:text-[1rem]">
-                            {action.title}
-                          </div>
-                          <p className="mt-1 text-[0.92rem] leading-[1.24] text-[#6A7693] md:text-[0.92rem] md:leading-[1.3]">
-                            {action.description}
-                          </p>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <StarterActions
+                heading={STARTER_WELCOME_HEADING}
+                actions={STARTER_ACTIONS}
+                onAction={(action) => handleStarterAction(action, "starter_card")}
+              />
             </div>
           )}
 
@@ -2023,6 +2156,16 @@ export function ChatArea({
                 </div>
               )}
             </div>
+          )}
+
+          {showPostOnboardingStarterStrip && (
+            <StarterActions
+              heading={POST_ONBOARDING_STARTER_HEADING}
+              actions={STARTER_ACTIONS}
+              variant="strip"
+              disabled={isLoading}
+              onAction={(action) => handleStarterAction(action, "post_onboarding_strip")}
+            />
           )}
 
           {/* Messages */}

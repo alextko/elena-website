@@ -592,6 +592,12 @@ function ChatPageInner() {
 
   const handleNewChat = useCallback(() => {
     setActiveSessionId(null);
+    setPendingQuery(null);
+    setPendingDocName(null);
+    setBookMessage(null);
+    try {
+      localStorage.removeItem("elena_pending_query");
+    } catch {}
     setIsNewChat(true);
   }, []);
 
@@ -739,6 +745,7 @@ function ChatPageInner() {
             onBookMessageConsumed={() => setBookMessage(null)}
             isNewChat={isNewChat}
             postIntakeSubmitKind={postIntakeSubmitKind}
+            showPostOnboardingStarter={onboardingJustCompleted}
             demoMode={demoMode}
             autoShowHipaa={searchParams.get("hipaa") === "1"}
           />
