@@ -11,6 +11,7 @@ import { ExitIntentSheet, type ExitOffer } from "./exit-intent-sheet";
 
 type PlanKey = "standard_annual" | "standard_weekly";
 type Step = 1 | 2 | 3 | null;
+export const PAYWALL_PENDING_TRIAL_KEY = "elena_pending_trial_start";
 
 interface TrialFlowProps {
   /** Which step is active. null = closed. */
@@ -88,12 +89,16 @@ export function TrialFlow({ step, onStepChange, reason }: TrialFlowProps) {
         });
         if (!res.ok) throw new Error(`checkout failed: ${res.status}`);
         const data = await res.json();
-
-        analytics.track("Paywall Trial Started", {
-          plan,
-          trial_days: trialDays,
-          source,
-        });
+        try {
+          localStorage.setItem(
+            PAYWALL_PENDING_TRIAL_KEY,
+            JSON.stringify({
+              plan,
+              trial_days: trialDays,
+              source,
+            }),
+          );
+        } catch {}
 
         window.location.href = data.checkout_url;
       } catch (err) {

@@ -23,7 +23,7 @@ import { ChatArea } from "@/components/chat-area";
 import { ChatErrorBoundary } from "@/components/error-boundary";
 import { WebOnboardingTour } from "@/components/web-onboarding-tour";
 import { UpgradeModal } from "@/components/upgrade-modal";
-import { TrialFlow } from "@/components/paywall/trial-flow";
+import { PAYWALL_PENDING_TRIAL_KEY, TrialFlow } from "@/components/paywall/trial-flow";
 import { useAppCta } from "@/lib/app-cta-context";
 import type { ChatSessionItem } from "@/lib/types";
 import { trackSubscription, trackStartTrial, trackActivation } from "@/lib/tracking-events";
@@ -304,8 +304,20 @@ function ChatPageInner() {
         if (!sub || !sub.tier || sub.tier === "free") return;
         const planKey: string = sub.plan || sub.tier;
         if (sub.status === "trialing") {
+          let pendingTrial: { plan?: string; trial_days?: number; source?: string } | null = null;
+          try {
+            const raw = localStorage.getItem(PAYWALL_PENDING_TRIAL_KEY);
+            if (raw) pendingTrial = JSON.parse(raw);
+            localStorage.removeItem(PAYWALL_PENDING_TRIAL_KEY);
+          } catch {}
+          analytics.track("Paywall Trial Started", {
+            plan: pendingTrial?.plan || planKey,
+            ...(typeof pendingTrial?.trial_days === "number" ? { trial_days: pendingTrial.trial_days } : {}),
+            ...(pendingTrial?.source ? { source: pendingTrial.source } : {}),
+          });
           trackStartTrial(planKey, "USD", sub.meta_start_trial_event_id);
         } else if (sub.status === "active") {
+          try { localStorage.removeItem(PAYWALL_PENDING_TRIAL_KEY); } catch {}
           trackSubscription(planKey, getPlanPriceUSD(planKey), "USD", sub.meta_subscribe_event_id);
         }
       })();
