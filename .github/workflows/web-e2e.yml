@@ -1,0 +1,83 @@
+name: web-e2e
+
+# Runs the Playwright suite against a deployed backend. Default = prod backend.
+# Override the backend URL via the workflow_dispatch `api_base` input when
+# testing a branch deploy.
+#
+# Tradeoff acknowledged: PR runs hit prod Supabase and will create real rows
+# (user_profiles, chat_sessions, chat_messages, meta_event_log). We accept this
+# for now to unblock CI; revisit with a test-mode header or staging env later.
+
+on:
+  pull_request:
+    paths:
+      - "**"
+      - "!**/*.md"
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+    inputs:
+      api_base:
+        description: "Backend base URL for this run"
+        required: false
+        default: "https://elena-backend-production-production.up.railway.app"
+
+concurrency:
+  group: web-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  playwright:
+    name: Playwright (chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    env:
+      # Default to prod backend; workflow_dispatch input overrides.
+      PLAYWRIGHT_API_BASE: ${{ github.event.inputs.api_base || 'https://elena-backend-production-production.up.railway.app' }}
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:3001
+      PLAYWRIGHT_NO_LOCAL_BACKEND: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Print test plan
+        run: |
+          echo "API base : $PLAYWRIGHT_API_BASE"
+          echo "Site URL : $PLAYWRIGHT_BASE_URL"
+          npx playwright test --list | tail -20
+
+      - name: Run Playwright suite
+        run: npx playwright test --reporter=html,list
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 7
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results
+          retention-days: 7
