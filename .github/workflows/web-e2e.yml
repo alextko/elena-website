@@ -35,7 +35,9 @@ jobs:
     env:
       # Default to prod backend; workflow_dispatch input overrides.
       PLAYWRIGHT_API_BASE: ${{ github.event.inputs.api_base || 'https://elena-backend-production-production.up.railway.app' }}
-      PLAYWRIGHT_BASE_URL: http://127.0.0.1:3001
+      # Must be `localhost` (not 127.0.0.1) — backend CORS allowlist matches
+      # http://localhost:3001 but rejects http://127.0.0.1:3001.
+      PLAYWRIGHT_BASE_URL: http://localhost:3001
       PLAYWRIGHT_NO_LOCAL_BACKEND: "1"
 
     steps:
