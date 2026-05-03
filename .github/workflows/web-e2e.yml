@@ -89,7 +89,7 @@ jobs:
             --grep-invert "$SKIP_REGEX"
         env:
           SKIP_REGEX: |-
-            (First load auto-selects most recent session|quiz signup: quiz backfill|default \(no query params\)|\?signup=first: hero CTA|\?signup=late: hero CTA|sessionStorage persists|self-setup handoff stays|dependent-setup handoff creates|fires Paywall Trial Started|pre-auth message from landing hero|pending message survives page reload|unauthenticated visitor leaves unclaimed|authenticated user claims pending|seeded free user hits paywall|BUG-001 blocks leaked system-prompt|quiz funnel completion → claim)
+            (First load auto-selects most recent session|quiz signup: quiz backfill|default \(no query params\)|\?signup=first: hero CTA|\?signup=late: hero CTA|sessionStorage persists|self-setup handoff stays|dependent-setup handoff creates|fires Paywall Trial Started|pre-auth message from landing hero|pending message survives page reload|unauthenticated visitor leaves unclaimed|authenticated user claims pending|seeded free user hits paywall|BUG-001 blocks leaked|BUG-003 routes|DME submit → chat creates one intake-aware|quiz funnel completion → claim)
 
       - name: Upload Playwright report
         if: always()
