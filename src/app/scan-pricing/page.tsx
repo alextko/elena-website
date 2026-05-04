@@ -132,6 +132,20 @@ function isValidCurrencyLikeNumber(value: string): boolean {
   return normalized.length > 0 && /^\d+(\.\d{1,2})?$/.test(normalized);
 }
 
+function formatCurrencyInput(value: string): string {
+  const normalized = value.replace(/[$,\s]/g, "").replace(/[^\d.]/g, "");
+  if (!normalized) return "";
+
+  const [rawWhole = "", rawDecimal = ""] = normalized.split(".");
+  const whole = rawWhole.replace(/^0+(?=\d)/, "") || "0";
+  const decimal = rawDecimal.slice(0, 2);
+  const formattedWhole = Number.parseInt(whole, 10).toLocaleString("en-US");
+
+  return decimal.length > 0
+    ? `$${formattedWhole}.${decimal}`
+    : `$${formattedWhole}`;
+}
+
 function ProcedureStep({
   value,
   withContrast,
@@ -495,7 +509,7 @@ function CostDetailsStep({
             </label>
             <input
               value={safeDeductible}
-              onChange={(e) => onDeductibleChange(e.target.value)}
+              onChange={(e) => onDeductibleChange(formatCurrencyInput(e.target.value))}
               placeholder="$1,500"
               inputMode="decimal"
               className="w-full rounded-2xl border border-[#E5E5EA] bg-[#F7F6F2] px-4 py-4 text-[16px] text-[#0F1B3D] outline-none transition focus:border-[#0F1B3D]/30"
@@ -513,7 +527,7 @@ function CostDetailsStep({
             </label>
             <input
               value={safeOopMax}
-              onChange={(e) => onOopMaxChange(e.target.value)}
+              onChange={(e) => onOopMaxChange(formatCurrencyInput(e.target.value))}
               placeholder="$4,500 (optional)"
               inputMode="decimal"
               className="w-full rounded-2xl border border-[#E5E5EA] bg-[#F7F6F2] px-4 py-4 text-[16px] text-[#0F1B3D] outline-none transition focus:border-[#0F1B3D]/30"
@@ -531,7 +545,9 @@ function CostDetailsStep({
             </label>
             <input
               value={safeHealthcareSpendThisYear}
-              onChange={(e) => onHealthcareSpendThisYearChange(e.target.value)}
+              onChange={(e) =>
+                onHealthcareSpendThisYearChange(formatCurrencyInput(e.target.value))
+              }
               onKeyDown={(e) => {
                 if (e.key === "Enter" && canContinue) onContinue();
               }}
