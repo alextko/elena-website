@@ -531,7 +531,7 @@ function CostDetailsStep({
             <input
               value={safeOopMax}
               onChange={(e) => onOopMaxChange(formatCurrencyInput(e.target.value))}
-              placeholder="$4,500 (optional)"
+              placeholder="$4,500"
               inputMode="decimal"
               className="w-full rounded-2xl border border-[#E5E5EA] bg-[#F7F6F2] px-4 py-4 text-[16px] text-[#0F1B3D] outline-none transition focus:border-[#0F1B3D]/30"
             />
@@ -554,7 +554,7 @@ function CostDetailsStep({
               onKeyDown={(e) => {
                 if (e.key === "Enter" && canContinue) onContinue();
               }}
-              placeholder="$750 spent so far (optional)"
+              placeholder="$750 spent so far"
               inputMode="decimal"
               className="w-full rounded-2xl border border-[#E5E5EA] bg-[#F7F6F2] px-4 py-4 text-[16px] text-[#0F1B3D] outline-none transition focus:border-[#0F1B3D]/30"
             />
@@ -841,8 +841,8 @@ function ScanPricingContent() {
         return (
           <StatStep
             eyebrow="Why This Matters"
-            stat="For the same procedure, some hospitals charge 6.6x to 30.0x more than others."
-            body="That is why shopping matters before you book."
+            stat="The same scan can cost 6x to 30x more depending on where you go."
+            body="Two places can offer the same MRI and charge wildly different prices. That is why it pays to compare before you book."
             sourceLabel="Med Care, 2022"
             sourceHref="https://pmc.ncbi.nlm.nih.gov/articles/PMC9464687/"
             onContinue={next}
@@ -904,8 +904,8 @@ function ScanPricingContent() {
         return (
           <StatStep
             eyebrow="Cash Pay Can Win"
-            stat="At 47% of hospitals studied, the cash price was lower than the median insurer-negotiated price."
-            body="That is why we ask about your deductible and expected spend."
+            stat="Cash pay is often cheaper than using insurance."
+            body="In one study, cash prices were lower than insurance prices at 47% of hospitals. That is why we compare both options before telling you where to book."
             sourceLabel="Health Affairs, 2023"
             sourceHref="https://pubmed.ncbi.nlm.nih.gov/37011313/"
             onContinue={next}

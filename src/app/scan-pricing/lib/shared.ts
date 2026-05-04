@@ -187,7 +187,7 @@ export function buildScanPricingPreview(
     pricingPathLabel = "We need to compare both paths";
   } else if (deductible > 0 && spend < deductible * 0.5 && !answers.expectsHighHealthcareSpend) {
     recommendation =
-      "Based on your deductible and healthcare spend so far, cash pay may save you money over using insurance.";
+      "Cash pay could be your cheapest option for this MRI.";
     pricingPathLabel = "Cash pay may win";
   } else if ((deductible > 0 && spend >= deductible) || answers.expectsHighHealthcareSpend || (oopMax > 0 && spend >= oopMax * 0.5)) {
     recommendation =

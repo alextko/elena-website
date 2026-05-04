@@ -72,7 +72,7 @@ const PROCESS_STEPS = [
   {
     number: "01",
     title: "Tell us what MRI you need",
-    body: "Tell us the body part, whether it needs contrast, your insurance, your location, and how urgent it is.",
+    body: "Tell us the body part, your insurance, and your location. We'll do the rest.",
   },
   {
     number: "02",
@@ -81,8 +81,8 @@ const PROCESS_STEPS = [
   },
   {
     number: "03",
-    title: "You book with clarity",
-    body: "We send the best MRI options, help schedule the appointment, and stay available for questions.",
+    title: "Get you the best price",
+    body: "We send the best MRI options, schedule the appointment, and stay available for questions as you navigate your care.",
   },
 ];
 
@@ -287,11 +287,11 @@ export function Intro({ onStart }: IntroProps) {
             onClick={onStart}
             className="min-w-[280px] rounded-full bg-white px-10 py-4 text-[1.02rem] font-semibold text-[#0F1B3D] shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition-all hover:bg-white/95 max-md:min-w-0 max-md:w-full max-md:max-w-[320px]"
           >
-            Start My MRI Request
+            Find the best MRI
           </button>
 
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[12px] font-medium tracking-[0.01em] text-white/42 max-md:max-w-[300px]">
-            <span>Free</span>
+            <span>Start free</span>
             <span className="hidden sm:inline text-white/20">•</span>
             <span>No signup required</span>
             <span className="hidden sm:inline text-white/20">•</span>

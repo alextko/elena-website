@@ -111,46 +111,14 @@ export default function ScanPricingConfirmationPage() {
             <p className="mt-3 text-[1.02rem] font-semibold leading-[1.35] tracking-[-0.02em] text-white md:text-[1.12rem]">
               {preview?.recommendation ?? "We’ll compare cash-pay and in-network MRI pricing to see which route looks best."}
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <span className="rounded-full border border-white/14 bg-white/10 px-3 py-1 text-[12px] font-medium text-white/82">
-                {preview?.procedure ?? "MRI"}
-              </span>
-              <span className="rounded-full border border-white/14 bg-white/10 px-3 py-1 text-[12px] font-medium text-white/82">
-                {preview?.contrastLabel ?? "Contrast not specified"}
-              </span>
-              <span className="rounded-full border border-white/14 bg-white/10 px-3 py-1 text-[12px] font-medium text-white/82">
-                {preview?.pricingPathLabel ?? "Compare cash pay and insurance"}
-              </span>
-            </div>
-            <p className="mt-3 text-[14px] leading-6 text-white/82 md:text-[15px] md:leading-7">
-              For {preview?.procedure ? `your ${preview.procedure}` : "your MRI"}, you can usually expect options somewhere in the{" "}
-              <span className="font-semibold text-white">{preview?.rangeLabel ?? "$200–$1,500"}</span>{" "}
+            <p className="mt-4 text-[1.35rem] font-semibold leading-[1.22] tracking-[-0.03em] text-white md:text-[1.75rem]">
+              {preview?.procedure ? `For your ${preview.procedure},` : "For your MRI,"} you can usually expect options in the{" "}
+              <span className="text-white">{preview?.rangeLabel ?? "$200–$1,500"}</span>{" "}
               range.
             </p>
             <p className="mt-3 text-[14px] leading-6 text-white/72 md:text-[15px] md:leading-7">
               {preview?.reportNote ?? "Your final MRI report will show the cheapest local options, what looks best with insurance vs cash pay, and the next step we’d recommend."}
               {preview?.location ? ` We’ll center it on ${preview.location}.` : ""}
-            </p>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <div className="rounded-[18px] border border-white/10 bg-white/[0.06] px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/48">
-                  Insurance Read
-                </p>
-                <p className="mt-1 text-[14px] leading-6 text-white/84">
-                  {preview?.insuranceLabel ?? "We’ll compare your plan against cash pay."}
-                </p>
-              </div>
-              <div className="rounded-[18px] border border-white/10 bg-white/[0.06] px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/48">
-                  Timing Read
-                </p>
-                <p className="mt-1 text-[14px] leading-6 text-white/84">
-                  {preview?.urgencyLabel ?? "We’ll balance price and availability."}
-                </p>
-              </div>
-            </div>
-            <p className="mt-4 text-[14px] leading-6 text-white/82 md:text-[15px] md:leading-7">
-              {preview?.nextStepLabel ?? "We’ll send the cheapest local MRI options, show the expected price spread, and call out the path we’d book."}
             </p>
           </div>
 
@@ -170,7 +138,7 @@ export default function ScanPricingConfirmationPage() {
 
               <div className="border-t border-white/[0.14] px-5 py-5 md:border-l md:border-t-0 md:px-7 md:py-7">
                 <div className="inline-flex rounded-full border border-white/16 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/62">
-                  Optional
+                  Now
                 </div>
                 <p className="mt-3 text-[1.15rem] font-semibold leading-[1.1] tracking-[-0.02em] text-white md:mt-4 md:text-[1.35rem]">
                   While You Wait
