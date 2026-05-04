@@ -108,16 +108,22 @@ export default function ScanPricingConfirmationPage() {
             <div className="inline-flex rounded-full border border-white/16 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/72">
               Early read
             </div>
-            <p className="mt-3 text-[1.02rem] font-semibold leading-[1.35] tracking-[-0.02em] text-white md:text-[1.12rem]">
-              {preview?.recommendation ?? "We’ll compare cash-pay and in-network MRI pricing to see which route looks best."}
-            </p>
             <p className="mt-4 text-[1.35rem] font-semibold leading-[1.22] tracking-[-0.03em] text-white md:text-[1.75rem]">
               {preview?.procedure ? `For your ${preview.procedure},` : "For your MRI,"} you can usually expect options in the{" "}
-              <span className="text-white">{preview?.rangeLabel ?? "$200–$1,500"}</span>{" "}
+              <span className="font-extrabold text-white">{preview?.rangeLabel ?? "$200–$1,500"}</span>{" "}
               range.
             </p>
             <p className="mt-3 text-[14px] leading-6 text-white/72 md:text-[15px] md:leading-7">
               {preview?.reportNote ?? "Your final MRI report will show the cheapest local options, what looks best with insurance vs cash pay, and the next step we’d recommend."}
+              {preview?.pricingPathLabel === "Cash pay may win"
+                ? " Based on your coverage, cash pay may be your best option."
+                : null}
+              {preview?.pricingPathLabel === "Prioritize cash-pay MRI pricing"
+                ? " Since you said cash pay is on the table, we’ll prioritize those options."
+                : null}
+              {preview?.pricingPathLabel === "Insurance may be competitive"
+                ? " Based on your coverage, using insurance may be worth comparing closely."
+                : null}
               {preview?.location ? ` We’ll center it on ${preview.location}.` : ""}
             </p>
           </div>
