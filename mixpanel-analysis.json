@@ -1,0 +1,358 @@
+{
+  "meta": {
+    "fromDate": "2026-04-30",
+    "toDate": "2026-05-02",
+    "landingVariant": null,
+    "rawRows": 613,
+    "distinctUsers": 185
+  },
+  "events": {
+    "Landing Page Viewed": 271,
+    "Web Tour Started": 60,
+    "Onboard Route Entered": 46,
+    "Message Sent": 44,
+    "Hero Input Submitted": 34,
+    "Web Funnel Auth Entry Viewed": 17,
+    "Auth Modal Opened": 15,
+    "Web Tour Value Step Shown": 13,
+    "Onboarding Modal Shown": 12,
+    "Signup Completed": 11,
+    "Web Tour Value Step Continued": 11,
+    "Onboard Auth Step Viewed": 11,
+    "Response Received": 8,
+    "Web Funnel Auth Succeeded": 7,
+    "Web Funnel Auth Submitted": 6,
+    "Login Completed": 6,
+    "Web Funnel Profile Form Viewed": 5,
+    "Web Funnel Profile Form Submitted": 4,
+    "Web Tour Completed": 4,
+    "Activated": 4,
+    "Tour Buffer Flushed": 4,
+    "Onboarding Completed": 4,
+    "Web Funnel Activated": 3,
+    "Web Funnel Seed Flushed": 3,
+    "Web Funnel Onboarding Completed": 3,
+    "Paywall Screen Viewed": 3,
+    "Web Tour Seed Query Written": 2,
+    "Welcome Screen Shown": 1,
+    "insurance_card_added": 1
+  },
+  "legacyFunnel": [
+    {
+      "step": "Landing Page Viewed",
+      "users": 179,
+      "conversionFromPrevious": 1,
+      "conversionFromLanding": 1
+    },
+    {
+      "step": "Auth Modal Opened",
+      "users": 6,
+      "conversionFromPrevious": 0.0335,
+      "conversionFromLanding": 0.0335
+    },
+    {
+      "step": "Signup Completed",
+      "users": 5,
+      "conversionFromPrevious": 0.8333,
+      "conversionFromLanding": 0.0279
+    },
+    {
+      "step": "Onboarding Modal Shown",
+      "users": 11,
+      "conversionFromPrevious": 2.2,
+      "conversionFromLanding": 0.0615
+    },
+    {
+      "step": "Onboarding Completed",
+      "users": 4,
+      "conversionFromPrevious": 0.3636,
+      "conversionFromLanding": 0.0223
+    },
+    {
+      "step": "Paywall Screen Viewed",
+      "users": 1,
+      "conversionFromPrevious": 0.25,
+      "conversionFromLanding": 0.0056
+    },
+    {
+      "step": "Paywall Trial Started",
+      "users": 0,
+      "conversionFromPrevious": 0,
+      "conversionFromLanding": 0
+    }
+  ],
+  "homepageChatFunnel": [
+    {
+      "step": "Landing Page Viewed",
+      "users": 179,
+      "conversionFromPrevious": 1,
+      "conversionFromLanding": 1
+    },
+    {
+      "step": "Start Onboarding Clicked",
+      "users": 28,
+      "conversionFromPrevious": 0.1564,
+      "conversionFromLanding": 0.1564
+    },
+    {
+      "step": "Message Sent",
+      "users": 29,
+      "conversionFromPrevious": 1.0357,
+      "conversionFromLanding": 0.162
+    },
+    {
+      "step": "Onboarding Started",
+      "users": 33,
+      "conversionFromPrevious": 1.1379,
+      "conversionFromLanding": 0.1844
+    },
+    {
+      "step": "Auth Modal Opened",
+      "users": 6,
+      "conversionFromPrevious": 0.1818,
+      "conversionFromLanding": 0.0335
+    },
+    {
+      "step": "Onboard Auth Step Viewed",
+      "users": 6,
+      "conversionFromPrevious": 1,
+      "conversionFromLanding": 0.0335
+    },
+    {
+      "step": "Signup Completed",
+      "users": 5,
+      "conversionFromPrevious": 0.8333,
+      "conversionFromLanding": 0.0279
+    },
+    {
+      "step": "Onboarding Completed",
+      "users": 4,
+      "conversionFromPrevious": 0.8,
+      "conversionFromLanding": 0.0223
+    },
+    {
+      "step": "Welcome Screen Shown",
+      "users": 1,
+      "conversionFromPrevious": 0.25,
+      "conversionFromLanding": 0.0056
+    },
+    {
+      "step": "Response Received",
+      "users": 4,
+      "conversionFromPrevious": 4,
+      "conversionFromLanding": 0.0223
+    },
+    {
+      "step": "Activated",
+      "users": 4,
+      "conversionFromPrevious": 1,
+      "conversionFromLanding": 0.0223
+    }
+  ],
+  "cleanWebFunnel": [
+    {
+      "step": "Landing Page Viewed",
+      "users": 179,
+      "conversionFromPrevious": 1,
+      "conversionFromLanding": 1
+    },
+    {
+      "step": "Start Onboarding Clicked",
+      "users": 28,
+      "conversionFromPrevious": 0.1564,
+      "conversionFromLanding": 0.1564
+    },
+    {
+      "step": "Onboarding Started",
+      "users": 33,
+      "conversionFromPrevious": 1.1786,
+      "conversionFromLanding": 0.1844
+    },
+    {
+      "step": "Name Step Viewed",
+      "users": 5,
+      "conversionFromPrevious": 0.1515,
+      "conversionFromLanding": 0.0279
+    },
+    {
+      "step": "Name Step Submitted",
+      "users": 4,
+      "conversionFromPrevious": 0.8,
+      "conversionFromLanding": 0.0223
+    },
+    {
+      "step": "Auth Step Viewed",
+      "users": 9,
+      "conversionFromPrevious": 2.25,
+      "conversionFromLanding": 0.0503
+    },
+    {
+      "step": "Auth Submitted",
+      "users": 5,
+      "conversionFromPrevious": 0.5556,
+      "conversionFromLanding": 0.0279
+    },
+    {
+      "step": "Auth Succeeded",
+      "users": 5,
+      "conversionFromPrevious": 1,
+      "conversionFromLanding": 0.0279
+    },
+    {
+      "step": "Profile Saved",
+      "users": 3,
+      "conversionFromPrevious": 0.6,
+      "conversionFromLanding": 0.0168
+    },
+    {
+      "step": "Onboarding Handoff Completed",
+      "users": 3,
+      "conversionFromPrevious": 1,
+      "conversionFromLanding": 0.0168
+    },
+    {
+      "step": "First Chat Sent",
+      "users": 3,
+      "conversionFromPrevious": 1,
+      "conversionFromLanding": 0.0168
+    }
+  ],
+  "postActivationMilestones": [
+    {
+      "step": "First Chat Sent",
+      "users": 3,
+      "conversionFromActivated": 1
+    },
+    {
+      "step": "Any core data added",
+      "users": 1,
+      "conversionFromActivated": 0.3333
+    },
+    {
+      "step": "Provider Added",
+      "users": 0,
+      "conversionFromActivated": 0
+    },
+    {
+      "step": "Appointment Added",
+      "users": 0,
+      "conversionFromActivated": 0
+    },
+    {
+      "step": "Task Added",
+      "users": 0,
+      "conversionFromActivated": 0
+    },
+    {
+      "step": "Insurance Added",
+      "users": 1,
+      "conversionFromActivated": 0.3333
+    },
+    {
+      "step": "Paywall Trial Started",
+      "users": 0,
+      "conversionFromActivated": 0
+    },
+    {
+      "step": "Checkout Completed",
+      "users": 0,
+      "conversionFromActivated": 0
+    }
+  ],
+  "landingVariants": [
+    {
+      "landingVariant": "fertility_web",
+      "users": 109
+    },
+    {
+      "landingVariant": "caregiver_web",
+      "users": 31
+    },
+    {
+      "landingVariant": "homepage",
+      "users": 27
+    },
+    {
+      "landingVariant": "price_transparency_web",
+      "users": 16
+    },
+    {
+      "landingVariant": "preventative_web",
+      "users": 3
+    },
+    {
+      "landingVariant": "calls",
+      "users": 2
+    },
+    {
+      "landingVariant": "caregiver",
+      "users": 1
+    },
+    {
+      "landingVariant": "fertility",
+      "users": 1
+    }
+  ],
+  "sources": {
+    "visits": [
+      {
+        "source": "meta",
+        "count": 230
+      },
+      {
+        "source": "$direct",
+        "count": 20
+      },
+      {
+        "source": "google",
+        "count": 10
+      },
+      {
+        "source": "elena-health.com",
+        "count": 6
+      },
+      {
+        "source": "fb",
+        "count": 4
+      },
+      {
+        "source": "app.onbento.com",
+        "count": 1
+      }
+    ],
+    "visitors": [
+      {
+        "source": "meta",
+        "count": 159
+      },
+      {
+        "source": "$direct",
+        "count": 12
+      },
+      {
+        "source": "google",
+        "count": 4
+      },
+      {
+        "source": "fb",
+        "count": 2
+      },
+      {
+        "source": "elena-health.com",
+        "count": 1
+      },
+      {
+        "source": "app.onbento.com",
+        "count": 1
+      }
+    ]
+  },
+  "exclusions": {
+    "terms": [
+      "test",
+      "alextko",
+      "abhi"
+    ],
+    "excludedDistinctUsers": 21
+  }
+}

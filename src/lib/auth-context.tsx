@@ -69,6 +69,13 @@ interface AuthContextValue {
   signOut: () => Promise<void>;
 }
 
+function formatLocalDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 const AuthContext = createContext<AuthContextValue | null>(null);
 const ONBOARDING_REQUIRED_PROFILE_FIELDS = ["first_name", "last_name"] as const;
 const AUTH_INTENT_KEY = "elena_auth_intent";
@@ -485,8 +492,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       startDate.setDate(now.getDate() - 12 * 7);
       const endDate = new Date(now);
       endDate.setDate(now.getDate() + 7);
-      const startStr = startDate.toISOString().slice(0, 10);
-      const endStr = endDate.toISOString().slice(0, 10);
+      const startStr = formatLocalDateKey(startDate);
+      const endStr = formatLocalDateKey(endDate);
 
       promises.push(
         apiFetch("/habits")
@@ -769,7 +776,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [todos, todayTodos]);
 
   const toggleHabit = useCallback(async (id: string) => {
-    const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD local time
+    const today = formatLocalDateKey(new Date());
     setHabitCompletions((prev) => {
       const next = { ...prev };
       const todaySet = new Set(next[today] || []);
@@ -949,8 +956,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     startDate.setDate(now.getDate() - 12 * 7); // 12 weeks back to match mobile
     const endDate = new Date(now);
     endDate.setDate(now.getDate() + 7);
-    const startStr = startDate.toISOString().slice(0, 10);
-    const endStr = endDate.toISOString().slice(0, 10);
+    const startStr = formatLocalDateKey(startDate);
+    const endStr = formatLocalDateKey(endDate);
     try {
       const [habitsRes, completionsRes] = await Promise.all([
         apiFetch("/habits"),
