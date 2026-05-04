@@ -1,8 +1,13 @@
 import type { NextConfig } from "next";
 
+const backendBase =
+  process.env.NEXT_PUBLIC_API_BASE ||
+  "https://elena-backend-production-production.up.railway.app";
+
 const nextConfig: NextConfig = {
   async rewrites() {
     return [
+      { source: "/backend/:path*", destination: `${backendBase}/:path*` },
       { source: "/lp/bill-fighting", destination: "/?ref=bill_fighting" },
       { source: "/lp/calls", destination: "/?ref=calls" },
       { source: "/lp/caregiver", destination: "/?ref=caregiver" },

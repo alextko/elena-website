@@ -8,6 +8,8 @@ interface QuizShellProps {
   step: number;
   direction: 1 | -1;
   onBack?: () => void;
+  totalSteps?: number;
+  hiddenProgressSteps?: number[];
   children: ReactNode;
 }
 
@@ -26,9 +28,16 @@ const variants = {
   }),
 };
 
-export function QuizShell({ step, direction, onBack, children }: QuizShellProps) {
+export function QuizShell({
+  step,
+  direction,
+  onBack,
+  totalSteps = 10,
+  hiddenProgressSteps = [3, 6, 8],
+  children,
+}: QuizShellProps) {
   const isIntro = step === 0;
-  const isInterstitial = [3, 6, 8].includes(step);
+  const isInterstitial = hiddenProgressSteps.includes(step);
   const isTeaser = step === 11;
   const isResults = step === 12;
   const showProgress = !isIntro && !isInterstitial && !isTeaser && !isResults;
@@ -38,7 +47,7 @@ export function QuizShell({ step, direction, onBack, children }: QuizShellProps)
       {showProgress && (
         <ProgressBar
           step={step}
-          totalSteps={10}
+          totalSteps={totalSteps}
           onBack={onBack}
           showBack={step >= 1}
         />

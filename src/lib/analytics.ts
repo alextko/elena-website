@@ -6,6 +6,7 @@ export type AnalyticsEvent =
   | "Suggested Prompt Clicked"
   | "Hero Input Submitted"
   | "Login Button Clicked"
+  | "Quiz Confirmation Viewed"
   // Authentication
   | "Auth Modal Opened"
   | "Auth Method Selected"
