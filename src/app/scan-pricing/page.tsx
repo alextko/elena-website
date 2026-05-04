@@ -10,6 +10,7 @@ import { QuizShell } from "../risk-assessment/components/quiz-shell";
 import { StepLayout } from "../risk-assessment/components/step-layout";
 import { OptionButton } from "../risk-assessment/components/option-button";
 import { submitScanPricingRequest, type ScanPricingAnswers, type ScanUrgency } from "./lib/intake";
+import { buildScanPricingPreview } from "./lib/shared";
 
 type FunnelStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
@@ -27,6 +28,7 @@ type FunnelAction =
 
 const STORAGE_ANSWERS_KEY = "elena_scan_pricing_answers";
 const STORAGE_STEP_KEY = "elena_scan_pricing_step";
+const STORAGE_CONFIRMATION_PREVIEW_KEY = "elena_scan_pricing_confirmation_preview";
 
 const INITIAL_ANSWERS: ScanPricingAnswers = {
   procedure: "",
@@ -165,8 +167,8 @@ function ProcedureStep({
 
   return (
     <StepLayout
-      question="What scan or procedure do you need?"
-      subtitle="We only need the simplest description that gets us pricing the right thing."
+      question="What MRI do you need?"
+      subtitle="Tell us the body part so we can price the right MRI."
       ctaLabel="Continue"
       ctaEnabled={canContinue}
       centered
@@ -205,7 +207,7 @@ function ProcedureStep({
         </div>
 
         <p className="mt-3 text-[13px] text-[#8E8E93] leading-relaxed">
-          Examples: MRI, CT scan, ultrasound, mammogram, colonoscopy, DEXA.
+          Examples: knee MRI, shoulder MRI, brain MRI, lumbar spine MRI.
         </p>
       </div>
     </StepLayout>
@@ -487,7 +489,8 @@ function CostDetailsStep({
   const safeOopMax = oopMax ?? "";
   const safeHealthcareSpendThisYear = healthcareSpendThisYear ?? "";
   const canContinue =
-    isValidCurrencyLikeNumber(safeDeductible) &&
+    (safeDeductible.trim().length === 0 ||
+      isValidCurrencyLikeNumber(safeDeductible)) &&
     (safeOopMax.trim().length === 0 || isValidCurrencyLikeNumber(safeOopMax)) &&
     (safeHealthcareSpendThisYear.trim().length === 0 ||
       isValidCurrencyLikeNumber(safeHealthcareSpendThisYear));
@@ -495,7 +498,7 @@ function CostDetailsStep({
   return (
     <StepLayout
       question="What does your coverage look like?"
-      subtitle="Your best estimate is fine if you do not know the exact numbers."
+      subtitle="These are optional. Add your best estimate if you know it."
       ctaLabel="Continue"
       ctaEnabled={canContinue}
       centered
@@ -505,7 +508,7 @@ function CostDetailsStep({
         <div className="space-y-4">
           <div>
             <label className="mb-2 block text-[14px] font-medium text-[#0F1B3D]">
-              Deductible
+              Deductible <span className="text-[#8E8E93]">(optional)</span>
             </label>
             <input
               value={safeDeductible}
@@ -523,7 +526,7 @@ function CostDetailsStep({
 
           <div>
             <label className="mb-2 block text-[14px] font-medium text-[#0F1B3D]">
-              Out-of-pocket max
+              Out-of-pocket max <span className="text-[#8E8E93]">(optional)</span>
             </label>
             <input
               value={safeOopMax}
@@ -541,7 +544,7 @@ function CostDetailsStep({
 
           <div>
             <label className="mb-2 block text-[14px] font-medium text-[#0F1B3D]">
-              Healthcare spend this year
+              Healthcare spend this year <span className="text-[#8E8E93]">(optional)</span>
             </label>
             <input
               value={safeHealthcareSpendThisYear}
@@ -597,7 +600,7 @@ function EmailStep({
   return (
     <StepLayout
       question="Where should we send the results?"
-      subtitle="We’ll email your lowest-cost options and next steps within 48 hours."
+      subtitle="We’ll email your lowest-cost options and next steps within 24 hours."
       ctaLabel="Continue"
       ctaEnabled={canContinue}
       centered
@@ -793,6 +796,14 @@ function ScanPricingContent() {
     try {
       analytics.track("Quiz Completed", { quiz: "scan_pricing" });
       await submitScanPricingRequest(answers, controller.signal);
+      sessionStorage.setItem(
+        STORAGE_CONFIRMATION_PREVIEW_KEY,
+        JSON.stringify({
+          procedure: answers.procedure,
+          location: answers.location,
+          ...buildScanPricingPreview(answers),
+        }),
+      );
       sessionStorage.removeItem(STORAGE_ANSWERS_KEY);
       sessionStorage.removeItem(STORAGE_STEP_KEY);
       router.push("/scan-pricing/confirmation");
