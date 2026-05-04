@@ -88,6 +88,83 @@ const PROCESS_STEPS = [
 const carouselKeyframes =
   "@keyframes trusted-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}@keyframes scroll-left{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}";
 
+const responsiveHeroStyles = `
+  @media (min-width: 768px) {
+    .scan-pricing-hero-main {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      max-width: 56rem;
+      padding-top: 5.5rem;
+      padding-bottom: 2.25rem;
+    }
+
+    .scan-pricing-hero-title {
+      font-size: clamp(2.9rem, min(4.1vw, 7.2vh), 4.1rem);
+      line-height: 1;
+    }
+
+    .scan-pricing-hero-subtitle {
+      font-size: clamp(0.96rem, min(1.08vw, 1.95vh), 1.04rem);
+      line-height: 1.6;
+      max-width: 37rem;
+    }
+
+    .scan-pricing-hero-process {
+      margin-top: clamp(1.25rem, 2vh, 1.9rem);
+      max-width: 56rem;
+    }
+
+    .scan-pricing-hero-step {
+      padding: clamp(1.1rem, 1.8vh, 1.35rem);
+    }
+
+    .scan-pricing-hero-step-title {
+      font-size: clamp(1.02rem, min(1.24vw, 2.2vh), 1.18rem);
+      line-height: 1.04;
+    }
+
+    .scan-pricing-hero-step-body {
+      font-size: clamp(0.88rem, min(0.92vw, 1.65vh), 0.95rem);
+      line-height: 1.58;
+    }
+
+    .scan-pricing-hero-cta {
+      margin-top: clamp(1.1rem, 1.8vh, 1.55rem);
+    }
+
+    .scan-pricing-hero-marquee {
+      display: none;
+    }
+  }
+
+  @media (min-width: 1440px) and (min-height: 980px) {
+    .scan-pricing-hero-main {
+      min-height: calc(100dvh - 8rem);
+      padding-bottom: clamp(5.5rem, 10vh, 8rem);
+    }
+
+    .scan-pricing-hero-marquee {
+      display: block;
+    }
+  }
+
+  @media (min-width: 768px) and (max-height: 820px) {
+    .scan-pricing-hero-title {
+      font-size: clamp(2.65rem, min(3.7vw, 6.4vh), 3.45rem);
+    }
+
+    .scan-pricing-hero-process {
+      margin-top: 1rem;
+    }
+
+    .scan-pricing-hero-step-body {
+      line-height: 1.48;
+    }
+  }
+`;
+
 export function Intro({ onStart }: IntroProps) {
   const heroRef = useRef<HTMLElement>(null);
   const blobRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -148,7 +225,7 @@ export function Intro({ onStart }: IntroProps) {
       ref={heroRef}
       className="relative flex min-h-dvh flex-col items-center overflow-hidden md:h-dvh"
     >
-      <style dangerouslySetInnerHTML={{ __html: carouselKeyframes }} />
+      <style dangerouslySetInnerHTML={{ __html: `${carouselKeyframes}${responsiveHeroStyles}` }} />
 
       <div className="absolute inset-0 z-0 bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)]">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_130%,#F4B084_0%,#E8956D_25%,rgba(46,107,181,0)_60%)]" />
@@ -176,25 +253,25 @@ export function Intro({ onStart }: IntroProps) {
         </Link>
       </nav>
 
-      <div className="relative z-[4] w-full max-w-[920px] px-6 pb-8 pt-[12vh] text-center max-md:px-5 max-md:pb-8 max-md:pt-[96px]">
-        <h1 className="text-[clamp(2.2rem,4.6vw,3.95rem)] font-light leading-[1.01] tracking-[-0.04em] text-white max-md:text-[2.35rem]">
+      <div className="scan-pricing-hero-main relative z-[4] w-full max-w-[920px] px-6 pb-8 pt-[12vh] text-center max-md:px-5 max-md:pb-8 max-md:pt-[96px]">
+        <h1 className="scan-pricing-hero-title text-[clamp(2.2rem,4.6vw,3.95rem)] font-light leading-[1.01] tracking-[-0.04em] text-white max-md:text-[2.35rem]">
           Find the cheapest place
           <br />
           <span className="font-extrabold text-white">to get your scan done.</span>
         </h1>
 
-        <p className="mx-auto mt-4 max-w-[640px] text-[0.98rem] font-light leading-relaxed tracking-[0.01em] text-white/82 max-md:max-w-[30ch] max-md:text-[0.98rem] max-md:leading-7">
+        <p className="scan-pricing-hero-subtitle mx-auto mt-4 max-w-[640px] text-[0.98rem] font-light leading-relaxed tracking-[0.01em] text-white/82 max-md:max-w-[30ch] max-md:text-[0.98rem] max-md:leading-7">
           We compare real options, call when pricing is unclear, and help you
           avoid overpaying before you book.
         </p>
 
-        <div className="mx-auto mt-7 max-w-[920px] text-left max-md:mt-7">
+        <div className="scan-pricing-hero-process mx-auto mt-7 max-w-[920px] text-left max-md:mt-7">
           <div className="overflow-hidden rounded-[30px] border border-white/[0.14] bg-white/[0.08] backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] max-md:rounded-[26px]">
             <div className="grid md:grid-cols-3">
               {PROCESS_STEPS.map((step, index) => (
                 <div
                   key={step.number}
-                  className={`relative px-6 py-6 md:px-6 md:py-6 max-md:px-5 max-md:py-5 ${
+                  className={`scan-pricing-hero-step relative px-6 py-6 md:px-6 md:py-6 max-md:px-5 max-md:py-5 ${
                     index > 0 ? "border-t border-white/[0.1] md:border-t-0 md:border-l" : ""
                   } border-white/[0.1]`}
                 >
@@ -205,11 +282,11 @@ export function Intro({ onStart }: IntroProps) {
                     <div className="h-px flex-1 bg-gradient-to-r from-white/25 to-transparent" />
                   </div>
 
-                  <div className="mt-4 text-[1.2rem] font-semibold leading-[1.08] tracking-[-0.02em] text-white max-md:text-[1.12rem]">
+                  <div className="scan-pricing-hero-step-title mt-4 text-[1.2rem] font-semibold leading-[1.08] tracking-[-0.02em] text-white max-md:text-[1.12rem]">
                     {step.title}
                   </div>
 
-                  <p className="mt-3 max-w-[24ch] text-[14px] leading-7 text-white/72 max-md:max-w-none max-md:text-[0.98rem] max-md:leading-7">
+                  <p className="scan-pricing-hero-step-body mt-3 max-w-[24ch] text-[14px] leading-7 text-white/72 max-md:max-w-none max-md:text-[0.98rem] max-md:leading-7">
                     {step.body}
                   </p>
                 </div>
@@ -218,7 +295,7 @@ export function Intro({ onStart }: IntroProps) {
           </div>
         </div>
 
-        <div className="mt-6 flex flex-col items-center gap-4 max-md:mt-6">
+        <div className="scan-pricing-hero-cta mt-6 flex flex-col items-center gap-4 max-md:mt-6">
           <button
             type="button"
             onClick={onStart}
@@ -238,7 +315,7 @@ export function Intro({ onStart }: IntroProps) {
       </div>
 
       <div
-        className="absolute bottom-0 left-0 right-0 z-[2] w-full pb-3 max-md:hidden"
+        className="scan-pricing-hero-marquee absolute bottom-0 left-0 right-0 z-[2] hidden w-full pb-3"
         style={{
           maskImage:
             "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
