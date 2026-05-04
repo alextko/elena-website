@@ -134,21 +134,6 @@ const responsiveHeroStyles = `
     .scan-pricing-hero-cta {
       margin-top: clamp(1.1rem, 1.8vh, 1.55rem);
     }
-
-    .scan-pricing-hero-marquee {
-      display: none;
-    }
-  }
-
-  @media (min-width: 1440px) and (min-height: 980px) {
-    .scan-pricing-hero-main {
-      min-height: calc(100dvh - 8rem);
-      padding-bottom: clamp(5.5rem, 10vh, 8rem);
-    }
-
-    .scan-pricing-hero-marquee {
-      display: block;
-    }
   }
 
   @media (min-width: 768px) and (max-height: 820px) {
@@ -341,7 +326,7 @@ export function Intro({ onStart }: IntroProps) {
       </div>
 
       <div
-        className="scan-pricing-hero-marquee absolute bottom-0 left-0 right-0 z-[2] hidden w-full pb-3"
+        className="scan-pricing-hero-marquee absolute bottom-0 left-0 right-0 z-[2] w-full pb-3 max-md:hidden"
         style={{
           maskImage:
             "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
