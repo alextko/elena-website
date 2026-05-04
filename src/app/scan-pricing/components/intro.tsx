@@ -176,25 +176,25 @@ export function Intro({ onStart }: IntroProps) {
         </Link>
       </nav>
 
-      <div className="relative z-[4] w-full max-w-[980px] px-6 pb-10 pt-[15vh] text-center max-md:px-5 max-md:pb-8 max-md:pt-[96px]">
-        <h1 className="text-[clamp(2.2rem,5.2vw,4.4rem)] font-light leading-[1.02] tracking-[-0.03em] text-white max-md:text-[2.35rem]">
+      <div className="relative z-[4] w-full max-w-[920px] px-6 pb-8 pt-[12vh] text-center max-md:px-5 max-md:pb-8 max-md:pt-[96px]">
+        <h1 className="text-[clamp(2.2rem,4.6vw,3.95rem)] font-light leading-[1.01] tracking-[-0.04em] text-white max-md:text-[2.35rem]">
           Find the cheapest place
           <br />
           <span className="font-extrabold text-white">to get your scan done.</span>
         </h1>
 
-        <p className="mx-auto mt-5 max-w-[700px] text-[1.02rem] font-light leading-relaxed tracking-[0.01em] text-white/82 max-md:max-w-[30ch] max-md:text-[0.98rem] max-md:leading-7">
+        <p className="mx-auto mt-4 max-w-[640px] text-[0.98rem] font-light leading-relaxed tracking-[0.01em] text-white/82 max-md:max-w-[30ch] max-md:text-[0.98rem] max-md:leading-7">
           We compare real options, call when pricing is unclear, and help you
           avoid overpaying before you book.
         </p>
 
-        <div className="mx-auto mt-8 max-w-[980px] text-left max-md:mt-7">
+        <div className="mx-auto mt-7 max-w-[920px] text-left max-md:mt-7">
           <div className="overflow-hidden rounded-[30px] border border-white/[0.14] bg-white/[0.08] backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] max-md:rounded-[26px]">
             <div className="grid md:grid-cols-3">
               {PROCESS_STEPS.map((step, index) => (
                 <div
                   key={step.number}
-                  className={`relative px-6 py-6 md:px-7 md:py-7 max-md:px-5 max-md:py-5 ${
+                  className={`relative px-6 py-6 md:px-6 md:py-6 max-md:px-5 max-md:py-5 ${
                     index > 0 ? "border-t border-white/[0.1] md:border-t-0 md:border-l" : ""
                   } border-white/[0.1]`}
                 >
@@ -205,11 +205,11 @@ export function Intro({ onStart }: IntroProps) {
                     <div className="h-px flex-1 bg-gradient-to-r from-white/25 to-transparent" />
                   </div>
 
-                  <div className="mt-4 text-[1.35rem] font-semibold leading-[1.1] tracking-[-0.02em] text-white max-md:text-[1.12rem]">
+                  <div className="mt-4 text-[1.2rem] font-semibold leading-[1.08] tracking-[-0.02em] text-white max-md:text-[1.12rem]">
                     {step.title}
                   </div>
 
-                  <p className="mt-3 max-w-[24ch] text-[15px] leading-7 text-white/72 max-md:max-w-none max-md:text-[0.98rem] max-md:leading-7">
+                  <p className="mt-3 max-w-[24ch] text-[14px] leading-7 text-white/72 max-md:max-w-none max-md:text-[0.98rem] max-md:leading-7">
                     {step.body}
                   </p>
                 </div>
@@ -218,7 +218,7 @@ export function Intro({ onStart }: IntroProps) {
           </div>
         </div>
 
-        <div className="mt-7 flex flex-col items-center gap-4 max-md:mt-6">
+        <div className="mt-6 flex flex-col items-center gap-4 max-md:mt-6">
           <button
             type="button"
             onClick={onStart}

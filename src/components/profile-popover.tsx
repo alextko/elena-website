@@ -94,6 +94,13 @@ function parseMedicationInt(raw?: string | number | null): number | null {
 const REFILL_REMINDER_LEAD_DAYS = 5;
 const RENEWAL_REMINDER_LEAD_DAYS = 10;
 
+function formatLocalDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function deriveScheduledMedicationActions(
   medications: SavedMedication[],
   existingActions: MedicationActionItem[],
@@ -126,7 +133,7 @@ function deriveScheduledMedicationActions(
     for (let refillIndex = 0; refillIndex < refillCount; refillIndex += 1) {
       const reminderDate = new Date(runOut);
       reminderDate.setDate(reminderDate.getDate() - REFILL_REMINDER_LEAD_DAYS);
-      const dueDate = reminderDate.toLocaleDateString("en-CA");
+      const dueDate = formatLocalDateKey(reminderDate);
       const key = `${medId}:refill_due:${dueDate}`;
       if (!seen.has(key)) {
         derived.push({
@@ -145,14 +152,15 @@ function deriveScheduledMedicationActions(
 
     const renewalDate = new Date(runOut);
     renewalDate.setDate(renewalDate.getDate() - RENEWAL_REMINDER_LEAD_DAYS);
-    const renewalKey = `${medId}:renewal_due:${renewalDate.toLocaleDateString("en-CA")}`;
+    const renewalDueDate = formatLocalDateKey(renewalDate);
+    const renewalKey = `${medId}:renewal_due:${renewalDueDate}`;
     if (!seen.has(renewalKey)) {
       derived.push({
         type: "renewal_due",
         medication_id: medId,
         title: `Renew ${medication.name || "Medication"}`,
         subtitle: "No refills left. Elena can help request a new prescription.",
-        due_date: renewalDate.toLocaleDateString("en-CA"),
+        due_date: renewalDueDate,
         sort_order: 500 + refillCount,
       });
       seen.add(renewalKey);
@@ -163,8 +171,8 @@ function deriveScheduledMedicationActions(
 }
 
 function isMedicationRelatedTodo(todo: CareTodo): boolean {
-  const haystack = `${todo.title || ""} ${todo.subtitle || ""} ${todo.book_message || ""}`.toLowerCase();
-  return /\b(refill|refills|prescription|prescriptions|medication|medications)\b/.test(haystack);
+  const visibleText = `${todo.title || ""} ${todo.subtitle || ""}`.toLowerCase();
+  return /\b(refill|refills|renew|renewal|prescription|prescriptions)\b/.test(visibleText);
 }
 
 const EMPTY_PERSONAL_INFO: PersonalInfo = {
@@ -309,7 +317,7 @@ function formatVisitDate(dateStr: string): string {
 }
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return formatLocalDateKey(new Date());
 }
 
 // ─── Main component ───
@@ -367,7 +375,7 @@ export function ProfilePopover({
   useEffect(() => {
     if (showSwitcher !== undefined) setSwitcherOpen(showSwitcher);
   }, [showSwitcher]);
-  const [selectedDay, setSelectedDay] = useState<string>(new Date().toLocaleDateString("en-CA")); // YYYY-MM-DD local time
+  const [selectedDay, setSelectedDay] = useState<string>(todayStr());
   // Week offset for the Game Plan calendar strip. 0 = current week,
   // +1 = next, -1 = previous. Lets users navigate to weeks with scheduled
   // todos. Reset to 0 whenever the popover opens.
@@ -699,7 +707,7 @@ export function ProfilePopover({
     // Refresh ALL data every time the popover opens (agent may have created visits, todos, etc.)
     if (open && profileDetailsLoaded) {
       // Reset to today's date on every open (uses local timezone)
-      setSelectedDay(new Date().toLocaleDateString("en-CA"));
+      setSelectedDay(todayStr());
       setWeekOffset(0);
       refreshTodos();
       refreshVisits();
@@ -1129,10 +1137,10 @@ export function ProfilePopover({
                   {/* Calendar strip */}
                   {(() => {
                     const now = new Date();
-                    const todayKey = now.toLocaleDateString("en-CA");
+                    const todayKey = formatLocalDateKey(now);
 
                     const computeDay = (d: Date) => {
-                      const dateKey = d.toLocaleDateString("en-CA");
+                      const dateKey = formatLocalDateKey(d);
                       const isToday = d.toDateString() === now.toDateString();
                       const isFuture = d > now && !isToday;
                       const dayCompletions = habitCompletions[dateKey];
@@ -1380,7 +1388,7 @@ export function ProfilePopover({
                   {/* To Do section */}
                   <div className="px-5 pb-4">
                     {(() => {
-                      const todayKey = new Date().toLocaleDateString("en-CA");
+                      const todayKey = todayStr();
                       const isViewingToday = selectedDay === todayKey;
                       const dayLabel = isViewingToday
                         ? "To Do"
@@ -1444,7 +1452,7 @@ export function ProfilePopover({
                     })()}
 
                     {(() => {
-                      const todayKey = new Date().toLocaleDateString("en-CA");
+                      const todayKey = todayStr();
                       const isViewingToday = selectedDay === todayKey;
 
                       // Merge visits, habits, and care todos into one list (matches mobile app)
@@ -2538,7 +2546,7 @@ function VisitDetailPanel({
   const [savingEdit, setSavingEdit] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const isPast = visit.visit_date <= new Date().toISOString().slice(0, 10);
+  const isPast = visit.visit_date <= todayStr();
 
   async function handleSaveEdit() {
     setSavingEdit(true);
