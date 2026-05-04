@@ -169,8 +169,8 @@ function ProcedureStep({
 
   return (
     <StepLayout
-      question="What scan or procedure do you need?"
-      subtitle="We only need the simplest description that gets us pricing the right thing."
+      question="What MRI do you need?"
+      subtitle="Tell us the body part so we can price the right MRI."
       ctaLabel="Continue"
       ctaEnabled={canContinue}
       centered
@@ -209,7 +209,7 @@ function ProcedureStep({
         </div>
 
         <p className="mt-3 text-[13px] text-[#8E8E93] leading-relaxed">
-          Examples: MRI, CT scan, ultrasound, mammogram, colonoscopy, DEXA.
+          Examples: knee MRI, shoulder MRI, brain MRI, lumbar spine MRI.
         </p>
       </div>
     </StepLayout>
@@ -491,7 +491,8 @@ function CostDetailsStep({
   const safeOopMax = oopMax ?? "";
   const safeHealthcareSpendThisYear = healthcareSpendThisYear ?? "";
   const canContinue =
-    isValidCurrencyLikeNumber(safeDeductible) &&
+    (safeDeductible.trim().length === 0 ||
+      isValidCurrencyLikeNumber(safeDeductible)) &&
     (safeOopMax.trim().length === 0 || isValidCurrencyLikeNumber(safeOopMax)) &&
     (safeHealthcareSpendThisYear.trim().length === 0 ||
       isValidCurrencyLikeNumber(safeHealthcareSpendThisYear));
@@ -499,7 +500,7 @@ function CostDetailsStep({
   return (
     <StepLayout
       question="What does your coverage look like?"
-      subtitle="Your best estimate is fine if you do not know the exact numbers."
+      subtitle="These are optional. Add your best estimate if you know it."
       ctaLabel="Continue"
       ctaEnabled={canContinue}
       centered
@@ -509,7 +510,7 @@ function CostDetailsStep({
         <div className="space-y-4">
           <div>
             <label className="mb-2 block text-[14px] font-medium text-[#0F1B3D]">
-              Deductible
+              Deductible <span className="text-[#8E8E93]">(optional)</span>
             </label>
             <input
               value={safeDeductible}
@@ -527,7 +528,7 @@ function CostDetailsStep({
 
           <div>
             <label className="mb-2 block text-[14px] font-medium text-[#0F1B3D]">
-              Out-of-pocket max
+              Out-of-pocket max <span className="text-[#8E8E93]">(optional)</span>
             </label>
             <input
               value={safeOopMax}
@@ -545,7 +546,7 @@ function CostDetailsStep({
 
           <div>
             <label className="mb-2 block text-[14px] font-medium text-[#0F1B3D]">
-              Healthcare spend this year
+              Healthcare spend this year <span className="text-[#8E8E93]">(optional)</span>
             </label>
             <input
               value={safeHealthcareSpendThisYear}
@@ -610,7 +611,7 @@ function EmailStep({
   return (
     <StepLayout
       question="Where should we send the results?"
-      subtitle="We’ll email your lowest-cost options and next steps within 48 hours."
+      subtitle="We’ll email your lowest-cost options and next steps within 24 hours."
       ctaLabel="Continue"
       ctaEnabled={canContinue}
       centered

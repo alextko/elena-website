@@ -19,6 +19,11 @@ type ConfirmationPreview = {
   recommendation?: string;
   rangeLabel?: string;
   reportNote?: string;
+  contrastLabel?: string;
+  pricingPathLabel?: string;
+  insuranceLabel?: string;
+  urgencyLabel?: string;
+  nextStepLabel?: string;
 };
 
 export default function ScanPricingConfirmationPage() {
@@ -82,14 +87,14 @@ export default function ScanPricingConfirmationPage() {
           </p>
 
           <h1 className="mx-auto mt-3 max-w-[11ch] text-center text-[clamp(2rem,10vw,4rem)] font-light leading-[1.02] tracking-[-0.04em] text-white md:mt-4 md:tracking-[-0.03em]">
-            Look out for your results.
+            Look out for your MRI report.
           </h1>
 
           <p className="mx-auto mt-4 max-w-[34rem] text-center text-[0.95rem] font-light leading-7 tracking-[0.01em] text-white/82 md:mt-5 md:max-w-[38rem] md:text-[1rem] md:leading-8">
-            Our patient advocates are working on your scan request now. We&apos;ll
-            send your best options to your inbox within 24 hours. If pricing is
-            unclear, we&apos;ll call and negotiate on your behalf before we send our
-            recommendation.
+            Our patient advocates are working on your MRI request now. We&apos;ll
+            send your best MRI options to your inbox within 24 hours. If pricing
+            is unclear, we&apos;ll call and negotiate on your behalf before we send
+            our recommendation.
           </p>
 
           <div className="mt-7 rounded-[24px] border border-[#f4b084]/35 bg-[linear-gradient(180deg,rgba(244,176,132,0.18),rgba(255,255,255,0.08))] px-5 py-5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] md:mt-8 md:px-7 md:py-6">
@@ -97,16 +102,48 @@ export default function ScanPricingConfirmationPage() {
               Early read
             </div>
             <p className="mt-3 text-[1.02rem] font-semibold leading-[1.35] tracking-[-0.02em] text-white md:text-[1.12rem]">
-              {preview?.recommendation ?? "We’ll compare cash-pay and in-network pricing to see which route looks best."}
+              {preview?.recommendation ?? "We’ll compare cash-pay and in-network MRI pricing to see which route looks best."}
             </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="rounded-full border border-white/14 bg-white/10 px-3 py-1 text-[12px] font-medium text-white/82">
+                {preview?.procedure ?? "MRI"}
+              </span>
+              <span className="rounded-full border border-white/14 bg-white/10 px-3 py-1 text-[12px] font-medium text-white/82">
+                {preview?.contrastLabel ?? "Contrast not specified"}
+              </span>
+              <span className="rounded-full border border-white/14 bg-white/10 px-3 py-1 text-[12px] font-medium text-white/82">
+                {preview?.pricingPathLabel ?? "Compare cash pay and insurance"}
+              </span>
+            </div>
             <p className="mt-3 text-[14px] leading-6 text-white/82 md:text-[15px] md:leading-7">
-              For {preview?.procedure ? `your ${preview.procedure}` : "this kind of scan"}, you can usually expect options somewhere in the{" "}
+              For {preview?.procedure ? `your ${preview.procedure}` : "your MRI"}, you can usually expect options somewhere in the{" "}
               <span className="font-semibold text-white">{preview?.rangeLabel ?? "$200–$1,500"}</span>{" "}
               range.
             </p>
             <p className="mt-3 text-[14px] leading-6 text-white/72 md:text-[15px] md:leading-7">
-              {preview?.reportNote ?? "Your final report will show the cheapest local options, what looks best with insurance vs cash pay, and the next step we’d recommend."}
+              {preview?.reportNote ?? "Your final MRI report will show the cheapest local options, what looks best with insurance vs cash pay, and the next step we’d recommend."}
               {preview?.location ? ` We’ll center it on ${preview.location}.` : ""}
+            </p>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div className="rounded-[18px] border border-white/10 bg-white/[0.06] px-4 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/48">
+                  Insurance Read
+                </p>
+                <p className="mt-1 text-[14px] leading-6 text-white/84">
+                  {preview?.insuranceLabel ?? "We’ll compare your plan against cash pay."}
+                </p>
+              </div>
+              <div className="rounded-[18px] border border-white/10 bg-white/[0.06] px-4 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/48">
+                  Timing Read
+                </p>
+                <p className="mt-1 text-[14px] leading-6 text-white/84">
+                  {preview?.urgencyLabel ?? "We’ll balance price and availability."}
+                </p>
+              </div>
+            </div>
+            <p className="mt-4 text-[14px] leading-6 text-white/82 md:text-[15px] md:leading-7">
+              {preview?.nextStepLabel ?? "We’ll send the cheapest local MRI options, show the expected price spread, and call out the path we’d book."}
             </p>
           </div>
 
@@ -120,7 +157,7 @@ export default function ScanPricingConfirmationPage() {
                   What Happens Next
                 </p>
                 <p className="mt-2 max-w-none text-[14px] leading-6 text-white/82 md:mt-3 md:max-w-[24ch] md:text-[15px] md:leading-7">
-                  We&apos;ll email your best options within 24 hours.
+                  We&apos;ll email your MRI report and best options within 24 hours.
                 </p>
               </div>
 
@@ -148,6 +185,8 @@ export default function ScanPricingConfirmationPage() {
 
             <div className="flex max-w-[20rem] flex-col items-center justify-center gap-1 text-center text-[12px] font-medium tracking-[0.01em] text-white/42 md:max-w-none md:flex-row md:flex-wrap md:gap-x-4 md:gap-y-2">
               <span>Results in your inbox within 24 hours</span>
+              <span className="hidden sm:inline text-white/20">•</span>
+              <span>Your MRI report includes price and booking guidance</span>
               <span className="hidden sm:inline text-white/20">•</span>
               <span>Questions? Our team is available anytime</span>
             </div>

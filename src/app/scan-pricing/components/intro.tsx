@@ -23,43 +23,44 @@ const TESTIMONIALS = [
     text: (
       <>
         <span className="font-bold">Ryan</span> found an in-network MRI for{" "}
-        <span className="font-bold">$350</span> instead of the{" "}
-        <span className="font-bold">$1,200</span> quoted.
+        <span className="font-bold">$350</span>, down from{" "}
+        <span className="font-bold">$1,200</span>.
       </>
     ),
     logo: "/images/insurers/uhc.svg",
     logoAlt: "UnitedHealthcare",
   },
   {
+    name: "Andrew",
+    text: (
+      <>
+        <span className="font-bold">Andrew</span> compared rates at{" "}
+        <span className="font-bold">3 facilities</span> before booking his knee
+        MRI.
+      </>
+    ),
+    logo: "/images/insurers/anthem.svg",
+    logoAlt: "Anthem",
+  },
+  {
     name: "Alex",
     text: (
       <>
         <span className="font-bold">Alex</span> saved{" "}
-        <span className="font-bold">$650</span> on a CT scan by comparing
-        prices before the appointment.
+        <span className="font-bold">$650</span> on a CT scan before the
+        appointment.
       </>
     ),
     logo: "/images/insurers/oscar.svg",
     logoAlt: "Oscar",
   },
   {
-    name: "Maya",
+    name: "Sarah",
     text: (
       <>
-        <span className="font-bold">Maya</span> moved her colonoscopy to a
-        lower-cost outpatient center and cut the total bill by{" "}
-        <span className="font-bold">$1,900</span>.
-      </>
-    ),
-    logo: "/images/insurers/aetna.svg",
-    logoAlt: "Aetna",
-  },
-  {
-    name: "Kevin",
-    text: (
-      <>
-        <span className="font-bold">Kevin</span> learned the cash price for his
-        ultrasound was lower than his deductible and avoided a surprise bill.
+        <span className="font-bold">Sarah</span> found a breast MRI for{" "}
+        <span className="font-bold">$400</span>, down from{" "}
+        <span className="font-bold">$2,500</span>.
       </>
     ),
     logo: "/images/insurers/cigna.svg",
@@ -70,18 +71,18 @@ const TESTIMONIALS = [
 const PROCESS_STEPS = [
   {
     number: "01",
-    title: "Tell us what you need",
-    body: "Share the scan, your insurance, your location, and how urgent it is.",
+    title: "Tell us what MRI you need",
+    body: "Tell us the body part, whether it needs contrast, your insurance, your location, and how urgent it is.",
   },
   {
     number: "02",
-    title: "We compare the real options",
-    body: "Our patient advocates call, price-check, and negotiate when pricing is unclear.",
+    title: "We compare real MRI options",
+    body: "Our patient advocates call, price-check, and negotiate when MRI pricing is unclear.",
   },
   {
     number: "03",
     title: "You book with clarity",
-    body: "We send the best options, help schedule the appointment, and stay available for questions.",
+    body: "We send the best MRI options, help schedule the appointment, and stay available for questions.",
   },
 ];
 
@@ -257,11 +258,11 @@ export function Intro({ onStart }: IntroProps) {
         <h1 className="scan-pricing-hero-title text-[clamp(2.2rem,4.6vw,3.95rem)] font-light leading-[1.01] tracking-[-0.04em] text-white max-md:text-[2.35rem]">
           Find the cheapest place
           <br />
-          <span className="font-extrabold text-white">to get your scan done.</span>
+          <span className="font-extrabold text-white">to get your MRI done.</span>
         </h1>
 
         <p className="scan-pricing-hero-subtitle mx-auto mt-4 max-w-[640px] text-[0.98rem] font-light leading-relaxed tracking-[0.01em] text-white/82 max-md:max-w-[30ch] max-md:text-[0.98rem] max-md:leading-7">
-          We compare real options, call when pricing is unclear, and help you
+          We compare real MRI options, call when pricing is unclear, and help you
           avoid overpaying before you book.
         </p>
 
@@ -301,7 +302,7 @@ export function Intro({ onStart }: IntroProps) {
             onClick={onStart}
             className="min-w-[280px] rounded-full bg-white px-10 py-4 text-[1.02rem] font-semibold text-[#0F1B3D] shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition-all hover:bg-white/95 max-md:min-w-0 max-md:w-full max-md:max-w-[320px]"
           >
-            Start My Request
+            Start My MRI Request
           </button>
 
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[12px] font-medium tracking-[0.01em] text-white/42 max-md:max-w-[300px]">
@@ -309,7 +310,7 @@ export function Intro({ onStart }: IntroProps) {
             <span className="hidden sm:inline text-white/20">•</span>
             <span>No signup required</span>
             <span className="hidden sm:inline text-white/20">•</span>
-            <span>Results in your inbox within 48 hours</span>
+            <span>Results in your inbox within 24 hours</span>
           </div>
         </div>
       </div>
@@ -324,7 +325,7 @@ export function Intro({ onStart }: IntroProps) {
         }}
       >
         <div className="text-[11px] font-semibold uppercase tracking-[2px] text-white/30 text-center mb-4">
-          Real people. Real savings.
+          Real patient examples.
         </div>
         <div className="overflow-hidden w-full">
           <div className="flex w-max animate-[scroll-left_80s_linear_infinite] max-md:animate-[scroll-left_55s_linear_infinite] will-change-transform [backface-visibility:hidden]">
