@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import * as analytics from "@/lib/analytics";
+import { getOrCreateAnonId } from "@/lib/anonId";
+import { trackScanPricingLead } from "@/lib/tracking-events";
 
 const BLOBS = [
   "w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(46,107,181,0.5)_0%,transparent_70%)] -top-[10%] left-[20%]",
@@ -27,6 +29,13 @@ export default function ScanPricingConfirmationPage() {
     if (trackedRef.current) return;
     trackedRef.current = true;
     analytics.track("Quiz Confirmation Viewed", { quiz: "scan_pricing" });
+
+    // Meta Lead fire — both CAPI (via backend) and pixel, deduped by event_id.
+    // This is the campaign optimization event for paid Meta acquisition.
+    const anonId = getOrCreateAnonId();
+    if (anonId) {
+      void trackScanPricingLead(anonId);
+    }
   }, []);
 
   return (

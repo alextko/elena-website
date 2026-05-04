@@ -361,6 +361,83 @@ export function trackPaywallHit(reason: string, feature?: string) {
   } catch { /* safe to ignore */ }
 }
 
+const SCAN_PRICING_LEAD_FLAG_PREFIX = 'elena_scan_pricing_lead_fired_v1:';
+
+/**
+ * Fires the Meta `Lead` event for the scan-pricing quiz on the confirmation
+ * page. Calls the backend first, which fires CAPI server-side and returns a
+ * deterministic event_id (uuid5 of anon_id). The browser then fires fbq with
+ * that same event_id so Meta dedupes within its 7-day window.
+ *
+ * - Idempotent per anon_id via localStorage; refresh of the confirmation
+ *   page does not re-fire.
+ * - Server is also idempotent via scan_pricing_requests.meta_lead_fired_at.
+ * - Standard event so Meta optimization + AEM treats it natively.
+ *   content_name="scan_pricing_quiz" lets you build a Custom Conversion
+ *   in Events Manager that targets ONLY this Lead source for ad set
+ *   optimization (vs all Lead fires).
+ */
+export async function trackScanPricingLead(anonId: string): Promise<void> {
+  if (typeof window === 'undefined') return;
+  if (!anonId) return;
+
+  const flagKey = SCAN_PRICING_LEAD_FLAG_PREFIX + anonId;
+  if (localStorage.getItem(flagKey)) return;
+
+  let eventId: string | undefined;
+  let serverFired = false;
+  try {
+    const res = await fetch('/backend/web/scan-pricing-confirmation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ anon_id: anonId }),
+    });
+    if (res.ok) {
+      const body = (await res.json()) as { fired: boolean; event_id: string };
+      eventId = body.event_id;
+      serverFired = !!body.fired;
+    }
+  } catch { /* network blip — pixel side is best-effort below */ }
+
+  if (!eventId) {
+    eventId = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+
+  try {
+    const fbq = (window as any).fbq;
+    if (fbq) {
+      fbq(
+        'track',
+        'Lead',
+        {
+          content_name: 'scan_pricing_quiz',
+          content_category: 'imaging_price_quote',
+          value: 9.99,
+          currency: 'USD',
+        },
+        { eventID: eventId },
+      );
+    }
+  } catch { /* safe to ignore */ }
+
+  try {
+    const ttq = (window as any).ttq;
+    if (ttq) {
+      ttq.track('SubmitForm', { content_name: 'scan_pricing_quiz' });
+    }
+  } catch { /* safe to ignore */ }
+
+  try {
+    localStorage.setItem(flagKey, JSON.stringify({
+      at: new Date().toISOString(),
+      event_id: eventId,
+      server_fired: serverFired,
+    }));
+  } catch { /* safe to ignore */ }
+}
+
 export function identifyUser(userId: string, email?: string) {
   try {
     const mp = getMixpanelAny();
