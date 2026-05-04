@@ -98,10 +98,7 @@ export default function ScanPricingConfirmationPage() {
           </h1>
 
           <p className="mx-auto mt-4 max-w-[34rem] text-center text-[0.95rem] font-light leading-7 tracking-[0.01em] text-white/82 md:mt-5 md:max-w-[38rem] md:text-[1rem] md:leading-8">
-            Our patient advocates are working on your MRI request now. We&apos;ll
-            send your best MRI options to your inbox within 24 hours. If pricing
-            is unclear, we&apos;ll call and negotiate on your behalf before we send
-            our recommendation.
+            Our patient advocates are working on your MRI request now.
           </p>
 
           <div className="mt-7 rounded-[24px] border border-[#f4b084]/35 bg-[linear-gradient(180deg,rgba(244,176,132,0.18),rgba(255,255,255,0.08))] px-5 py-5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] md:mt-8 md:px-7 md:py-6">
