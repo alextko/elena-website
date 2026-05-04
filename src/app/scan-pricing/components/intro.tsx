@@ -1,0 +1,280 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import Image from "next/image";
+import Link from "next/link";
+
+interface IntroProps {
+  onStart: () => void;
+}
+
+const BLOB_SPEEDS = [0.04, -0.03, 0.025, -0.02];
+
+const BLOBS = [
+  "w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(46,107,181,0.5)_0%,transparent_70%)] -top-[10%] left-[20%]",
+  "w-[600px] h-[600px] bg-[radial-gradient(circle,rgba(244,176,132,0.35)_0%,transparent_70%)] -bottom-[20%] -right-[5%]",
+  "w-[400px] h-[400px] bg-[radial-gradient(circle,rgba(26,58,110,0.4)_0%,transparent_70%)] top-[30%] right-[25%]",
+  "w-[450px] h-[450px] bg-[radial-gradient(circle,rgba(232,149,109,0.25)_0%,transparent_70%)] bottom-[10%] left-[5%]",
+];
+
+const TESTIMONIALS = [
+  {
+    name: "Ryan",
+    text: (
+      <>
+        <span className="font-bold">Ryan</span> found an in-network MRI for{" "}
+        <span className="font-bold">$350</span> instead of the{" "}
+        <span className="font-bold">$1,200</span> quoted.
+      </>
+    ),
+    logo: "/images/insurers/uhc.svg",
+    logoAlt: "UnitedHealthcare",
+  },
+  {
+    name: "Alex",
+    text: (
+      <>
+        <span className="font-bold">Alex</span> saved{" "}
+        <span className="font-bold">$650</span> on a CT scan by comparing
+        prices before the appointment.
+      </>
+    ),
+    logo: "/images/insurers/oscar.svg",
+    logoAlt: "Oscar",
+  },
+  {
+    name: "Maya",
+    text: (
+      <>
+        <span className="font-bold">Maya</span> moved her colonoscopy to a
+        lower-cost outpatient center and cut the total bill by{" "}
+        <span className="font-bold">$1,900</span>.
+      </>
+    ),
+    logo: "/images/insurers/aetna.svg",
+    logoAlt: "Aetna",
+  },
+  {
+    name: "Kevin",
+    text: (
+      <>
+        <span className="font-bold">Kevin</span> learned the cash price for his
+        ultrasound was lower than his deductible and avoided a surprise bill.
+      </>
+    ),
+    logo: "/images/insurers/cigna.svg",
+    logoAlt: "Cigna",
+  },
+];
+
+const PROCESS_STEPS = [
+  {
+    number: "01",
+    title: "Tell us what you need",
+    body: "Share the scan, your insurance, your location, and how urgent it is.",
+  },
+  {
+    number: "02",
+    title: "We compare the real options",
+    body: "Our patient advocates call, price-check, and negotiate when pricing is unclear.",
+  },
+  {
+    number: "03",
+    title: "You book with clarity",
+    body: "We send the best options, help schedule the appointment, and stay available for questions.",
+  },
+];
+
+const carouselKeyframes =
+  "@keyframes trusted-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}@keyframes scroll-left{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}";
+
+export function Intro({ onStart }: IntroProps) {
+  const heroRef = useRef<HTMLElement>(null);
+  const blobRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    const hero = heroRef.current;
+    if (!hero) return;
+    const mouse = { x: 0, y: 0 };
+    const current = { x: 0, y: 0 };
+    let raf: number;
+
+    const onMove = (e: MouseEvent) => {
+      const rect = hero.getBoundingClientRect();
+      mouse.x = (e.clientX - rect.left) / rect.width - 0.5;
+      mouse.y = (e.clientY - rect.top) / rect.height - 0.5;
+    };
+
+    const onScroll = () => {
+      const progress = Math.min(1, window.scrollY / window.innerHeight);
+      mouse.y = progress * 0.3 - 0.15;
+      mouse.x = Math.sin(progress * 2) * 0.1;
+    };
+
+    function animate() {
+      current.x += (mouse.x - current.x) * 0.05;
+      current.y += (mouse.y - current.y) * 0.05;
+      blobRefs.current.forEach((blob, i) => {
+        if (!blob) return;
+        const dx = current.x * BLOB_SPEEDS[i] * 1000;
+        const dy = current.y * BLOB_SPEEDS[i] * 1000;
+        blob.style.transform = `translate(${dx}px, ${dy}px)`;
+      });
+      raf = requestAnimationFrame(animate);
+    }
+
+    hero.addEventListener("mousemove", onMove);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    animate();
+
+    return () => {
+      hero.removeEventListener("mousemove", onMove);
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  useEffect(() => {
+    document.body.style.backgroundColor = "#0F1B3D";
+    document.documentElement.style.backgroundColor = "#0F1B3D";
+    return () => {
+      document.body.style.backgroundColor = "";
+      document.documentElement.style.backgroundColor = "";
+    };
+  }, []);
+
+  return (
+    <section
+      ref={heroRef}
+      className="relative flex min-h-dvh flex-col items-center overflow-hidden md:h-dvh"
+    >
+      <style dangerouslySetInnerHTML={{ __html: carouselKeyframes }} />
+
+      <div className="absolute inset-0 z-0 bg-[linear-gradient(135deg,#0F1B3D_0%,#1A3A6E_30%,#2E6BB5_60%,#2E6BB5_100%)]">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_130%,#F4B084_0%,#E8956D_25%,rgba(46,107,181,0)_60%)]" />
+      </div>
+
+      <div className="absolute inset-0 z-[2] overflow-hidden pointer-events-none">
+        {BLOBS.map((cls, i) => (
+          <div
+            key={i}
+            ref={(el) => {
+              blobRefs.current[i] = el;
+            }}
+            className={`absolute rounded-full blur-[80px] will-change-transform ${cls}`}
+          />
+        ))}
+      </div>
+
+      <nav className="absolute top-0 left-0 right-0 z-[100] px-8 py-5 flex items-center justify-between max-md:px-4">
+        <Link
+          href="/"
+          className="bg-white/[0.08] backdrop-blur-[40px] border border-white/[0.18] border-t-white/30 rounded-[18px_18px_18px_4px] px-5 py-2.5 max-md:px-4 max-md:py-2 max-md:h-10 max-md:flex max-md:items-center text-[1.35rem] max-md:text-[0.95rem] font-semibold text-white no-underline tracking-tight shadow-[0_4px_16px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.15)]"
+          style={{ WebkitBackdropFilter: "blur(40px) saturate(1.8)" }}
+        >
+          elena
+        </Link>
+      </nav>
+
+      <div className="relative z-[4] w-full max-w-[980px] px-6 pb-10 pt-[15vh] text-center max-md:px-5 max-md:pb-8 max-md:pt-[96px]">
+        <h1 className="text-[clamp(2.2rem,5.2vw,4.4rem)] font-light leading-[1.02] tracking-[-0.03em] text-white max-md:text-[2.35rem]">
+          Find the cheapest place
+          <br />
+          <span className="font-extrabold text-white">to get your scan done.</span>
+        </h1>
+
+        <p className="mx-auto mt-5 max-w-[700px] text-[1.02rem] font-light leading-relaxed tracking-[0.01em] text-white/82 max-md:max-w-[30ch] max-md:text-[0.98rem] max-md:leading-7">
+          We compare real options, call when pricing is unclear, and help you
+          avoid overpaying before you book.
+        </p>
+
+        <div className="mx-auto mt-8 max-w-[980px] text-left max-md:mt-7">
+          <div className="overflow-hidden rounded-[30px] border border-white/[0.14] bg-white/[0.08] backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] max-md:rounded-[26px]">
+            <div className="grid md:grid-cols-3">
+              {PROCESS_STEPS.map((step, index) => (
+                <div
+                  key={step.number}
+                  className={`relative px-6 py-6 md:px-7 md:py-7 max-md:px-5 max-md:py-5 ${
+                    index > 0 ? "border-t border-white/[0.1] md:border-t-0 md:border-l" : ""
+                  } border-white/[0.1]`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="text-[3rem] leading-none text-[#F4B084] font-[family-name:var(--font-dm-serif)] italic max-md:text-[2.5rem]">
+                      {step.number}
+                    </div>
+                    <div className="h-px flex-1 bg-gradient-to-r from-white/25 to-transparent" />
+                  </div>
+
+                  <div className="mt-4 text-[1.35rem] font-semibold leading-[1.1] tracking-[-0.02em] text-white max-md:text-[1.12rem]">
+                    {step.title}
+                  </div>
+
+                  <p className="mt-3 max-w-[24ch] text-[15px] leading-7 text-white/72 max-md:max-w-none max-md:text-[0.98rem] max-md:leading-7">
+                    {step.body}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-7 flex flex-col items-center gap-4 max-md:mt-6">
+          <button
+            type="button"
+            onClick={onStart}
+            className="min-w-[280px] rounded-full bg-white px-10 py-4 text-[1.02rem] font-semibold text-[#0F1B3D] shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition-all hover:bg-white/95 max-md:min-w-0 max-md:w-full max-md:max-w-[320px]"
+          >
+            Start My Request
+          </button>
+
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[12px] font-medium tracking-[0.01em] text-white/42 max-md:max-w-[300px]">
+            <span>Free</span>
+            <span className="hidden sm:inline text-white/20">•</span>
+            <span>No signup required</span>
+            <span className="hidden sm:inline text-white/20">•</span>
+            <span>Results in your inbox within 48 hours</span>
+          </div>
+        </div>
+      </div>
+
+      <div
+        className="absolute bottom-0 left-0 right-0 z-[2] w-full pb-3 max-md:hidden"
+        style={{
+          maskImage:
+            "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
+          WebkitMaskImage:
+            "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
+        }}
+      >
+        <div className="text-[11px] font-semibold uppercase tracking-[2px] text-white/30 text-center mb-4">
+          Real people. Real savings.
+        </div>
+        <div className="overflow-hidden w-full">
+          <div className="flex w-max animate-[scroll-left_80s_linear_infinite] max-md:animate-[scroll-left_55s_linear_infinite] will-change-transform [backface-visibility:hidden]">
+            {[0, 1].map((set) => (
+              <div key={set} className="flex gap-3 pr-3 shrink-0">
+                {TESTIMONIALS.map((card) => (
+                  <div
+                    key={`${set}-${card.name}`}
+                    className="bg-white/[0.12] backdrop-blur-xl border border-white/[0.18] rounded-2xl px-6 pt-5 pb-4 w-[320px] h-[132px] shrink-0 shadow-[0_4px_16px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.15)] flex flex-col"
+                  >
+                    <p className="text-[0.88rem] text-white/90 leading-relaxed flex-1">
+                      {card.text}
+                    </p>
+                    <Image
+                      src={card.logo}
+                      alt={card.logoAlt}
+                      width={88}
+                      height={24}
+                      className="h-6 w-auto mt-auto pt-2 self-start brightness-0 invert opacity-60"
+                    />
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

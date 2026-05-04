@@ -16,7 +16,7 @@ interface InvitePreview {
   expired: boolean;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://elena-backend-production-production.up.railway.app";
+const API_BASE = "/backend";
 
 export default function InviteClient({ code, fromName }: { code: string; fromName: string | null }) {
   const { session, loading: authLoading, profileId, profileData, completeOnboarding } = useAuth();

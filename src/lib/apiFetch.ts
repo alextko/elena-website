@@ -1,8 +1,6 @@
 import { supabase } from "@/lib/supabase";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE ||
-  "https://elena-backend-production-production.up.railway.app";
+const API_BASE = "/backend";
 
 const RETRYABLE_STATUS = new Set([502, 503, 504]);
 const MAX_RETRIES = 2;
