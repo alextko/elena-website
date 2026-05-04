@@ -408,14 +408,14 @@ export async function trackScanPricingLead(anonId: string): Promise<void> {
   try {
     const fbq = (window as any).fbq;
     if (fbq) {
+      // No value/currency on the Lead — money hasn't been exchanged yet.
+      // Real $ flows on the downstream Purchase event from the Stripe webhook.
       fbq(
         'track',
         'Lead',
         {
           content_name: 'scan_pricing_quiz',
           content_category: 'imaging_price_quote',
-          value: 9.99,
-          currency: 'USD',
         },
         { eventID: eventId },
       );
