@@ -187,7 +187,13 @@ function StatsBar({ persona }: { persona?: string | null }) {
   );
 }
 
-const HOMEPAGE_USE_CASE_ACTIONS = [
+type HomepageUseCaseAction = {
+  title: string;
+  prompt: string;
+  href?: string;
+};
+
+const HOMEPAGE_USE_CASE_ACTIONS: HomepageUseCaseAction[] = [
   {
     title: "Lower a medical bill",
     prompt: "I got a medical bill that seems too high. Help me review it, find errors, and lower what I owe.",
@@ -201,8 +207,9 @@ const HOMEPAGE_USE_CASE_ACTIONS = [
     prompt: "Help me organize care for my family member so appointments, medications, and follow-ups stop feeling chaotic.",
   },
   {
-    title: "Find care faster",
-    prompt: "I need care soon. Help me find the right nearby provider who takes my insurance and tell me what it will cost.",
+    title: "Find the cheapest scan near me",
+    prompt: "",
+    href: "https://elena-health.com/",
   },
 ];
 
@@ -684,9 +691,17 @@ function LandingPage() {
     return;
   }, [ref, hero, demoMode, session, router, needsOnboarding, profileChecked]);
 
-  const handleUseCaseClick = useCallback((title: string, prompt: string) => {
-    analytics.track("Suggested Prompt Clicked", { prompt_label: title, source: "homepage_use_case" });
-    handleSend({ overrideQuery: prompt });
+  const handleUseCaseClick = useCallback((item: HomepageUseCaseAction) => {
+    analytics.track("Suggested Prompt Clicked", {
+      prompt_label: item.title,
+      source: "homepage_use_case",
+      destination: item.href ? "external_url" : "onboarding",
+    });
+    if (item.href) {
+      window.location.href = item.href;
+      return;
+    }
+    handleSend({ overrideQuery: item.prompt });
   }, [handleSend]);
 
   const activeExample = HOMEPAGE_EXAMPLES[activeExampleIndex]!;
@@ -799,7 +814,7 @@ function LandingPage() {
               {HOMEPAGE_USE_CASE_ACTIONS.map((item, index) => (
                 <motion.button
                   key={item.title}
-                  onClick={() => handleUseCaseClick(item.title, item.prompt)}
+                  onClick={() => handleUseCaseClick(item)}
                   custom={index}
                   initial="hidden"
                   animate="visible"
@@ -925,7 +940,7 @@ function LandingPage() {
                   {HOMEPAGE_USE_CASE_ACTIONS.map((item) => (
                     <button
                       key={item.title}
-                      onClick={() => handleUseCaseClick(item.title, item.prompt)}
+                      onClick={() => handleUseCaseClick(item)}
                       className="inline-flex items-center justify-center h-10 rounded-full border border-white/18 bg-white/[0.12] px-4 text-[0.86rem] font-semibold text-white transition-all hover:bg-white/[0.22] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                     >
                       {item.title}
@@ -986,7 +1001,7 @@ function LandingPage() {
                       {HOMEPAGE_USE_CASE_ACTIONS.map((item) => (
                         <button
                           key={item.title}
-                          onClick={() => handleUseCaseClick(item.title, item.prompt)}
+                          onClick={() => handleUseCaseClick(item)}
                           className="inline-flex items-center justify-center h-10 rounded-full border border-white/18 bg-white/[0.12] px-4 text-[0.82rem] font-semibold text-white transition-all hover:bg-white/[0.22] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                         >
                           {item.title}
@@ -1138,7 +1153,7 @@ function LandingPage() {
                 </div>
                 <div className="mt-7">
                   <button
-                    onClick={() => handleUseCaseClick(activeExample.cta, activeExample.prompt)}
+                    onClick={() => handleSend({ overrideQuery: activeExample.prompt })}
                     className="inline-flex h-11 items-center justify-center rounded-full border border-[#0F1B3D]/12 bg-[#F7FAFE] px-5 text-[0.9rem] font-semibold text-[#0F1B3D] transition-all hover:border-[#2E6BB5] hover:text-[#2E6BB5] hover:bg-white"
                   >
                     {activeExample.cta}

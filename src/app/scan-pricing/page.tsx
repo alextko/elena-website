@@ -10,6 +10,7 @@ import { QuizShell } from "../risk-assessment/components/quiz-shell";
 import { StepLayout } from "../risk-assessment/components/step-layout";
 import { OptionButton } from "../risk-assessment/components/option-button";
 import { submitScanPricingRequest, type ScanPricingAnswers, type ScanUrgency } from "./lib/intake";
+import { buildScanPricingPreview } from "./lib/shared";
 
 type FunnelStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
@@ -27,8 +28,11 @@ type FunnelAction =
 
 const STORAGE_ANSWERS_KEY = "elena_scan_pricing_answers";
 const STORAGE_STEP_KEY = "elena_scan_pricing_step";
+const STORAGE_CONFIRMATION_PREVIEW_KEY = "elena_scan_pricing_confirmation_preview";
 
 const INITIAL_ANSWERS: ScanPricingAnswers = {
+  firstName: "",
+  lastName: "",
   procedure: "",
   withContrast: false,
   withoutContrast: false,
@@ -583,16 +587,25 @@ function CostDetailsStep({
 }
 
 function EmailStep({
+  firstName,
+  lastName,
   value,
+  onFirstNameChange,
+  onLastNameChange,
   onChange,
   onContinue,
 }: {
+  firstName: string;
+  lastName: string;
   value: string;
+  onFirstNameChange: (value: string) => void;
+  onLastNameChange: (value: string) => void;
   onChange: (value: string) => void;
   onContinue: () => void;
 }) {
+  const hasFirstName = firstName.trim().length > 0;
   const isValid = isValidEmail(value);
-  const canContinue = value.trim().length > 0 && isValid;
+  const canContinue = hasFirstName && value.trim().length > 0 && isValid;
 
   return (
     <StepLayout
@@ -605,6 +618,22 @@ function EmailStep({
     >
       <div className="rounded-[28px] border border-[#E5E5EA] bg-white px-5 py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
         <input
+          value={firstName}
+          onChange={(e) => onFirstNameChange(e.target.value)}
+          placeholder="First name"
+          autoComplete="given-name"
+          autoCapitalize="words"
+          className="w-full rounded-2xl border border-[#E5E5EA] bg-[#F7F6F2] px-4 py-4 text-[16px] text-[#0F1B3D] outline-none transition focus:border-[#0F1B3D]/30"
+        />
+        <input
+          value={lastName}
+          onChange={(e) => onLastNameChange(e.target.value)}
+          placeholder="Last name (optional)"
+          autoComplete="family-name"
+          autoCapitalize="words"
+          className="mt-3 w-full rounded-2xl border border-[#E5E5EA] bg-[#F7F6F2] px-4 py-4 text-[16px] text-[#0F1B3D] outline-none transition focus:border-[#0F1B3D]/30"
+        />
+        <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => {
@@ -613,7 +642,7 @@ function EmailStep({
           placeholder="you@example.com"
           autoComplete="email"
           inputMode="email"
-          className="w-full rounded-2xl border border-[#E5E5EA] bg-[#F7F6F2] px-4 py-4 text-[16px] text-[#0F1B3D] outline-none transition focus:border-[#0F1B3D]/30"
+          className="mt-3 w-full rounded-2xl border border-[#E5E5EA] bg-[#F7F6F2] px-4 py-4 text-[16px] text-[#0F1B3D] outline-none transition focus:border-[#0F1B3D]/30"
         />
         <p className="mt-3 text-[13px] text-[#8E8E93] leading-relaxed">
           Our patient advocates will use this to send your options and stay in touch.
@@ -793,6 +822,14 @@ function ScanPricingContent() {
     try {
       analytics.track("Quiz Completed", { quiz: "scan_pricing" });
       await submitScanPricingRequest(answers, controller.signal);
+      sessionStorage.setItem(
+        STORAGE_CONFIRMATION_PREVIEW_KEY,
+        JSON.stringify({
+          procedure: answers.procedure,
+          location: answers.location,
+          ...buildScanPricingPreview(answers),
+        }),
+      );
       sessionStorage.removeItem(STORAGE_ANSWERS_KEY);
       sessionStorage.removeItem(STORAGE_STEP_KEY);
       router.push("/scan-pricing/confirmation");
@@ -927,7 +964,11 @@ function ScanPricingContent() {
       case 8:
         return (
           <EmailStep
+            firstName={answers.firstName}
+            lastName={answers.lastName}
             value={answers.email}
+            onFirstNameChange={(value) => setAnswers({ firstName: value })}
+            onLastNameChange={(value) => setAnswers({ lastName: value })}
             onChange={(value) => setAnswers({ email: value })}
             onContinue={next}
           />

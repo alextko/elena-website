@@ -16,6 +16,8 @@ create table if not exists public.scan_pricing_requests (
   expects_high_healthcare_spend boolean not null default false,
   location text not null,
   urgency text not null check (urgency in ('asap', 'soon', 'flexible')),
+  first_name text not null default '',
+  last_name text not null default '',
   email text not null,
   anything_else text,
   summary text not null,
@@ -23,6 +25,12 @@ create table if not exists public.scan_pricing_requests (
   source text not null default 'scan_pricing',
   raw_payload jsonb not null default '{}'::jsonb
 );
+
+alter table public.scan_pricing_requests
+  add column if not exists first_name text not null default '';
+
+alter table public.scan_pricing_requests
+  add column if not exists last_name text not null default '';
 
 alter table public.scan_pricing_requests enable row level security;
 

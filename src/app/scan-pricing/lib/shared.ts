@@ -1,6 +1,14 @@
 export type ScanUrgency = "asap" | "soon" | "flexible";
 
+export type ScanPricingPreview = {
+  recommendation: string;
+  rangeLabel: string;
+  reportNote: string;
+};
+
 export type ScanPricingAnswers = {
+  firstName: string;
+  lastName: string;
   procedure: string;
   withContrast: boolean;
   withoutContrast: boolean;
@@ -23,6 +31,8 @@ export function normalizeScanPricingAnswers(
   answers: ScanPricingAnswers,
 ): ScanPricingAnswers {
   return {
+    firstName: answers.firstName.trim(),
+    lastName: answers.lastName.trim(),
     procedure: answers.procedure.trim(),
     withContrast: answers.withContrast,
     withoutContrast: answers.withoutContrast,
@@ -55,6 +65,7 @@ export function buildScanPricingSummary(
           : "";
 
   return [
+    `Contact name: ${[answers.firstName, answers.lastName].filter(Boolean).join(" ")}.`,
     `I need help finding the cheapest place to get ${answers.procedure}${contrastDetails ? ` (${contrastDetails})` : ""}.`,
     answers.noInsuranceOrCashPay
       ? "No insurance / prefers cash pay."
@@ -76,4 +87,71 @@ export function buildScanPricingSummary(
   ]
     .filter(Boolean)
     .join(" ");
+}
+
+function parseMoneyLike(value: string): number | null {
+  const normalized = value.replace(/[$,\s]/g, "");
+  if (!normalized || !/^\d+(\.\d{1,2})?$/.test(normalized)) return null;
+  const parsed = Number.parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatUsd(value: number): string {
+  return `$${Math.round(value).toLocaleString("en-US")}`;
+}
+
+function estimateScanRange(answers: ScanPricingAnswers): [number, number] {
+  const procedure = answers.procedure.toLowerCase();
+  const withContrast = answers.withContrast;
+  const withoutContrast = answers.withoutContrast;
+  const bothContrast = withContrast && withoutContrast;
+
+  if (procedure.includes("mri")) {
+    if (bothContrast) return [700, 1600];
+    if (withContrast) return [500, 1200];
+    return [300, 800];
+  }
+
+  if (procedure.includes("ct")) {
+    if (bothContrast) return [600, 1300];
+    if (withContrast) return [400, 1000];
+    return [250, 700];
+  }
+
+  if (procedure.includes("ultrasound")) return [150, 500];
+  if (procedure.includes("mammogram")) return [150, 450];
+  if (procedure.includes("dexa")) return [100, 250];
+  if (procedure.includes("colonoscopy")) return [1200, 3500];
+
+  return [200, 1500];
+}
+
+export function buildScanPricingPreview(
+  answers: ScanPricingAnswers,
+): ScanPricingPreview {
+  const deductible = parseMoneyLike(answers.deductible) ?? 0;
+  const oopMax = parseMoneyLike(answers.oopMax) ?? 0;
+  const spend = parseMoneyLike(answers.healthcareSpendThisYear) ?? 0;
+  const [low, high] = estimateScanRange(answers);
+
+  let recommendation =
+    "We’ll compare both cash-pay and in-network pricing so you can see which path is actually cheaper.";
+
+  if (answers.noInsuranceOrCashPay) {
+    recommendation =
+      "Since you said cash pay is on the table, we’ll prioritize self-pay pricing first and compare it against any obvious insured options.";
+  } else if (deductible > 0 && spend < deductible * 0.5 && !answers.expectsHighHealthcareSpend) {
+    recommendation =
+      "Based on your deductible and healthcare spend so far, cash pay may save you money over using insurance.";
+  } else if ((deductible > 0 && spend >= deductible) || answers.expectsHighHealthcareSpend || (oopMax > 0 && spend >= oopMax * 0.5)) {
+    recommendation =
+      "Based on your deductible and out-of-pocket max, in-network pricing may be competitive enough that we should compare both paths closely.";
+  }
+
+  return {
+    recommendation,
+    rangeLabel: `${formatUsd(low)}–${formatUsd(high)}`,
+    reportNote:
+      "Your final report will show the cheapest local options, what looks best with insurance vs cash pay, and the next step we’d recommend.",
+  };
 }

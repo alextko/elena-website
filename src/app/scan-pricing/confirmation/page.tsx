@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import * as analytics from "@/lib/analytics";
 
@@ -11,8 +11,19 @@ const BLOBS = [
   "w-[450px] h-[450px] bg-[radial-gradient(circle,rgba(232,149,109,0.25)_0%,transparent_70%)] bottom-[10%] left-[5%]",
 ];
 
+const STORAGE_CONFIRMATION_PREVIEW_KEY = "elena_scan_pricing_confirmation_preview";
+
+type ConfirmationPreview = {
+  procedure?: string;
+  location?: string;
+  recommendation?: string;
+  rangeLabel?: string;
+  reportNote?: string;
+};
+
 export default function ScanPricingConfirmationPage() {
   const trackedRef = useRef(false);
+  const [preview, setPreview] = useState<ConfirmationPreview | null>(null);
 
   useEffect(() => {
     document.body.style.backgroundColor = "#0F1B3D";
@@ -27,6 +38,16 @@ export default function ScanPricingConfirmationPage() {
     if (trackedRef.current) return;
     trackedRef.current = true;
     analytics.track("Quiz Confirmation Viewed", { quiz: "scan_pricing" });
+  }, []);
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(STORAGE_CONFIRMATION_PREVIEW_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as ConfirmationPreview;
+      setPreview(parsed);
+      sessionStorage.removeItem(STORAGE_CONFIRMATION_PREVIEW_KEY);
+    } catch {}
   }, []);
 
   return (
@@ -66,10 +87,28 @@ export default function ScanPricingConfirmationPage() {
 
           <p className="mx-auto mt-4 max-w-[34rem] text-center text-[0.95rem] font-light leading-7 tracking-[0.01em] text-white/82 md:mt-5 md:max-w-[38rem] md:text-[1rem] md:leading-8">
             Our patient advocates are working on your scan request now. We&apos;ll
-            send your best options to your inbox within 48 hours. If pricing is
+            send your best options to your inbox within 24 hours. If pricing is
             unclear, we&apos;ll call and negotiate on your behalf before we send our
             recommendation.
           </p>
+
+          <div className="mt-7 rounded-[24px] border border-[#f4b084]/35 bg-[linear-gradient(180deg,rgba(244,176,132,0.18),rgba(255,255,255,0.08))] px-5 py-5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] md:mt-8 md:px-7 md:py-6">
+            <div className="inline-flex rounded-full border border-white/16 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/72">
+              Early read
+            </div>
+            <p className="mt-3 text-[1.02rem] font-semibold leading-[1.35] tracking-[-0.02em] text-white md:text-[1.12rem]">
+              {preview?.recommendation ?? "We’ll compare cash-pay and in-network pricing to see which route looks best."}
+            </p>
+            <p className="mt-3 text-[14px] leading-6 text-white/82 md:text-[15px] md:leading-7">
+              For {preview?.procedure ? `your ${preview.procedure}` : "this kind of scan"}, you can usually expect options somewhere in the{" "}
+              <span className="font-semibold text-white">{preview?.rangeLabel ?? "$200–$1,500"}</span>{" "}
+              range.
+            </p>
+            <p className="mt-3 text-[14px] leading-6 text-white/72 md:text-[15px] md:leading-7">
+              {preview?.reportNote ?? "Your final report will show the cheapest local options, what looks best with insurance vs cash pay, and the next step we’d recommend."}
+              {preview?.location ? ` We’ll center it on ${preview.location}.` : ""}
+            </p>
+          </div>
 
           <div className="mt-7 overflow-hidden rounded-[24px] border border-white/[0.16] bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.08))] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] md:mt-9 md:rounded-[28px]">
             <div className="grid md:grid-cols-2">
@@ -81,7 +120,7 @@ export default function ScanPricingConfirmationPage() {
                   What Happens Next
                 </p>
                 <p className="mt-2 max-w-none text-[14px] leading-6 text-white/82 md:mt-3 md:max-w-[24ch] md:text-[15px] md:leading-7">
-                  We&apos;ll email your best options within 48 hours.
+                  We&apos;ll email your best options within 24 hours.
                 </p>
               </div>
 
@@ -108,7 +147,7 @@ export default function ScanPricingConfirmationPage() {
             </Link>
 
             <div className="flex max-w-[20rem] flex-col items-center justify-center gap-1 text-center text-[12px] font-medium tracking-[0.01em] text-white/42 md:max-w-none md:flex-row md:flex-wrap md:gap-x-4 md:gap-y-2">
-              <span>Results in your inbox within 48 hours</span>
+              <span>Results in your inbox within 24 hours</span>
               <span className="hidden sm:inline text-white/20">•</span>
               <span>Questions? Our team is available anytime</span>
             </div>
