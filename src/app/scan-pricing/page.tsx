@@ -165,7 +165,7 @@ function ProcedureStep({
           onKeyDown={(e) => {
             if (e.key === "Enter" && canContinue) onContinue();
           }}
-          placeholder="MRI of the knee"
+          placeholder="Knee MRI"
           className="w-full rounded-2xl border border-[#E5E5EA] bg-[#F7F6F2] px-4 py-4 text-[16px] text-[#0F1B3D] outline-none transition focus:border-[#0F1B3D]/30"
         />
 
