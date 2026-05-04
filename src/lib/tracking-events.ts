@@ -386,6 +386,8 @@ export async function trackScanPricingLead(anonId: string): Promise<void> {
 
   let eventId: string | undefined;
   let serverFired = false;
+  let serverReason: string | null | undefined;
+  let serverResponded = false;
   try {
     const res = await fetch('/backend/web/scan-pricing-confirmation', {
       method: 'POST',
@@ -393,11 +395,43 @@ export async function trackScanPricingLead(anonId: string): Promise<void> {
       body: JSON.stringify({ anon_id: anonId }),
     });
     if (res.ok) {
-      const body = (await res.json()) as { fired: boolean; event_id: string };
+      const body = (await res.json()) as {
+        fired: boolean;
+        event_id: string;
+        reason?: string | null;
+      };
       eventId = body.event_id;
       serverFired = !!body.fired;
+      serverReason = body.reason ?? null;
+      serverResponded = true;
     }
-  } catch { /* network blip — pixel side is best-effort below */ }
+  } catch { /* network blip — handled below */ }
+
+  // Gate the browser pixel fires on quiz completion. The server is the source
+  // of truth for "did this anon_id ever submit the quiz?" — if it tells us
+  // there's no intake row, this person landed organically (refresh, share
+  // link, copy-paste). Don't fire Lead in that case; it would corrupt the
+  // optimization signal.
+  //
+  // Fire criteria: server responded AND (it just fired CAPI itself, or it
+  // skipped CAPI for a reason that still implies quiz completion). On a
+  // network failure we can't tell, so we don't fire — biased toward false
+  // negatives over false positives.
+  const QUIZ_COMPLETED_REASONS = new Set([
+    'already_fired',     // we previously fired CAPI for this anon_id; quiz was completed
+    'capi_not_configured', // intake row exists; CAPI is just unconfigured
+    'capi_error',        // intake row exists; CAPI errored on Meta's side
+  ]);
+  const shouldFire = serverResponded && (
+    serverFired || (serverReason !== null && serverReason !== undefined && QUIZ_COMPLETED_REASONS.has(serverReason))
+  );
+
+  if (!shouldFire) {
+    // No fire. Don't even mint a flag — let a future legit confirmation page
+    // visit (after the user actually completes the quiz) get a clean shot at
+    // firing.
+    return;
+  }
 
   if (!eventId) {
     eventId = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
