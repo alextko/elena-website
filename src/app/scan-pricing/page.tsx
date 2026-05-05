@@ -150,6 +150,10 @@ function formatCurrencyInput(value: string): string {
     : `$${formattedWhole}`;
 }
 
+function formatNameInput(value: string): string {
+  return value.replace(/\b([a-z])/g, (match) => match.toUpperCase());
+}
+
 function ProcedureStep({
   value,
   withContrast,
@@ -620,7 +624,7 @@ function EmailStep({
       <div className="rounded-[28px] border border-[#E5E5EA] bg-white px-5 py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
         <input
           value={firstName}
-          onChange={(e) => onFirstNameChange(e.target.value)}
+          onChange={(e) => onFirstNameChange(formatNameInput(e.target.value))}
           placeholder="First name"
           autoComplete="given-name"
           autoCapitalize="words"
@@ -628,7 +632,7 @@ function EmailStep({
         />
         <input
           value={lastName}
-          onChange={(e) => onLastNameChange(e.target.value)}
+          onChange={(e) => onLastNameChange(formatNameInput(e.target.value))}
           placeholder="Last name (optional)"
           autoComplete="family-name"
           autoCapitalize="words"
