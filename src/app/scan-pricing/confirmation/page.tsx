@@ -147,7 +147,7 @@ export default function ScanPricingConfirmationPage() {
                   While You Wait
                 </p>
                 <p className="mt-2 max-w-none text-[14px] leading-6 text-white/82 md:mt-3 md:max-w-[24ch] md:text-[15px] md:leading-7">
-                  Create an Elena account to track your care, compare costs, and keep all your healthcare details in one place.
+                  Have help at your fingertips 24/7 with Elena.
                 </p>
               </div>
             </div>
