@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Upload } from "lucide-react";
 import * as analytics from "@/lib/analytics";
 import { trackViewContent } from "@/lib/tracking-events";
 import { Intro } from "./components/intro";
@@ -12,7 +12,7 @@ import { OptionButton } from "../risk-assessment/components/option-button";
 import { submitScanPricingRequest, type ScanPricingAnswers, type ScanUrgency } from "./lib/intake";
 import { buildScanPricingPreview } from "./lib/shared";
 
-type FunnelStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+type FunnelStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
 type FunnelState = {
   step: FunnelStep;
@@ -33,6 +33,8 @@ const STORAGE_CONFIRMATION_PREVIEW_KEY = "elena_scan_pricing_confirmation_previe
 const INITIAL_ANSWERS: ScanPricingAnswers = {
   firstName: "",
   lastName: "",
+  insuranceCardS3Key: "",
+  insuranceCardUrl: "",
   procedure: "",
   withContrast: false,
   withoutContrast: false,
@@ -47,6 +49,7 @@ const INITIAL_ANSWERS: ScanPricingAnswers = {
   expectsHighHealthcareSpend: false,
   location: "",
   urgency: "soon",
+  availabilityWindow: "",
   email: "",
   anythingElse: "",
 };
@@ -93,6 +96,21 @@ const PLAN_TYPE_OPTIONS = [
   "Not sure",
 ] as const;
 
+function getNextFunnelStep(step: FunnelStep, answers: ScanPricingAnswers): FunnelStep {
+  if (step === 7 && answers.urgency !== "asap") return 9;
+  return Math.min(step + 1, 10) as FunnelStep;
+}
+
+function getPrevFunnelStep(step: FunnelStep, answers: ScanPricingAnswers): FunnelStep {
+  if (step === 9 && answers.urgency !== "asap") return 7;
+  return Math.max(step - 1, 0) as FunnelStep;
+}
+
+function getDisplayStep(step: FunnelStep, answers: ScanPricingAnswers): number {
+  if (answers.urgency !== "asap" && step >= 9) return step - 1;
+  return Math.max(step, 1);
+}
+
 function reducer(state: FunnelState, action: FunnelAction): FunnelState {
   switch (action.type) {
     case "SET_ANSWERS":
@@ -103,13 +121,13 @@ function reducer(state: FunnelState, action: FunnelAction): FunnelState {
     case "NEXT_STEP":
       return {
         ...state,
-        step: Math.min(state.step + 1, 9) as FunnelStep,
+        step: getNextFunnelStep(state.step, state.answers),
         direction: 1,
       };
     case "PREV_STEP":
       return {
         ...state,
-        step: Math.max(state.step - 1, 0) as FunnelStep,
+        step: getPrevFunnelStep(state.step, state.answers),
         direction: -1,
       };
     case "GO_TO_STEP":
@@ -337,11 +355,14 @@ function InsuranceDetailsStep({
   insuranceCompany,
   planName,
   planType,
+  isUploadingInsuranceCard,
+  insuranceUploadMessage,
   onToggleNoInsuranceOrCashPay,
   onUseCustomInsuranceCompanyChange,
   onInsuranceCompanyChange,
   onPlanNameChange,
   onPlanTypeChange,
+  onInsuranceCardUpload,
   onContinue,
 }: {
   noInsuranceOrCashPay: boolean;
@@ -349,13 +370,17 @@ function InsuranceDetailsStep({
   insuranceCompany: string;
   planName: string;
   planType: string;
+  isUploadingInsuranceCard: boolean;
+  insuranceUploadMessage: string | null;
   onToggleNoInsuranceOrCashPay: () => void;
   onUseCustomInsuranceCompanyChange: (value: boolean) => void;
   onInsuranceCompanyChange: (value: string) => void;
   onPlanNameChange: (value: string) => void;
   onPlanTypeChange: (value: string) => void;
+  onInsuranceCardUpload: (file: File) => void;
   onContinue: () => void;
 }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const safeInsuranceCompany = insuranceCompany ?? "";
   const safePlanName = planName ?? "";
   const safePlanType = planType ?? "";
@@ -363,7 +388,6 @@ function InsuranceDetailsStep({
   const canContinue =
     noInsuranceOrCashPay ||
     (safeInsuranceCompany.trim().length > 0 &&
-      safePlanName.trim().length > 0 &&
       safePlanType.trim().length > 0);
 
   return (
@@ -376,6 +400,18 @@ function InsuranceDetailsStep({
       onCta={onContinue}
     >
       <div className="rounded-[28px] border border-[#E5E5EA] bg-white px-5 py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            e.target.value = "";
+            onInsuranceCardUpload(file);
+          }}
+        />
         <div className="space-y-4">
           <label className="inline-flex items-start gap-3 rounded-2xl border border-[#E5E5EA] bg-[#F7F6F2] px-4 py-4 text-[14px] text-[#0F1B3D] cursor-pointer">
             <input
@@ -388,6 +424,39 @@ function InsuranceDetailsStep({
               No insurance / prefer cash pay
             </span>
           </label>
+
+          {!noInsuranceOrCashPay ? (
+            <div className="rounded-2xl border border-[#E5E5EA] bg-[#F7F6F2] p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-[14px] font-medium text-[#0F1B3D]">
+                    Upload your insurance card instead
+                  </p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-[#8E8E93]">
+                    Pick a photo from your library and we&apos;ll fill in what we can.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingInsuranceCard}
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-[#0F1B3D]/12 bg-white px-4 py-2.5 text-[14px] font-semibold text-[#0F1B3D] transition hover:bg-[#FAFAF7] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isUploadingInsuranceCard ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0F1B3D]/25 border-t-[#0F1B3D]" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
+                  {isUploadingInsuranceCard ? "Reading card..." : "Upload from photos"}
+                </button>
+              </div>
+              {insuranceUploadMessage ? (
+                <p className="mt-3 text-[13px] leading-relaxed text-[#5A6A82]">
+                  {insuranceUploadMessage}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
 
           <div>
             <label className="mb-2 block text-[14px] font-medium text-[#0F1B3D]">
@@ -427,7 +496,7 @@ function InsuranceDetailsStep({
 
           <div>
             <label className="mb-2 block text-[14px] font-medium text-[#0F1B3D]">
-              Plan name
+              Plan name <span className="text-[#8E8E93]">(optional)</span>
             </label>
             <input
               value={safePlanName}
@@ -725,6 +794,29 @@ function UrgencyStep({
   );
 }
 
+function AvailabilityStep({
+  value,
+  onChange,
+  onContinue,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onContinue: () => void;
+}) {
+  return (
+    <TextFieldStep
+      question="When are you available for this scan?"
+      subtitle="Since you need it ASAP, tell us when you can go so we can prioritize the right options."
+      placeholder="Tomorrow after 3, weekday mornings, any time Friday, etc."
+      value={value}
+      onChange={onChange}
+      ctaLabel="Continue"
+      onContinue={onContinue}
+      helper="Share any days, times, or scheduling constraints that matter."
+    />
+  );
+}
+
 function ScanPricingContent() {
   const router = useRouter();
   const hasTrackedPageView = useRef(false);
@@ -732,6 +824,8 @@ function ScanPricingContent() {
   const prevStepRef = useRef<FunnelStep>(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingInsuranceCard, setIsUploadingInsuranceCard] = useState(false);
+  const [insuranceUploadMessage, setInsuranceUploadMessage] = useState<string | null>(null);
 
   const [state, dispatch] = useReducer(reducer, {
     step: 0,
@@ -763,7 +857,7 @@ function ScanPricingContent() {
       });
       if (savedStep) {
         const parsedStep = Number(savedStep);
-        if (parsedStep >= 0 && parsedStep <= 9) {
+        if (parsedStep >= 0 && parsedStep <= 10) {
           dispatch({ type: "GO_TO_STEP", payload: parsedStep as FunnelStep });
         }
       }
@@ -794,7 +888,7 @@ function ScanPricingContent() {
       return;
     }
 
-    if (previous >= 1 && previous <= 8 && !STAT_STEPS.has(previous)) {
+    if (previous >= 1 && previous <= 9 && !STAT_STEPS.has(previous)) {
       analytics.track("Quiz Step Completed", {
         quiz: "scan_pricing",
         step: previous,
@@ -802,12 +896,70 @@ function ScanPricingContent() {
     }
   }, [step]);
 
-  const progressStep = useMemo(() => Math.max(step, 1), [step]);
+  const progressStep = useMemo(() => getDisplayStep(step, answers), [answers, step]);
 
   const setAnswers = useCallback((payload: Partial<ScanPricingAnswers>) => {
     setSubmitError(null);
     dispatch({ type: "SET_ANSWERS", payload });
   }, []);
+
+  const handleInsuranceCardUpload = useCallback(async (file: File) => {
+    setInsuranceUploadMessage(null);
+    setIsUploadingInsuranceCard(true);
+
+    try {
+      const form = new FormData();
+      form.append("image", file);
+      const res = await fetch("/backend/web/scan-pricing-insurance-ocr", {
+        method: "POST",
+        body: form,
+      });
+
+      const data = (await res.json().catch(() => null)) as
+        | {
+            success?: boolean;
+            structured_data?: {
+              provider?: string;
+              plan_name?: string;
+              plan_type?: string;
+            };
+            s3_key?: string;
+            s3_url?: string;
+            error?: string;
+          }
+        | null;
+
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || "We couldn’t read that card. You can still type your insurance details.");
+      }
+
+      const structured = data.structured_data ?? {};
+      const normalizedPlanType = (structured.plan_type || "").trim().toUpperCase();
+      const matchedPlanType = PLAN_TYPE_OPTIONS.find(
+        (option) => option.toUpperCase() === normalizedPlanType,
+      );
+
+      setAnswers({
+        insuranceCompany: structured.provider || "",
+        planName: structured.plan_name || "",
+        planType: matchedPlanType || "",
+        insuranceCardS3Key: data.s3_key || "",
+        insuranceCardUrl: data.s3_url || "",
+        useCustomInsuranceCompany:
+          Boolean(structured.provider) &&
+          !INSURANCE_COMPANY_OPTIONS.includes(structured.provider as (typeof INSURANCE_COMPANY_OPTIONS)[number]),
+      });
+      setInsuranceUploadMessage("Card read. We filled in what we could.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "We couldn’t read that card. You can still type your insurance details.";
+      setInsuranceUploadMessage(message);
+    } finally {
+      setIsUploadingInsuranceCard(false);
+    }
+  }, [setAnswers]);
 
   const next = useCallback(() => {
     dispatch({ type: "NEXT_STEP" });
@@ -887,6 +1039,8 @@ function ScanPricingContent() {
             insuranceCompany={answers.insuranceCompany}
             planName={answers.planName}
             planType={answers.planType}
+            isUploadingInsuranceCard={isUploadingInsuranceCard}
+            insuranceUploadMessage={insuranceUploadMessage}
             onToggleNoInsuranceOrCashPay={() =>
               setAnswers({
                 noInsuranceOrCashPay: !answers.noInsuranceOrCashPay,
@@ -908,6 +1062,7 @@ function ScanPricingContent() {
             }
             onPlanNameChange={(value) => setAnswers({ planName: value })}
             onPlanTypeChange={(value) => setAnswers({ planType: value })}
+            onInsuranceCardUpload={handleInsuranceCardUpload}
             onContinue={next}
           />
         );
@@ -962,11 +1117,24 @@ function ScanPricingContent() {
         return (
           <UrgencyStep
             selected={answers.urgency}
-            onSelect={(value) => setAnswers({ urgency: value })}
+            onSelect={(value) =>
+              setAnswers({
+                urgency: value,
+                ...(value === "asap" ? {} : { availabilityWindow: "" }),
+              })
+            }
             onContinue={next}
           />
         );
       case 8:
+        return (
+          <AvailabilityStep
+            value={answers.availabilityWindow}
+            onChange={(value) => setAnswers({ availabilityWindow: value })}
+            onContinue={next}
+          />
+        );
+      case 9:
         return (
           <EmailStep
             firstName={answers.firstName}
@@ -978,7 +1146,7 @@ function ScanPricingContent() {
             onContinue={next}
           />
         );
-      case 9:
+      case 10:
         return (
           <div className="flex min-h-full flex-1 flex-col">
             <OpenResponseStep
@@ -1006,7 +1174,7 @@ function ScanPricingContent() {
       step={step === 0 ? 0 : progressStep}
       direction={direction}
       onBack={step > 0 ? back : undefined}
-      totalSteps={9}
+      totalSteps={answers.urgency === "asap" ? 10 : 9}
       hiddenProgressSteps={[]}
     >
       {renderStep()}

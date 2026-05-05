@@ -14,6 +14,8 @@ export type ScanPricingPreview = {
 export type ScanPricingAnswers = {
   firstName: string;
   lastName: string;
+  insuranceCardS3Key: string;
+  insuranceCardUrl: string;
   procedure: string;
   withContrast: boolean;
   withoutContrast: boolean;
@@ -28,6 +30,7 @@ export type ScanPricingAnswers = {
   expectsHighHealthcareSpend: boolean;
   location: string;
   urgency: ScanUrgency;
+  availabilityWindow: string;
   email: string;
   anythingElse: string;
 };
@@ -38,6 +41,8 @@ export function normalizeScanPricingAnswers(
   return {
     firstName: answers.firstName.trim(),
     lastName: answers.lastName.trim(),
+    insuranceCardS3Key: answers.insuranceCardS3Key.trim(),
+    insuranceCardUrl: answers.insuranceCardUrl.trim(),
     procedure: answers.procedure.trim(),
     withContrast: answers.withContrast,
     withoutContrast: answers.withoutContrast,
@@ -52,6 +57,7 @@ export function normalizeScanPricingAnswers(
     expectsHighHealthcareSpend: answers.expectsHighHealthcareSpend,
     location: answers.location.trim(),
     urgency: answers.urgency,
+    availabilityWindow: answers.availabilityWindow.trim(),
     email: answers.email.trim().toLowerCase(),
     anythingElse: answers.anythingElse.trim(),
   };
@@ -74,10 +80,13 @@ export function buildScanPricingSummary(
       ? `Contact name: ${[answers.firstName, answers.lastName].filter(Boolean).join(" ")}.`
       : "",
     `I need help finding the cheapest place to get ${answers.procedure}${contrastDetails ? ` (${contrastDetails})` : ""}.`,
+    answers.insuranceCardS3Key ? "Insurance card uploaded." : "",
     answers.noInsuranceOrCashPay
       ? "No insurance / prefers cash pay."
       : `Insurance company: ${answers.insuranceCompany}.`,
-    answers.noInsuranceOrCashPay ? "" : `Plan name: ${answers.planName}.`,
+    answers.noInsuranceOrCashPay || !answers.planName
+      ? ""
+      : `Plan name: ${answers.planName}.`,
     answers.noInsuranceOrCashPay || !answers.planType
       ? ""
       : `Plan type: ${answers.planType}.`,
@@ -89,6 +98,9 @@ export function buildScanPricingSummary(
     `Expects high healthcare spend this year: ${answers.expectsHighHealthcareSpend ? "Yes" : "No"}.`,
     `Location: ${answers.location}.`,
     `Urgency: ${answers.urgency}.`,
+    answers.availabilityWindow
+      ? `Availability for the scan: ${answers.availabilityWindow}.`
+      : "",
     `Email: ${answers.email}.`,
     answers.anythingElse
       ? `Anything else they need help with: ${answers.anythingElse}.`
