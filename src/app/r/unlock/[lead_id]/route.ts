@@ -1,4 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+
+import { trackServer } from "@/lib/server/mixpanel";
 
 /**
  * On-domain redirect to the scan-pricing Stripe payment link, with the
@@ -6,6 +8,9 @@ import { NextResponse } from "next/server";
  * webhook can map the payment back to the original quiz submission row.
  *
  * Hit: https://elena-health.com/r/unlock/<lead_id>  →  302  →  Stripe
+ *
+ * Fires `Email Link Clicked - Unlock CTA` to Mixpanel before redirecting,
+ * keyed on lead_id. Tracking is best-effort with an 800ms hard timeout.
  *
  * Two reasons we route through our domain instead of linking buy.stripe.com
  * directly in the email:
@@ -24,7 +29,7 @@ const LEAD_ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
 export const dynamic = "force-dynamic";
 
 export async function GET(
-  _req: Request,
+  req: NextRequest,
   ctx: { params: Promise<{ lead_id: string }> },
 ) {
   const { lead_id } = await ctx.params;
@@ -32,5 +37,16 @@ export async function GET(
     return new NextResponse("Invalid lead reference", { status: 400 });
   }
   const target = `${STRIPE_PAYMENT_LINK_BASE}?client_reference_id=${encodeURIComponent(lead_id)}`;
+  await trackServer(
+    "Email Link Clicked - Unlock CTA",
+    {
+      funnel: "scan_pricing",
+      destination: STRIPE_PAYMENT_LINK_BASE,
+      lead_id,
+      user_agent: req.headers.get("user-agent") || null,
+      referer: req.headers.get("referer") || null,
+    },
+    lead_id,
+  );
   return NextResponse.redirect(target, 302);
 }
