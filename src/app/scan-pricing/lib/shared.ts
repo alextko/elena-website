@@ -12,6 +12,8 @@ export type ScanPricingPreview = {
 };
 
 export type ScanPricingAnswers = {
+  firstName: string;
+  lastName: string;
   procedure: string;
   withContrast: boolean;
   withoutContrast: boolean;
@@ -34,6 +36,8 @@ export function normalizeScanPricingAnswers(
   answers: ScanPricingAnswers,
 ): ScanPricingAnswers {
   return {
+    firstName: answers.firstName.trim(),
+    lastName: answers.lastName.trim(),
     procedure: answers.procedure.trim(),
     withContrast: answers.withContrast,
     withoutContrast: answers.withoutContrast,
@@ -66,6 +70,9 @@ export function buildScanPricingSummary(
           : "";
 
   return [
+    [answers.firstName, answers.lastName].filter(Boolean).length > 0
+      ? `Contact name: ${[answers.firstName, answers.lastName].filter(Boolean).join(" ")}.`
+      : "",
     `I need help finding the cheapest place to get ${answers.procedure}${contrastDetails ? ` (${contrastDetails})` : ""}.`,
     answers.noInsuranceOrCashPay
       ? "No insurance / prefers cash pay."
