@@ -413,45 +413,28 @@ function InsuranceDetailsStep({
           }}
         />
         <div className="space-y-4">
-          <label className="inline-flex items-start gap-3 rounded-2xl border border-[#E5E5EA] bg-[#F7F6F2] px-4 py-4 text-[14px] text-[#0F1B3D] cursor-pointer">
-            <input
-              type="checkbox"
-              checked={noInsuranceOrCashPay}
-              onChange={onToggleNoInsuranceOrCashPay}
-              className="mt-1 h-4 w-4 shrink-0 accent-[#0F1B3D]"
-            />
-            <span className="leading-6">
-              No insurance / prefer cash pay
-            </span>
-          </label>
-
           {!noInsuranceOrCashPay ? (
-            <div className="rounded-2xl border border-[#E5E5EA] bg-[#F7F6F2] p-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-[14px] font-medium text-[#0F1B3D]">
-                    Upload your insurance card instead
-                  </p>
-                  <p className="mt-1 text-[13px] leading-relaxed text-[#8E8E93]">
-                    Pick a photo from your library and we&apos;ll fill in what we can.
-                  </p>
-                </div>
+            <div className="rounded-2xl border border-[#E5E5EA] bg-[#F7F6F2] px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[13px] leading-relaxed text-[#8E8E93]">
+                  Have your insurance card handy?
+                </p>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploadingInsuranceCard}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-[#0F1B3D]/12 bg-white px-4 py-2.5 text-[14px] font-semibold text-[#0F1B3D] transition hover:bg-[#FAFAF7] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-[#0F1B3D]/12 bg-white px-3 py-2 text-[13px] font-semibold text-[#0F1B3D] transition hover:bg-[#FAFAF7] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isUploadingInsuranceCard ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0F1B3D]/25 border-t-[#0F1B3D]" />
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#0F1B3D]/25 border-t-[#0F1B3D]" />
                   ) : (
-                    <Upload className="h-4 w-4" />
+                    <Upload className="h-3.5 w-3.5" />
                   )}
-                  {isUploadingInsuranceCard ? "Reading card..." : "Upload from photos"}
+                  {isUploadingInsuranceCard ? "Reading..." : "Upload card"}
                 </button>
               </div>
               {insuranceUploadMessage ? (
-                <p className="mt-3 text-[13px] leading-relaxed text-[#5A6A82]">
+                <p className="mt-2 text-[12px] leading-relaxed text-[#5A6A82]">
                   {insuranceUploadMessage}
                 </p>
               ) : null}
@@ -532,6 +515,18 @@ function InsuranceDetailsStep({
               <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#5A6A82]" />
             </div>
           </div>
+
+          <label className="inline-flex items-start gap-3 text-[13px] text-[#5A6A82] cursor-pointer pt-1">
+            <input
+              type="checkbox"
+              checked={noInsuranceOrCashPay}
+              onChange={onToggleNoInsuranceOrCashPay}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[#0F1B3D]"
+            />
+            <span className="leading-5">
+              No insurance or prefer cash pay
+            </span>
+          </label>
 
         </div>
       </div>
@@ -755,7 +750,7 @@ function OpenResponseStep({
         <textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Drop your question here."
+          placeholder=""
           rows={6}
           className="w-full resize-none rounded-2xl border border-[#E5E5EA] bg-[#F7F6F2] px-4 py-4 text-[16px] text-[#0F1B3D] outline-none transition focus:border-[#0F1B3D]/30"
         />
