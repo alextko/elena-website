@@ -135,7 +135,7 @@ export function normalizeRestoredTourPhase({
     !pendingSignup &&
     (phase === "intro" || phase === "social-proof" || phase === "auth" || phase === "flushing")
   ) {
-    return "care";
+    return "router";
   }
 
   if (surface === "onboard" && (phase === "joyride" || phase === "profile" || phase === "chat")) {

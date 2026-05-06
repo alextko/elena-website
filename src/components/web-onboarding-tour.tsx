@@ -779,7 +779,7 @@ export function WebOnboardingTour({
   // change and restored here on mount. Snapshot is computed once (useMemo
   // with []) so state initializers see a stable value. Cleared in
   // finishTour / skipTour so a fresh tour starts at the first real
-  // decision step ("care"), not the old Elena intro card.
+  // decision step ("router"), not the old Elena intro card.
   // Joyride phase requires live joyride controls that don't survive a
   // refresh, so if the snapshot was mid-joyride we skip past it to the
   // profile walkthrough (which reopens the popover via its own effect).
@@ -817,7 +817,9 @@ export function WebOnboardingTour({
         pendingSignup: hasPendingSignup(sessionStorage),
         needsOnboarding,
       });
-      if (normalizedPhase === "intro") s.phase = "care";
+      if (normalizedPhase === "intro" || normalizedPhase === "care" || normalizedPhase === "care-ack" || normalizedPhase === "setup-for") {
+        s.phase = "router";
+      }
       else if (normalizedPhase) s.phase = normalizedPhase;
       else delete s.phase;
       // Previously we fell back joyride→profile here on the theory that
@@ -834,7 +836,7 @@ export function WebOnboardingTour({
     }
   }, [needsOnboarding, session, surface]);
 
-  const [phase, setPhase] = useState<Phase>(tourSnapshot.phase ?? "care");
+  const [phase, setPhase] = useState<Phase>(tourSnapshot.phase ?? "router");
   const [profileStep, setProfileStep] = useState(tourSnapshot.profileStep ?? 0);
   const impossibleAuthPhaseTrackedRef = useRef(false);
 
@@ -923,7 +925,7 @@ export function WebOnboardingTour({
     | { kind: "invite"; title: string; detail: string }
     | null
   >(null);
-  const [careSelections, setCareSelections] = useState<string[]>(tourSnapshot.careSelections ?? []);
+  const [careSelections, setCareSelections] = useState<string[]>(tourSnapshot.careSelections ?? ["myself"]);
   const [painSelection, setPainSelection] = useState<string | null>(tourSnapshot.painSelection ?? null);
   const [lpVariant, setLpVariant] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -5276,13 +5278,12 @@ function BenefitTiles({
   routerChoice: RouterChoice | null;
   painSelection: string | null;
 }) {
-  // Four mini-spotlights in a 2×2 grid. Each tile reveals in three beats:
+  // Two mini-spotlights, ranked by the user's pain point. Each tile reveals in three beats:
   //   1. Container fades + scales in
   //   2. Label streams word-by-word
   //   3. Visual fades in once the label finishes
   // Tiles start 700ms apart so the first lands before the next begins,
-  // creating a clear top-left → top-right → bottom-left → bottom-right
-  // cascade.
+  // creating a clear left → right cascade.
   //
   // Tile order is pain-first, router-second: if we captured a pain
   // bucket, that wins (money pain → costs tile leads; time pain → hours
@@ -5310,9 +5311,11 @@ function BenefitTiles({
     tiles = [tileHours, tileMoney, tileInsurance, tileFamily];
   }
 
+  const prioritizedTiles = tiles.slice(0, 2);
+
   return (
     <div className="grid grid-cols-2 gap-3 mb-1">
-      {tiles.map((tile, i) => (
+      {prioritizedTiles.map((tile, i) => (
         <RevealingTile
           key={tile.key}
           label={tile.label}
