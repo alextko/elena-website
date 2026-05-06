@@ -1091,7 +1091,7 @@ export function WebOnboardingTour({
   // flip subtitleDone so the tiles + Continue reveal.
   useEffect(() => {
     if (phase !== "value" || !headlineDone) return;
-    const t = setTimeout(() => setSubtitleDone(true), 480);
+    const t = setTimeout(() => setSubtitleDone(true), 180);
     return () => clearTimeout(t);
   }, [phase, headlineDone]);
   const finishedRef = useRef(false);
@@ -1233,7 +1233,7 @@ export function WebOnboardingTour({
     // this, joyride spotlights an off-canvas element and the user sees
     // a floating tooltip pointing at nothing.
     if (isMobile.current) onSidebarRef.current(true);
-    const startTimer = setTimeout(() => controls.start(), isMobile.current ? 600 : 300);
+    const startTimer = setTimeout(() => controls.start(), isMobile.current ? 300 : 150);
     let fired = false;
     const fire = () => {
       if (fired) return;
@@ -1743,12 +1743,12 @@ export function WebOnboardingTour({
     if (isMobile.current) onSidebar(true);
     setPhase("joyride");
     // Extra delay on mobile to let sidebar slide animation complete
-    setTimeout(() => controls.start(), isMobile.current ? 600 : 300);
+    setTimeout(() => controls.start(), isMobile.current ? 300 : 150);
   }, [controls, onSidebar]);
 
   const leaveShellThen = useCallback((cb: () => void) => {
     setShellFading(true);
-    setTimeout(cb, 280);
+    setTimeout(cb, 180);
   }, []);
 
   const advanceFromIntro = useCallback(() => {
@@ -2539,13 +2539,13 @@ export function WebOnboardingTour({
                       initial={{ opacity: 0, scale: 0.5 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.35, ease: motionEase, delay: 0.15 }}
-                      style={{ animation: "elena-wave 900ms ease-in-out 550ms 1" }}
+                      style={{ animation: "elena-wave 650ms ease-in-out 250ms 1" }}
                       aria-hidden
                     >
                       👋
                     </motion.div>
                     <h2 className="text-[22px] font-extrabold text-[#0F1B3D] text-balance leading-tight mb-2">
-                      <StreamingText text="Hey, I'm Elena" startDelay={0.6} onDone={() => setHeadlineDone(true)} />
+                      <StreamingText text="Hey, I'm Elena" startDelay={0.2} onDone={() => setHeadlineDone(true)} />
                     </h2>
                     <motion.p
                       initial={{ opacity: 0 }}
@@ -2558,7 +2558,7 @@ export function WebOnboardingTour({
                     </motion.p>
                   </motion.div>
                 </div>
-                <RevealButton visible={subtitleDone} delay={0.15}>
+                <RevealButton visible={subtitleDone} delay={0.05}>
                   <GradientButton onClick={advanceFromIntro} label="Continue" />
                 </RevealButton>
               </motion.div>
@@ -2972,7 +2972,7 @@ export function WebOnboardingTour({
                   </div>
                   {subtitleDone && <BenefitTiles routerChoice={routerChoice} painSelection={painSelection} />}
                 </div>
-                <RevealButton visible={subtitleDone} delay={0.8}>
+                <RevealButton visible={subtitleDone} delay={0.15}>
                   <GradientButton onClick={advanceFromValue} label="Continue" />
                 </RevealButton>
               </motion.div>
@@ -4072,7 +4072,7 @@ export function WebOnboardingTour({
                             fill="url(#savings-gap)"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            transition={{ duration: 0.5, delay: 2.0 }}
+                            transition={{ duration: 0.35, delay: 1.05 }}
                           />
                           {/* "On your own" line — muted red, rises */}
                           <motion.path
@@ -4083,7 +4083,7 @@ export function WebOnboardingTour({
                             strokeLinecap="round"
                             initial={{ pathLength: 0 }}
                             animate={{ pathLength: 1 }}
-                            transition={{ duration: 1.2, ease: motionEase, delay: 0.25 }}
+                            transition={{ duration: 0.7, ease: motionEase, delay: 0.1 }}
                           />
                           {/* "Elena" line — navy, flat then dips */}
                           <motion.path
@@ -4094,7 +4094,7 @@ export function WebOnboardingTour({
                             strokeLinecap="round"
                             initial={{ pathLength: 0 }}
                             animate={{ pathLength: 1 }}
-                            transition={{ duration: 1.3, ease: motionEase, delay: 0.55 }}
+                            transition={{ duration: 0.75, ease: motionEase, delay: 0.2 }}
                           />
                           {/* Shared start point */}
                           <motion.circle
@@ -4102,7 +4102,7 @@ export function WebOnboardingTour({
                             fill="#F5F1EB" stroke="#0F1B3D" strokeWidth={2}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            transition={{ duration: 0.2, delay: 0.15 }}
+                            transition={{ duration: 0.15, delay: 0.05 }}
                           />
                           {/* "On your own" endpoint */}
                           <motion.circle
@@ -4110,7 +4110,7 @@ export function WebOnboardingTour({
                             fill="#F5F1EB" stroke="#B5707A" strokeWidth={2}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            transition={{ duration: 0.2, delay: 1.45 }}
+                            transition={{ duration: 0.15, delay: 0.72 }}
                           />
                           {/* "On your own" endpoint label */}
                           <motion.text
@@ -4121,7 +4121,7 @@ export function WebOnboardingTour({
                             fill="#B5707A"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            transition={{ duration: 0.25, delay: 1.5 }}
+                            transition={{ duration: 0.2, delay: 0.76 }}
                           >
                             On your own
                           </motion.text>
@@ -4131,7 +4131,7 @@ export function WebOnboardingTour({
                             fill="#F5F1EB" stroke="#0F1B3D" strokeWidth={2}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            transition={{ duration: 0.2, delay: 1.85 }}
+                            transition={{ duration: 0.15, delay: 0.9 }}
                           />
                           {/* Elena endpoint label */}
                           <motion.text
@@ -4142,7 +4142,7 @@ export function WebOnboardingTour({
                             fill="#0F1B3D"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            transition={{ duration: 0.25, delay: 1.9 }}
+                            transition={{ duration: 0.2, delay: 0.94 }}
                           >
                             With Elena
                           </motion.text>
@@ -4150,7 +4150,7 @@ export function WebOnboardingTour({
                           <motion.g
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            transition={{ duration: 0.25, delay: 1.95 }}
+                            transition={{ duration: 0.2, delay: 0.98 }}
                           >
                             <circle cx={34} cy={162} r={3.5} fill="#0F1B3D" />
                             <text x={42} y={166} fontSize={11} fontWeight={700} fill="#0F1B3D">
@@ -4171,7 +4171,7 @@ export function WebOnboardingTour({
                         <motion.p
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          transition={{ duration: 0.3, delay: 2.3 }}
+                          transition={{ duration: 0.2, delay: 1.15 }}
                           className="text-center text-[13px] text-[#0F1B3D]/80 leading-snug text-balance mt-3 max-w-[24rem] mx-auto"
                         >
                           {copy.caption}
@@ -4179,7 +4179,7 @@ export function WebOnboardingTour({
                       </motion.div>
                     )}
                   </div>
-                  <RevealButton visible={headlineDone} delay={2.4}>
+                  <RevealButton visible={headlineDone} delay={1.2}>
                     <GradientButton
                       onClick={() => {
                         analytics.track("Web Tour Social Proof Continued", {
@@ -5121,11 +5121,11 @@ export function WebOnboardingTour({
 // Stagger-in wrapper for list items. Children must use REVEAL_ITEM variants.
 const REVEAL_CONTAINER = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
+  visible: { transition: { staggerChildren: 0.04, delayChildren: 0.02 } },
 };
 const REVEAL_ITEM = {
   hidden: { opacity: 0, y: 8 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.28, ease: [0.4, 0, 0.2, 1] as const } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } },
 };
 
 function RevealStack({ visible, className, children }: { visible: boolean; className?: string; children: React.ReactNode }) {
@@ -5146,7 +5146,7 @@ function RevealButton({ visible, delay = 0, children }: { visible: boolean; dela
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={visible ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
-      transition={{ duration: 0.3, delay, ease: [0.4, 0, 0.2, 1] }}
+      transition={{ duration: 0.2, delay, ease: [0.4, 0, 0.2, 1] }}
     >
       {children}
     </motion.div>
@@ -5320,7 +5320,7 @@ function BenefitTiles({
           key={tile.key}
           label={tile.label}
           visual={tile.visual}
-          startDelayMs={100 + i * 700}
+          startDelayMs={40 + i * 220}
         />
       ))}
     </div>
@@ -5340,7 +5340,7 @@ function RevealingTile({ label, visual, startDelayMs }: {
     const t1 = setTimeout(() => setContainerShown(true), startDelayMs);
     // Label begins streaming ~200ms after the container lands, so the empty
     // square is briefly visible before text arrives.
-    const t2 = setTimeout(() => setLabelStart(true), startDelayMs + 220);
+    const t2 = setTimeout(() => setLabelStart(true), startDelayMs + 80);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [startDelayMs]);
 
@@ -5348,7 +5348,7 @@ function RevealingTile({ label, visual, startDelayMs }: {
     <motion.div
       initial={{ opacity: 0, scale: 0.94, y: 6 }}
       animate={containerShown ? { opacity: 1, scale: 1, y: 0 } : undefined}
-      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
       className="rounded-2xl bg-[#F5F7FB] border border-[#E5E5EA] p-3 flex flex-col"
     >
       {/* min-h reserves space for the streaming label so the container doesn't
@@ -5357,7 +5357,7 @@ function RevealingTile({ label, visual, startDelayMs }: {
         {labelStart && (
           <StreamingText
             text={label}
-            wordStagger={0.06}
+            wordStagger={0.035}
             onDone={() => setLabelDone(true)}
           />
         )}
@@ -5366,7 +5366,7 @@ function RevealingTile({ label, visual, startDelayMs }: {
         <motion.div
           initial={{ opacity: 0, y: 4 }}
           animate={labelDone ? { opacity: 1, y: 0 } : { opacity: 0, y: 4 }}
-          transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1], delay: 0.08 }}
+          transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1], delay: 0.03 }}
           className="w-full"
         >
           {visual}
