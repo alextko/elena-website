@@ -94,11 +94,11 @@ export default function ScanPricingConfirmationPage() {
           </p>
 
           <h1 className="mx-auto mt-3 max-w-[11ch] text-center text-[clamp(2rem,10vw,4rem)] font-light leading-[1.02] tracking-[-0.04em] text-white md:mt-4 md:tracking-[-0.03em]">
-            Look out for your MRI report.
+            We’re finding the best MRI options now.
           </h1>
 
           <p className="mx-auto mt-4 max-w-[34rem] text-center text-[0.95rem] font-light leading-7 tracking-[0.01em] text-white/82 md:mt-5 md:max-w-[38rem] md:text-[1rem] md:leading-8">
-            Our patient advocates are working on your MRI request now.
+            Our patient concierge team is comparing local MRI options so you can avoid overpaying and move forward with the best fit.
           </p>
 
           <div className="mt-7 rounded-[24px] border border-[#f4b084]/35 bg-[linear-gradient(180deg,rgba(244,176,132,0.18),rgba(255,255,255,0.08))] px-5 py-5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] md:mt-8 md:px-7 md:py-6">
@@ -111,11 +111,11 @@ export default function ScanPricingConfirmationPage() {
               range.
             </p>
             <p className="mt-3 text-[14px] leading-6 text-white/72 md:text-[15px] md:leading-7">
-              {preview?.reportNote ?? "Your final MRI report will show the cheapest local options, what looks best with insurance vs cash pay, and the next step we’d recommend."}
+              {preview?.reportNote ?? "Your MRI options report will show the best local options, where you may be able to save money, and the path we’d recommend first."}
               {preview?.pricingPathLabel === "Cash pay may win"
                 ? " Based on your coverage, cash pay may be your best option."
                 : null}
-              {preview?.pricingPathLabel === "Prioritize cash-pay MRI pricing"
+              {preview?.pricingPathLabel === "Prioritize cash-pay options"
                 ? " Since you said cash pay is on the table, we’ll prioritize those options."
                 : null}
               {preview?.pricingPathLabel === "Insurance may be competitive"
@@ -135,7 +135,7 @@ export default function ScanPricingConfirmationPage() {
                   What Happens Next
                 </p>
                 <p className="mt-2 max-w-none text-[14px] leading-6 text-white/82 md:mt-3 md:max-w-[24ch] md:text-[15px] md:leading-7">
-                  We&apos;ll email your MRI report and best options within 24 hours.
+                  We&apos;ll email your MRI options report within 24 hours, including our recommendation and next steps.
                 </p>
               </div>
 
@@ -164,7 +164,7 @@ export default function ScanPricingConfirmationPage() {
             <div className="flex max-w-[20rem] flex-col items-center justify-center gap-1 text-center text-[12px] font-medium tracking-[0.01em] text-white/42 md:max-w-none md:flex-row md:flex-wrap md:gap-x-4 md:gap-y-2">
               <span>Results in your inbox within 24 hours</span>
               <span className="hidden sm:inline text-white/20">•</span>
-              <span>Your MRI report includes price and booking guidance</span>
+              <span>Your MRI report includes savings and booking guidance</span>
               <span className="hidden sm:inline text-white/20">•</span>
               <span>Questions? Our team is available anytime</span>
             </div>

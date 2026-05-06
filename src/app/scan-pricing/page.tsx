@@ -192,7 +192,7 @@ function ProcedureStep({
   return (
     <StepLayout
       question="What MRI do you need?"
-      subtitle="Tell us the body part so we can price the right MRI."
+      subtitle="Tell us the scan so our concierge can compare the right MRI options."
       ctaLabel="Continue"
       ctaEnabled={canContinue}
       centered
@@ -393,7 +393,7 @@ function InsuranceDetailsStep({
   return (
     <StepLayout
       question="What insurance do you have?"
-      subtitle="We always check cash pay options too, even if you have insurance."
+      subtitle="We compare the best path for cash pay versus insurance."
       ctaLabel="Continue"
       ctaEnabled={canContinue}
       centered
@@ -679,7 +679,7 @@ function EmailStep({
   return (
     <StepLayout
       question="Where should we send the results?"
-      subtitle="We’ll email your lowest-cost options and next steps within 24 hours."
+      subtitle="We’ll email your best MRI options, savings opportunities, and next steps within 24 hours."
       ctaLabel="Continue"
       ctaEnabled={canContinue}
       centered
@@ -714,7 +714,7 @@ function EmailStep({
           className="mt-3 w-full rounded-2xl border border-[#E5E5EA] bg-[#F7F6F2] px-4 py-4 text-[16px] text-[#0F1B3D] outline-none transition focus:border-[#0F1B3D]/30"
         />
         <p className="mt-3 text-[13px] text-[#8E8E93] leading-relaxed">
-          Our patient advocates will use this to send your options and stay in touch.
+          Our patient concierge team will use this to send your report and stay in touch.
         </p>
         {value.trim().length > 0 && !isValid ? (
           <p className="mt-3 text-[13px] text-[#b42318] leading-relaxed">
@@ -740,7 +740,7 @@ function OpenResponseStep({
   return (
     <StepLayout
       question="Anything else we can help with?"
-      subtitle="Our patient advocates can help with any care navigation question. Drop it here and we’ll do our best to help."
+      subtitle="Tell us anything that should factor into our recommendation or help coordinating the appointment."
       ctaLabel={isSubmitting ? "Submitting Request..." : "Submit Request"}
       ctaLoading={isSubmitting}
       centered
@@ -771,7 +771,7 @@ function UrgencyStep({
   return (
     <StepLayout
       question="How urgent is this?"
-      subtitle="We’ll balance cost against how quickly you need it done."
+      subtitle="We’ll balance savings against how quickly you need it done."
       ctaLabel="Continue"
       centered
       onCta={onContinue}
@@ -1086,7 +1086,7 @@ function ScanPricingContent() {
           <StatStep
             eyebrow="Cash Pay Can Win"
             stat="Cash pay is often cheaper than using insurance."
-            body="In one study, cash prices were lower than insurance prices at 47% of hospitals. That is why we compare both options before telling you where to book."
+            body="In one study, cash prices were lower than insurance prices at 47% of hospitals. That is why we compare both options before recommending where to go."
             sourceLabel="Health Affairs, 2023"
             sourceHref="https://pubmed.ncbi.nlm.nih.gov/37011313/"
             onContinue={next}
@@ -1096,13 +1096,13 @@ function ScanPricingContent() {
         return (
           <TextFieldStep
             question="What ZIP code should we search?"
-            subtitle="Enter the ZIP code where you want us to compare options."
+            subtitle="Enter the ZIP code where you want us to compare the best local options."
             placeholder="10001"
             value={answers.location}
             onChange={(value) => setAnswers({ location: value })}
             ctaLabel="Continue"
             onContinue={next}
-            helper="We use your ZIP code to compare the best local options."
+            helper="We use your ZIP code to compare local options on price, timing, and fit."
             error="Enter a valid ZIP code."
             validate={isValidZipCode}
             inputMode="numeric"

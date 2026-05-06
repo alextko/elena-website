@@ -185,28 +185,28 @@ export function buildScanPricingPreview(
     answers.expectsHighHealthcareSpend;
   const urgencyLabel =
     answers.urgency === "asap"
-      ? "We’ll bias toward fast-turnaround MRI options."
+      ? "We’ll prioritize MRI options that can get you in quickly."
       : answers.urgency === "flexible"
-        ? "We’ll bias toward the cheapest sensible MRI option."
-        : "We’ll balance price and availability.";
+        ? "We’ll prioritize the lowest-cost sensible MRI options."
+        : "We’ll balance price, availability, and fit.";
 
   let recommendation =
-    "We’ll compare both cash-pay and in-network pricing so you can see which path is actually cheaper.";
-  let pricingPathLabel = "Compare cash pay and insurance";
+    "We’ll compare both cash-pay and in-network pricing so you can see which path saves you the most money.";
+  let pricingPathLabel = "Compare cash-pay and insurance paths";
   let nextStepLabel =
-    "We’ll send the cheapest local MRI options, show the expected price spread, and call out the path we’d book.";
+    "We’ll compare the best local MRI options, show where you can save money, and recommend the path we’d choose first.";
 
   if (answers.noInsuranceOrCashPay) {
     recommendation =
       "Since you said cash pay is on the table, we’ll prioritize self-pay pricing first and compare it against any obvious insured options.";
-    pricingPathLabel = "Prioritize cash-pay MRI pricing";
+    pricingPathLabel = "Prioritize cash-pay options";
   } else if (!hasFinancialInputs) {
     recommendation =
       "Since you skipped your deductible and spend details, we’ll compare both cash-pay and in-network MRI pricing side by side.";
-    pricingPathLabel = "We need to compare both paths";
+    pricingPathLabel = "Compare both paths";
   } else if (deductible > 0 && spend < deductible * 0.5 && !answers.expectsHighHealthcareSpend) {
     recommendation =
-      "Cash pay could be your cheapest option for this MRI.";
+      "Cash pay may be the best-value option for this MRI.";
     pricingPathLabel = "Cash pay may win";
   } else if ((deductible > 0 && spend >= deductible) || answers.expectsHighHealthcareSpend || (oopMax > 0 && spend >= oopMax * 0.5)) {
     recommendation =
@@ -216,17 +216,17 @@ export function buildScanPricingPreview(
 
   if (answers.urgency === "asap") {
     nextStepLabel =
-      "We’ll focus on MRI centers that can see you quickly, then flag the lowest-cost options among the fastest appointments.";
+      "We’ll focus on MRI centers that can see you quickly, then flag the strongest value among the fastest appointments.";
   } else if (answers.urgency === "flexible") {
     nextStepLabel =
-      "We’ll lean into the cheapest MRI options first, even if the best price takes a little longer to schedule.";
+      "We’ll lean into the lowest-cost MRI options first, even if the best price takes a little longer to schedule.";
   }
 
   return {
     recommendation,
     rangeLabel: `${formatUsd(low)}–${formatUsd(high)}`,
     reportNote:
-      "Your final MRI report will show the cheapest local options, what looks best with insurance vs cash pay, and the next step we’d recommend.",
+      "Your MRI options report will show the best local options, where you may be able to save money, and the path we’d recommend first.",
     contrastLabel,
     pricingPathLabel,
     insuranceLabel,

@@ -72,17 +72,17 @@ const PROCESS_STEPS = [
   {
     number: "01",
     title: "Tell us what MRI you need",
-    body: "Tell us the body part, your insurance, and your location. We'll do the rest.",
+    body: "Tell us the body part, your insurance, and your location so we can find the best option.",
   },
   {
     number: "02",
-    title: "We compare real MRI options",
-    body: "Our patient advocates call, price-check, and negotiate when MRI pricing is unclear.",
+    title: "We compare the best local options",
+    body: "Our patient concierge team compares price, timing, and cash-pay versus insurance when MRI pricing is unclear.",
   },
   {
     number: "03",
-    title: "Get you the best price",
-    body: "We send the best MRI options, schedule the appointment, and stay available for questions as you navigate your care.",
+    title: "Save money and move forward",
+    body: "We send the best options, explain the tradeoffs, and help coordinate the appointment.",
   },
 ];
 
@@ -241,14 +241,14 @@ export function Intro({ onStart }: IntroProps) {
 
       <div className="scan-pricing-hero-main relative z-[4] w-full max-w-[920px] px-6 pb-8 pt-[12vh] text-center max-md:px-5 max-md:pb-8 max-md:pt-[96px]">
         <h1 className="scan-pricing-hero-title text-[clamp(2.2rem,4.6vw,3.95rem)] font-light leading-[1.01] tracking-[-0.04em] text-white max-md:text-[2.35rem]">
-          Find the cheapest place
+          Find the best MRI
           <br />
-          <span className="font-extrabold text-white">to get your MRI done.</span>
+          <span className="font-extrabold text-white">and avoid overpaying.</span>
         </h1>
 
         <p className="scan-pricing-hero-subtitle mx-auto mt-4 max-w-[640px] text-[0.98rem] font-light leading-relaxed tracking-[0.01em] text-white/82 max-md:max-w-[30ch] max-md:text-[0.98rem] max-md:leading-7">
-          We compare real MRI options, call when pricing is unclear, and help you
-          avoid overpaying before you book.
+          Elena is your MRI concierge. We compare local options, check cash-pay
+          versus insurance, and help coordinate the appointment.
         </p>
 
         <div className="scan-pricing-hero-process mx-auto mt-7 max-w-[920px] text-left max-md:mt-7">
@@ -287,7 +287,7 @@ export function Intro({ onStart }: IntroProps) {
             onClick={onStart}
             className="min-w-[280px] rounded-full bg-white px-10 py-4 text-[1.02rem] font-semibold text-[#0F1B3D] shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition-all hover:bg-white/95 max-md:min-w-0 max-md:w-full max-md:max-w-[320px]"
           >
-            Find the best MRI
+            Find my best MRI option
           </button>
 
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[12px] font-medium tracking-[0.01em] text-white/42 max-md:max-w-[300px]">
