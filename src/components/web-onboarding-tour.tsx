@@ -5291,9 +5291,9 @@ function BenefitTiles({
   // named. routerChoice is only used as a fallback for users who
   // skipped pain (e.g. staying_healthy branch).
   const tileHours = { key: "hours", label: "Hours back every week", visual: <BookingMiniCard /> };
-  const tileMoney = { key: "money", label: "Typically cut costs 20 to 40%", visual: <PricingMiniCard /> };
+  const tileMoney = { key: "money", label: "Price shopping cuts cost by 20 to 40%", visual: <PricingMiniCard /> };
   const tileFamily = { key: "family", label: "Every family member in one place", visual: <FamilyMiniCard /> };
-  const tileInsurance = { key: "insurance", label: "Get the most from your insurance", visual: <InsuranceMiniCard /> };
+  const tileInsurance = { key: "insurance", label: "Get the most out of your insurance", visual: <InsuranceMiniCard /> };
 
   const isMoneyPain = painSelection != null
     && ["lt500", "500to2k", "2kto5k", "5kplus"].includes(painSelection);
