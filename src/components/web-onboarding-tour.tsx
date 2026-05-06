@@ -239,33 +239,23 @@ const MONEY_PAIN_OPTIONS = [
   { id: "5kplus", label: "$5,000 or more", dollarsOverDecade: 75000, punchline: "Enough to retire a few years earlier." },
 ];
 
-// Comparison-chart copy for the social-proof step before auth. Keyed by
-// pain-bucket id so the y-axis framing + caption match the number the
-// user just named on the pain step. Headline sits above the chart,
-// yLabel inside the card, pill next to the Elena legend chip, caption
-// beneath. PLACEHOLDER percentages — calibrate to real 90-day cohort
-// data once the events pipeline has N. Soft language ("most", "typical")
-// keeps the copy honest if the true median shifts.
-const COMPARISON_COPY: Record<string, { yLabel: string; pill: string; caption: string }> = {
-  // Time buckets
-  lt1:    { yLabel: "Your weekly healthcare time", pill: "Time", caption: "Healthcare load grows as life gets busier. Most Elena users in your range reclaim 30+ minutes a week within 3 months." },
-  "1to3": { yLabel: "Your weekly healthcare time", pill: "Time", caption: "Healthcare load grows over time. 80% of Elena users in your range cut theirs in half within 3 months." },
-  "3to6": { yLabel: "Your weekly healthcare time", pill: "Time", caption: "Healthcare load grows over time. 80% of Elena users in your range cut theirs by more than half within 3 months." },
-  "6plus":{ yLabel: "Your weekly healthcare time", pill: "Time", caption: "Healthcare load grows over time. 80% of Elena users in your range cut theirs by more than half within 3 months." },
-  // Money buckets
-  lt500:    { yLabel: "Your yearly healthcare spend", pill: "Cost", caption: "Healthcare costs climb every year. Most Elena users in your range catch billing surprises before they become real bills." },
-  "500to2k":{ yLabel: "Your yearly healthcare spend", pill: "Cost", caption: "Healthcare costs climb every year. 75% of Elena users in your range cut theirs by 20% or more within a year." },
-  "2kto5k": { yLabel: "Your yearly healthcare spend", pill: "Cost", caption: "Healthcare costs climb every year. 80% of Elena users in your range cut theirs by 25% or more within a year." },
-  "5kplus": { yLabel: "Your yearly healthcare spend", pill: "Cost", caption: "Healthcare costs climb every year. 80% of Elena users in your range cut theirs by 30% or more within a year." },
-};
-// Fallback for users who reach social-proof without picking a pain
-// bucket (e.g. staying_healthy branch that skipped pain). Generic
-// retention framing instead of outcome-sized.
-const COMPARISON_DEFAULT = {
-  yLabel: "Your healthcare load",
-  pill: "Care",
-  caption: "Healthcare only gets more complicated over time. Elena keeps yours from running away — 9 in 10 users stick with the app past their first week.",
-};
+const SOCIAL_PROOF_EXAMPLES = [
+  {
+    procedure: "Abdomen MRI",
+    price: "$650",
+    comparison: "instead of $4,100",
+  },
+  {
+    procedure: "Lumbar MRI",
+    price: "$400",
+    comparison: "instead of $1,000",
+  },
+  {
+    procedure: "Whole-body MRI",
+    price: "$899",
+    comparison: "instead of $2,599+",
+  },
+];
 
 // Only the profile button step uses Joyride (targets main DOM)
 const JOYRIDE_STEPS: any[] = [
@@ -4005,26 +3995,6 @@ export function WebOnboardingTour({
             })()}
 
             {phase === "social-proof" && (() => {
-              // Dual-line comparison chart modeled after Cal AI. Both
-              // lines start at the SAME point (the user's current pain
-              // today); "On your own" rises over 12 months (healthcare
-              // load grows if left alone — the honest counterfactual),
-              // Elena flattens/dips. The SHADED GAP between them is
-              // the visual payoff — that's the savings story. Labels
-              // sit at the line endpoints (not inside the chart) and
-              // the X-axis shows Now / 6 mo / 12 mo so the chart reads
-              // as a trajectory, not just two endpoints. No y-axis
-              // numbers — kept non-specific so the chart doesn't imply
-              // more precision than we have.
-              const copy = (painSelection && COMPARISON_COPY[painSelection]) || COMPARISON_DEFAULT;
-              // ViewBox: 320 × 180. Chart area: x 30→290, y 40→120.
-              // Shared start point: (30, 85). Divergence to (290, 40)
-              // and (290, 118) by end.
-              const diyPath = "M 30 85 C 110 82, 185 58, 290 40";
-              const elenaPath = "M 30 85 C 110 88, 185 108, 290 118";
-              // Closed polygon between the two lines for the savings
-              // gap shading. Traverses DIY forward, then Elena in reverse.
-              const gapPath = "M 30 85 C 110 82, 185 58, 290 40 L 290 118 C 185 108, 110 88, 30 85 Z";
               return (
                 <motion.div
                   key="social-proof"
@@ -4037,7 +4007,7 @@ export function WebOnboardingTour({
                   <div className="flex-1 flex flex-col justify-center gap-4">
                     <div className="text-center">
                       <h2 className="text-[22px] font-extrabold text-[#0F1B3D] mb-1 text-balance leading-tight">
-                        <StreamingText text="Elena creates lasting relief" onDone={() => setHeadlineDone(true)} />
+                        <StreamingText text="Recent MRI wins from Elena customers" onDone={() => setHeadlineDone(true)} />
                       </h2>
                     </div>
                     {headlineDone && (
@@ -4047,139 +4017,42 @@ export function WebOnboardingTour({
                         transition={{ duration: 0.4, ease: motionEase, delay: 0.1 }}
                         className="mt-1 rounded-2xl bg-[#F5F1EB] p-4 sm:p-5"
                       >
-                        <p className="text-[13px] font-semibold text-[#0F1B3D] mb-2">
-                          {copy.yLabel}
+                        <p className="text-[13px] leading-6 text-[#0F1B3D]/75 text-center max-w-[26rem] mx-auto">
+                          Elena helps people avoid overpaying by comparing real MRI options before they book.
                         </p>
-                        <svg
-                          viewBox="0 0 320 180"
-                          className="w-full h-auto"
-                          role="img"
-                          aria-label={`Comparison of ${copy.yLabel.toLowerCase()} with Elena vs on your own over twelve months`}
-                        >
-                          <defs>
-                            <linearGradient id="savings-gap" x1="0%" y1="0%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="#0F1B3D" stopOpacity="0" />
-                              <stop offset="100%" stopColor="#2E6BB5" stopOpacity="0.18" />
-                            </linearGradient>
-                          </defs>
-                          {/* Subtle dashed gridlines — reference only, no numbers */}
-                          <line x1="30" y1="50" x2="290" y2="50" stroke="#0F1B3D" strokeOpacity="0.08" strokeDasharray="3 4" />
-                          <line x1="30" y1="85" x2="290" y2="85" stroke="#0F1B3D" strokeOpacity="0.08" strokeDasharray="3 4" />
-                          <line x1="30" y1="120" x2="290" y2="120" stroke="#0F1B3D" strokeOpacity="0.08" strokeDasharray="3 4" />
-                          {/* Savings-gap shading — the visual payoff, fades in AFTER both lines have drawn */}
-                          <motion.path
-                            d={gapPath}
-                            fill="url(#savings-gap)"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.35, delay: 1.05 }}
-                          />
-                          {/* "On your own" line — muted red, rises */}
-                          <motion.path
-                            d={diyPath}
-                            fill="none"
-                            stroke="#B5707A"
-                            strokeWidth={2.5}
-                            strokeLinecap="round"
-                            initial={{ pathLength: 0 }}
-                            animate={{ pathLength: 1 }}
-                            transition={{ duration: 0.7, ease: motionEase, delay: 0.1 }}
-                          />
-                          {/* "Elena" line — navy, flat then dips */}
-                          <motion.path
-                            d={elenaPath}
-                            fill="none"
-                            stroke="#0F1B3D"
-                            strokeWidth={2.8}
-                            strokeLinecap="round"
-                            initial={{ pathLength: 0 }}
-                            animate={{ pathLength: 1 }}
-                            transition={{ duration: 0.75, ease: motionEase, delay: 0.2 }}
-                          />
-                          {/* Shared start point */}
-                          <motion.circle
-                            cx={30} cy={85} r={4.5}
-                            fill="#F5F1EB" stroke="#0F1B3D" strokeWidth={2}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.15, delay: 0.05 }}
-                          />
-                          {/* "On your own" endpoint */}
-                          <motion.circle
-                            cx={290} cy={40} r={4.5}
-                            fill="#F5F1EB" stroke="#B5707A" strokeWidth={2}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.15, delay: 0.72 }}
-                          />
-                          {/* "On your own" endpoint label */}
-                          <motion.text
-                            x={283} y={30}
-                            textAnchor="end"
-                            fontSize={12}
-                            fontWeight={600}
-                            fill="#B5707A"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.2, delay: 0.76 }}
-                          >
-                            On your own
-                          </motion.text>
-                          {/* Elena endpoint */}
-                          <motion.circle
-                            cx={290} cy={118} r={4.5}
-                            fill="#F5F1EB" stroke="#0F1B3D" strokeWidth={2}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.15, delay: 0.9 }}
-                          />
-                          {/* Elena endpoint label */}
-                          <motion.text
-                            x={283} y={140}
-                            textAnchor="end"
-                            fontSize={12}
-                            fontWeight={700}
-                            fill="#0F1B3D"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.2, delay: 0.94 }}
-                          >
-                            With Elena
-                          </motion.text>
-                          {/* Elena context chip (metric pill) — bottom-left, outside line area */}
-                          <motion.g
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.2, delay: 0.98 }}
-                          >
-                            <circle cx={34} cy={162} r={3.5} fill="#0F1B3D" />
-                            <text x={42} y={166} fontSize={11} fontWeight={700} fill="#0F1B3D">
-                              Elena
-                            </text>
-                            <rect x={80} y={154} rx={6.5} ry={6.5} width={44} height={15} fill="#0F1B3D" />
-                            <text x={102} y={165} textAnchor="middle" fontSize={10} fontWeight={600} fill="#FFFFFF">
-                              {copy.pill}
-                            </text>
-                          </motion.g>
-                        </svg>
-                        {/* X-axis labels — three ticks for trajectory */}
-                        <div className="flex justify-between text-[11px] text-[#0F1B3D]/60 font-medium mt-1 px-[8%]">
-                          <span>Now</span>
-                          <span>6 months</span>
-                          <span>12 months</span>
+                        <div className="mt-4 grid gap-3">
+                          {SOCIAL_PROOF_EXAMPLES.map((example, index) => (
+                            <motion.div
+                              key={example.procedure}
+                              initial={{ opacity: 0, y: 8 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.24, ease: motionEase, delay: 0.08 + index * 0.08 }}
+                              className="rounded-2xl border border-[#E3D8CC] bg-white/70 px-4 py-3"
+                            >
+                              <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#8E8E93]">
+                                {example.procedure}
+                              </p>
+                              <p className="mt-1 text-[18px] font-extrabold text-[#0F1B3D]">
+                                {example.price}
+                              </p>
+                              <p className="text-[13px] text-[#0F1B3D]/70">
+                                {example.comparison}
+                              </p>
+                            </motion.div>
+                          ))}
                         </div>
                         <motion.p
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          transition={{ duration: 0.2, delay: 1.15 }}
+                          transition={{ duration: 0.2, delay: 0.4 }}
                           className="text-center text-[13px] text-[#0F1B3D]/80 leading-snug text-balance mt-3 max-w-[24rem] mx-auto"
                         >
-                          {copy.caption}
+                          We compare local options so you can see the best path before you book.
                         </motion.p>
                       </motion.div>
                     )}
                   </div>
-                  <RevealButton visible={headlineDone} delay={1.2}>
+                  <RevealButton visible={headlineDone} delay={0.6}>
                     <GradientButton
                       onClick={() => {
                         analytics.track("Web Tour Social Proof Continued", {
