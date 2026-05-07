@@ -1179,7 +1179,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: `${window.location.origin}/chat` },
+        options: {
+          emailRedirectTo: `${window.location.origin}/chat`,
+          data: {
+            signup_surface: "web",
+            signup_source: options?.source || "unknown",
+          },
+        },
       });
       // Signup Completed is tracked in fetchProfile() to avoid duplicates
       return { error: error?.message ?? null };
