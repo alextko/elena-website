@@ -1892,16 +1892,11 @@ export function WebOnboardingTour({
 
   const advanceFromValue = useCallback(async () => {
     analytics.track("Web Tour Value Step Continued", { lp_variant: lpVariant || "homepage" });
-    // Fresh signup without pre-filled profile → collect name first;
-    // handleProfileSubmit then routes into the appropriate branch.
-    //
-    // Plan A anonymous tour: no auth-context session means needsOnboarding
-    // is false, but we DEFINITELY still need name (nothing is
-    // saved server-side yet — it all rides on the buffer through signup
-    // to flushTourBuffer). Force the profile-form phase whenever the
-    // tour is anonymous OR we haven't captured name yet.
-    const hasName = !!(firstName.trim() || profileData?.firstName);
-    if (isAnonymousTour || needsOnboarding || !hasName) {
+    // Keep the dependent path on profile-form because that screen still
+    // confirms who we're setting up and creates/switches the managed
+    // profile before the downstream health flow. Self-setup now pushes
+    // name capture into the auth step later in the funnel.
+    if (isDependentSetup || (surface === "chat" && needsOnboarding)) {
       setPhase("profile-form");
       return;
     }
@@ -1912,7 +1907,7 @@ export function WebOnboardingTour({
       await createDependentAndSwitch();
     }
     routeAfterProfile();
-  }, [lpVariant, needsOnboarding, isAnonymousTour, firstName, dob, zipCode, profileData?.firstName, profileData?.dob, profileData?.zipCode, routeAfterProfile, setupForCareId, createDependentAndSwitch]);
+  }, [lpVariant, needsOnboarding, isDependentSetup, routeAfterProfile, setupForCareId, createDependentAndSwitch, surface]);
 
   // Profile-form submit — migrates the OnboardingModal's handleSubmit.
   // completeOnboarding() handles: POST /profile, setProfileId, setProfileData,
@@ -4155,15 +4150,10 @@ export function WebOnboardingTour({
                           setAuthError("Password must be at least 8 characters");
                           return;
                         }
-                        // Managed-setup signup: main user's name wasn't
-                        // collected anywhere else in the tour (profile-form
-                        // captured the managed profile's data instead).
-                        // Merge the name into the tour-buffer profile now
-                        // so the flush's completeOnboarding writes a real
-                        // name to the "Me" profile instead of empty strings.
-                        // Self-setup users already have their name buffered
-                        // from profile-form, so this block is a no-op there.
-                        if (authMode === "signup" && isDependentSetup
+                        // Signup now captures the primary user's name here,
+                        // so buffer it before auth completes and the post-auth
+                        // flush writes the profile.
+                        if (authMode === "signup"
                             && firstName.trim() && lastName.trim()) {
                           setBufferedProfile({
                             first_name: firstName.trim(),
@@ -4190,14 +4180,12 @@ export function WebOnboardingTour({
                         // effect picks it up and runs the flush.
                       }}
                     >
-                      {/* Managed-path signup also captures the main user's
-                          first/last name right here, so the "Me" profile
-                          saves with a real name. Only shown in the managed
-                          path + signup mode (self-setup already has the
-                          name from profile-form; login mode means the
-                          profile already exists). OAuth buttons above
-                          handle the name automatically. */}
-                      {authMode === "signup" && isDependentSetup && (
+                      {/* Signup captures the primary user's first/last name
+                          here so we can push identity collection later in
+                          the funnel without losing profile data. Login mode
+                          skips this because the account already exists, and
+                          OAuth buttons above still rely on provider data. */}
+                      {authMode === "signup" && (
                         <div className="flex gap-2.5">
                           <input
                             type="text"
@@ -4271,7 +4259,7 @@ export function WebOnboardingTour({
                           authSubmitting
                           || !authEmail
                           || !authPassword
-                          || (authMode === "signup" && isDependentSetup
+                          || (authMode === "signup"
                               && (!firstName.trim() || !lastName.trim()))
                         }
                         className="w-full py-3 rounded-full text-white font-semibold text-[15px] transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(15,27,61,0.25)]"
